@@ -14,7 +14,6 @@ export default defineConfig({
         'src/**/*.d.ts',
         'src/index.ts',
         // Exclude unimplemented modules (remove as they're implemented)
-        'src/abis/index.ts',
         'src/conditions/index.ts',
         'src/config/index.ts',
         'src/errors/index.ts',
