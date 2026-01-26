@@ -107,6 +107,20 @@ const handler = createWebhookHandler({
 | Base Sepolia | 84532 | Supported |
 | Base Mainnet | 8453 | Coming Soon |
 
+## Known Limitations (v1)
+
+The following features are **not included** in v1 and are planned for future releases:
+
+| Feature | Description | Planned |
+|---------|-------------|---------|
+| `charge()` | Immediate settlement (authorize + release in one call) | v1.1 |
+| `refundPostEscrow()` | Refunds after funds are released | v1.1 |
+| Fee management | Fee tracking and multi-token fee utilities | v1.1 |
+| Evidence system | Sending evidence/metadata with refund requests | v2.0 |
+| Communication | Encrypted messaging between merchant/client (XMTP, IPFS) | v2.0 |
+
+For detailed rationale, see the [Architecture Decision Records](docs/decisions/).
+
 ## Development
 
 ```bash

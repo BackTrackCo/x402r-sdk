@@ -51,3 +51,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Vitest configured with coverage reporting
 - tsup configured for ESM builds
 - GitHub Actions for API documentation generation and deployment
+
+### Deferred (Not in v1)
+
+The following features were discussed but intentionally deferred. See [Architecture Decision Records](docs/decisions/) for detailed rationale.
+
+| Feature | Reason | ADR | Planned |
+|---------|--------|-----|---------|
+| `charge()` | Simplify v1 scope | [ADR-0004](docs/decisions/0004-skip-charge-for-v1.md) | v1.1 |
+| `refundPostEscrow()` | Requires charge() first | [ADR-0004](docs/decisions/0004-skip-charge-for-v1.md) | v1.1 |
+| Fee management | Low priority | [ADR-0005](docs/decisions/0005-skip-fee-management-v1.md) | v1.1 |
+| Evidence/metadata | Needs design work | [ADR-0006](docs/decisions/0006-skip-evidence-metadata-v1.md) | v2.0 |
+
+**Evidence/metadata system** - Communication between merchant and client for sending evidence, dispute context, and refund reasoning. In v1, arbiters must use external tools. v2.0 will add pluggable backends (XMTP for messaging, IPFS for storage) with encrypted evidence and standardized schemas.
