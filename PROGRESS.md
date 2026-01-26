@@ -42,10 +42,8 @@
 ### In Progress - Phase 6 (Examples & Documentation)
 - [x] TypeDoc automation (typedoc.json, docs:generate script)
 - [x] GitHub Actions workflow for automatic doc generation
-- [x] Generated 89 API reference markdown files
-- [x] Manual SDK documentation (22 pages in Mintlify docs)
-- [x] API reference link in Mintlify (→ GitHub Pages)
-- [x] Updated roadmap with Mintlify AI migration plan (v2.0)
+- [x] API reference deployed to GitHub Pages (backtrackco.github.io/x402r-sdk)
+- [x] SDK documentation (22 pages at docs.x402r.org/sdk)
 - [x] README.md for SDK repo
 - [ ] Example: client-basic
 - [ ] Example: merchant-express

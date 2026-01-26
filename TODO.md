@@ -38,9 +38,13 @@ Quick reference for current tasks. See PROGRESS.md for detailed status.
 - [x] Event subscriptions (watchNewCases, watchDecisions, watchFreezeEvents)
 
 ## Up Next (Phase 6 - Examples & Documentation)
-- [x] TypeDoc API reference (GitHub Pages)
-- [x] Mintlify SDK documentation (22 pages)
-- [x] API reference link in Mintlify docs
+
+### Done
+- [x] TypeDoc API reference (backtrackco.github.io/x402r-sdk)
+- [x] SDK documentation (22 pages at docs.x402r.org/sdk)
+- [x] README.md for SDK repo
+
+### Remaining
 - [ ] client-basic example
 - [ ] merchant-express example
 - [ ] arbiter-ai example
