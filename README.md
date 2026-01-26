@@ -98,7 +98,7 @@ const handler = createWebhookHandler({
 ## Documentation
 
 - [SDK Documentation](https://docs.x402r.org/sdk/overview) - Guides and tutorials
-- [API Reference](https://backtrackco.github.io/x402r-sdk) - Auto-generated TypeDoc
+- [API Reference](https://github.com/BackTrackCo/x402r-sdk/tree/main/docs-generated) - Auto-generated TypeDoc
 
 ## Network Support
 
