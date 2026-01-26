@@ -20,7 +20,7 @@ export const PAYMENT_INFO_TYPEHASH = keccak256(
 /**
  * ABI parameter types for PaymentInfo struct encoding
  */
-const paymentInfoAbiParams = [
+const paymentInfoAbiParams: readonly { name: string; type: string }[] = [
   { name: 'typehash', type: 'bytes32' },
   { name: 'operator', type: 'address' },
   { name: 'payer', type: 'address' },
@@ -34,16 +34,16 @@ const paymentInfoAbiParams = [
   { name: 'maxFeeBps', type: 'uint16' },
   { name: 'feeReceiver', type: 'address' },
   { name: 'salt', type: 'uint256' },
-] as const;
+];
 
 /**
  * ABI parameter types for final hash encoding (chainId, escrow, paymentInfoHash)
  */
-const finalHashAbiParams = [
+const finalHashAbiParams: readonly { name: string; type: string }[] = [
   { name: 'chainId', type: 'uint256' },
   { name: 'escrow', type: 'address' },
   { name: 'paymentInfoHash', type: 'bytes32' },
-] as const;
+];
 
 /**
  * Compute the payment info hash as used by the escrow contract
@@ -88,8 +88,8 @@ export function computePaymentInfoHash(
     paymentInfo.preApprovalExpiry,
     paymentInfo.authorizationExpiry,
     paymentInfo.refundExpiry,
-    paymentInfo.minFeeBps,
-    paymentInfo.maxFeeBps,
+    BigInt(paymentInfo.minFeeBps),
+    BigInt(paymentInfo.maxFeeBps),
     paymentInfo.feeReceiver,
     paymentInfo.salt,
   ]);

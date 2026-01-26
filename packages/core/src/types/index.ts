@@ -52,7 +52,7 @@ export enum RequestStatus {
  *   receiver: '0x3456...',
  *   token: '0x4567...',
  *   maxAmount: BigInt('1000000'),
- *   preApprovalExpiry: BigInt(0),
+ *   preApprovalExpiry: 0n,
  *   authorizationExpiry: BigInt(4294967295),
  *   refundExpiry: BigInt(281474976710655),
  *   minFeeBps: 0,
@@ -73,7 +73,7 @@ export interface PaymentInfo {
   token: `0x${string}`;
   /** Maximum amount authorized (uint120 in Solidity) */
   maxAmount: bigint;
-  /** Pre-approval expiry timestamp (uint48 in Solidity, 0 if not used) */
+  /** Pre-approval expiry timestamp (uint48 in Solidity, 0n if not used) */
   preApprovalExpiry: bigint;
   /** Authorization expiry timestamp (uint48 in Solidity) */
   authorizationExpiry: bigint;
@@ -99,47 +99,10 @@ export interface RefundRequestData {
   status: RequestStatus;
 }
 
-/**
- * Condition configuration for PaymentOperator
- */
-export interface ConditionConfig {
-  authorizeCondition?: `0x${string}`;
-  authorizeRecorder?: `0x${string}`;
-  chargeCondition?: `0x${string}`;
-  chargeRecorder?: `0x${string}`;
-  releaseCondition?: `0x${string}`;
-  releaseRecorder?: `0x${string}`;
-  refundInEscrowCondition?: `0x${string}`;
-  refundInEscrowRecorder?: `0x${string}`;
-  refundPostEscrowCondition?: `0x${string}`;
-  refundPostEscrowRecorder?: `0x${string}`;
-}
-
-/**
- * PaymentOperator factory configuration
- */
-export interface PaymentOperatorConfig {
-  /** Address of the escrow contract */
-  escrow: `0x${string}`;
-  /** Address of the protocol fee recipient */
-  protocolFeeRecipient: `0x${string}`;
-  /** Maximum total fee rate in basis points */
-  maxTotalFeeRate: number;
-  /** Protocol fee percentage (0-100) */
-  protocolFeePercentage: number;
-  /** Address of the operator fee recipient */
-  feeRecipient: `0x${string}`;
-  /** Owner address for the operator */
-  owner: `0x${string}`;
-  /** Condition configuration */
-  conditions: ConditionConfig;
-}
-
 // ============ Constants ============
 
-/** Zero address constant */
-export const ZERO_ADDRESS: `0x${string}` =
-  '0x0000000000000000000000000000000000000000';
+/** Zero address constant for validation */
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
 /** Maximum uint32 value (used for authorizationExpiry) */
 export const MAX_UINT32 = 4294967295n;

@@ -2,34 +2,37 @@
 
 ## v1.0 (Current)
 
-### Core Package (@x402r/core)
-- [ ] PaymentInfo, PaymentState, RequestStatus types
-- [ ] Contract ABIs (PaymentOperator, RefundRequest, etc.)
-- [ ] Network configuration (Base Sepolia)
-- [ ] Error decoder utility
-- [ ] Factory utilities (CREATE2 address computation)
-- [ ] Condition builder (And/Or/Not composition)
+### Core Package (@x402r/core) - COMPLETE
+- [x] PaymentInfo, PaymentState, RequestStatus types
+- [x] Contract ABIs (PaymentOperator, RefundRequest, etc.)
+- [x] Network configuration (Base Sepolia)
+- [x] Error decoder utility
+- [x] Factory utilities (CREATE2 address computation)
+- [x] Condition builder (And/Or/Not composition)
+- [x] Shared utilities (computePaymentInfoHash)
 
-### Client Package (@x402r/client)
-- [ ] X402rClient class
-- [ ] Payment queries (getPaymentState, getPaymentDetails, etc.)
-- [ ] Refund operations (requestRefund, cancelRefundRequest, etc.)
-- [ ] Escrow operations (freezePayment, isFrozen, etc.)
-- [ ] Event subscriptions
+### Client Package (@x402r/client) - COMPLETE
+- [x] X402rClient class with constructor
+- [x] Payment queries (getPaymentState, paymentExists, isInEscrow, getPaymentDetails, getMyPayments)
+- [x] Refund operations (requestRefund, cancelRefundRequest, hasRefundRequest, getRefundStatus, getMyRefundRequests)
+- [x] Escrow operations (freezePayment, unfreezePayment, isFrozen, getAuthorizationTime, isEscrowPeriodPassed)
+- [x] Event subscriptions (watchPaymentState, watchRefundRequests, watchMyPayments, watchFreezeEvents)
 
-### Merchant Package (@x402r/merchant)
-- [ ] X402rMerchant class
-- [ ] Payment operations (release, refundInEscrow)
-- [ ] Refund handling (approveRefundRequest, denyRefundRequest)
+### Merchant Package (@x402r/merchant) - IN PROGRESS
+- [ ] X402rMerchant class with constructor
+- [ ] Payment operations (release, refundInEscrow, getPaymentState, getReceiverPayments)
+- [ ] Refund handling (approveRefundRequest, denyRefundRequest, getPendingRefundRequests)
+- [ ] Escrow management (unfreezePayment, isFrozen)
 - [ ] Server helpers (refundable, withRefund)
-- [ ] Event subscriptions
+- [ ] Event subscriptions (watchRefundRequests, watchReleases, watchFreezeEvents)
 
-### Arbiter Package (@x402r/arbiter)
-- [ ] X402rArbiter class
-- [ ] Decision submission (approveRefund, denyRefund)
-- [ ] Batch operations
-- [ ] AI arbiter hooks
-- [ ] Event subscriptions
+### Arbiter Package (@x402r/arbiter) - NOT STARTED
+- [ ] X402rArbiter class with constructor
+- [ ] Decision submission (approveRefund, denyRefund, executeRefundInEscrow)
+- [ ] Batch operations (batchApprove, batchDeny)
+- [ ] Case queries (getPendingCases, getCaseDetails, getArbiterPayments)
+- [ ] AI integration (CaseEvaluationContext, createWebhookHandler)
+- [ ] Event subscriptions (watchNewCases, watchDecisions, watchFreezeEvents)
 
 ### Examples & Documentation
 - [ ] client-basic example

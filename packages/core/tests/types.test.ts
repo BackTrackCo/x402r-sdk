@@ -49,9 +49,9 @@ describe('PaymentInfo type', () => {
       receiver: '0x3456789012345678901234567890123456789012',
       token: '0x4567890123456789012345678901234567890123',
       maxAmount: BigInt('1000000'),
-      preApprovalExpiry: BigInt(0),
-      authorizationExpiry: BigInt(4294967295), // uint48 max
-      refundExpiry: BigInt(281474976710655), // uint48 max
+      preApprovalExpiry: 0n,
+      authorizationExpiry: BigInt(4294967295),
+      refundExpiry: BigInt(281474976710655),
       minFeeBps: 0,
       maxFeeBps: 0,
       feeReceiver: '0x5678901234567890123456789012345678901234',
@@ -104,7 +104,7 @@ describe('isValidPaymentInfo', () => {
     receiver: '0x3456789012345678901234567890123456789012',
     token: '0x4567890123456789012345678901234567890123',
     maxAmount: BigInt('1000000'),
-    preApprovalExpiry: BigInt(0),
+    preApprovalExpiry: 0n,
     authorizationExpiry: BigInt(4294967295),
     refundExpiry: BigInt(281474976710655),
     minFeeBps: 0,

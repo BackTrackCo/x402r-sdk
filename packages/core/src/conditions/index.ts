@@ -3,6 +3,9 @@
  * @module conditions
  */
 
+// Re-export StaticAddressConditionABI from abis for convenience
+export { StaticAddressConditionABI } from '../abis/index.js';
+
 // ============ Types ============
 
 /**
@@ -215,25 +218,6 @@ export const ReceiverConditionABI = [
  */
 export const AlwaysTrueConditionABI = [
   ...IConditionABI,
-] as const;
-
-/**
- * StaticAddressCondition ABI
- */
-export const StaticAddressConditionABI = [
-  ...IConditionABI,
-  {
-    type: 'function',
-    name: 'DESIGNATED_ADDRESS',
-    inputs: [],
-    outputs: [{ name: '', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'error',
-    name: 'ZeroAddress',
-    inputs: [],
-  },
 ] as const;
 
 /**

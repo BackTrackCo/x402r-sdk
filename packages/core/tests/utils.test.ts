@@ -25,8 +25,8 @@ describe('computePaymentInfoHash', () => {
     receiver: '0x3456789012345678901234567890123456789012',
     token: '0x4567890123456789012345678901234567890123',
     maxAmount: BigInt('1000000'),
-    preApprovalExpiry: BigInt(0),
-    authorizationExpiry: BigInt(1735689600), // Some future timestamp
+    preApprovalExpiry: 0n,
+    authorizationExpiry: BigInt(1735689600),
     refundExpiry: BigInt(1738368000),
     minFeeBps: 0,
     maxFeeBps: 500, // 5%
@@ -83,9 +83,9 @@ describe('computePaymentInfoHash', () => {
       receiver: '0x3456789012345678901234567890123456789012',
       token: '0x4567890123456789012345678901234567890123',
       maxAmount: BigInt(0),
-      preApprovalExpiry: BigInt(0),
-      authorizationExpiry: BigInt(0),
-      refundExpiry: BigInt(0),
+      preApprovalExpiry: 0n,
+      authorizationExpiry: 0n,
+      refundExpiry: 0n,
       minFeeBps: 0,
       maxFeeBps: 0,
       feeReceiver: '0x0000000000000000000000000000000000000000',
