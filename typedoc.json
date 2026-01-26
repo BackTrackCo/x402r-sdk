@@ -1,0 +1,20 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": [
+    "packages/core/src/index.ts",
+    "packages/client/src/index.ts",
+    "packages/merchant/src/index.ts",
+    "packages/arbiter/src/index.ts"
+  ],
+  "entryPointStrategy": "expand",
+  "out": "docs-generated",
+  "plugin": ["typedoc-plugin-markdown"],
+  "exclude": ["**/tests/**", "**/node_modules/**", "**/*.test.ts"],
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": true,
+  "skipErrorChecking": true,
+  "sort": ["alphabetical"],
+  "readme": "none",
+  "githubPages": false
+}

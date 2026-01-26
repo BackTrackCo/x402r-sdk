@@ -18,10 +18,14 @@
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",
     "clean": "turbo run clean && rm -rf node_modules",
-    "format": "prettier --write \"**/*.{ts,tsx,md,json}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "docs:generate": "typedoc",
+    "docs:watch": "typedoc --watch"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",
+    "typedoc": "^0.28.0",
+    "typedoc-plugin-markdown": "^4.4.0",
     "@eslint/js": "^9.39.2",
     "@types/node": "^20.11.0",
     "@typescript-eslint/eslint-plugin": "^8.53.1",
