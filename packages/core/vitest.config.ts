@@ -10,7 +10,16 @@ export default defineConfig({
       reporter: ['text', 'json', 'lcov'],
       reportsDirectory: './coverage',
       include: ['src/**/*.ts'],
-      exclude: ['src/**/*.d.ts', 'src/**/index.ts'],
+      exclude: [
+        'src/**/*.d.ts',
+        'src/index.ts',
+        // Exclude unimplemented modules (remove as they're implemented)
+        'src/abis/index.ts',
+        'src/conditions/index.ts',
+        'src/config/index.ts',
+        'src/errors/index.ts',
+        'src/factory/index.ts',
+      ],
       thresholds: {
         statements: 90,
         branches: 90,

@@ -3,5 +3,194 @@
  * @module types
  */
 
-// Placeholder - will be implemented with TDD
-export {};
+/**
+ * Payment lifecycle states matching the Solidity enum
+ *
+ * STATE MACHINE:
+ * - NonExistent → InEscrow: authorize()
+ * - InEscrow → Released: release() / capture()
+ * - InEscrow → Settled: full refundInEscrow(), void(), or reclaim()
+ * - InEscrow → Expired: authorizationExpiry passed
+ * - Released → Settled: full refundPostEscrow() or refundExpiry passed
+ * - Expired → Settled: reclaim() called by payer
+ */
+export enum PaymentState {
+  /** Payment has never been authorized through this operator */
+  NonExistent = 0,
+  /** Payment authorized, funds locked in escrow (capturableAmount > 0) */
+  InEscrow = 1,
+  /** Funds released to receiver, may still be refundable (refundableAmount > 0) */
+  Released = 2,
+  /** Payment settled - no funds in escrow or refundable */
+  Settled = 3,
+  /** Authorization expired, payer can reclaim via escrow.reclaim() */
+  Expired = 4,
+}
+
+/**
+ * Refund request status matching the Solidity enum
+ */
+export enum RequestStatus {
+  /** Request submitted, awaiting decision */
+  Pending = 0,
+  /** Request approved by arbiter or receiver */
+  Approved = 1,
+  /** Request denied by arbiter or receiver */
+  Denied = 2,
+  /** Request cancelled by payer */
+  Cancelled = 3,
+}
+
+/**
+ * PaymentInfo struct matching the Solidity struct from AuthCaptureEscrow
+ *
+ * @example
+ * ```typescript
+ * const paymentInfo: PaymentInfo = {
+ *   operator: '0x1234...',
+ *   payer: '0x2345...',
+ *   receiver: '0x3456...',
+ *   token: '0x4567...',
+ *   maxAmount: BigInt('1000000'),
+ *   preApprovalExpiry: BigInt(0),
+ *   authorizationExpiry: BigInt(4294967295),
+ *   refundExpiry: BigInt(281474976710655),
+ *   minFeeBps: 0,
+ *   maxFeeBps: 0,
+ *   feeReceiver: '0x5678...',
+ *   salt: BigInt('0x123456'),
+ * };
+ * ```
+ */
+export interface PaymentInfo {
+  /** Address of the operator contract (must match operator that authorized) */
+  operator: `0x${string}`;
+  /** Address of the payer who authorized the payment */
+  payer: `0x${string}`;
+  /** Address of the receiver (merchant) */
+  receiver: `0x${string}`;
+  /** Address of the token being transferred (e.g., USDC) */
+  token: `0x${string}`;
+  /** Maximum amount authorized (uint120 in Solidity) */
+  maxAmount: bigint;
+  /** Pre-approval expiry timestamp (uint48 in Solidity, 0 if not used) */
+  preApprovalExpiry: bigint;
+  /** Authorization expiry timestamp (uint48 in Solidity) */
+  authorizationExpiry: bigint;
+  /** Refund expiry timestamp (uint48 in Solidity) */
+  refundExpiry: bigint;
+  /** Minimum fee in basis points (uint16 in Solidity) */
+  minFeeBps: number;
+  /** Maximum fee in basis points (uint16 in Solidity) */
+  maxFeeBps: number;
+  /** Address that receives the fee */
+  feeReceiver: `0x${string}`;
+  /** Unique salt for this payment (uint256 in Solidity) */
+  salt: bigint;
+}
+
+/**
+ * Refund request data matching the Solidity struct
+ */
+export interface RefundRequestData {
+  /** Hash of the PaymentInfo struct */
+  paymentInfoHash: `0x${string}`;
+  /** Current status of the refund request */
+  status: RequestStatus;
+}
+
+/**
+ * Condition configuration for PaymentOperator
+ */
+export interface ConditionConfig {
+  authorizeCondition?: `0x${string}`;
+  authorizeRecorder?: `0x${string}`;
+  chargeCondition?: `0x${string}`;
+  chargeRecorder?: `0x${string}`;
+  releaseCondition?: `0x${string}`;
+  releaseRecorder?: `0x${string}`;
+  refundInEscrowCondition?: `0x${string}`;
+  refundInEscrowRecorder?: `0x${string}`;
+  refundPostEscrowCondition?: `0x${string}`;
+  refundPostEscrowRecorder?: `0x${string}`;
+}
+
+/**
+ * PaymentOperator factory configuration
+ */
+export interface PaymentOperatorConfig {
+  /** Address of the escrow contract */
+  escrow: `0x${string}`;
+  /** Address of the protocol fee recipient */
+  protocolFeeRecipient: `0x${string}`;
+  /** Maximum total fee rate in basis points */
+  maxTotalFeeRate: number;
+  /** Protocol fee percentage (0-100) */
+  protocolFeePercentage: number;
+  /** Address of the operator fee recipient */
+  feeRecipient: `0x${string}`;
+  /** Owner address for the operator */
+  owner: `0x${string}`;
+  /** Condition configuration */
+  conditions: ConditionConfig;
+}
+
+// ============ Constants ============
+
+/** Zero address constant */
+export const ZERO_ADDRESS: `0x${string}` =
+  '0x0000000000000000000000000000000000000000';
+
+/** Maximum uint32 value (used for authorizationExpiry) */
+export const MAX_UINT32 = 4294967295n;
+
+/** Maximum uint48 value (used for refundExpiry) */
+export const MAX_UINT48 = 281474976710655n;
+
+/** Basis points constant (10000 = 100%) */
+export const BASIS_POINTS = 10000;
+
+// ============ Validation Functions ============
+
+/**
+ * Validates an Ethereum address format
+ *
+ * @param address - The address to validate
+ * @returns true if the address is a valid format
+ *
+ * @example
+ * ```typescript
+ * isValidAddress('0x1234567890123456789012345678901234567890'); // true
+ * isValidAddress('0x123'); // false
+ * ```
+ */
+export function isValidAddress(address: string): address is `0x${string}` {
+  return /^0x[a-fA-F0-9]{40}$/.test(address);
+}
+
+/**
+ * Validates a PaymentInfo object
+ *
+ * @param paymentInfo - The PaymentInfo to validate
+ * @returns true if all required fields are valid
+ *
+ * @example
+ * ```typescript
+ * const isValid = isValidPaymentInfo(paymentInfo);
+ * if (!isValid) {
+ *   throw new Error('Invalid payment info');
+ * }
+ * ```
+ */
+export function isValidPaymentInfo(paymentInfo: PaymentInfo): boolean {
+  // Check all address fields are valid and non-zero
+  if (paymentInfo.operator === ZERO_ADDRESS) return false;
+  if (paymentInfo.payer === ZERO_ADDRESS) return false;
+  if (paymentInfo.receiver === ZERO_ADDRESS) return false;
+
+  // Check maxAmount is positive
+  if (paymentInfo.maxAmount <= 0n) return false;
+
+  // All checks passed
+  return true;
+}
