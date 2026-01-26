@@ -4,5 +4,12 @@
  * @packageDocumentation
  */
 
-// Placeholder - will be implemented with TDD
-export {};
+export { X402rArbiter, type X402rArbiterConfig } from './arbiter.js';
+export {
+  createWebhookHandler,
+  type CaseEvaluationContext,
+  type DecisionResult,
+  type ArbiterHook,
+  type WebhookHandlerConfig,
+  type WebhookResult,
+} from './ai-hooks.js';

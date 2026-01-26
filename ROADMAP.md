@@ -18,21 +18,21 @@
 - [x] Escrow operations (freezePayment, unfreezePayment, isFrozen, getAuthorizationTime, isEscrowPeriodPassed)
 - [x] Event subscriptions (watchPaymentState, watchRefundRequests, watchMyPayments, watchFreezeEvents)
 
-### Merchant Package (@x402r/merchant) - IN PROGRESS
-- [ ] X402rMerchant class with constructor
-- [ ] Payment operations (release, refundInEscrow, getPaymentState, getReceiverPayments)
-- [ ] Refund handling (approveRefundRequest, denyRefundRequest, getPendingRefundRequests)
-- [ ] Escrow management (unfreezePayment, isFrozen)
-- [ ] Server helpers (refundable, withRefund)
-- [ ] Event subscriptions (watchRefundRequests, watchReleases, watchFreezeEvents)
+### Merchant Package (@x402r/merchant) - COMPLETE
+- [x] X402rMerchant class with constructor
+- [x] Payment operations (release, refundInEscrow, getPaymentState, getReceiverPayments, getPaymentAmounts)
+- [x] Refund handling (approveRefundRequest, denyRefundRequest, getPendingRefundRequests, hasRefundRequest, getRefundStatus)
+- [x] Escrow management (unfreezePayment, isFrozen)
+- [x] Server helpers (refundable, withRefund)
+- [x] Event subscriptions (watchRefundRequests, watchReleases, watchFreezeEvents)
 
-### Arbiter Package (@x402r/arbiter) - NOT STARTED
-- [ ] X402rArbiter class with constructor
-- [ ] Decision submission (approveRefund, denyRefund, executeRefundInEscrow)
-- [ ] Batch operations (batchApprove, batchDeny)
-- [ ] Case queries (getPendingCases, getCaseDetails, getArbiterPayments)
-- [ ] AI integration (CaseEvaluationContext, createWebhookHandler)
-- [ ] Event subscriptions (watchNewCases, watchDecisions, watchFreezeEvents)
+### Arbiter Package (@x402r/arbiter) - COMPLETE
+- [x] X402rArbiter class with constructor
+- [x] Decision submission (approveRefund, denyRefund, executeRefundInEscrow)
+- [x] Batch operations (batchApprove, batchDeny)
+- [x] Case queries (getPendingCases, getRefundStatus, getArbiterPayments)
+- [x] AI integration (CaseEvaluationContext, DecisionResult, createWebhookHandler)
+- [x] Event subscriptions (watchNewCases, watchDecisions, watchFreezeEvents)
 
 ### Examples & Documentation
 - [ ] client-basic example

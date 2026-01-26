@@ -1,6 +1,6 @@
 # SDK Progress
 
-## Current Phase: 4 - Merchant SDK
+## Current Phase: Complete - All SDKs Implemented
 
 ### Completed - Phase 1 & 2 (@x402r/core)
 - [x] Monorepo setup (Turborepo + pnpm + tsup)
@@ -23,20 +23,21 @@
 - [x] Escrow operations (freezePayment, unfreezePayment, isFrozen, getAuthorizationTime, isEscrowPeriodPassed)
 - [x] Event subscriptions (watchPaymentState, watchRefundRequests, watchMyPayments, watchFreezeEvents)
 
-### Up Next - Phase 4 (@x402r/merchant)
-- [ ] X402rMerchant class with constructor
-- [ ] Payment operations (release, refundInEscrow, getPaymentState, getReceiverPayments)
-- [ ] Refund handling (approveRefundRequest, denyRefundRequest, getPendingRefundRequests)
-- [ ] Escrow management (unfreezePayment, isFrozen)
-- [ ] Event subscriptions (watchRefundRequests, watchReleases, watchFreezeEvents)
-- [ ] Server helpers (refundable, withRefund)
+### Completed - Phase 4 (@x402r/merchant)
+- [x] X402rMerchant class with constructor
+- [x] Payment operations (release, refundInEscrow, getPaymentState, getReceiverPayments, getPaymentAmounts)
+- [x] Refund handling (approveRefundRequest, denyRefundRequest, getPendingRefundRequests, hasRefundRequest, getRefundStatus)
+- [x] Escrow management (unfreezePayment, isFrozen)
+- [x] Event subscriptions (watchRefundRequests, watchReleases, watchFreezeEvents)
+- [x] Server helpers (refundable, withRefund)
 
-### Up Next - Phase 5 (@x402r/arbiter)
-- [ ] X402rArbiter class with constructor
-- [ ] Decision submission (approveRefund, denyRefund, executeRefundInEscrow)
-- [ ] Batch operations (batchApprove, batchDeny)
-- [ ] Case queries (getPendingCases, getCaseDetails, getArbiterPayments)
-- [ ] AI integration (CaseEvaluationContext, createWebhookHandler)
+### Completed - Phase 5 (@x402r/arbiter)
+- [x] X402rArbiter class with constructor
+- [x] Decision submission (approveRefund, denyRefund, executeRefundInEscrow)
+- [x] Batch operations (batchApprove, batchDeny)
+- [x] Case queries (getPendingCases, getRefundStatus, getArbiterPayments)
+- [x] AI integration (CaseEvaluationContext, DecisionResult, createWebhookHandler)
+- [x] Event subscriptions (watchNewCases, watchDecisions, watchFreezeEvents)
 
 ## Blocked
 - [ ] Base Mainnet addresses - waiting on deployment
@@ -54,8 +55,10 @@
 |---------|-------|--------|
 | @x402r/core | 111 tests passing | Complete |
 | @x402r/client | 50 tests passing | Complete |
-| @x402r/merchant | 1 placeholder test | Not started |
-| @x402r/arbiter | 1 placeholder test | Not started |
+| @x402r/merchant | 38 tests passing | Complete |
+| @x402r/arbiter | 39 tests passing | Complete |
+
+**Total: 238 tests passing**
 
 ## Commits
 - `d5fc054` - Initialize x402r-sdk monorepo

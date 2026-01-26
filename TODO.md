@@ -21,20 +21,28 @@ Quick reference for current tasks. See PROGRESS.md for detailed status.
 - [x] Escrow operations (freezePayment, unfreezePayment, isFrozen, getAuthorizationTime, isEscrowPeriodPassed)
 - [x] Event subscriptions (watchPaymentState, watchRefundRequests, watchMyPayments, watchFreezeEvents)
 
-## Current (Phase 4 - @x402r/merchant)
-- [ ] X402rMerchant class with constructor
-- [ ] Payment operations (release, refundInEscrow, getPaymentState, getReceiverPayments)
-- [ ] Refund handling (approveRefundRequest, denyRefundRequest, getPendingRefundRequests)
-- [ ] Escrow management (unfreezePayment, isFrozen)
-- [ ] Server helpers (refundable, withRefund)
-- [ ] Event subscriptions (watchRefundRequests, watchReleases, watchFreezeEvents)
+### Phase 4 (@x402r/merchant)
+- [x] X402rMerchant class with constructor
+- [x] Payment operations (release, refundInEscrow, getPaymentState, getReceiverPayments, getPaymentAmounts)
+- [x] Refund handling (approveRefundRequest, denyRefundRequest, getPendingRefundRequests, hasRefundRequest, getRefundStatus)
+- [x] Escrow management (unfreezePayment, isFrozen)
+- [x] Server helpers (refundable, withRefund)
+- [x] Event subscriptions (watchRefundRequests, watchReleases, watchFreezeEvents)
 
-## Next Up (Phase 5 - @x402r/arbiter)
-- [ ] X402rArbiter class with constructor
-- [ ] Decision submission (approveRefund, denyRefund, executeRefundInEscrow)
-- [ ] Batch operations (batchApprove, batchDeny)
-- [ ] Case queries (getPendingCases, getCaseDetails, getArbiterPayments)
-- [ ] AI integration (CaseEvaluationContext, createWebhookHandler)
+### Phase 5 (@x402r/arbiter)
+- [x] X402rArbiter class with constructor
+- [x] Decision submission (approveRefund, denyRefund, executeRefundInEscrow)
+- [x] Batch operations (batchApprove, batchDeny)
+- [x] Case queries (getPendingCases, getRefundStatus, getArbiterPayments)
+- [x] AI integration (CaseEvaluationContext, DecisionResult, createWebhookHandler)
+- [x] Event subscriptions (watchNewCases, watchDecisions, watchFreezeEvents)
+
+## Up Next (Phase 6 - Examples & Documentation)
+- [ ] client-basic example
+- [ ] merchant-express example
+- [ ] arbiter-ai example
+- [ ] mcp-integration example
+- [ ] TypeDoc API reference
 
 ## Blocked
 - **Base Mainnet addresses** - Waiting on contract deployment
@@ -43,4 +51,4 @@ Quick reference for current tasks. See PROGRESS.md for detailed status.
 - All implementations follow TDD: write test first, then implement
 - Update PROGRESS.md after each milestone
 - Coverage targets: core 90%, client/merchant 80%, arbiter 75%
-- Total tests: 163 passing (core: 111, client: 50, merchant: 1, arbiter: 1)
+- Total tests: 238 passing (core: 111, client: 50, merchant: 38, arbiter: 39)
