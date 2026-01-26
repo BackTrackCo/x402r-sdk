@@ -1,0 +1,59 @@
+{
+  "name": "@x402r/client",
+  "version": "0.1.0",
+  "description": "Client SDK for payers using X402r refundable payments",
+  "author": "x402r.org",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "clean": "rm -rf dist coverage"
+  },
+  "dependencies": {
+    "@x402r/core": "workspace:*",
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@vitest/coverage-v8": "^2.1.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  },
+  "peerDependencies": {
+    "viem": "^2.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/x402r/x402r-sdk.git",
+    "directory": "packages/client"
+  },
+  "keywords": [
+    "x402",
+    "x402r",
+    "payments",
+    "client",
+    "payer",
+    "refund"
+  ]
+}

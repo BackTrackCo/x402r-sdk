@@ -1,0 +1,84 @@
+{
+  "name": "@x402r/core",
+  "version": "0.1.0",
+  "description": "Core types, ABIs, and utilities for the X402r SDK",
+  "author": "x402r.org",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./types": {
+      "import": "./dist/types/index.js",
+      "types": "./dist/types/index.d.ts"
+    },
+    "./abis": {
+      "import": "./dist/abis/index.js",
+      "types": "./dist/abis/index.d.ts"
+    },
+    "./config": {
+      "import": "./dist/config/index.js",
+      "types": "./dist/config/index.d.ts"
+    },
+    "./errors": {
+      "import": "./dist/errors/index.js",
+      "types": "./dist/errors/index.d.ts"
+    },
+    "./factory": {
+      "import": "./dist/factory/index.js",
+      "types": "./dist/factory/index.d.ts"
+    },
+    "./conditions": {
+      "import": "./dist/conditions/index.js",
+      "types": "./dist/conditions/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "clean": "rm -rf dist coverage"
+  },
+  "dependencies": {
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@vitest/coverage-v8": "^2.1.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  },
+  "peerDependencies": {
+    "viem": "^2.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/x402r/x402r-sdk.git",
+    "directory": "packages/core"
+  },
+  "keywords": [
+    "x402",
+    "x402r",
+    "payments",
+    "escrow",
+    "refund",
+    "blockchain",
+    "ethereum",
+    "base"
+  ]
+}
