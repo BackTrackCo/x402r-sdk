@@ -37,3 +37,4 @@ docs/api/
 # Changesets
 .changeset/*.md
 !.changeset/README.md
+docs-generated/
