@@ -39,7 +39,8 @@
 - [ ] merchant-express example
 - [ ] arbiter-ai example
 - [ ] mcp-integration example
-- [ ] TypeDoc API reference
+- [x] TypeDoc API reference (GitHub Pages)
+- [x] Mintlify SDK documentation (22 pages)
 
 ## v1.1 (Planned)
 
@@ -54,3 +55,7 @@
 - [ ] Partial refund negotiations
 - [ ] Multi-arbiter support
 - [ ] Session-based billing patterns
+- [ ] AI-assisted documentation (Mintlify agent integration)
+  - GitHub Action to detect code changes
+  - AGENTS.md behavior configuration
+  - Auto-generate doc update PRs (similar to x402 approach)

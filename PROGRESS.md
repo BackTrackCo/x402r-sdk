@@ -44,6 +44,8 @@
 - [x] GitHub Actions workflow for automatic doc generation
 - [x] Generated 89 API reference markdown files
 - [x] Manual SDK documentation (22 pages in Mintlify docs)
+- [x] API reference link in Mintlify (→ GitHub Pages)
+- [x] Updated roadmap with Mintlify AI migration plan (v2.0)
 - [ ] Example: client-basic
 - [ ] Example: merchant-express
 - [ ] Example: arbiter-ai
