@@ -31,10 +31,9 @@ Thumbs.db
 npm-debug.log*
 pnpm-debug.log*
 
-# Generated docs
-docs/api/
-
 # Changesets
 .changeset/*.md
 !.changeset/README.md
+
+# Generated docs (built by CI)
 docs-generated/
