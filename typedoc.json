@@ -8,13 +8,13 @@
   ],
   "entryPointStrategy": "expand",
   "out": "docs-generated",
-  "plugin": ["typedoc-plugin-markdown"],
   "exclude": ["**/tests/**", "**/node_modules/**", "**/*.test.ts"],
   "excludePrivate": true,
   "excludeProtected": true,
   "excludeInternal": true,
   "skipErrorChecking": true,
   "sort": ["alphabetical"],
-  "readme": "none",
-  "githubPages": false
+  "readme": "README.md",
+  "githubPages": true,
+  "name": "X402r SDK API Reference"
 }
