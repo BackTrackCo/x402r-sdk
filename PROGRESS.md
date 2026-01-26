@@ -13,12 +13,13 @@
 - [x] Implemented network configuration (NETWORK_CONFIG, getNetworkConfig, isSupportedNetwork)
 - [x] Implemented error decoder (X402rError, decodeContractError, CONTRACT_ERRORS)
 - [x] Implemented factory utilities (PaymentOperatorConfig, EscrowPeriodConfig, FreezePolicyConfig, factory ABIs)
+- [x] Implemented condition builder (conditions.and/or/not/staticAddress, condition ABIs, singletons)
 
 ### In Progress
-- [ ] Condition builder (Phase 2.2)
+- [ ] Shared utilities (Phase 2.3 - computePaymentInfoHash)
 
 ### Up Next
-- [ ] Shared utilities (Phase 2.3)
+- [ ] Client SDK (Phase 3)
 
 ## Blocked
 - [ ] Base Mainnet addresses - waiting on deployment
@@ -34,7 +35,7 @@
 ## Test Status
 | Package | Coverage | Status |
 |---------|----------|--------|
-| @x402r/core | 100% (types, abis, config, errors, factory) | In progress |
+| @x402r/core | 100% (types, abis, config, errors, factory, conditions) | In progress |
 | @x402r/client | 0% | Not started |
 | @x402r/merchant | 0% | Not started |
 | @x402r/arbiter | 0% | Not started |
@@ -46,4 +47,5 @@
 - `43df62c` - Add contract ABIs with tests (100% coverage)
 - `03322fc` - Add network configuration with tests (100% coverage)
 - `ecb4053` - Add error decoder with tests (100% coverage)
-- (pending) - Add factory utilities with tests
+- `60104ba` - Add factory utilities with tests (100% coverage)
+- (pending) - Add condition builder with tests
