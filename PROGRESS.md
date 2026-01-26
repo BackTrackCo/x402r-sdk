@@ -2,7 +2,7 @@
 
 ## Current Phase: 1 - Core Foundation
 
-### Completed
+### Completed - Phase 1 & 2 (@x402r/core)
 - [x] Monorepo setup (Turborepo + pnpm + tsup)
 - [x] Vitest with coverage reporting configured
 - [x] Package structure created (@x402r/core, @x402r/client, @x402r/merchant, @x402r/arbiter)
@@ -14,12 +14,14 @@
 - [x] Implemented error decoder (X402rError, decodeContractError, CONTRACT_ERRORS)
 - [x] Implemented factory utilities (PaymentOperatorConfig, EscrowPeriodConfig, FreezePolicyConfig, factory ABIs)
 - [x] Implemented condition builder (conditions.and/or/not/staticAddress, condition ABIs, singletons)
+- [x] Implemented shared utilities (computePaymentInfoHash, PAYMENT_INFO_TYPEHASH)
 
 ### In Progress
-- [ ] Shared utilities (Phase 2.3 - computePaymentInfoHash)
+- [ ] Client SDK (Phase 3)
 
 ### Up Next
-- [ ] Client SDK (Phase 3)
+- [ ] Merchant SDK (Phase 4)
+- [ ] Arbiter SDK (Phase 5)
 
 ## Blocked
 - [ ] Base Mainnet addresses - waiting on deployment
@@ -35,7 +37,7 @@
 ## Test Status
 | Package | Coverage | Status |
 |---------|----------|--------|
-| @x402r/core | 100% (types, abis, config, errors, factory, conditions) | In progress |
+| @x402r/core | 100% (types, abis, config, errors, factory, conditions, utils) | Complete |
 | @x402r/client | 0% | Not started |
 | @x402r/merchant | 0% | Not started |
 | @x402r/arbiter | 0% | Not started |
@@ -48,4 +50,5 @@
 - `03322fc` - Add network configuration with tests (100% coverage)
 - `ecb4053` - Add error decoder with tests (100% coverage)
 - `60104ba` - Add factory utilities with tests (100% coverage)
-- (pending) - Add condition builder with tests
+- `cf50dcb` - Add condition builder with tests (100% coverage)
+- (pending) - Add shared utilities with tests

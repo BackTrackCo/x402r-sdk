@@ -21,3 +21,6 @@ export * from './factory/index.js';
 
 // Condition builder
 export * from './conditions/index.js';
+
+// Shared utilities
+export * from './utils/index.js';
