@@ -39,6 +39,16 @@
 - [x] AI integration (CaseEvaluationContext, DecisionResult, createWebhookHandler)
 - [x] Event subscriptions (watchNewCases, watchDecisions, watchFreezeEvents)
 
+### In Progress - Phase 6 (Examples & Documentation)
+- [x] TypeDoc automation (typedoc.json, docs:generate script)
+- [x] GitHub Actions workflow for automatic doc generation
+- [x] Generated 89 API reference markdown files
+- [x] Manual SDK documentation (22 pages in Mintlify docs)
+- [ ] Example: client-basic
+- [ ] Example: merchant-express
+- [ ] Example: arbiter-ai
+- [ ] Example: mcp-integration
+
 ## Blocked
 - [ ] Base Mainnet addresses - waiting on deployment
 
@@ -71,3 +81,5 @@
 - `cf50dcb` - Add condition builder with tests (100% coverage)
 - `5baceba` - Add shared utilities with tests (100% coverage)
 - `ef7ff20` - Add X402rClient with payment queries (100% coverage)
+- `c9f3d1a` - Complete X402r SDK implementation (Phases 1-5)
+- `6976bc9` - Add TypeDoc automation for API reference generation
