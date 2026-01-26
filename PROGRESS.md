@@ -9,14 +9,15 @@
 - [x] Created PROGRESS.md, ROADMAP.md, TODO.md
 - [x] Created initial ADRs (0001-0007)
 - [x] Implemented core types (PaymentState, RequestStatus, PaymentInfo) with 100% coverage
+- [x] Extracted ABIs from contracts (PaymentOperator, RefundRequest, EscrowPeriodRecorder, etc.)
+- [x] Implemented network configuration (NETWORK_CONFIG, getNetworkConfig, isSupportedNetwork)
 
 ### In Progress
-- [ ] Extract ABIs from contracts
+- [ ] Error decoder (decodeContractError)
 
 ### Up Next
-- [ ] Network configuration
-- [ ] Error decoder
 - [ ] Factory utilities
+- [ ] Condition builder
 
 ## Blocked
 - [ ] Base Mainnet addresses - waiting on deployment
@@ -32,7 +33,7 @@
 ## Test Status
 | Package | Coverage | Status |
 |---------|----------|--------|
-| @x402r/core | 100% (types) | In progress |
+| @x402r/core | 100% (types, abis, config) | In progress |
 | @x402r/client | 0% | Not started |
 | @x402r/merchant | 0% | Not started |
 | @x402r/arbiter | 0% | Not started |
@@ -40,4 +41,6 @@
 ## Commits
 - `d5fc054` - Initialize x402r-sdk monorepo
 - `e181ccb` - Add progress tracking and ADRs
-- (pending) - Implement core types with TDD
+- `612a462` - Implement core types with TDD (100% coverage)
+- `43df62c` - Add contract ABIs with tests (100% coverage)
+- (pending) - Add network configuration with tests
