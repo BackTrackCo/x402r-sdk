@@ -15,7 +15,6 @@ export default defineConfig({
         'src/index.ts',
         // Exclude unimplemented modules (remove as they're implemented)
         'src/conditions/index.ts',
-        'src/errors/index.ts',
         'src/factory/index.ts',
       ],
       thresholds: {
