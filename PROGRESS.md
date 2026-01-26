@@ -12,12 +12,12 @@
 - [x] Extracted ABIs from contracts (PaymentOperator, RefundRequest, EscrowPeriodRecorder, etc.)
 - [x] Implemented network configuration (NETWORK_CONFIG, getNetworkConfig, isSupportedNetwork)
 - [x] Implemented error decoder (X402rError, decodeContractError, CONTRACT_ERRORS)
+- [x] Implemented factory utilities (PaymentOperatorConfig, EscrowPeriodConfig, FreezePolicyConfig, factory ABIs)
 
 ### In Progress
-- [ ] Factory utilities (Phase 2.1)
+- [ ] Condition builder (Phase 2.2)
 
 ### Up Next
-- [ ] Condition builder (Phase 2.2)
 - [ ] Shared utilities (Phase 2.3)
 
 ## Blocked
@@ -34,7 +34,7 @@
 ## Test Status
 | Package | Coverage | Status |
 |---------|----------|--------|
-| @x402r/core | 100% (types, abis, config, errors) | In progress |
+| @x402r/core | 100% (types, abis, config, errors, factory) | In progress |
 | @x402r/client | 0% | Not started |
 | @x402r/merchant | 0% | Not started |
 | @x402r/arbiter | 0% | Not started |
@@ -45,4 +45,5 @@
 - `612a462` - Implement core types with TDD (100% coverage)
 - `43df62c` - Add contract ABIs with tests (100% coverage)
 - `03322fc` - Add network configuration with tests (100% coverage)
-- (pending) - Add error decoder with tests
+- `ecb4053` - Add error decoder with tests (100% coverage)
+- (pending) - Add factory utilities with tests
