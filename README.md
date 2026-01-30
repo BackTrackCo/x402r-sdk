@@ -2,7 +2,7 @@
 
 Production-ready TypeScript SDK for the X402r refundable payments protocol.
 
-[![Tests](https://img.shields.io/badge/tests-238%20passing-brightgreen)](https://github.com/BackTrackCo/x402r-sdk)
+[![Tests](https://img.shields.io/badge/tests-230%20passing-brightgreen)](https://github.com/BackTrackCo/x402r-sdk)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -12,8 +12,10 @@ Production-ready TypeScript SDK for the X402r refundable payments protocol.
 |---------|-------------|
 | `@x402r/core` | Shared types, ABIs, and utilities |
 | `@x402r/client` | SDK for payers (payment queries, refund requests, escrow) |
-| `@x402r/merchant` | SDK for merchants (release, refund handling, server helpers) |
+| `@x402r/merchant` | SDK for merchants (release, charge, refund handling) |
 | `@x402r/arbiter` | SDK for arbiters (dispute resolution, AI integration) |
+
+> **Note:** Server helpers (`refundable`, `withRefund`) are in the separate `@x402r/helpers` package.
 
 ## Installation
 
@@ -25,6 +27,9 @@ pnpm add @x402r/core @x402r/client @x402r/merchant @x402r/arbiter
 pnpm add @x402r/client  # For payers
 pnpm add @x402r/merchant  # For merchants
 pnpm add @x402r/arbiter  # For arbiters
+
+# For server route helpers (optional)
+pnpm add @x402r/helpers
 ```
 
 ## Quick Start
@@ -52,7 +57,7 @@ const { txHash } = await client.requestRefund(paymentInfo);
 ### Merchant
 
 ```typescript
-import { X402rMerchant, refundable, withRefund } from '@x402r/merchant';
+import { X402rMerchant } from '@x402r/merchant';
 
 const merchant = new X402rMerchant({
   publicClient,
@@ -63,10 +68,14 @@ const merchant = new X402rMerchant({
 // Release funds from escrow
 await merchant.release(paymentInfo, amount);
 
-// Server helper: make routes refundable
-const routes = withRefund({
-  '/api/data': { price: '$0.01', network: 'base-sepolia' }
-});
+// Charge (immediate settlement)
+await merchant.charge(paymentInfo, amount, tokenCollector, collectorData);
+
+// Refund after release
+await merchant.refundPostEscrow(paymentInfo, amount, tokenCollector, collectorData);
+
+// Get operator config
+const config = await merchant.getOperatorConfig();
 ```
 
 ### Arbiter
@@ -95,6 +104,29 @@ const handler = createWebhookHandler({
 });
 ```
 
+### Server Helpers (separate package)
+
+```typescript
+import { refundable, withRefund } from '@x402r/helpers';
+
+// Define routes with refundable payment options
+const routes = {
+  '/api/resource': {
+    accepts: [
+      refundable({
+        scheme: 'escrow',
+        payTo: '0xMerchantAddress...',
+        price: '$0.01',
+        network: 'eip155:84532',
+      }, '0xOperatorAddress...'),
+    ],
+  },
+};
+
+// Process routes for use with x402 middleware
+const processedRoutes = withRefund(routes);
+```
+
 ## Documentation
 
 - [SDK Documentation](https://docs.x402r.org/sdk/overview) - Guides and tutorials
@@ -106,20 +138,6 @@ const handler = createWebhookHandler({
 |---------|----------|--------|
 | Base Sepolia | 84532 | Supported |
 | Base Mainnet | 8453 | Coming Soon |
-
-## Known Limitations (v1)
-
-The following features are **not included** in v1 and are planned for future releases:
-
-| Feature | Description | Planned |
-|---------|-------------|---------|
-| `charge()` | Immediate settlement (authorize + release in one call) | v1.1 |
-| `refundPostEscrow()` | Refunds after funds are released | v1.1 |
-| Fee management | Fee tracking and multi-token fee utilities | v1.1 |
-| Evidence system | Sending evidence/metadata with refund requests | v2.0 |
-| Communication | Encrypted messaging between merchant/client (XMTP, IPFS) | v2.0 |
-
-For detailed rationale, see the [Architecture Decision Records](docs/decisions/).
 
 ## Development
 
