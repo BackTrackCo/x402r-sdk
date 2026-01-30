@@ -39,6 +39,15 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     refundRequest: '0x26A3d27139b442Be5ECc10c8608c494627B660BF',
     usdc: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
   },
+  'eip155:8453': {
+    name: 'Base Mainnet',
+    chainId: 8453,
+    // TODO: Update with deployed contract addresses
+    authCaptureEscrow: '0x0000000000000000000000000000000000000000',
+    tokenCollector: '0x0000000000000000000000000000000000000000',
+    refundRequest: '0x0000000000000000000000000000000000000000',
+    usdc: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+  },
 };
 
 /**

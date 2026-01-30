@@ -39,6 +39,18 @@ export const PaymentOperatorABI = [
     outputs: [],
   },
   {
+    name: 'charge',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'paymentInfo', type: 'tuple', components: paymentInfoComponents },
+      { name: 'amount', type: 'uint256' },
+      { name: 'tokenCollector', type: 'address' },
+      { name: 'collectorData', type: 'bytes' },
+    ],
+    outputs: [],
+  },
+  {
     name: 'release',
     type: 'function',
     stateMutability: 'nonpayable',
@@ -55,6 +67,18 @@ export const PaymentOperatorABI = [
     inputs: [
       { name: 'paymentInfo', type: 'tuple', components: paymentInfoComponents },
       { name: 'amount', type: 'uint120' },
+    ],
+    outputs: [],
+  },
+  {
+    name: 'refundPostEscrow',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'paymentInfo', type: 'tuple', components: paymentInfoComponents },
+      { name: 'amount', type: 'uint256' },
+      { name: 'tokenCollector', type: 'address' },
+      { name: 'collectorData', type: 'bytes' },
     ],
     outputs: [],
   },
@@ -123,9 +147,106 @@ export const PaymentOperatorABI = [
     inputs: [],
     outputs: [{ name: '', type: 'address' }],
   },
+  {
+    name: 'FEE_CALCULATOR',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+  },
+  {
+    name: 'PROTOCOL_FEE_CONFIG',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+  },
+  // Condition slots
+  {
+    name: 'AUTHORIZE_CONDITION',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+  },
+  {
+    name: 'CHARGE_CONDITION',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+  },
+  {
+    name: 'RELEASE_CONDITION',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+  },
+  {
+    name: 'REFUND_IN_ESCROW_CONDITION',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+  },
+  {
+    name: 'REFUND_POST_ESCROW_CONDITION',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+  },
+  // Recorder slots
+  {
+    name: 'AUTHORIZE_RECORDER',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+  },
+  {
+    name: 'CHARGE_RECORDER',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+  },
+  {
+    name: 'RELEASE_RECORDER',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+  },
+  {
+    name: 'REFUND_IN_ESCROW_RECORDER',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+  },
+  {
+    name: 'REFUND_POST_ESCROW_RECORDER',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+  },
   // Events
   {
     name: 'AuthorizationCreated',
+    type: 'event',
+    inputs: [
+      { name: 'paymentInfoHash', type: 'bytes32', indexed: true },
+      { name: 'payer', type: 'address', indexed: true },
+      { name: 'receiver', type: 'address', indexed: true },
+      { name: 'amount', type: 'uint256', indexed: false },
+      { name: 'timestamp', type: 'uint256', indexed: false },
+    ],
+  },
+  {
+    name: 'ChargeExecuted',
     type: 'event',
     inputs: [
       { name: 'paymentInfoHash', type: 'bytes32', indexed: true },
@@ -150,7 +271,21 @@ export const PaymentOperatorABI = [
     ],
   },
   {
-    name: 'RefundExecuted',
+    name: 'RefundInEscrowExecuted',
+    type: 'event',
+    inputs: [
+      {
+        name: 'paymentInfo',
+        type: 'tuple',
+        components: paymentInfoComponents,
+        indexed: false,
+      },
+      { name: 'payer', type: 'address', indexed: true },
+      { name: 'amount', type: 'uint256', indexed: false },
+    ],
+  },
+  {
+    name: 'RefundPostEscrowExecuted',
     type: 'event',
     inputs: [
       {

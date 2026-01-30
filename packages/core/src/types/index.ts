@@ -99,6 +99,41 @@ export interface RefundRequestData {
   status: RequestStatus;
 }
 
+/**
+ * Operator configuration - all immutable slots
+ */
+export interface OperatorConfig {
+  /** Core state */
+  escrow: `0x${string}`;
+  feeRecipient: `0x${string}`;
+  feeCalculator: `0x${string}`;
+  protocolFeeConfig: `0x${string}`;
+  /** Condition slots (address(0) = always allow) */
+  authorizeCondition: `0x${string}`;
+  chargeCondition: `0x${string}`;
+  releaseCondition: `0x${string}`;
+  refundInEscrowCondition: `0x${string}`;
+  refundPostEscrowCondition: `0x${string}`;
+  /** Recorder slots (address(0) = no-op) */
+  authorizeRecorder: `0x${string}`;
+  chargeRecorder: `0x${string}`;
+  releaseRecorder: `0x${string}`;
+  refundInEscrowRecorder: `0x${string}`;
+  refundPostEscrowRecorder: `0x${string}`;
+}
+
+/**
+ * Fee structure information
+ */
+export interface FeeStructure {
+  /** Fee calculator contract address */
+  feeCalculator: `0x${string}`;
+  /** Protocol fee config contract address */
+  protocolFeeConfig: `0x${string}`;
+  /** Address that receives operator's share of fees */
+  feeRecipient: `0x${string}`;
+}
+
 // ============ Constants ============
 
 /** Zero address constant for validation */

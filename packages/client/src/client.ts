@@ -564,18 +564,31 @@ export class X402rClient {
     });
     unsubscribers.push(unsubscribeRelease);
 
-    // Watch RefundExecuted events
-    const unsubscribeRefund = this.publicClient.watchContractEvent({
+    // Watch RefundInEscrowExecuted events
+    const unsubscribeRefundInEscrow = this.publicClient.watchContractEvent({
       address: this.operatorAddress,
       abi: PaymentOperatorABI,
-      eventName: 'RefundExecuted',
+      eventName: 'RefundInEscrowExecuted',
       onLogs: (logs) => {
         for (const log of logs) {
           callback(log);
         }
       },
     });
-    unsubscribers.push(unsubscribeRefund);
+    unsubscribers.push(unsubscribeRefundInEscrow);
+
+    // Watch RefundPostEscrowExecuted events
+    const unsubscribeRefundPostEscrow = this.publicClient.watchContractEvent({
+      address: this.operatorAddress,
+      abi: PaymentOperatorABI,
+      eventName: 'RefundPostEscrowExecuted',
+      onLogs: (logs) => {
+        for (const log of logs) {
+          callback(log);
+        }
+      },
+    });
+    unsubscribers.push(unsubscribeRefundPostEscrow);
 
     return {
       unsubscribe: () => {

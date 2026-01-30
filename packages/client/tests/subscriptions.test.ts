@@ -49,7 +49,7 @@ describe('X402rClient - Subscriptions', () => {
       expect(typeof unsubscribe).toBe('function');
     });
 
-    it('should watch ReleaseExecuted and RefundExecuted events', () => {
+    it('should watch ReleaseExecuted, RefundInEscrowExecuted, and RefundPostEscrowExecuted events', () => {
       const client = new X402rClient({
         publicClient,
         operatorAddress,
@@ -58,8 +58,8 @@ describe('X402rClient - Subscriptions', () => {
       const callback = vi.fn();
       client.watchPaymentState(paymentInfoHash, callback);
 
-      // Should be called twice - once for ReleaseExecuted, once for RefundExecuted
-      expect(publicClient.watchContractEvent).toHaveBeenCalledTimes(2);
+      // Should be called 3 times - ReleaseExecuted, RefundInEscrowExecuted, RefundPostEscrowExecuted
+      expect(publicClient.watchContractEvent).toHaveBeenCalledTimes(3);
     });
 
     it('should unsubscribe from all watchers', () => {
@@ -77,8 +77,8 @@ describe('X402rClient - Subscriptions', () => {
       const { unsubscribe } = client.watchPaymentState(paymentInfoHash, callback);
       unsubscribe();
 
-      // Should have been called twice (once per event watcher)
-      expect(unsubscribeMock).toHaveBeenCalledTimes(2);
+      // Should have been called 3 times (once per event watcher)
+      expect(unsubscribeMock).toHaveBeenCalledTimes(3);
     });
   });
 

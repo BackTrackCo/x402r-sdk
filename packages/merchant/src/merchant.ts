@@ -13,6 +13,8 @@ import {
   computePaymentInfoHash,
   type PaymentInfo,
   type PaymentState,
+  type OperatorConfig,
+  type FeeStructure,
 } from '@x402r/core';
 
 /**
@@ -243,6 +245,264 @@ export class X402rMerchant {
     });
 
     return { txHash: txHash as `0x${string}` };
+  }
+
+  /**
+   * Charge a payment directly (for non-escrow flows like subscriptions)
+   *
+   * @param paymentInfo - The payment information struct
+   * @param amount - Amount to charge in token units
+   * @param tokenCollector - Address of the token collector contract
+   * @param collectorData - Data to pass to the token collector
+   * @returns Transaction hash
+   *
+   * @example
+   * ```typescript
+   * const { txHash } = await merchant.charge(
+   *   paymentInfo,
+   *   BigInt('1000000'),
+   *   tokenCollectorAddress,
+   *   '0x...'
+   * );
+   * console.log(`Charged: ${txHash}`);
+   * ```
+   */
+  async charge(
+    paymentInfo: PaymentInfo,
+    amount: bigint,
+    tokenCollector: `0x${string}`,
+    collectorData: `0x${string}`
+  ): Promise<{ txHash: `0x${string}` }> {
+    const txHash = await this.walletClient.writeContract({
+      chain: this.walletClient.chain,
+      account: this.walletClient.account!,
+      address: this.operatorAddress,
+      abi: PaymentOperatorABI,
+      functionName: 'charge',
+      args: [paymentInfo as never, amount, tokenCollector, collectorData],
+    });
+
+    return { txHash: txHash as `0x${string}` };
+  }
+
+  /**
+   * Refund funds that have already been released (post-escrow refund)
+   *
+   * @param paymentInfo - The payment information struct
+   * @param amount - Amount to refund in token units
+   * @param tokenCollector - Address of the token collector contract that will source the refund
+   * @param collectorData - Data to pass to the token collector (e.g., signatures)
+   * @returns Transaction hash
+   *
+   * @example
+   * ```typescript
+   * const { txHash } = await merchant.refundPostEscrow(
+   *   paymentInfo,
+   *   BigInt('500000'),
+   *   tokenCollectorAddress,
+   *   '0x...'
+   * );
+   * console.log(`Post-escrow refund: ${txHash}`);
+   * ```
+   */
+  async refundPostEscrow(
+    paymentInfo: PaymentInfo,
+    amount: bigint,
+    tokenCollector: `0x${string}`,
+    collectorData: `0x${string}`
+  ): Promise<{ txHash: `0x${string}` }> {
+    const txHash = await this.walletClient.writeContract({
+      chain: this.walletClient.chain,
+      account: this.walletClient.account!,
+      address: this.operatorAddress,
+      abi: PaymentOperatorABI,
+      functionName: 'refundPostEscrow',
+      args: [paymentInfo as never, amount, tokenCollector, collectorData],
+    });
+
+    return { txHash: txHash as `0x${string}` };
+  }
+
+  // ============ Operator Config ============
+
+  /**
+   * Get the full operator configuration (all immutable slots)
+   *
+   * @returns OperatorConfig object with all slot addresses
+   *
+   * @example
+   * ```typescript
+   * const config = await merchant.getOperatorConfig();
+   * console.log(`Escrow: ${config.escrow}`);
+   * console.log(`Release condition: ${config.releaseCondition}`);
+   * ```
+   */
+  async getOperatorConfig(): Promise<OperatorConfig> {
+    const [
+      escrow,
+      feeRecipient,
+      feeCalculator,
+      protocolFeeConfig,
+      authorizeCondition,
+      chargeCondition,
+      releaseCondition,
+      refundInEscrowCondition,
+      refundPostEscrowCondition,
+      authorizeRecorder,
+      chargeRecorder,
+      releaseRecorder,
+      refundInEscrowRecorder,
+      refundPostEscrowRecorder,
+    ] = await Promise.all([
+      this.publicClient.readContract({
+        address: this.operatorAddress,
+        abi: PaymentOperatorABI,
+        functionName: 'ESCROW',
+      }),
+      this.publicClient.readContract({
+        address: this.operatorAddress,
+        abi: PaymentOperatorABI,
+        functionName: 'FEE_RECIPIENT',
+      }),
+      this.publicClient.readContract({
+        address: this.operatorAddress,
+        abi: PaymentOperatorABI,
+        functionName: 'FEE_CALCULATOR',
+      }),
+      this.publicClient.readContract({
+        address: this.operatorAddress,
+        abi: PaymentOperatorABI,
+        functionName: 'PROTOCOL_FEE_CONFIG',
+      }),
+      this.publicClient.readContract({
+        address: this.operatorAddress,
+        abi: PaymentOperatorABI,
+        functionName: 'AUTHORIZE_CONDITION',
+      }),
+      this.publicClient.readContract({
+        address: this.operatorAddress,
+        abi: PaymentOperatorABI,
+        functionName: 'CHARGE_CONDITION',
+      }),
+      this.publicClient.readContract({
+        address: this.operatorAddress,
+        abi: PaymentOperatorABI,
+        functionName: 'RELEASE_CONDITION',
+      }),
+      this.publicClient.readContract({
+        address: this.operatorAddress,
+        abi: PaymentOperatorABI,
+        functionName: 'REFUND_IN_ESCROW_CONDITION',
+      }),
+      this.publicClient.readContract({
+        address: this.operatorAddress,
+        abi: PaymentOperatorABI,
+        functionName: 'REFUND_POST_ESCROW_CONDITION',
+      }),
+      this.publicClient.readContract({
+        address: this.operatorAddress,
+        abi: PaymentOperatorABI,
+        functionName: 'AUTHORIZE_RECORDER',
+      }),
+      this.publicClient.readContract({
+        address: this.operatorAddress,
+        abi: PaymentOperatorABI,
+        functionName: 'CHARGE_RECORDER',
+      }),
+      this.publicClient.readContract({
+        address: this.operatorAddress,
+        abi: PaymentOperatorABI,
+        functionName: 'RELEASE_RECORDER',
+      }),
+      this.publicClient.readContract({
+        address: this.operatorAddress,
+        abi: PaymentOperatorABI,
+        functionName: 'REFUND_IN_ESCROW_RECORDER',
+      }),
+      this.publicClient.readContract({
+        address: this.operatorAddress,
+        abi: PaymentOperatorABI,
+        functionName: 'REFUND_POST_ESCROW_RECORDER',
+      }),
+    ]);
+
+    return {
+      escrow: escrow as `0x${string}`,
+      feeRecipient: feeRecipient as `0x${string}`,
+      feeCalculator: feeCalculator as `0x${string}`,
+      protocolFeeConfig: protocolFeeConfig as `0x${string}`,
+      authorizeCondition: authorizeCondition as `0x${string}`,
+      chargeCondition: chargeCondition as `0x${string}`,
+      releaseCondition: releaseCondition as `0x${string}`,
+      refundInEscrowCondition: refundInEscrowCondition as `0x${string}`,
+      refundPostEscrowCondition: refundPostEscrowCondition as `0x${string}`,
+      authorizeRecorder: authorizeRecorder as `0x${string}`,
+      chargeRecorder: chargeRecorder as `0x${string}`,
+      releaseRecorder: releaseRecorder as `0x${string}`,
+      refundInEscrowRecorder: refundInEscrowRecorder as `0x${string}`,
+      refundPostEscrowRecorder: refundPostEscrowRecorder as `0x${string}`,
+    };
+  }
+
+  /**
+   * Get the fee structure for this operator
+   *
+   * @returns FeeStructure object with fee calculator and recipient addresses
+   *
+   * @example
+   * ```typescript
+   * const fees = await merchant.getFeeStructure();
+   * console.log(`Fee calculator: ${fees.feeCalculator}`);
+   * console.log(`Fee recipient: ${fees.feeRecipient}`);
+   * ```
+   */
+  async getFeeStructure(): Promise<FeeStructure> {
+    const [feeCalculator, protocolFeeConfig, feeRecipient] = await Promise.all([
+      this.publicClient.readContract({
+        address: this.operatorAddress,
+        abi: PaymentOperatorABI,
+        functionName: 'FEE_CALCULATOR',
+      }),
+      this.publicClient.readContract({
+        address: this.operatorAddress,
+        abi: PaymentOperatorABI,
+        functionName: 'PROTOCOL_FEE_CONFIG',
+      }),
+      this.publicClient.readContract({
+        address: this.operatorAddress,
+        abi: PaymentOperatorABI,
+        functionName: 'FEE_RECIPIENT',
+      }),
+    ]);
+
+    return {
+      feeCalculator: feeCalculator as `0x${string}`,
+      protocolFeeConfig: protocolFeeConfig as `0x${string}`,
+      feeRecipient: feeRecipient as `0x${string}`,
+    };
+  }
+
+  /**
+   * Get the release condition address for this operator
+   *
+   * @returns The release condition contract address (address(0) = always allow)
+   *
+   * @example
+   * ```typescript
+   * const releaseCondition = await merchant.getReleaseConditions();
+   * if (releaseCondition === '0x0000000000000000000000000000000000000000') {
+   *   console.log('No release conditions - always allowed');
+   * }
+   * ```
+   */
+  async getReleaseConditions(): Promise<`0x${string}`> {
+    const releaseCondition = await this.publicClient.readContract({
+      address: this.operatorAddress,
+      abi: PaymentOperatorABI,
+      functionName: 'RELEASE_CONDITION',
+    });
+
+    return releaseCondition as `0x${string}`;
   }
 
   // ============ Refund Handling ============
