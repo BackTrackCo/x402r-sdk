@@ -21,7 +21,6 @@ import type { PaymentOption, RefundableOptions, EscrowExtra } from './types.js';
  * | `tokenCollector` | From network config | ERC3009PaymentCollector contract |
  * | `minFeeBps` | `0` | Minimum acceptable fee (0% = accept zero fees) |
  * | `maxFeeBps` | `1000` | Maximum acceptable fee (1000 bps = 10%) |
- * | `feeReceiver` | `undefined` → operator | Address that receives fees |
  * | `escrowPeriod` | `undefined` → no expiry | Refund window in seconds |
  * | `tokenName` | `undefined` | Token name for ERC-3009 (e.g., "USDC") |
  * | `tokenVersion` | `undefined` | Token version for ERC-3009 (e.g., "2") |
@@ -49,7 +48,6 @@ import type { PaymentOption, RefundableOptions, EscrowExtra } from './types.js';
  * }, '0xOperator...', {
  *   escrowPeriod: 86400,              // 1 day refund window
  *   maxFeeBps: 500,                   // Accept up to 5% fee
- *   feeReceiver: '0xTreasury...',     // Fees go to treasury
  *   tokenName: 'USDC',
  *   tokenVersion: '2',
  * });
@@ -87,9 +85,6 @@ export function refundable<T extends PaymentOption>(
   }
   if (options?.tokenVersion !== undefined) {
     extra.version = options.tokenVersion;
-  }
-  if (options?.feeReceiver !== undefined) {
-    extra.feeReceiver = options.feeReceiver;
   }
 
   return {

@@ -16,8 +16,6 @@ export interface EscrowExtra {
   minFeeBps?: number;
   /** Maximum fee in basis points */
   maxFeeBps?: number;
-  /** Fee receiver address */
-  feeReceiver?: `0x${string}`;
   /** Token name for ERC-3009 */
   name?: string;
   /** Token version for ERC-3009 */
@@ -56,6 +54,4 @@ export interface RefundableOptions {
   minFeeBps?: number;
   /** Maximum acceptable fee in basis points (e.g., 500 = 5%) */
   maxFeeBps?: number;
-  /** Fee receiver address (defaults to operator address) */
-  feeReceiver?: `0x${string}`;
 }
