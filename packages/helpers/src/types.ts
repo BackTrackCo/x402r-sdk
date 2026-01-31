@@ -1,0 +1,55 @@
+/**
+ * EscrowExtra - matches x402r-scheme's EscrowExtra interface
+ * These fields populate PaymentRequirements.extra
+ */
+export interface EscrowExtra {
+  escrowAddress: `0x${string}`;
+  operatorAddress: `0x${string}`;
+  tokenCollector: `0x${string}`;
+  /** Refund window in seconds */
+  refundExpirySeconds?: number;
+  /** Pre-approval expiry in seconds */
+  preApprovalExpirySeconds?: number;
+  /** Authorization expiry in seconds */
+  authorizationExpirySeconds?: number;
+  /** Minimum fee in basis points */
+  minFeeBps?: number;
+  /** Maximum fee in basis points */
+  maxFeeBps?: number;
+  /** Fee receiver address */
+  feeReceiver?: `0x${string}`;
+  /** Token name for ERC-3009 */
+  name?: string;
+  /** Token version for ERC-3009 */
+  version?: string;
+}
+
+/**
+ * Payment option for x402 protocol
+ */
+export interface PaymentOption {
+  scheme: string;
+  network: string;
+  payTo?: `0x${string}`;
+  price?: string;
+  maxAmountRequired?: string;
+  asset?: `0x${string}`;
+  extra?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+/**
+ * Options for refundable()
+ */
+export interface RefundableOptions {
+  /** Refund window in seconds */
+  escrowPeriod?: number;
+  /** Override escrow address (defaults to network config) */
+  escrowAddress?: `0x${string}`;
+  /** Override token collector (defaults to network config) */
+  tokenCollector?: `0x${string}`;
+  /** Token name for ERC-3009 (e.g., "USDC") */
+  tokenName?: string;
+  /** Token version for ERC-3009 (e.g., "2") */
+  tokenVersion?: string;
+}

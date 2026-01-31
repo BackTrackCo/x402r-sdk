@@ -1,0 +1,51 @@
+{
+  "name": "@x402r/helpers",
+  "version": "0.1.0",
+  "description": "Server-side helpers for x402r refundable payments",
+  "author": "x402r.org",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@x402r/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/x402r/x402r-sdk.git",
+    "directory": "packages/helpers"
+  },
+  "keywords": [
+    "x402",
+    "x402r",
+    "helpers",
+    "refundable",
+    "payments",
+    "escrow"
+  ]
+}
