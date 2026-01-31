@@ -40,16 +40,10 @@ export interface PaymentOption {
  * Options for refundable()
  */
 export interface RefundableOptions {
-  /** Refund window in seconds */
-  escrowPeriod?: number;
   /** Override escrow address (defaults to network config) */
   escrowAddress?: `0x${string}`;
   /** Override token collector (defaults to network config) */
   tokenCollector?: `0x${string}`;
-  /** Token name for ERC-3009 (e.g., "USDC") */
-  tokenName?: string;
-  /** Token version for ERC-3009 (e.g., "2") */
-  tokenVersion?: string;
   /** Minimum acceptable fee in basis points (e.g., 0 = 0%) */
   minFeeBps?: number;
   /** Maximum acceptable fee in basis points (e.g., 500 = 5%) */

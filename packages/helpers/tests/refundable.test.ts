@@ -38,16 +38,6 @@ describe('refundable', () => {
     expect(result.price).toBe('$0.01');
   });
 
-  it('allows escrowPeriod override', () => {
-    const result = refundable(
-      baseOption,
-      '0xABCDEF1234567890123456789012345678901234' as `0x${string}`,
-      { escrowPeriod: 86400 },
-    );
-
-    expect(result.extra.refundExpirySeconds).toBe(86400);
-  });
-
   it('allows address overrides', () => {
     const result = refundable(
       baseOption,
@@ -77,17 +67,6 @@ describe('refundable', () => {
         '0xABCDEF1234567890123456789012345678901234' as `0x${string}`,
       ),
     ).toThrow('Unsupported network');
-  });
-
-  it('adds token name and version', () => {
-    const result = refundable(
-      baseOption,
-      '0xABCDEF1234567890123456789012345678901234' as `0x${string}`,
-      { tokenName: 'USDC', tokenVersion: '2' },
-    );
-
-    expect(result.extra.name).toBe('USDC');
-    expect(result.extra.version).toBe('2');
   });
 
   it('merges with existing extra fields', () => {

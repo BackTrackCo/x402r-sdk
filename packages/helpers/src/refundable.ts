@@ -21,9 +21,6 @@ import type { PaymentOption, RefundableOptions, EscrowExtra } from './types.js';
  * | `tokenCollector` | From network config | ERC3009PaymentCollector contract |
  * | `minFeeBps` | `0` | Minimum acceptable fee (0% = accept zero fees) |
  * | `maxFeeBps` | `1000` | Maximum acceptable fee (1000 bps = 10%) |
- * | `escrowPeriod` | `undefined` → no expiry | Refund window in seconds |
- * | `tokenName` | `undefined` | Token name for ERC-3009 (e.g., "USDC") |
- * | `tokenVersion` | `undefined` | Token version for ERC-3009 (e.g., "2") |
  *
  * @example Basic usage (with defaults)
  * ```typescript
@@ -38,7 +35,7 @@ import type { PaymentOption, RefundableOptions, EscrowExtra } from './types.js';
  * // → minFeeBps: 0, maxFeeBps: 1000 (defaults applied)
  * ```
  *
- * @example With custom configuration
+ * @example With custom fee bounds
  * ```typescript
  * const option = refundable({
  *   scheme: 'escrow',
@@ -46,10 +43,7 @@ import type { PaymentOption, RefundableOptions, EscrowExtra } from './types.js';
  *   payTo: '0xMerchant...',
  *   price: '$0.01',
  * }, '0xOperator...', {
- *   escrowPeriod: 86400,              // 1 day refund window
- *   maxFeeBps: 500,                   // Accept up to 5% fee
- *   tokenName: 'USDC',
- *   tokenVersion: '2',
+ *   maxFeeBps: 500,  // Accept up to 5% fee
  * });
  * ```
  */
@@ -75,17 +69,6 @@ export function refundable<T extends PaymentOption>(
     minFeeBps: options?.minFeeBps ?? 0,
     maxFeeBps: options?.maxFeeBps ?? 1000,
   };
-
-  // Add optional fields if provided
-  if (options?.escrowPeriod !== undefined) {
-    extra.refundExpirySeconds = options.escrowPeriod;
-  }
-  if (options?.tokenName !== undefined) {
-    extra.name = options.tokenName;
-  }
-  if (options?.tokenVersion !== undefined) {
-    extra.version = options.tokenVersion;
-  }
 
   return {
     ...option,
