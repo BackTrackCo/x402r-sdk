@@ -52,4 +52,10 @@ export interface RefundableOptions {
   tokenName?: string;
   /** Token version for ERC-3009 (e.g., "2") */
   tokenVersion?: string;
+  /** Minimum acceptable fee in basis points (e.g., 0 = 0%) */
+  minFeeBps?: number;
+  /** Maximum acceptable fee in basis points (e.g., 500 = 5%) */
+  maxFeeBps?: number;
+  /** Fee receiver address (defaults to operator address) */
+  feeReceiver?: `0x${string}`;
 }

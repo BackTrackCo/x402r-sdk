@@ -104,4 +104,33 @@ describe('refundable', () => {
     expect(result.extra.customField).toBe('value');
     expect(result.extra.operatorAddress).toBeDefined();
   });
+
+  it('adds fee bounds configuration', () => {
+    const result = refundable(
+      baseOption,
+      '0xABCDEF1234567890123456789012345678901234' as `0x${string}`,
+      {
+        minFeeBps: 0,
+        maxFeeBps: 500, // 5%
+        feeReceiver: '0xFeeReceiver234567890123456789012345' as `0x${string}`,
+      },
+    );
+
+    expect(result.extra.minFeeBps).toBe(0);
+    expect(result.extra.maxFeeBps).toBe(500);
+    expect(result.extra.feeReceiver).toBe(
+      '0xFeeReceiver234567890123456789012345',
+    );
+  });
+
+  it('sets sensible fee defaults when not specified', () => {
+    const result = refundable(
+      baseOption,
+      '0xABCDEF1234567890123456789012345678901234' as `0x${string}`,
+    );
+
+    expect(result.extra.minFeeBps).toBe(0); // Accept 0% minimum
+    expect(result.extra.maxFeeBps).toBe(1000); // Accept up to 10%
+    expect(result.extra.feeReceiver).toBeUndefined(); // Defaults to operator in scheme
+  });
 });
