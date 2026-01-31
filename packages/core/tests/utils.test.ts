@@ -34,7 +34,7 @@ describe('computePaymentInfoHash', () => {
     salt: BigInt('0x123456789abcdef'),
   };
 
-  const escrowAddress = '0xb33D6502EdBbC47201cd1E53C49d703EC0a660b8' as const;
+  const escrowAddress = '0xb9488351E48b23D798f24e8174514F28B741Eb4f' as const;
   const chainId = 84532; // Base Sepolia
 
   it('should return a bytes32 hash', () => {

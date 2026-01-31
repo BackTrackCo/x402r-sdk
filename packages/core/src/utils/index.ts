@@ -67,7 +67,7 @@ const finalHashAbiParams: readonly { name: string; type: string }[] = [
  * ```typescript
  * const hash = computePaymentInfoHash(
  *   paymentInfo,
- *   '0xb33D6502EdBbC47201cd1E53C49d703EC0a660b8',
+ *   '0xb9488351E48b23D798f24e8174514F28B741Eb4f',
  *   84532
  * );
  * ```

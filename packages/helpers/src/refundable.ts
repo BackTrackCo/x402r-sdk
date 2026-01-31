@@ -30,7 +30,7 @@ import type { PaymentOption, RefundableOptions, EscrowExtra } from './types.js';
  * //   payTo: '0xMerchant...',
  * //   price: '$0.01',
  * //   extra: {
- * //     escrowAddress: '0xb33D6502EdBbC47201cd1E53C49d703EC0a660b8',
+ * //     escrowAddress: '0xb9488351E48b23D798f24e8174514F28B741Eb4f',
  * //     operatorAddress: '0xOperator...',
  * //     tokenCollector: '0xed02d3E5167BCc9582D851885A89b050AB816a56',
  * //   }

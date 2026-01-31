@@ -16,7 +16,7 @@ describe('refundable', () => {
     );
 
     expect(result.extra.escrowAddress).toBe(
-      '0xb33D6502EdBbC47201cd1E53C49d703EC0a660b8',
+      '0xb9488351E48b23D798f24e8174514F28B741Eb4f',
     );
     expect(result.extra.operatorAddress).toBe(
       '0xABCDEF1234567890123456789012345678901234',

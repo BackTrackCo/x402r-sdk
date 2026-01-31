@@ -34,9 +34,9 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
   'eip155:84532': {
     name: 'Base Sepolia',
     chainId: 84532,
-    authCaptureEscrow: '0xb33D6502EdBbC47201cd1E53C49d703EC0a660b8',
+    authCaptureEscrow: '0xb9488351E48b23D798f24e8174514F28B741Eb4f',
     tokenCollector: '0xed02d3E5167BCc9582D851885A89b050AB816a56',
-    refundRequest: '0x26A3d27139b442Be5ECc10c8608c494627B660BF',
+    refundRequest: '0x6926c05193c714ED4bA3867Ee93d6816Fdc14128',
     usdc: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
   },
   'eip155:8453': {
