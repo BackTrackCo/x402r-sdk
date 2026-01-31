@@ -22,7 +22,7 @@ describe('refundable', () => {
       '0xABCDEF1234567890123456789012345678901234',
     );
     expect(result.extra.tokenCollector).toBe(
-      '0xed02d3E5167BCc9582D851885A89b050AB816a56',
+      '0xC80cd08d609673061597DE7fe54Af3978f10A825',
     );
   });
 
