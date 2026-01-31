@@ -170,6 +170,43 @@ export class X402rError extends Error {
 }
 
 /**
+ * Error thrown when a method is not yet implemented
+ *
+ * Used for SDK methods that require future Graph/indexer integration.
+ * These methods preserve the API surface for when subgraph support is added.
+ *
+ * @example
+ * ```typescript
+ * throw new NotImplementedError(
+ *   'getPaymentState',
+ *   'This method requires subgraph integration. See: https://docs.x402r.org/indexing'
+ * );
+ * ```
+ */
+export class NotImplementedError extends Error {
+  /** Name of the method that is not implemented */
+  readonly methodName: string;
+
+  constructor(methodName: string, message?: string) {
+    const defaultMessage = `Method '${methodName}' is not yet implemented. This method requires The Graph subgraph integration for efficient querying. Track progress at: https://github.com/x402r/x402r-sdk/issues`;
+    super(message ?? defaultMessage);
+    this.name = 'NotImplementedError';
+    this.methodName = methodName;
+    Object.setPrototypeOf(this, NotImplementedError.prototype);
+  }
+}
+
+/**
+ * Check if an error is a NotImplementedError
+ *
+ * @param error - The error to check
+ * @returns true if the error is a NotImplementedError
+ */
+export function isNotImplementedError(error: unknown): error is NotImplementedError {
+  return error instanceof NotImplementedError;
+}
+
+/**
  * Check if an error is an X402rError
  *
  * @param error - The error to check

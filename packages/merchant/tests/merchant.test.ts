@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { X402rMerchant, X402rMerchantConfig } from '../src/merchant.js';
-import { PaymentState } from '@x402r/core';
+import { PaymentState, NotImplementedError } from '@x402r/core';
 import type { PublicClient, WalletClient } from 'viem';
 
 // Mock viem clients
@@ -103,7 +103,7 @@ describe('X402rMerchant', () => {
   });
 
   describe('getPaymentState', () => {
-    it('should return payment state', async () => {
+    it('should throw NotImplementedError', async () => {
       const merchant = new X402rMerchant({
         publicClient,
         walletClient,
@@ -125,12 +125,7 @@ describe('X402rMerchant', () => {
         salt: BigInt('0x123456'),
       };
 
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(
-        PaymentState.InEscrow
-      );
-
-      const state = await merchant.getPaymentState(paymentInfo);
-      expect(state).toBe(PaymentState.InEscrow);
+      await expect(merchant.getPaymentState(paymentInfo)).rejects.toThrow(NotImplementedError);
     });
   });
 });

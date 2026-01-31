@@ -95,6 +95,10 @@ export interface PaymentInfo {
 export interface RefundRequestData {
   /** Hash of the PaymentInfo struct */
   paymentInfoHash: `0x${string}`;
+  /** Record index this refund is for (nonce from PaymentIndexRecorder) */
+  nonce: bigint;
+  /** Amount being requested for refund (uint120 in Solidity) */
+  amount: bigint;
   /** Current status of the refund request */
   status: RequestStatus;
 }

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { X402rMerchant } from '../src/merchant.js';
+import { NotImplementedError } from '@x402r/core';
 import type { PublicClient, WalletClient } from 'viem';
 
 // Mock viem clients
@@ -93,42 +94,14 @@ describe('X402rMerchant - Payment Operations', () => {
   });
 
   describe('getReceiverPayments', () => {
-    it('should return payment hashes for receiver', async () => {
+    it('should throw NotImplementedError', async () => {
       const merchant = new X402rMerchant({
         publicClient,
         walletClient,
         operatorAddress,
       });
 
-      const mockHashes = [
-        '0x1234567890123456789012345678901234567890123456789012345678901234',
-        '0xabcdef1234567890123456789012345678901234567890123456789012345678',
-      ] as const;
-
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(mockHashes);
-
-      const result = await merchant.getReceiverPayments();
-      expect(result.hashes).toHaveLength(2);
-      expect(result.hashes[0]).toBe(mockHashes[0]);
-    });
-
-    it('should filter by receiver address from wallet', async () => {
-      const merchant = new X402rMerchant({
-        publicClient,
-        walletClient,
-        operatorAddress,
-      });
-
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-
-      await merchant.getReceiverPayments();
-
-      expect(publicClient.readContract).toHaveBeenCalledWith(
-        expect.objectContaining({
-          functionName: 'getReceiverPayments',
-          args: [walletClient.account!.address],
-        })
-      );
+      await expect(merchant.getReceiverPayments()).rejects.toThrow(NotImplementedError);
     });
   });
 

@@ -98,9 +98,49 @@ describe('RefundRequestABI', () => {
     expect(functionNames).toContain('getRefundRequest');
     expect(functionNames).toContain('hasRefundRequest');
     expect(functionNames).toContain('getRefundRequestStatus');
-    expect(functionNames).toContain('getPayerRefundRequestHashes');
-    expect(functionNames).toContain('getReceiverRefundRequestHashes');
-    expect(functionNames).toContain('getRefundRequestByHash');
+    expect(functionNames).toContain('getRefundRequestByKey');
+    // Paginated query functions
+    expect(functionNames).toContain('getPayerRefundRequests');
+    expect(functionNames).toContain('getReceiverRefundRequests');
+    expect(functionNames).toContain('getPayerRefundRequest');
+    expect(functionNames).toContain('getReceiverRefundRequest');
+    // Count functions
+    expect(functionNames).toContain('payerRefundRequestCount');
+    expect(functionNames).toContain('receiverRefundRequestCount');
+  });
+
+  it('requestRefund should have amount and nonce parameters', () => {
+    const requestFn = RefundRequestABI.find(
+      (item) => item.name === 'requestRefund' && item.type === 'function'
+    );
+    expect(requestFn).toBeDefined();
+    expect(requestFn?.inputs).toHaveLength(3);
+    const inputNames = requestFn?.inputs?.map((i) => i.name);
+    expect(inputNames).toContain('paymentInfo');
+    expect(inputNames).toContain('amount');
+    expect(inputNames).toContain('nonce');
+  });
+
+  it('updateStatus should have nonce parameter', () => {
+    const updateFn = RefundRequestABI.find(
+      (item) => item.name === 'updateStatus' && item.type === 'function'
+    );
+    expect(updateFn).toBeDefined();
+    expect(updateFn?.inputs).toHaveLength(3);
+    const inputNames = updateFn?.inputs?.map((i) => i.name);
+    expect(inputNames).toContain('paymentInfo');
+    expect(inputNames).toContain('nonce');
+    expect(inputNames).toContain('newStatus');
+  });
+
+  it('RefundRequested event should have amount and nonce', () => {
+    const event = RefundRequestABI.find(
+      (item) => item.name === 'RefundRequested' && item.type === 'event'
+    );
+    expect(event).toBeDefined();
+    const inputNames = event?.inputs?.map((i) => i.name);
+    expect(inputNames).toContain('amount');
+    expect(inputNames).toContain('nonce');
   });
 });
 

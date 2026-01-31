@@ -8,9 +8,11 @@ import {
   PaymentOperatorABI,
   RefundRequestABI,
   EscrowPeriodRecorderABI,
+  NotImplementedError,
   type PaymentInfo,
   type PaymentState,
   type RequestStatus,
+  type RefundRequestData,
 } from '@x402r/core';
 
 /**
@@ -78,12 +80,16 @@ export class X402rClient {
   }
 
   // ============ Payment Queries ============
+  // NOTE: These methods are stubbed for future Graph/indexer integration.
+  // The PaymentOperator contract does not store payment state on-chain.
+  // Payment state is derived from the escrow contract and event logs.
 
   /**
    * Get the current state of a payment
    *
-   * @param paymentInfo - The payment information struct
+   * @param _paymentInfo - The payment information struct
    * @returns The payment state (NonExistent, InEscrow, Released, Settled, Expired)
+   * @throws NotImplementedError - This method requires subgraph integration
    *
    * @example
    * ```typescript
@@ -93,44 +99,32 @@ export class X402rClient {
    * }
    * ```
    */
-  async getPaymentState(paymentInfo: PaymentInfo): Promise<PaymentState> {
-    const state = await this.publicClient.readContract({
-      address: this.operatorAddress,
-      abi: PaymentOperatorABI,
-      functionName: 'getPaymentState',
-      args: [paymentInfo as never],
-    });
-
-    return state as PaymentState;
+  async getPaymentState(_paymentInfo: PaymentInfo): Promise<PaymentState> {
+    throw new NotImplementedError('getPaymentState');
   }
 
   /**
    * Check if a payment exists (has been authorized)
    *
-   * @param paymentInfoHash - The hash of the PaymentInfo
+   * @param _paymentInfoHash - The hash of the PaymentInfo
    * @returns True if payment exists
+   * @throws NotImplementedError - This method requires subgraph integration
    *
    * @example
    * ```typescript
    * const exists = await client.paymentExists(paymentInfoHash);
    * ```
    */
-  async paymentExists(paymentInfoHash: `0x${string}`): Promise<boolean> {
-    const exists = await this.publicClient.readContract({
-      address: this.operatorAddress,
-      abi: PaymentOperatorABI,
-      functionName: 'paymentExists',
-      args: [paymentInfoHash],
-    });
-
-    return exists as boolean;
+  async paymentExists(_paymentInfoHash: `0x${string}`): Promise<boolean> {
+    throw new NotImplementedError('paymentExists');
   }
 
   /**
    * Check if a payment is currently in escrow
    *
-   * @param paymentInfoHash - The hash of the PaymentInfo
+   * @param _paymentInfoHash - The hash of the PaymentInfo
    * @returns True if payment is in escrow (has capturable amount)
+   * @throws NotImplementedError - This method requires subgraph integration
    *
    * @example
    * ```typescript
@@ -139,22 +133,16 @@ export class X402rClient {
    * }
    * ```
    */
-  async isInEscrow(paymentInfoHash: `0x${string}`): Promise<boolean> {
-    const inEscrow = await this.publicClient.readContract({
-      address: this.operatorAddress,
-      abi: PaymentOperatorABI,
-      functionName: 'isInEscrow',
-      args: [paymentInfoHash],
-    });
-
-    return inEscrow as boolean;
+  async isInEscrow(_paymentInfoHash: `0x${string}`): Promise<boolean> {
+    throw new NotImplementedError('isInEscrow');
   }
 
   /**
    * Get stored PaymentInfo for a given hash
    *
-   * @param paymentInfoHash - The hash of the PaymentInfo
+   * @param _paymentInfoHash - The hash of the PaymentInfo
    * @returns The stored PaymentInfo struct
+   * @throws NotImplementedError - This method requires subgraph integration
    *
    * @example
    * ```typescript
@@ -162,23 +150,15 @@ export class X402rClient {
    * console.log(`Receiver: ${details.receiver}`);
    * ```
    */
-  async getPaymentDetails(paymentInfoHash: `0x${string}`): Promise<PaymentInfo> {
-    const paymentInfo = await this.publicClient.readContract({
-      address: this.operatorAddress,
-      abi: PaymentOperatorABI,
-      functionName: 'getPaymentInfo',
-      args: [paymentInfoHash],
-    });
-
-    // viem infers uint48 as number, but we use bigint for consistency
-    return paymentInfo as unknown as PaymentInfo;
+  async getPaymentDetails(_paymentInfoHash: `0x${string}`): Promise<PaymentInfo> {
+    throw new NotImplementedError('getPaymentDetails');
   }
 
   /**
    * Get all payment hashes where the current wallet is the payer
    *
    * @returns Object with hashes array
-   * @throws Error if walletClient is not configured
+   * @throws NotImplementedError - This method requires subgraph integration
    *
    * @example
    * ```typescript
@@ -190,20 +170,7 @@ export class X402rClient {
    * ```
    */
   async getMyPayments(): Promise<{ hashes: readonly `0x${string}`[] }> {
-    if (!this.walletClient?.account) {
-      throw new Error('WalletClient required for getMyPayments');
-    }
-
-    const payerAddress = this.walletClient.account.address;
-
-    const hashes = await this.publicClient.readContract({
-      address: this.operatorAddress,
-      abi: PaymentOperatorABI,
-      functionName: 'getPayerPayments',
-      args: [payerAddress],
-    });
-
-    return { hashes: hashes as readonly `0x${string}`[] };
+    throw new NotImplementedError('getMyPayments');
   }
 
   // ============ Refund Operations ============
@@ -212,18 +179,19 @@ export class X402rClient {
    * Check if a refund request exists for a payment
    *
    * @param paymentInfo - The payment information struct
+   * @param nonce - The record index (from PaymentIndexRecorder) identifying which charge
    * @returns True if a refund request exists
    * @throws Error if refundRequestAddress is not configured
    *
    * @example
    * ```typescript
-   * const hasRequest = await client.hasRefundRequest(paymentInfo);
+   * const hasRequest = await client.hasRefundRequest(paymentInfo, 0n);
    * if (hasRequest) {
    *   console.log('Refund request exists');
    * }
    * ```
    */
-  async hasRefundRequest(paymentInfo: PaymentInfo): Promise<boolean> {
+  async hasRefundRequest(paymentInfo: PaymentInfo, nonce: bigint): Promise<boolean> {
     if (!this.refundRequestAddress) {
       throw new Error('RefundRequest address required');
     }
@@ -232,7 +200,7 @@ export class X402rClient {
       address: this.refundRequestAddress,
       abi: RefundRequestABI,
       functionName: 'hasRefundRequest',
-      args: [paymentInfo as never],
+      args: [paymentInfo as never, nonce],
     });
 
     return exists as boolean;
@@ -242,18 +210,19 @@ export class X402rClient {
    * Get the status of a refund request
    *
    * @param paymentInfo - The payment information struct
+   * @param nonce - The record index (from PaymentIndexRecorder) identifying which charge
    * @returns The refund request status (Pending, Approved, Denied, Cancelled)
    * @throws Error if refundRequestAddress is not configured
    *
    * @example
    * ```typescript
-   * const status = await client.getRefundStatus(paymentInfo);
+   * const status = await client.getRefundStatus(paymentInfo, 0n);
    * if (status === RequestStatus.Pending) {
    *   console.log('Refund request is pending');
    * }
    * ```
    */
-  async getRefundStatus(paymentInfo: PaymentInfo): Promise<RequestStatus> {
+  async getRefundStatus(paymentInfo: PaymentInfo, nonce: bigint): Promise<RequestStatus> {
     if (!this.refundRequestAddress) {
       throw new Error('RefundRequest address required');
     }
@@ -262,27 +231,62 @@ export class X402rClient {
       address: this.refundRequestAddress,
       abi: RefundRequestABI,
       functionName: 'getRefundRequestStatus',
-      args: [paymentInfo as never],
+      args: [paymentInfo as never, nonce],
     });
 
     return status as RequestStatus;
   }
 
   /**
+   * Get the full refund request data
+   *
+   * @param paymentInfo - The payment information struct
+   * @param nonce - The record index (from PaymentIndexRecorder) identifying which charge
+   * @returns The full refund request data including amount and status
+   * @throws Error if refundRequestAddress is not configured
+   *
+   * @example
+   * ```typescript
+   * const request = await client.getRefundRequest(paymentInfo, 0n);
+   * console.log(`Requesting ${request.amount} refund, status: ${request.status}`);
+   * ```
+   */
+  async getRefundRequest(paymentInfo: PaymentInfo, nonce: bigint): Promise<RefundRequestData> {
+    if (!this.refundRequestAddress) {
+      throw new Error('RefundRequest address required');
+    }
+
+    const request = await this.publicClient.readContract({
+      address: this.refundRequestAddress,
+      abi: RefundRequestABI,
+      functionName: 'getRefundRequest',
+      args: [paymentInfo as never, nonce],
+    });
+
+    return request as unknown as RefundRequestData;
+  }
+
+  /**
    * Submit a refund request for a payment
    *
    * @param paymentInfo - The payment information struct
+   * @param amount - The amount to request for refund
+   * @param nonce - The record index (from PaymentIndexRecorder) identifying which charge
    * @returns Transaction hash
    * @throws Error if walletClient is not configured
    * @throws Error if refundRequestAddress is not configured
    *
    * @example
    * ```typescript
-   * const { txHash } = await client.requestRefund(paymentInfo);
+   * const { txHash } = await client.requestRefund(paymentInfo, BigInt('1000000'), 0n);
    * console.log(`Refund requested: ${txHash}`);
    * ```
    */
-  async requestRefund(paymentInfo: PaymentInfo): Promise<{ txHash: `0x${string}` }> {
+  async requestRefund(
+    paymentInfo: PaymentInfo,
+    amount: bigint,
+    nonce: bigint
+  ): Promise<{ txHash: `0x${string}` }> {
     if (!this.walletClient) {
       throw new Error('WalletClient required');
     }
@@ -297,7 +301,7 @@ export class X402rClient {
       address: this.refundRequestAddress,
       abi: RefundRequestABI,
       functionName: 'requestRefund',
-      args: [paymentInfo as never],
+      args: [paymentInfo as never, amount, nonce],
     });
 
     return { txHash: txHash as `0x${string}` };
@@ -307,17 +311,21 @@ export class X402rClient {
    * Cancel a pending refund request
    *
    * @param paymentInfo - The payment information struct
+   * @param nonce - The record index (from PaymentIndexRecorder) identifying which charge
    * @returns Transaction hash
    * @throws Error if walletClient is not configured
    * @throws Error if refundRequestAddress is not configured
    *
    * @example
    * ```typescript
-   * const { txHash } = await client.cancelRefundRequest(paymentInfo);
+   * const { txHash } = await client.cancelRefundRequest(paymentInfo, 0n);
    * console.log(`Refund request cancelled: ${txHash}`);
    * ```
    */
-  async cancelRefundRequest(paymentInfo: PaymentInfo): Promise<{ txHash: `0x${string}` }> {
+  async cancelRefundRequest(
+    paymentInfo: PaymentInfo,
+    nonce: bigint
+  ): Promise<{ txHash: `0x${string}` }> {
     if (!this.walletClient) {
       throw new Error('WalletClient required');
     }
@@ -332,28 +340,31 @@ export class X402rClient {
       address: this.refundRequestAddress,
       abi: RefundRequestABI,
       functionName: 'cancelRefundRequest',
-      args: [paymentInfo as never],
+      args: [paymentInfo as never, nonce],
     });
 
     return { txHash: txHash as `0x${string}` };
   }
 
   /**
-   * Get all refund request hashes for the current wallet
+   * Get paginated refund request keys for the current wallet
    *
-   * @returns Array of payment info hashes with refund requests
+   * @param offset - Starting index (0-based)
+   * @param count - Number of keys to return
+   * @returns Object with keys array and total count
    * @throws Error if walletClient is not configured
    * @throws Error if refundRequestAddress is not configured
    *
    * @example
    * ```typescript
-   * const hashes = await client.getMyRefundRequests();
-   * for (const hash of hashes) {
-   *   console.log(`Refund request: ${hash}`);
-   * }
+   * const { keys, total } = await client.getMyRefundRequests(0n, 10n);
+   * console.log(`Found ${total} refund requests, showing first ${keys.length}`);
    * ```
    */
-  async getMyRefundRequests(): Promise<readonly `0x${string}`[]> {
+  async getMyRefundRequests(
+    offset: bigint,
+    count: bigint
+  ): Promise<{ keys: readonly `0x${string}`[]; total: bigint }> {
     if (!this.walletClient?.account) {
       throw new Error('WalletClient required');
     }
@@ -364,14 +375,76 @@ export class X402rClient {
 
     const payerAddress = this.walletClient.account.address;
 
-    const hashes = await this.publicClient.readContract({
+    const [keys, total] = (await this.publicClient.readContract({
       address: this.refundRequestAddress,
       abi: RefundRequestABI,
-      functionName: 'getPayerRefundRequestHashes',
+      functionName: 'getPayerRefundRequests',
+      args: [payerAddress, offset, count],
+    })) as [readonly `0x${string}`[], bigint];
+
+    return { keys, total };
+  }
+
+  /**
+   * Get the total count of refund requests for the current wallet
+   *
+   * @returns Total number of refund requests
+   * @throws Error if walletClient is not configured
+   * @throws Error if refundRequestAddress is not configured
+   *
+   * @example
+   * ```typescript
+   * const count = await client.getMyRefundRequestCount();
+   * console.log(`Total refund requests: ${count}`);
+   * ```
+   */
+  async getMyRefundRequestCount(): Promise<bigint> {
+    if (!this.walletClient?.account) {
+      throw new Error('WalletClient required');
+    }
+
+    if (!this.refundRequestAddress) {
+      throw new Error('RefundRequest address required');
+    }
+
+    const payerAddress = this.walletClient.account.address;
+
+    const count = await this.publicClient.readContract({
+      address: this.refundRequestAddress,
+      abi: RefundRequestABI,
+      functionName: 'payerRefundRequestCount',
       args: [payerAddress],
     });
 
-    return hashes as readonly `0x${string}`[];
+    return count as bigint;
+  }
+
+  /**
+   * Get refund request data by composite key
+   *
+   * @param compositeKey - The keccak256(paymentInfoHash, nonce) key
+   * @returns The refund request data
+   * @throws Error if refundRequestAddress is not configured
+   *
+   * @example
+   * ```typescript
+   * const request = await client.getRefundRequestByKey(compositeKey);
+   * console.log(`Amount: ${request.amount}, Status: ${request.status}`);
+   * ```
+   */
+  async getRefundRequestByKey(compositeKey: `0x${string}`): Promise<RefundRequestData> {
+    if (!this.refundRequestAddress) {
+      throw new Error('RefundRequest address required');
+    }
+
+    const request = await this.publicClient.readContract({
+      address: this.refundRequestAddress,
+      abi: RefundRequestABI,
+      functionName: 'getRefundRequestByKey',
+      args: [compositeKey],
+    });
+
+    return request as unknown as RefundRequestData;
   }
 
   // ============ Escrow Operations ============

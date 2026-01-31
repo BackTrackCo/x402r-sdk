@@ -9,8 +9,10 @@ import {
   RefundRequestABI,
   EscrowPeriodRecorderABI,
   RequestStatus,
+  NotImplementedError,
   type PaymentInfo,
   type PaymentState,
+  type RefundRequestData,
 } from '@x402r/core';
 
 /**
@@ -96,12 +98,14 @@ export class X402rArbiter {
   }
 
   // ============ Payment Queries ============
+  // NOTE: getPaymentState is stubbed for future Graph/indexer integration.
 
   /**
    * Get the current state of a payment
    *
-   * @param paymentInfo - The payment information struct
+   * @param _paymentInfo - The payment information struct
    * @returns The payment state (NonExistent, InEscrow, Released, Settled, Expired)
+   * @throws NotImplementedError - This method requires subgraph integration
    *
    * @example
    * ```typescript
@@ -111,33 +115,27 @@ export class X402rArbiter {
    * }
    * ```
    */
-  async getPaymentState(paymentInfo: PaymentInfo): Promise<PaymentState> {
-    const state = await this.publicClient.readContract({
-      address: this.operatorAddress,
-      abi: PaymentOperatorABI,
-      functionName: 'getPaymentState',
-      args: [paymentInfo as never],
-    });
-
-    return state as PaymentState;
+  async getPaymentState(_paymentInfo: PaymentInfo): Promise<PaymentState> {
+    throw new NotImplementedError('getPaymentState');
   }
 
   /**
    * Check if a refund request exists for a payment
    *
    * @param paymentInfo - The payment information struct
+   * @param nonce - The record index (from PaymentIndexRecorder) identifying which charge
    * @returns True if a refund request exists
    * @throws Error if refundRequestAddress is not configured
    *
    * @example
    * ```typescript
-   * const hasRequest = await arbiter.hasRefundRequest(paymentInfo);
+   * const hasRequest = await arbiter.hasRefundRequest(paymentInfo, 0n);
    * if (hasRequest) {
    *   console.log('Refund request exists');
    * }
    * ```
    */
-  async hasRefundRequest(paymentInfo: PaymentInfo): Promise<boolean> {
+  async hasRefundRequest(paymentInfo: PaymentInfo, nonce: bigint): Promise<boolean> {
     if (!this.refundRequestAddress) {
       throw new Error('RefundRequest address required');
     }
@@ -146,10 +144,39 @@ export class X402rArbiter {
       address: this.refundRequestAddress,
       abi: RefundRequestABI,
       functionName: 'hasRefundRequest',
-      args: [paymentInfo as never],
+      args: [paymentInfo as never, nonce],
     });
 
     return exists as boolean;
+  }
+
+  /**
+   * Get the full refund request data
+   *
+   * @param paymentInfo - The payment information struct
+   * @param nonce - The record index (from PaymentIndexRecorder) identifying which charge
+   * @returns The full refund request data including amount and status
+   * @throws Error if refundRequestAddress is not configured
+   *
+   * @example
+   * ```typescript
+   * const request = await arbiter.getRefundRequest(paymentInfo, 0n);
+   * console.log(`Requesting ${request.amount} refund, status: ${request.status}`);
+   * ```
+   */
+  async getRefundRequest(paymentInfo: PaymentInfo, nonce: bigint): Promise<RefundRequestData> {
+    if (!this.refundRequestAddress) {
+      throw new Error('RefundRequest address required');
+    }
+
+    const request = await this.publicClient.readContract({
+      address: this.refundRequestAddress,
+      abi: RefundRequestABI,
+      functionName: 'getRefundRequest',
+      args: [paymentInfo as never, nonce],
+    });
+
+    return request as unknown as RefundRequestData;
   }
 
   // ============ Decision Submission ============
@@ -158,16 +185,20 @@ export class X402rArbiter {
    * Approve a refund request as the arbiter
    *
    * @param paymentInfo - The payment information struct
+   * @param nonce - The record index (from PaymentIndexRecorder) identifying which charge
    * @returns Transaction hash
    * @throws Error if refundRequestAddress is not configured
    *
    * @example
    * ```typescript
-   * const { txHash } = await arbiter.approveRefund(paymentInfo);
+   * const { txHash } = await arbiter.approveRefund(paymentInfo, 0n);
    * console.log(`Refund approved: ${txHash}`);
    * ```
    */
-  async approveRefund(paymentInfo: PaymentInfo): Promise<{ txHash: `0x${string}` }> {
+  async approveRefund(
+    paymentInfo: PaymentInfo,
+    nonce: bigint
+  ): Promise<{ txHash: `0x${string}` }> {
     if (!this.refundRequestAddress) {
       throw new Error('RefundRequest address required');
     }
@@ -178,7 +209,7 @@ export class X402rArbiter {
       address: this.refundRequestAddress,
       abi: RefundRequestABI,
       functionName: 'updateStatus',
-      args: [paymentInfo as never, RequestStatus.Approved],
+      args: [paymentInfo as never, nonce, RequestStatus.Approved],
     });
 
     return { txHash: txHash as `0x${string}` };
@@ -188,16 +219,20 @@ export class X402rArbiter {
    * Deny a refund request as the arbiter
    *
    * @param paymentInfo - The payment information struct
+   * @param nonce - The record index (from PaymentIndexRecorder) identifying which charge
    * @returns Transaction hash
    * @throws Error if refundRequestAddress is not configured
    *
    * @example
    * ```typescript
-   * const { txHash } = await arbiter.denyRefund(paymentInfo);
+   * const { txHash } = await arbiter.denyRefund(paymentInfo, 0n);
    * console.log(`Refund denied: ${txHash}`);
    * ```
    */
-  async denyRefund(paymentInfo: PaymentInfo): Promise<{ txHash: `0x${string}` }> {
+  async denyRefund(
+    paymentInfo: PaymentInfo,
+    nonce: bigint
+  ): Promise<{ txHash: `0x${string}` }> {
     if (!this.refundRequestAddress) {
       throw new Error('RefundRequest address required');
     }
@@ -208,7 +243,7 @@ export class X402rArbiter {
       address: this.refundRequestAddress,
       abi: RefundRequestABI,
       functionName: 'updateStatus',
-      args: [paymentInfo as never, RequestStatus.Denied],
+      args: [paymentInfo as never, nonce, RequestStatus.Denied],
     });
 
     return { txHash: txHash as `0x${string}` };
@@ -256,31 +291,36 @@ export class X402rArbiter {
   /**
    * Approve multiple refund requests in batch
    *
-   * @param paymentInfos - Array of payment information structs
+   * @param items - Array of objects containing paymentInfo and nonce
    * @returns Array of transaction results
    * @throws Error if refundRequestAddress is not configured
    *
    * @example
    * ```typescript
-   * const results = await arbiter.batchApprove([paymentInfo1, paymentInfo2, paymentInfo3]);
+   * const results = await arbiter.batchApprove([
+   *   { paymentInfo: paymentInfo1, nonce: 0n },
+   *   { paymentInfo: paymentInfo2, nonce: 0n },
+   * ]);
    * for (const { txHash } of results) {
    *   console.log(`Approved: ${txHash}`);
    * }
    * ```
    */
-  async batchApprove(paymentInfos: PaymentInfo[]): Promise<{ txHash: `0x${string}` }[]> {
+  async batchApprove(
+    items: Array<{ paymentInfo: PaymentInfo; nonce: bigint }>
+  ): Promise<{ txHash: `0x${string}` }[]> {
     if (!this.refundRequestAddress) {
       throw new Error('RefundRequest address required');
     }
 
-    if (paymentInfos.length === 0) {
+    if (items.length === 0) {
       return [];
     }
 
     const results: { txHash: `0x${string}` }[] = [];
 
-    for (const paymentInfo of paymentInfos) {
-      const result = await this.approveRefund(paymentInfo);
+    for (const { paymentInfo, nonce } of items) {
+      const result = await this.approveRefund(paymentInfo, nonce);
       results.push(result);
     }
 
@@ -290,31 +330,36 @@ export class X402rArbiter {
   /**
    * Deny multiple refund requests in batch
    *
-   * @param paymentInfos - Array of payment information structs
+   * @param items - Array of objects containing paymentInfo and nonce
    * @returns Array of transaction results
    * @throws Error if refundRequestAddress is not configured
    *
    * @example
    * ```typescript
-   * const results = await arbiter.batchDeny([paymentInfo1, paymentInfo2]);
+   * const results = await arbiter.batchDeny([
+   *   { paymentInfo: paymentInfo1, nonce: 0n },
+   *   { paymentInfo: paymentInfo2, nonce: 0n },
+   * ]);
    * for (const { txHash } of results) {
    *   console.log(`Denied: ${txHash}`);
    * }
    * ```
    */
-  async batchDeny(paymentInfos: PaymentInfo[]): Promise<{ txHash: `0x${string}` }[]> {
+  async batchDeny(
+    items: Array<{ paymentInfo: PaymentInfo; nonce: bigint }>
+  ): Promise<{ txHash: `0x${string}` }[]> {
     if (!this.refundRequestAddress) {
       throw new Error('RefundRequest address required');
     }
 
-    if (paymentInfos.length === 0) {
+    if (items.length === 0) {
       return [];
     }
 
     const results: { txHash: `0x${string}` }[] = [];
 
-    for (const paymentInfo of paymentInfos) {
-      const result = await this.denyRefund(paymentInfo);
+    for (const { paymentInfo, nonce } of items) {
+      const result = await this.denyRefund(paymentInfo, nonce);
       results.push(result);
     }
 
@@ -324,51 +369,61 @@ export class X402rArbiter {
   // ============ Case Queries ============
 
   /**
-   * Get all pending refund requests for a receiver that the arbiter can decide on
+   * Get paginated refund request keys for a receiver that the arbiter can decide on
    *
+   * @param offset - Starting index (0-based)
+   * @param count - Number of keys to return
    * @param receiverAddress - The receiver address to query (defaults to wallet account)
-   * @returns Array of payment info hashes with pending refund requests
+   * @returns Object with keys array and total count
    * @throws Error if refundRequestAddress is not configured
    *
    * @example
    * ```typescript
-   * const hashes = await arbiter.getPendingCases('0x...');
-   * console.log(`${hashes.length} pending cases to review`);
+   * const { keys, total } = await arbiter.getPendingCases(0n, 10n, '0x...');
+   * console.log(`${total} total cases, showing first ${keys.length}`);
    * ```
    */
-  async getPendingCases(receiverAddress?: `0x${string}`): Promise<readonly `0x${string}`[]> {
+  async getPendingCases(
+    offset: bigint,
+    count: bigint,
+    receiverAddress?: `0x${string}`
+  ): Promise<{ keys: readonly `0x${string}`[]; total: bigint }> {
     if (!this.refundRequestAddress) {
       throw new Error('RefundRequest address required');
     }
 
     const address = receiverAddress ?? this.walletClient.account!.address;
 
-    const hashes = await this.publicClient.readContract({
+    const [keys, total] = (await this.publicClient.readContract({
       address: this.refundRequestAddress,
       abi: RefundRequestABI,
-      functionName: 'getReceiverRefundRequestHashes',
-      args: [address],
-    });
+      functionName: 'getReceiverRefundRequests',
+      args: [address, offset, count],
+    })) as [readonly `0x${string}`[], bigint];
 
-    return hashes as readonly `0x${string}`[];
+    return { keys, total };
   }
 
   /**
    * Get the status of a refund request
    *
    * @param paymentInfo - The payment information struct
+   * @param nonce - The record index (from PaymentIndexRecorder) identifying which charge
    * @returns The refund request status (Pending, Approved, Denied, Cancelled)
    * @throws Error if refundRequestAddress is not configured
    *
    * @example
    * ```typescript
-   * const status = await arbiter.getRefundStatus(paymentInfo);
+   * const status = await arbiter.getRefundStatus(paymentInfo, 0n);
    * if (status === RequestStatus.Pending) {
    *   console.log('Case needs review');
    * }
    * ```
    */
-  async getRefundStatus(paymentInfo: PaymentInfo): Promise<typeof RequestStatus[keyof typeof RequestStatus]> {
+  async getRefundStatus(
+    paymentInfo: PaymentInfo,
+    nonce: bigint
+  ): Promise<typeof RequestStatus[keyof typeof RequestStatus]> {
     if (!this.refundRequestAddress) {
       throw new Error('RefundRequest address required');
     }
@@ -377,40 +432,104 @@ export class X402rArbiter {
       address: this.refundRequestAddress,
       abi: RefundRequestABI,
       functionName: 'getRefundRequestStatus',
-      args: [paymentInfo as never],
+      args: [paymentInfo as never, nonce],
     });
 
     return status as typeof RequestStatus[keyof typeof RequestStatus];
   }
 
   /**
-   * Get all refund request hashes for a receiver
+   * Get paginated refund request keys for a receiver
    *
+   * @param offset - Starting index (0-based)
+   * @param count - Number of keys to return
    * @param receiverAddress - The receiver address to query (defaults to wallet account)
-   * @returns Object with hashes array
+   * @returns Object with keys array and total count
    * @throws Error if refundRequestAddress is not configured
    *
    * @example
    * ```typescript
-   * const { hashes } = await arbiter.getArbiterPayments('0x...');
-   * console.log(`Found ${hashes.length} refund requests`);
+   * const { keys, total } = await arbiter.getArbiterPayments(0n, 10n, '0x...');
+   * console.log(`Found ${total} refund requests, showing first ${keys.length}`);
    * ```
    */
-  async getArbiterPayments(receiverAddress?: `0x${string}`): Promise<{ hashes: readonly `0x${string}`[] }> {
+  async getArbiterPayments(
+    offset: bigint,
+    count: bigint,
+    receiverAddress?: `0x${string}`
+  ): Promise<{ keys: readonly `0x${string}`[]; total: bigint }> {
     if (!this.refundRequestAddress) {
       throw new Error('RefundRequest address required');
     }
 
     const address = receiverAddress ?? this.walletClient.account!.address;
 
-    const hashes = await this.publicClient.readContract({
+    const [keys, total] = (await this.publicClient.readContract({
       address: this.refundRequestAddress,
       abi: RefundRequestABI,
-      functionName: 'getReceiverRefundRequestHashes',
+      functionName: 'getReceiverRefundRequests',
+      args: [address, offset, count],
+    })) as [readonly `0x${string}`[], bigint];
+
+    return { keys, total };
+  }
+
+  /**
+   * Get the total count of refund requests for a receiver
+   *
+   * @param receiverAddress - The receiver address to query (defaults to wallet account)
+   * @returns Total number of refund requests
+   * @throws Error if refundRequestAddress is not configured
+   *
+   * @example
+   * ```typescript
+   * const count = await arbiter.getRefundRequestCount('0x...');
+   * console.log(`Total refund requests: ${count}`);
+   * ```
+   */
+  async getRefundRequestCount(receiverAddress?: `0x${string}`): Promise<bigint> {
+    if (!this.refundRequestAddress) {
+      throw new Error('RefundRequest address required');
+    }
+
+    const address = receiverAddress ?? this.walletClient.account!.address;
+
+    const count = await this.publicClient.readContract({
+      address: this.refundRequestAddress,
+      abi: RefundRequestABI,
+      functionName: 'receiverRefundRequestCount',
       args: [address],
     });
 
-    return { hashes: hashes as readonly `0x${string}`[] };
+    return count as bigint;
+  }
+
+  /**
+   * Get refund request data by composite key
+   *
+   * @param compositeKey - The keccak256(paymentInfoHash, nonce) key
+   * @returns The refund request data
+   * @throws Error if refundRequestAddress is not configured
+   *
+   * @example
+   * ```typescript
+   * const request = await arbiter.getRefundRequestByKey(compositeKey);
+   * console.log(`Amount: ${request.amount}, Status: ${request.status}`);
+   * ```
+   */
+  async getRefundRequestByKey(compositeKey: `0x${string}`): Promise<RefundRequestData> {
+    if (!this.refundRequestAddress) {
+      throw new Error('RefundRequest address required');
+    }
+
+    const request = await this.publicClient.readContract({
+      address: this.refundRequestAddress,
+      abi: RefundRequestABI,
+      functionName: 'getRefundRequestByKey',
+      args: [compositeKey],
+    });
+
+    return request as unknown as RefundRequestData;
   }
 
   // ============ Subscriptions ============

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { X402rArbiter } from '../src/arbiter.js';
-import { PaymentState } from '@x402r/core';
+import { PaymentState, NotImplementedError } from '@x402r/core';
 import type { PublicClient, WalletClient } from 'viem';
 
 // Mock viem clients
@@ -73,7 +73,7 @@ describe('X402rArbiter', () => {
   });
 
   describe('getPaymentState', () => {
-    it('should return payment state from operator', async () => {
+    it('should throw NotImplementedError', async () => {
       const arbiter = new X402rArbiter({
         publicClient,
         walletClient,
@@ -95,15 +95,12 @@ describe('X402rArbiter', () => {
         salt: BigInt('0x123456'),
       };
 
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(PaymentState.InEscrow);
-
-      const state = await arbiter.getPaymentState(samplePaymentInfo);
-      expect(state).toBe(PaymentState.InEscrow);
+      await expect(arbiter.getPaymentState(samplePaymentInfo)).rejects.toThrow(NotImplementedError);
     });
   });
 
   describe('hasRefundRequest', () => {
-    it('should check if refund request exists', async () => {
+    it('should check if refund request exists with nonce', async () => {
       const arbiter = new X402rArbiter({
         publicClient,
         walletClient,
@@ -128,7 +125,7 @@ describe('X402rArbiter', () => {
 
       (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(true);
 
-      const exists = await arbiter.hasRefundRequest(samplePaymentInfo);
+      const exists = await arbiter.hasRefundRequest(samplePaymentInfo, 0n);
       expect(exists).toBe(true);
     });
 
@@ -154,7 +151,7 @@ describe('X402rArbiter', () => {
         salt: BigInt('0x123456'),
       };
 
-      await expect(arbiter.hasRefundRequest(samplePaymentInfo)).rejects.toThrow(
+      await expect(arbiter.hasRefundRequest(samplePaymentInfo, 0n)).rejects.toThrow(
         'RefundRequest address required'
       );
     });

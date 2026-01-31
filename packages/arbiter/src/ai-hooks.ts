@@ -12,12 +12,16 @@ import type { X402rArbiter } from './arbiter.js';
 export interface CaseEvaluationContext {
   /** The payment information struct */
   paymentInfo: PaymentInfo;
+  /** The record index (nonce) identifying which charge this refund is for */
+  nonce: bigint;
   /** Current state of the payment */
   paymentState: PaymentState;
   /** Current status of the refund request */
   refundStatus: number;
   /** Hash of the payment info */
   paymentInfoHash: `0x${string}`;
+  /** Amount being requested for refund */
+  refundAmount?: bigint;
   /** Optional evidence/metadata (if available) */
   evidence?: unknown;
 }
@@ -122,11 +126,11 @@ export function createWebhookHandler(
       if (confidence >= confidenceThreshold) {
         try {
           if (decision.decision === 'approve') {
-            const { txHash } = await arbiter.approveRefund(context.paymentInfo);
+            const { txHash } = await arbiter.approveRefund(context.paymentInfo, context.nonce);
             result.txHash = txHash;
             result.executed = true;
           } else {
-            const { txHash } = await arbiter.denyRefund(context.paymentInfo);
+            const { txHash } = await arbiter.denyRefund(context.paymentInfo, context.nonce);
             result.txHash = txHash;
             result.executed = true;
           }

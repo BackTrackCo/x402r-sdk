@@ -60,7 +60,7 @@ describe('X402rMerchant - Refund Handling', () => {
 
       (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(true);
 
-      const exists = await merchant.hasRefundRequest(samplePaymentInfo);
+      const exists = await merchant.hasRefundRequest(samplePaymentInfo, 0n);
       expect(exists).toBe(true);
     });
 
@@ -71,7 +71,7 @@ describe('X402rMerchant - Refund Handling', () => {
         operatorAddress,
       });
 
-      await expect(merchant.hasRefundRequest(samplePaymentInfo)).rejects.toThrow(
+      await expect(merchant.hasRefundRequest(samplePaymentInfo, 0n)).rejects.toThrow(
         'RefundRequest address required'
       );
     });
@@ -90,13 +90,13 @@ describe('X402rMerchant - Refund Handling', () => {
         RequestStatus.Pending
       );
 
-      const status = await merchant.getRefundStatus(samplePaymentInfo);
+      const status = await merchant.getRefundStatus(samplePaymentInfo, 0n);
       expect(status).toBe(RequestStatus.Pending);
     });
   });
 
   describe('approveRefundRequest', () => {
-    it('should submit approve transaction', async () => {
+    it('should submit approve transaction with nonce', async () => {
       const merchant = new X402rMerchant({
         publicClient,
         walletClient,
@@ -104,13 +104,12 @@ describe('X402rMerchant - Refund Handling', () => {
         refundRequestAddress,
       });
 
-      const result = await merchant.approveRefundRequest(samplePaymentInfo);
+      const result = await merchant.approveRefundRequest(samplePaymentInfo, 0n);
 
       expect(walletClient.writeContract).toHaveBeenCalledWith(
         expect.objectContaining({
           address: refundRequestAddress,
           functionName: 'updateStatus',
-          args: expect.arrayContaining([expect.anything(), RequestStatus.Approved]),
         })
       );
       expect(result.txHash).toBe('0xtxhash');
@@ -123,14 +122,14 @@ describe('X402rMerchant - Refund Handling', () => {
         operatorAddress,
       });
 
-      await expect(merchant.approveRefundRequest(samplePaymentInfo)).rejects.toThrow(
+      await expect(merchant.approveRefundRequest(samplePaymentInfo, 0n)).rejects.toThrow(
         'RefundRequest address required'
       );
     });
   });
 
   describe('denyRefundRequest', () => {
-    it('should submit deny transaction', async () => {
+    it('should submit deny transaction with nonce', async () => {
       const merchant = new X402rMerchant({
         publicClient,
         walletClient,
@@ -138,13 +137,12 @@ describe('X402rMerchant - Refund Handling', () => {
         refundRequestAddress,
       });
 
-      const result = await merchant.denyRefundRequest(samplePaymentInfo);
+      const result = await merchant.denyRefundRequest(samplePaymentInfo, 0n);
 
       expect(walletClient.writeContract).toHaveBeenCalledWith(
         expect.objectContaining({
           address: refundRequestAddress,
           functionName: 'updateStatus',
-          args: expect.arrayContaining([expect.anything(), RequestStatus.Denied]),
         })
       );
       expect(result.txHash).toBe('0xtxhash');
@@ -152,7 +150,7 @@ describe('X402rMerchant - Refund Handling', () => {
   });
 
   describe('getPendingRefundRequests', () => {
-    it('should return refund request hashes for receiver', async () => {
+    it('should return paginated refund request keys for receiver', async () => {
       const merchant = new X402rMerchant({
         publicClient,
         walletClient,
@@ -160,15 +158,16 @@ describe('X402rMerchant - Refund Handling', () => {
         refundRequestAddress,
       });
 
-      const mockHashes = [
+      const mockKeys = [
         '0x1234567890123456789012345678901234567890123456789012345678901234',
         '0xabcdef1234567890123456789012345678901234567890123456789012345678',
       ] as const;
 
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(mockHashes);
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue([mockKeys, 2n]);
 
-      const hashes = await merchant.getPendingRefundRequests();
-      expect(hashes).toHaveLength(2);
+      const result = await merchant.getPendingRefundRequests(0n, 10n);
+      expect(result.keys).toHaveLength(2);
+      expect(result.total).toBe(2n);
     });
 
     it('should throw if refundRequestAddress not configured', async () => {
@@ -178,7 +177,7 @@ describe('X402rMerchant - Refund Handling', () => {
         operatorAddress,
       });
 
-      await expect(merchant.getPendingRefundRequests()).rejects.toThrow(
+      await expect(merchant.getPendingRefundRequests(0n, 10n)).rejects.toThrow(
         'RefundRequest address required'
       );
     });

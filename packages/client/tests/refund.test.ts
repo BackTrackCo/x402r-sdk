@@ -58,7 +58,7 @@ describe('X402rClient - Refund Operations', () => {
 
       (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(true);
 
-      const exists = await client.hasRefundRequest(samplePaymentInfo);
+      const exists = await client.hasRefundRequest(samplePaymentInfo, 0n);
       expect(exists).toBe(true);
     });
 
@@ -71,7 +71,7 @@ describe('X402rClient - Refund Operations', () => {
 
       (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(false);
 
-      const exists = await client.hasRefundRequest(samplePaymentInfo);
+      const exists = await client.hasRefundRequest(samplePaymentInfo, 0n);
       expect(exists).toBe(false);
     });
 
@@ -81,7 +81,7 @@ describe('X402rClient - Refund Operations', () => {
         operatorAddress,
       });
 
-      await expect(client.hasRefundRequest(samplePaymentInfo)).rejects.toThrow(
+      await expect(client.hasRefundRequest(samplePaymentInfo, 0n)).rejects.toThrow(
         'RefundRequest address required'
       );
     });
@@ -99,7 +99,7 @@ describe('X402rClient - Refund Operations', () => {
         RequestStatus.Pending
       );
 
-      const status = await client.getRefundStatus(samplePaymentInfo);
+      const status = await client.getRefundStatus(samplePaymentInfo, 0n);
       expect(status).toBe(RequestStatus.Pending);
     });
 
@@ -114,7 +114,7 @@ describe('X402rClient - Refund Operations', () => {
         RequestStatus.Approved
       );
 
-      const status = await client.getRefundStatus(samplePaymentInfo);
+      const status = await client.getRefundStatus(samplePaymentInfo, 0n);
       expect(status).toBe(RequestStatus.Approved);
     });
   });
@@ -127,12 +127,12 @@ describe('X402rClient - Refund Operations', () => {
         refundRequestAddress,
       });
 
-      await expect(client.requestRefund(samplePaymentInfo)).rejects.toThrow(
+      await expect(client.requestRefund(samplePaymentInfo, BigInt('500000'), 0n)).rejects.toThrow(
         'WalletClient required'
       );
     });
 
-    it('should submit refund request transaction', async () => {
+    it('should submit refund request transaction with amount and nonce', async () => {
       const client = new X402rClient({
         publicClient,
         walletClient,
@@ -140,7 +140,7 @@ describe('X402rClient - Refund Operations', () => {
         refundRequestAddress,
       });
 
-      const result = await client.requestRefund(samplePaymentInfo);
+      const result = await client.requestRefund(samplePaymentInfo, BigInt('500000'), 0n);
 
       expect(walletClient.writeContract).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -160,12 +160,12 @@ describe('X402rClient - Refund Operations', () => {
         refundRequestAddress,
       });
 
-      await expect(client.cancelRefundRequest(samplePaymentInfo)).rejects.toThrow(
+      await expect(client.cancelRefundRequest(samplePaymentInfo, 0n)).rejects.toThrow(
         'WalletClient required'
       );
     });
 
-    it('should submit cancel request transaction', async () => {
+    it('should submit cancel request transaction with nonce', async () => {
       const client = new X402rClient({
         publicClient,
         walletClient,
@@ -173,7 +173,7 @@ describe('X402rClient - Refund Operations', () => {
         refundRequestAddress,
       });
 
-      const result = await client.cancelRefundRequest(samplePaymentInfo);
+      const result = await client.cancelRefundRequest(samplePaymentInfo, 0n);
 
       expect(walletClient.writeContract).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -193,10 +193,10 @@ describe('X402rClient - Refund Operations', () => {
         refundRequestAddress,
       });
 
-      await expect(client.getMyRefundRequests()).rejects.toThrow('WalletClient required');
+      await expect(client.getMyRefundRequests(0n, 10n)).rejects.toThrow('WalletClient required');
     });
 
-    it('should return refund request hashes for payer', async () => {
+    it('should return paginated refund request keys for payer', async () => {
       const client = new X402rClient({
         publicClient,
         walletClient,
@@ -204,15 +204,16 @@ describe('X402rClient - Refund Operations', () => {
         refundRequestAddress,
       });
 
-      const mockHashes = [
+      const mockKeys = [
         '0x1234567890123456789012345678901234567890123456789012345678901234',
         '0xabcdef1234567890123456789012345678901234567890123456789012345678',
       ] as const;
 
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(mockHashes);
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue([mockKeys, 2n]);
 
-      const hashes = await client.getMyRefundRequests();
-      expect(hashes).toHaveLength(2);
+      const result = await client.getMyRefundRequests(0n, 10n);
+      expect(result.keys).toHaveLength(2);
+      expect(result.total).toBe(2n);
     });
   });
 });

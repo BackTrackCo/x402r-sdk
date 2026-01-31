@@ -310,16 +310,33 @@ export const PaymentOperatorABI = [
 ] as const;
 
 /**
+ * RefundRequestData components (reused in ABI)
+ */
+const refundRequestDataComponents = [
+  { name: 'paymentInfoHash', type: 'bytes32' },
+  { name: 'nonce', type: 'uint256' },
+  { name: 'amount', type: 'uint120' },
+  { name: 'status', type: 'uint8' },
+] as const;
+
+/**
  * RefundRequest ABI - Contract for managing refund requests
+ *
+ * Key changes from previous version:
+ * - All methods now take (paymentInfo, nonce) to identify specific refund requests
+ * - requestRefund also takes amount parameter
+ * - Paginated query functions use (offset, count) pattern
  */
 export const RefundRequestABI = [
-  // Functions
+  // ============ Write Functions ============
   {
     name: 'requestRefund',
     type: 'function',
     stateMutability: 'nonpayable',
     inputs: [
       { name: 'paymentInfo', type: 'tuple', components: paymentInfoComponents },
+      { name: 'amount', type: 'uint120' },
+      { name: 'nonce', type: 'uint256' },
     ],
     outputs: [],
   },
@@ -329,6 +346,7 @@ export const RefundRequestABI = [
     stateMutability: 'nonpayable',
     inputs: [
       { name: 'paymentInfo', type: 'tuple', components: paymentInfoComponents },
+      { name: 'nonce', type: 'uint256' },
       { name: 'newStatus', type: 'uint8' },
     ],
     outputs: [],
@@ -339,24 +357,24 @@ export const RefundRequestABI = [
     stateMutability: 'nonpayable',
     inputs: [
       { name: 'paymentInfo', type: 'tuple', components: paymentInfoComponents },
+      { name: 'nonce', type: 'uint256' },
     ],
     outputs: [],
   },
+  // ============ View Functions ============
   {
     name: 'getRefundRequest',
     type: 'function',
     stateMutability: 'view',
     inputs: [
       { name: 'paymentInfo', type: 'tuple', components: paymentInfoComponents },
+      { name: 'nonce', type: 'uint256' },
     ],
     outputs: [
       {
         name: '',
         type: 'tuple',
-        components: [
-          { name: 'paymentInfoHash', type: 'bytes32' },
-          { name: 'status', type: 'uint8' },
-        ],
+        components: refundRequestDataComponents,
       },
     ],
   },
@@ -366,6 +384,7 @@ export const RefundRequestABI = [
     stateMutability: 'view',
     inputs: [
       { name: 'paymentInfo', type: 'tuple', components: paymentInfoComponents },
+      { name: 'nonce', type: 'uint256' },
     ],
     outputs: [{ name: '', type: 'bool' }],
   },
@@ -375,40 +394,88 @@ export const RefundRequestABI = [
     stateMutability: 'view',
     inputs: [
       { name: 'paymentInfo', type: 'tuple', components: paymentInfoComponents },
+      { name: 'nonce', type: 'uint256' },
     ],
     outputs: [{ name: '', type: 'uint8' }],
   },
   {
-    name: 'getPayerRefundRequestHashes',
+    name: 'getRefundRequestByKey',
     type: 'function',
     stateMutability: 'view',
-    inputs: [{ name: 'payer', type: 'address' }],
-    outputs: [{ name: '', type: 'bytes32[]' }],
-  },
-  {
-    name: 'getReceiverRefundRequestHashes',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'receiver', type: 'address' }],
-    outputs: [{ name: '', type: 'bytes32[]' }],
-  },
-  {
-    name: 'getRefundRequestByHash',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'paymentInfoHash', type: 'bytes32' }],
+    inputs: [{ name: 'compositeKey', type: 'bytes32' }],
     outputs: [
       {
         name: '',
         type: 'tuple',
-        components: [
-          { name: 'paymentInfoHash', type: 'bytes32' },
-          { name: 'status', type: 'uint8' },
-        ],
+        components: refundRequestDataComponents,
       },
     ],
   },
-  // Events
+  // ============ Paginated Query Functions ============
+  {
+    name: 'getPayerRefundRequests',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'payer', type: 'address' },
+      { name: 'offset', type: 'uint256' },
+      { name: 'count', type: 'uint256' },
+    ],
+    outputs: [
+      { name: 'keys', type: 'bytes32[]' },
+      { name: 'total', type: 'uint256' },
+    ],
+  },
+  {
+    name: 'getReceiverRefundRequests',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'receiver', type: 'address' },
+      { name: 'offset', type: 'uint256' },
+      { name: 'count', type: 'uint256' },
+    ],
+    outputs: [
+      { name: 'keys', type: 'bytes32[]' },
+      { name: 'total', type: 'uint256' },
+    ],
+  },
+  {
+    name: 'getPayerRefundRequest',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'payer', type: 'address' },
+      { name: 'index', type: 'uint256' },
+    ],
+    outputs: [{ name: '', type: 'bytes32' }],
+  },
+  {
+    name: 'getReceiverRefundRequest',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'receiver', type: 'address' },
+      { name: 'index', type: 'uint256' },
+    ],
+    outputs: [{ name: '', type: 'bytes32' }],
+  },
+  // ============ Count Functions ============
+  {
+    name: 'payerRefundRequestCount',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'payer', type: 'address' }],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    name: 'receiverRefundRequestCount',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'receiver', type: 'address' }],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  // ============ Events ============
   {
     name: 'RefundRequested',
     type: 'event',
@@ -421,6 +488,8 @@ export const RefundRequestABI = [
       },
       { name: 'payer', type: 'address', indexed: true },
       { name: 'receiver', type: 'address', indexed: true },
+      { name: 'amount', type: 'uint120', indexed: false },
+      { name: 'nonce', type: 'uint256', indexed: false },
     ],
   },
   {
@@ -436,6 +505,7 @@ export const RefundRequestABI = [
       { name: 'oldStatus', type: 'uint8', indexed: false },
       { name: 'newStatus', type: 'uint8', indexed: false },
       { name: 'updatedBy', type: 'address', indexed: true },
+      { name: 'nonce', type: 'uint256', indexed: false },
     ],
   },
   {
@@ -449,6 +519,7 @@ export const RefundRequestABI = [
         indexed: false,
       },
       { name: 'payer', type: 'address', indexed: true },
+      { name: 'nonce', type: 'uint256', indexed: false },
     ],
   },
 ] as const;
