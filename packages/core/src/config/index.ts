@@ -19,6 +19,14 @@ export interface FactoryAddresses {
   staticFeeCalculator: `0x${string}`;
   /** StaticAddressConditionFactory address */
   staticAddressCondition: `0x${string}`;
+  /** AndConditionFactory address */
+  andCondition: `0x${string}`;
+  /** OrConditionFactory address */
+  orCondition: `0x${string}`;
+  /** NotConditionFactory address */
+  notCondition: `0x${string}`;
+  /** RecorderCombinatorFactory address */
+  recorderCombinator: `0x${string}`;
 }
 
 /**
@@ -85,6 +93,10 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
       freeze: '0x5b3e33791C1764cF7e2573Bf8116F1D361FD97Cd',
       staticFeeCalculator: '0x35fb2EFEfAc3Ee9f6E52A9AAE5C9655bC08dEc00',
       staticAddressCondition: '0x68684ff8CD38483B8023a1443Af97C58eD29Cb06',
+      andCondition: '0xF8989eA1ECc5be2d369860cec23Ee0B9e1558714',
+      orCondition: '0x6293Ab0503411392f7f46671595D97C8CAfe321c',
+      notCondition: '0xEb2615951d0F0781B1D94e028120414f237BD74c',
+      recorderCombinator: '0x31E6E25bc97187A102E1a64D2A495a287F95Cdd6',
     },
     conditions: {
       payer: '0xBAF68176FF94CAdD403EF7FbB776bbca548AC09D',
@@ -108,6 +120,10 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
       freeze: '0x26A3d27139b442Be5ECc10c8608c494627B660BF',
       staticFeeCalculator: '0x0DdF51E62DDD41B5f67BEaF2DCE9F2E99E2C5aF5',
       staticAddressCondition: '0x89257cA1114139C3332bb73655BC2e4C924aC678',
+      andCondition: '0xAfdEEa8f37AC2cfaE6732c31FEde0A014BfD693a',
+      orCondition: '0xe968AA7530b9C3336FED14FD5D5D4dD3Cf82655D',
+      notCondition: '0xc5a96DaBd3F0E485CEEA7Bf912fC5834A6DE2267',
+      recorderCombinator: '0x6a7E26c3A78a7B1eFF9Dd28d51B2a15df3208B84',
     },
     conditions: {
       payer: '0xb33D6502EdBbC47201cd1E53C49d703EC0a660b8',
