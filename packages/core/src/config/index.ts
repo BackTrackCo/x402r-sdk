@@ -101,7 +101,19 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     protocolFeeConfig: '0x230fd3A171750FA45db2976121376b7F47Cba308',
     usdcTvlLimit: '0xE78648e7af7B1BaDE717FF6E410B922F92adE80f',
     usdc: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
-    // factories and conditions not yet deployed on mainnet
+    factories: {
+      paymentOperator: '0xD979dBfBdA5f4b16AAF60Eaab32A44f352076838',
+      escrowPeriod: '0x2714EA3e839Ac50F52B2e2a5788F614cACeE5316',
+      freezePolicy: '0x46C44071BDf9753482400B76d88A5850318b776F',
+      freeze: '0x26A3d27139b442Be5ECc10c8608c494627B660BF',
+      staticFeeCalculator: '0x0DdF51E62DDD41B5f67BEaF2DCE9F2E99E2C5aF5',
+      staticAddressCondition: '0x89257cA1114139C3332bb73655BC2e4C924aC678',
+    },
+    conditions: {
+      payer: '0xb33D6502EdBbC47201cd1E53C49d703EC0a660b8',
+      receiver: '0xed02d3E5167BCc9582D851885A89b050AB816a56',
+      alwaysTrue: '0xc9BbA6A2CF9838e7Dd8c19BC8B3BAC620B9D8178',
+    },
   },
 };
 
