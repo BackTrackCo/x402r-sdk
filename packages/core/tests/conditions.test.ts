@@ -90,20 +90,24 @@ describe('ConditionAddress type', () => {
 });
 
 describe('createConditionHelpers', () => {
-  // Note: These tests will throw because condition singletons aren't deployed
-  // In a real scenario, you'd mock the network config or use a deployed network
+  it('should return helpers for Base Sepolia (conditions deployed)', () => {
+    // Base Sepolia has condition singletons deployed
+    const helpers = createConditionHelpers('eip155:84532');
+    expect(helpers).toBeDefined();
+    expect(helpers.PAYER).toBe('0xBAF68176FF94CAdD403EF7FbB776bbca548AC09D');
+    expect(helpers.RECEIVER).toBe('0x12EDefd4549c53497689067f165c0f101796Eb6D');
+    expect(helpers.ALWAYS_TRUE).toBe('0x785cC83DEa3d46D5509f3bf7496EAb26D42EE610');
+  });
 
   it('should throw when network has no condition singletons', () => {
-    // Base Sepolia has condition addresses set to zero, so this should throw
-    expect(() => createConditionHelpers('eip155:84532')).toThrow();
+    // Base Mainnet has no conditions deployed yet (zero addresses)
+    expect(() => createConditionHelpers('eip155:8453')).toThrow();
   });
 
   it('should throw for unsupported network', () => {
     expect(() => createConditionHelpers('eip155:1')).toThrow();
   });
 
-  // Test the helper methods work when singletons are available
-  // We can't fully test without deployed singletons, but we can test the factory function itself
   describe('helper factory', () => {
     it('should export createConditionHelpers function', () => {
       expect(createConditionHelpers).toBeDefined();

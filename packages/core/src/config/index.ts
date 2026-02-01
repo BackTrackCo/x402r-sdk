@@ -77,18 +77,16 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     usdc: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
     factories: {
       paymentOperator: '0xFa8C4Cb156053b867Ae7489220A29b5939E3Df70',
-      // TODO: Verify these addresses on-chain once deployed
-      escrowPeriod: '0x0000000000000000000000000000000000000000',
-      freezePolicy: '0x0000000000000000000000000000000000000000',
-      freeze: '0x0000000000000000000000000000000000000000',
-      staticFeeCalculator: '0x0000000000000000000000000000000000000000',
-      staticAddressCondition: '0x0000000000000000000000000000000000000000',
+      escrowPeriod: '0x206D4DbB6E7b876e4B5EFAAD2a04e7d7813FB6ba',
+      freezePolicy: '0x9D4146EF898c8E60B3e865AE254ef438E7cEd2A0',
+      freeze: '0x5b3e33791C1764cF7e2573Bf8116F1D361FD97Cd',
+      staticFeeCalculator: '0x35fb2EFEfAc3Ee9f6E52A9AAE5C9655bC08dEc00',
+      staticAddressCondition: '0x68684ff8CD38483B8023a1443Af97C58eD29Cb06',
     },
-    // TODO: Verify condition singleton addresses on-chain once deployed
     conditions: {
-      payer: '0x0000000000000000000000000000000000000000',
-      receiver: '0x0000000000000000000000000000000000000000',
-      alwaysTrue: '0x0000000000000000000000000000000000000000',
+      payer: '0xBAF68176FF94CAdD403EF7FbB776bbca548AC09D',
+      receiver: '0x12EDefd4549c53497689067f165c0f101796Eb6D',
+      alwaysTrue: '0x785cC83DEa3d46D5509f3bf7496EAb26D42EE610',
     },
   },
   'eip155:8453': {
