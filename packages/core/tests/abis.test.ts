@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   PaymentOperatorABI,
   RefundRequestABI,
+  IRecorderABI,
   EscrowPeriodABI,
   AuthCaptureEscrowABI,
   StaticAddressConditionABI,
@@ -143,6 +144,27 @@ describe('RefundRequestABI', () => {
     const inputNames = event?.inputs?.map((i) => i.name);
     expect(inputNames).toContain('amount');
     expect(inputNames).toContain('nonce');
+  });
+});
+
+describe('IRecorderABI', () => {
+  it('should have record function with 3 parameters', () => {
+    const recordFn = IRecorderABI.find(
+      (item) => item.name === 'record' && item.type === 'function'
+    );
+    expect(recordFn).toBeDefined();
+    expect(recordFn?.inputs).toHaveLength(3);
+    const inputNames = recordFn?.inputs?.map((i) => i.name);
+    expect(inputNames).toContain('paymentInfo');
+    expect(inputNames).toContain('amount');
+    expect(inputNames).toContain('caller');
+  });
+
+  it('should be nonpayable', () => {
+    const recordFn = IRecorderABI.find(
+      (item) => item.name === 'record' && item.type === 'function'
+    );
+    expect(recordFn?.stateMutability).toBe('nonpayable');
   });
 });
 

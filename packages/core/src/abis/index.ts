@@ -525,6 +525,26 @@ export const RefundRequestABI = [
 ] as const;
 
 /**
+ * IRecorder interface ABI
+ *
+ * Recorders are called after an action is executed to update state.
+ * Amount and caller are provided for convenience - recorders may ignore them.
+ */
+export const IRecorderABI = [
+  {
+    type: 'function',
+    name: 'record',
+    inputs: [
+      { name: 'paymentInfo', type: 'tuple', components: paymentInfoComponents },
+      { name: 'amount', type: 'uint256' },
+      { name: 'caller', type: 'address' },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+] as const;
+
+/**
  * EscrowPeriod contract ABI
  *
  * EscrowPeriod implements both IRecorder and ICondition:
@@ -882,6 +902,7 @@ export const FreezeABI = [
 // Export types for ABI consumers
 export type PaymentOperatorABIType = typeof PaymentOperatorABI;
 export type RefundRequestABIType = typeof RefundRequestABI;
+export type IRecorderABIType = typeof IRecorderABI;
 export type EscrowPeriodABIType = typeof EscrowPeriodABI;
 export type AuthCaptureEscrowABIType = typeof AuthCaptureEscrowABI;
 export type StaticAddressConditionABIType = typeof StaticAddressConditionABI;
