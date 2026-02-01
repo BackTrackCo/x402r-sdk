@@ -2,7 +2,7 @@
 
 Production-ready TypeScript SDK for the X402r refundable payments protocol.
 
-[![Tests](https://img.shields.io/badge/tests-230%20passing-brightgreen)](https://github.com/BackTrackCo/x402r-sdk)
+[![Tests](https://img.shields.io/badge/tests-238%20passing-brightgreen)](https://github.com/BackTrackCo/x402r-sdk)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -15,7 +15,7 @@ Production-ready TypeScript SDK for the X402r refundable payments protocol.
 | `@x402r/merchant` | SDK for merchants (release, charge, refund handling) |
 | `@x402r/arbiter` | SDK for arbiters (dispute resolution, AI integration) |
 
-> **Note:** Server helpers (`refundable`, `withRefund`) are in the separate `@x402r/helpers` package.
+> **Note:** Server helpers (`refundable`) are included in `@x402r/helpers`.
 
 ## Installation
 
@@ -104,10 +104,10 @@ const handler = createWebhookHandler({
 });
 ```
 
-### Server Helpers (separate package)
+### Server Helpers
 
 ```typescript
-import { refundable, withRefund } from '@x402r/helpers';
+import { refundable } from '@x402r/helpers';
 
 // Define routes with refundable payment options
 const routes = {
@@ -122,9 +122,6 @@ const routes = {
     ],
   },
 };
-
-// Process routes for use with x402 middleware
-const processedRoutes = withRefund(routes);
 ```
 
 ## Documentation
@@ -138,6 +135,18 @@ const processedRoutes = withRefund(routes);
 |---------|----------|--------|
 | Base Sepolia | 84532 | Supported |
 | Base Mainnet | 8453 | Coming Soon |
+
+## Subgraph Dependency
+
+Some query methods require a subgraph/indexer and will throw `NotImplementedError` until deployed:
+
+| Package | Method |
+|---------|--------|
+| `@x402r/client` | `getPaymentState()`, `paymentExists()`, `isInEscrow()`, `getPaymentDetails()`, `getMyPayments()` |
+| `@x402r/merchant` | `getPaymentState()`, `getReceiverPayments()` |
+| `@x402r/arbiter` | `getPaymentState()` |
+
+All write operations (refunds, releases, charges) work directly on-chain without the subgraph.
 
 ## Development
 
