@@ -173,6 +173,12 @@ const paymentInfoComponents = [
 
 /**
  * ICondition interface ABI
+ *
+ * @remarks
+ * The check() function takes 3 parameters:
+ * - paymentInfo: The payment details tuple
+ * - amount: The amount being checked (uint256)
+ * - caller: The address calling the condition check
  */
 export const IConditionABI = [
   {
@@ -184,6 +190,7 @@ export const IConditionABI = [
         type: 'tuple',
         components: paymentInfoComponents,
       },
+      { name: 'amount', type: 'uint256' },
       { name: 'caller', type: 'address' },
     ],
     outputs: [{ name: 'allowed', type: 'bool' }],

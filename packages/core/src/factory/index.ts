@@ -677,3 +677,302 @@ export const StaticAddressConditionFactoryABI = [
     inputs: [],
   },
 ] as const;
+
+/**
+ * ABI for AndConditionFactory contract
+ *
+ * Deploys AndCondition contracts that combine multiple conditions with AND logic.
+ * All child conditions must return true for the combined condition to return true.
+ *
+ * Key functions:
+ * - computeAddress(conditions[]) - Get deterministic address
+ * - deploy(conditions[]) - Deploy AndCondition
+ * - getDeployed(conditions[]) - Get deployed address
+ */
+export const AndConditionFactoryABI = [
+  // View functions
+  {
+    type: 'function',
+    name: 'MAX_CONDITIONS',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'computeAddress',
+    inputs: [{ name: '_conditions', type: 'address[]' }],
+    outputs: [{ name: 'condition', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getDeployed',
+    inputs: [{ name: '_conditions', type: 'address[]' }],
+    outputs: [{ name: 'condition', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getKey',
+    inputs: [{ name: '_conditions', type: 'address[]' }],
+    outputs: [{ name: '', type: 'bytes32' }],
+    stateMutability: 'pure',
+  },
+  {
+    type: 'function',
+    name: 'conditions',
+    inputs: [{ name: '', type: 'bytes32' }],
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+  },
+  // Write functions
+  {
+    type: 'function',
+    name: 'deploy',
+    inputs: [{ name: '_conditions', type: 'address[]' }],
+    outputs: [{ name: 'condition', type: 'address' }],
+    stateMutability: 'nonpayable',
+  },
+  // Events
+  {
+    type: 'event',
+    name: 'AndConditionDeployed',
+    inputs: [
+      { name: 'condition', type: 'address', indexed: true },
+      { name: 'conditions', type: 'address[]', indexed: false },
+    ],
+  },
+  // Errors
+  {
+    type: 'error',
+    name: 'NoConditions',
+    inputs: [],
+  },
+  {
+    type: 'error',
+    name: 'TooManyConditions',
+    inputs: [],
+  },
+] as const;
+
+/**
+ * ABI for OrConditionFactory contract
+ *
+ * Deploys OrCondition contracts that combine multiple conditions with OR logic.
+ * At least one child condition must return true for the combined condition to return true.
+ *
+ * Key functions:
+ * - computeAddress(conditions[]) - Get deterministic address
+ * - deploy(conditions[]) - Deploy OrCondition
+ * - getDeployed(conditions[]) - Get deployed address
+ */
+export const OrConditionFactoryABI = [
+  // View functions
+  {
+    type: 'function',
+    name: 'MAX_CONDITIONS',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'computeAddress',
+    inputs: [{ name: '_conditions', type: 'address[]' }],
+    outputs: [{ name: 'condition', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getDeployed',
+    inputs: [{ name: '_conditions', type: 'address[]' }],
+    outputs: [{ name: 'condition', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getKey',
+    inputs: [{ name: '_conditions', type: 'address[]' }],
+    outputs: [{ name: '', type: 'bytes32' }],
+    stateMutability: 'pure',
+  },
+  {
+    type: 'function',
+    name: 'conditions',
+    inputs: [{ name: '', type: 'bytes32' }],
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+  },
+  // Write functions
+  {
+    type: 'function',
+    name: 'deploy',
+    inputs: [{ name: '_conditions', type: 'address[]' }],
+    outputs: [{ name: 'condition', type: 'address' }],
+    stateMutability: 'nonpayable',
+  },
+  // Events
+  {
+    type: 'event',
+    name: 'OrConditionDeployed',
+    inputs: [
+      { name: 'condition', type: 'address', indexed: true },
+      { name: 'conditions', type: 'address[]', indexed: false },
+    ],
+  },
+  // Errors
+  {
+    type: 'error',
+    name: 'NoConditions',
+    inputs: [],
+  },
+  {
+    type: 'error',
+    name: 'TooManyConditions',
+    inputs: [],
+  },
+] as const;
+
+/**
+ * ABI for NotConditionFactory contract
+ *
+ * Deploys NotCondition contracts that negate a single condition.
+ * Returns the opposite of the wrapped condition's result.
+ *
+ * Key functions:
+ * - computeAddress(condition) - Get deterministic address
+ * - deploy(condition) - Deploy NotCondition
+ * - getDeployed(condition) - Get deployed address
+ */
+export const NotConditionFactoryABI = [
+  // View functions
+  {
+    type: 'function',
+    name: 'computeAddress',
+    inputs: [{ name: '_condition', type: 'address' }],
+    outputs: [{ name: 'condition', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getDeployed',
+    inputs: [{ name: '_condition', type: 'address' }],
+    outputs: [{ name: 'condition', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getKey',
+    inputs: [{ name: '_condition', type: 'address' }],
+    outputs: [{ name: '', type: 'bytes32' }],
+    stateMutability: 'pure',
+  },
+  {
+    type: 'function',
+    name: 'conditions',
+    inputs: [{ name: '', type: 'bytes32' }],
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+  },
+  // Write functions
+  {
+    type: 'function',
+    name: 'deploy',
+    inputs: [{ name: '_condition', type: 'address' }],
+    outputs: [{ name: 'condition', type: 'address' }],
+    stateMutability: 'nonpayable',
+  },
+  // Events
+  {
+    type: 'event',
+    name: 'NotConditionDeployed',
+    inputs: [
+      { name: 'condition', type: 'address', indexed: true },
+      { name: 'wrappedCondition', type: 'address', indexed: true },
+    ],
+  },
+  // Errors
+  {
+    type: 'error',
+    name: 'ZeroCondition',
+    inputs: [],
+  },
+] as const;
+
+/**
+ * ABI for RecorderCombinatorFactory contract
+ *
+ * Deploys RecorderCombinator contracts that call multiple recorders in sequence.
+ *
+ * Key functions:
+ * - computeAddress(recorders[]) - Get deterministic address
+ * - deploy(recorders[]) - Deploy RecorderCombinator
+ * - getDeployed(recorders[]) - Get deployed address
+ */
+export const RecorderCombinatorFactoryABI = [
+  // View functions
+  {
+    type: 'function',
+    name: 'MAX_RECORDERS',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'computeAddress',
+    inputs: [{ name: '_recorders', type: 'address[]' }],
+    outputs: [{ name: 'combinator', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getDeployed',
+    inputs: [{ name: '_recorders', type: 'address[]' }],
+    outputs: [{ name: 'combinator', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getKey',
+    inputs: [{ name: '_recorders', type: 'address[]' }],
+    outputs: [{ name: '', type: 'bytes32' }],
+    stateMutability: 'pure',
+  },
+  {
+    type: 'function',
+    name: 'combinators',
+    inputs: [{ name: '', type: 'bytes32' }],
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+  },
+  // Write functions
+  {
+    type: 'function',
+    name: 'deploy',
+    inputs: [{ name: '_recorders', type: 'address[]' }],
+    outputs: [{ name: 'combinator', type: 'address' }],
+    stateMutability: 'nonpayable',
+  },
+  // Events
+  {
+    type: 'event',
+    name: 'RecorderCombinatorDeployed',
+    inputs: [
+      { name: 'combinator', type: 'address', indexed: true },
+      { name: 'recorders', type: 'address[]', indexed: false },
+    ],
+  },
+  // Errors
+  {
+    type: 'error',
+    name: 'EmptyRecorders',
+    inputs: [],
+  },
+  {
+    type: 'error',
+    name: 'TooManyRecorders',
+    inputs: [],
+  },
+] as const;

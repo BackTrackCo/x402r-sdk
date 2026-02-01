@@ -2,7 +2,7 @@
 
 Production-ready TypeScript SDK for the X402r refundable payments protocol.
 
-[![Tests](https://img.shields.io/badge/tests-238%20passing-brightgreen)](https://github.com/BackTrackCo/x402r-sdk)
+[![Tests](https://img.shields.io/badge/tests-244%20passing-brightgreen)](https://github.com/BackTrackCo/x402r-sdk)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -10,8 +10,8 @@ Production-ready TypeScript SDK for the X402r refundable payments protocol.
 
 | Package | Description |
 |---------|-------------|
-| `@x402r/core` | Shared types, ABIs, and utilities |
-| `@x402r/client` | SDK for payers (payment queries, refund requests, escrow) |
+| `@x402r/core` | Shared types, ABIs, deployment helpers, and utilities |
+| `@x402r/client` | SDK for payers (payment queries, refund requests, freeze) |
 | `@x402r/merchant` | SDK for merchants (release, charge, refund handling) |
 | `@x402r/arbiter` | SDK for arbiters (dispute resolution, AI integration) |
 
@@ -129,12 +129,36 @@ const routes = {
 - [SDK Documentation](https://docs.x402r.org/sdk/overview) - Guides and tutorials
 - [API Reference](https://backtrackco.github.io/x402r-sdk) - Auto-generated TypeDoc
 
+## Deploying Operators
+
+Deploy a complete marketplace operator with escrow, freeze, and arbiter support:
+
+```typescript
+import { deployMarketplaceOperator } from '@x402r/core';
+
+const result = await deployMarketplaceOperator(
+  walletClient,
+  publicClient,
+  'eip155:84532', // Base Sepolia
+  {
+    feeRecipient: '0x...',
+    arbiter: '0x...',
+    escrowPeriodSeconds: 604800n, // 7 days
+    operatorFeeBps: 100n, // 1%
+  }
+);
+
+console.log('Operator deployed at:', result.operatorAddress);
+```
+
+See `examples/deploy-operator/` for a complete example.
+
 ## Network Support
 
 | Network | Chain ID | Status |
 |---------|----------|--------|
-| Base Sepolia | 84532 | Supported |
-| Base Mainnet | 8453 | Coming Soon |
+| Base Sepolia | 84532 | ✅ Supported |
+| Base Mainnet | 8453 | ✅ Supported |
 
 ## Subgraph Dependency
 

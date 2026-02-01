@@ -5,6 +5,8 @@ import {
   EscrowPeriodABI,
   AuthCaptureEscrowABI,
   StaticAddressConditionABI,
+  FreezePolicyABI,
+  FreezeABI,
 } from '../src/abis/index.js';
 
 describe('PaymentOperatorABI', () => {
@@ -145,30 +147,37 @@ describe('RefundRequestABI', () => {
 });
 
 describe('EscrowPeriodABI', () => {
-  it('should have freeze function', () => {
-    const freezeFn = EscrowPeriodABI.find(
-      (item) => item.name === 'freeze' && item.type === 'function'
+  it('should have check function with 3 parameters (ICondition)', () => {
+    const checkFn = EscrowPeriodABI.find(
+      (item) => item.name === 'check' && item.type === 'function'
     );
-    expect(freezeFn).toBeDefined();
+    expect(checkFn).toBeDefined();
+    expect(checkFn?.inputs).toHaveLength(3);
+    const inputNames = checkFn?.inputs?.map((i) => i.name);
+    expect(inputNames).toContain('paymentInfo');
+    expect(inputNames).toContain('amount');
+    expect(inputNames).toContain('caller');
   });
 
-  it('should have unfreeze function', () => {
-    const unfreezeFn = EscrowPeriodABI.find(
-      (item) => item.name === 'unfreeze' && item.type === 'function'
+  it('should have record function (IRecorder)', () => {
+    const recordFn = EscrowPeriodABI.find(
+      (item) => item.name === 'record' && item.type === 'function'
     );
-    expect(unfreezeFn).toBeDefined();
+    expect(recordFn).toBeDefined();
+    expect(recordFn?.inputs).toHaveLength(1);
   });
 
-  it('should have PaymentFrozen event', () => {
+  it('should have isDuringEscrowPeriod function', () => {
+    const fn = EscrowPeriodABI.find(
+      (item) => item.name === 'isDuringEscrowPeriod' && item.type === 'function'
+    );
+    expect(fn).toBeDefined();
+    expect(fn?.stateMutability).toBe('view');
+  });
+
+  it('should have AuthorizationTimeRecorded event', () => {
     const event = EscrowPeriodABI.find(
-      (item) => item.name === 'PaymentFrozen' && item.type === 'event'
-    );
-    expect(event).toBeDefined();
-  });
-
-  it('should have PaymentUnfrozen event', () => {
-    const event = EscrowPeriodABI.find(
-      (item) => item.name === 'PaymentUnfrozen' && item.type === 'event'
+      (item) => item.name === 'AuthorizationTimeRecorded' && item.type === 'event'
     );
     expect(event).toBeDefined();
   });
@@ -178,13 +187,130 @@ describe('EscrowPeriodABI', () => {
       (item) => item.type === 'function'
     ).map((item) => item.name);
 
+    expect(functionNames).toContain('check');
+    expect(functionNames).toContain('record');
+    expect(functionNames).toContain('getAuthorizationTime');
+    expect(functionNames).toContain('isDuringEscrowPeriod');
+    expect(functionNames).toContain('ESCROW_PERIOD');
+    expect(functionNames).toContain('ESCROW');
+    expect(functionNames).toContain('AUTHORIZED_CODEHASH');
+    expect(functionNames).toContain('authorizationTimes');
+  });
+
+  it('should NOT have freeze functions (those are in FreezeABI)', () => {
+    const functionNames = EscrowPeriodABI.filter(
+      (item) => item.type === 'function'
+    ).map((item) => item.name);
+
+    expect(functionNames).not.toContain('freeze');
+    expect(functionNames).not.toContain('unfreeze');
+    expect(functionNames).not.toContain('isFrozen');
+    expect(functionNames).not.toContain('FREEZE_POLICY');
+  });
+});
+
+describe('FreezePolicyABI', () => {
+  it('should have canFreeze function', () => {
+    const fn = FreezePolicyABI.find(
+      (item) => item.name === 'canFreeze' && item.type === 'function'
+    );
+    expect(fn).toBeDefined();
+    expect(fn?.outputs).toHaveLength(2); // (bool allowed, uint256 duration)
+  });
+
+  it('should have canUnfreeze function', () => {
+    const fn = FreezePolicyABI.find(
+      (item) => item.name === 'canUnfreeze' && item.type === 'function'
+    );
+    expect(fn).toBeDefined();
+    expect(fn?.outputs).toHaveLength(1); // bool
+  });
+
+  it('should have all immutables', () => {
+    const functionNames = FreezePolicyABI.filter(
+      (item) => item.type === 'function'
+    ).map((item) => item.name);
+
+    expect(functionNames).toContain('FREEZE_CONDITION');
+    expect(functionNames).toContain('UNFREEZE_CONDITION');
+    expect(functionNames).toContain('FREEZE_DURATION');
+  });
+});
+
+describe('FreezeABI', () => {
+  it('should have check function with 3 parameters (ICondition)', () => {
+    const checkFn = FreezeABI.find(
+      (item) => item.name === 'check' && item.type === 'function'
+    );
+    expect(checkFn).toBeDefined();
+    expect(checkFn?.inputs).toHaveLength(3);
+    const inputNames = checkFn?.inputs?.map((i) => i.name);
+    expect(inputNames).toContain('paymentInfo');
+    expect(inputNames).toContain('amount');
+    expect(inputNames).toContain('caller');
+  });
+
+  it('should have freeze function', () => {
+    const fn = FreezeABI.find(
+      (item) => item.name === 'freeze' && item.type === 'function'
+    );
+    expect(fn).toBeDefined();
+    expect(fn?.stateMutability).toBe('nonpayable');
+  });
+
+  it('should have unfreeze function', () => {
+    const fn = FreezeABI.find(
+      (item) => item.name === 'unfreeze' && item.type === 'function'
+    );
+    expect(fn).toBeDefined();
+  });
+
+  it('should have isFrozen function', () => {
+    const fn = FreezeABI.find(
+      (item) => item.name === 'isFrozen' && item.type === 'function'
+    );
+    expect(fn).toBeDefined();
+    expect(fn?.stateMutability).toBe('view');
+  });
+
+  it('should have PaymentFrozen event', () => {
+    const event = FreezeABI.find(
+      (item) => item.name === 'PaymentFrozen' && item.type === 'event'
+    );
+    expect(event).toBeDefined();
+  });
+
+  it('should have PaymentUnfrozen event', () => {
+    const event = FreezeABI.find(
+      (item) => item.name === 'PaymentUnfrozen' && item.type === 'event'
+    );
+    expect(event).toBeDefined();
+  });
+
+  it('should have all required functions', () => {
+    const functionNames = FreezeABI.filter(
+      (item) => item.type === 'function'
+    ).map((item) => item.name);
+
+    expect(functionNames).toContain('check');
     expect(functionNames).toContain('freeze');
     expect(functionNames).toContain('unfreeze');
-    expect(functionNames).toContain('getAuthorizationTime');
     expect(functionNames).toContain('isFrozen');
-    expect(functionNames).toContain('isEscrowPeriodPassed');
-    expect(functionNames).toContain('ESCROW_PERIOD');
+    expect(functionNames).toContain('ESCROW');
     expect(functionNames).toContain('FREEZE_POLICY');
+    expect(functionNames).toContain('ESCROW_PERIOD_CONTRACT');
+    expect(functionNames).toContain('frozenUntil');
+  });
+
+  it('should have error definitions', () => {
+    const errorNames = FreezeABI.filter(
+      (item) => item.type === 'error'
+    ).map((item) => item.name);
+
+    expect(errorNames).toContain('FreezeWindowExpired');
+    expect(errorNames).toContain('UnauthorizedFreeze');
+    expect(errorNames).toContain('AlreadyFrozen');
+    expect(errorNames).toContain('NotFrozen');
   });
 });
 
@@ -207,11 +333,16 @@ describe('AuthCaptureEscrowABI', () => {
 });
 
 describe('StaticAddressConditionABI', () => {
-  it('should have check function', () => {
+  it('should have check function with 3 parameters', () => {
     const checkFn = StaticAddressConditionABI.find(
       (item) => item.name === 'check' && item.type === 'function'
     );
     expect(checkFn).toBeDefined();
+    expect(checkFn?.inputs).toHaveLength(3);
+    const inputNames = checkFn?.inputs?.map((i) => i.name);
+    expect(inputNames).toContain('paymentInfo');
+    expect(inputNames).toContain('amount');
+    expect(inputNames).toContain('caller');
     expect(checkFn?.outputs?.[0]?.type).toBe('bool');
   });
 
@@ -230,6 +361,8 @@ describe('ABI structure validation', () => {
     expect(Array.isArray(EscrowPeriodABI)).toBe(true);
     expect(Array.isArray(AuthCaptureEscrowABI)).toBe(true);
     expect(Array.isArray(StaticAddressConditionABI)).toBe(true);
+    expect(Array.isArray(FreezePolicyABI)).toBe(true);
+    expect(Array.isArray(FreezeABI)).toBe(true);
   });
 
   it('all ABI items should have name and type', () => {
@@ -239,6 +372,8 @@ describe('ABI structure validation', () => {
       ...EscrowPeriodABI,
       ...AuthCaptureEscrowABI,
       ...StaticAddressConditionABI,
+      ...FreezePolicyABI,
+      ...FreezeABI,
     ];
 
     allAbis.forEach((item) => {

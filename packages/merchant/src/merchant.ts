@@ -9,6 +9,7 @@ import {
   AuthCaptureEscrowABI,
   RefundRequestABI,
   EscrowPeriodABI,
+  FreezeABI,
   RequestStatus,
   NotImplementedError,
   computePaymentInfoHash,
@@ -749,30 +750,30 @@ export class X402rMerchant {
     return request as unknown as RefundRequestData;
   }
 
-  // ============ Escrow Management ============
+  // ============ Freeze Management ============
 
   /**
    * Unfreeze a payment that was previously frozen
    *
    * @param paymentInfo - The payment information struct
-   * @param escrowRecorderAddress - The EscrowPeriod contract address
+   * @param freezeAddress - The Freeze contract address
    * @returns Transaction hash
    *
    * @example
    * ```typescript
-   * const { txHash } = await merchant.unfreezePayment(paymentInfo, escrowRecorderAddress);
+   * const { txHash } = await merchant.unfreezePayment(paymentInfo, freezeAddress);
    * console.log(`Payment unfrozen: ${txHash}`);
    * ```
    */
   async unfreezePayment(
     paymentInfo: PaymentInfo,
-    escrowRecorderAddress: `0x${string}`
+    freezeAddress: `0x${string}`
   ): Promise<{ txHash: `0x${string}` }> {
     const txHash = await this.walletClient.writeContract({
       chain: this.walletClient.chain,
       account: this.walletClient.account!,
-      address: escrowRecorderAddress,
-      abi: EscrowPeriodABI,
+      address: freezeAddress,
+      abi: FreezeABI,
       functionName: 'unfreeze',
       args: [paymentInfo as never],
     });
@@ -784,12 +785,12 @@ export class X402rMerchant {
    * Check if a payment is currently frozen
    *
    * @param paymentInfo - The payment information struct
-   * @param escrowRecorderAddress - The EscrowPeriod contract address
+   * @param freezeAddress - The Freeze contract address
    * @returns True if the payment is frozen
    *
    * @example
    * ```typescript
-   * const frozen = await merchant.isFrozen(paymentInfo, escrowRecorderAddress);
+   * const frozen = await merchant.isFrozen(paymentInfo, freezeAddress);
    * if (frozen) {
    *   console.log('Payment is frozen');
    * }
@@ -797,11 +798,11 @@ export class X402rMerchant {
    */
   async isFrozen(
     paymentInfo: PaymentInfo,
-    escrowRecorderAddress: `0x${string}`
+    freezeAddress: `0x${string}`
   ): Promise<boolean> {
     const frozen = await this.publicClient.readContract({
-      address: escrowRecorderAddress,
-      abi: EscrowPeriodABI,
+      address: freezeAddress,
+      abi: FreezeABI,
       functionName: 'isFrozen',
       args: [paymentInfo as never],
     });
@@ -879,15 +880,15 @@ export class X402rMerchant {
   }
 
   /**
-   * Watch for freeze/unfreeze events on an escrow recorder
+   * Watch for freeze/unfreeze events on a Freeze contract
    *
-   * @param escrowRecorderAddress - The EscrowPeriod contract address
+   * @param freezeAddress - The Freeze contract address
    * @param callback - Function to call when a freeze event is received
    * @returns Object with unsubscribe function
    *
    * @example
    * ```typescript
-   * const { unsubscribe } = merchant.watchFreezeEvents(escrowRecorderAddress, (event) => {
+   * const { unsubscribe } = merchant.watchFreezeEvents(freezeAddress, (event) => {
    *   console.log('Freeze event:', event);
    * });
    *
@@ -896,12 +897,12 @@ export class X402rMerchant {
    * ```
    */
   watchFreezeEvents(
-    escrowRecorderAddress: `0x${string}`,
+    freezeAddress: `0x${string}`,
     callback: (event: unknown) => void
   ): { unsubscribe: () => void } {
     const unsubscribeFrozen = this.publicClient.watchContractEvent({
-      address: escrowRecorderAddress,
-      abi: EscrowPeriodABI,
+      address: freezeAddress,
+      abi: FreezeABI,
       eventName: 'PaymentFrozen',
       onLogs: (logs) => {
         for (const log of logs) {
@@ -911,8 +912,8 @@ export class X402rMerchant {
     });
 
     const unsubscribeUnfrozen = this.publicClient.watchContractEvent({
-      address: escrowRecorderAddress,
-      abi: EscrowPeriodABI,
+      address: freezeAddress,
+      abi: FreezeABI,
       eventName: 'PaymentUnfrozen',
       onLogs: (logs) => {
         for (const log of logs) {

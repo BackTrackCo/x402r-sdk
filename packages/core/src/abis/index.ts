@@ -527,17 +527,32 @@ export const RefundRequestABI = [
 /**
  * EscrowPeriod contract ABI
  *
- * EscrowPeriod is a SINGLE contract implementing both IRecorder and ICondition.
- * Use this ABI to read state (getAuthorizationTime, isFrozen, isEscrowPeriodPassed)
- * and call recorder methods (freeze, unfreeze).
+ * EscrowPeriod implements both IRecorder and ICondition:
+ * - As IRecorder: record() stores authorization timestamp when payment is authorized
+ * - As ICondition: check() returns true only after escrow period has passed
  *
  * The same deployed address is used for both authorizeRecorder and releaseCondition
  * in PaymentOperatorConfig.
+ *
+ * @remarks
+ * This contract does NOT handle freezing - that's done by the separate Freeze contract.
  */
 export const EscrowPeriodABI = [
-  // Functions
+  // ICondition implementation - checks if escrow period has passed
   {
-    name: 'freeze',
+    name: 'check',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'paymentInfo', type: 'tuple', components: paymentInfoComponents },
+      { name: 'amount', type: 'uint256' },
+      { name: 'caller', type: 'address' },
+    ],
+    outputs: [{ name: 'allowed', type: 'bool' }],
+  },
+  // IRecorder implementation - records authorization timestamp
+  {
+    name: 'record',
     type: 'function',
     stateMutability: 'nonpayable',
     inputs: [
@@ -545,15 +560,7 @@ export const EscrowPeriodABI = [
     ],
     outputs: [],
   },
-  {
-    name: 'unfreeze',
-    type: 'function',
-    stateMutability: 'nonpayable',
-    inputs: [
-      { name: 'paymentInfo', type: 'tuple', components: paymentInfoComponents },
-    ],
-    outputs: [],
-  },
+  // View functions
   {
     name: 'getAuthorizationTime',
     type: 'function',
@@ -564,7 +571,7 @@ export const EscrowPeriodABI = [
     outputs: [{ name: '', type: 'uint256' }],
   },
   {
-    name: 'isFrozen',
+    name: 'isDuringEscrowPeriod',
     type: 'function',
     stateMutability: 'view',
     inputs: [
@@ -572,18 +579,7 @@ export const EscrowPeriodABI = [
     ],
     outputs: [{ name: '', type: 'bool' }],
   },
-  {
-    name: 'isEscrowPeriodPassed',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [
-      { name: 'paymentInfo', type: 'tuple', components: paymentInfoComponents },
-    ],
-    outputs: [
-      { name: 'passed', type: 'bool' },
-      { name: 'authTime', type: 'uint256' },
-    ],
-  },
+  // Immutables
   {
     name: 'ESCROW_PERIOD',
     type: 'function',
@@ -592,21 +588,22 @@ export const EscrowPeriodABI = [
     outputs: [{ name: '', type: 'uint256' }],
   },
   {
-    name: 'FREEZE_POLICY',
+    name: 'ESCROW',
     type: 'function',
     stateMutability: 'view',
     inputs: [],
     outputs: [{ name: '', type: 'address' }],
   },
   {
-    name: 'authorizationTimes',
+    name: 'AUTHORIZED_CODEHASH',
     type: 'function',
     stateMutability: 'view',
-    inputs: [{ name: 'paymentInfoHash', type: 'bytes32' }],
-    outputs: [{ name: '', type: 'uint256' }],
+    inputs: [],
+    outputs: [{ name: '', type: 'bytes32' }],
   },
+  // Mapping accessor
   {
-    name: 'frozenUntil',
+    name: 'authorizationTimes',
     type: 'function',
     stateMutability: 'view',
     inputs: [{ name: 'paymentInfoHash', type: 'bytes32' }],
@@ -626,31 +623,11 @@ export const EscrowPeriodABI = [
       { name: 'authorizationTime', type: 'uint256', indexed: false },
     ],
   },
+  // Errors
   {
-    name: 'PaymentFrozen',
-    type: 'event',
-    inputs: [
-      {
-        name: 'paymentInfo',
-        type: 'tuple',
-        components: paymentInfoComponents,
-        indexed: false,
-      },
-      { name: 'caller', type: 'address', indexed: true },
-    ],
-  },
-  {
-    name: 'PaymentUnfrozen',
-    type: 'event',
-    inputs: [
-      {
-        name: 'paymentInfo',
-        type: 'tuple',
-        components: paymentInfoComponents,
-        indexed: false,
-      },
-      { name: 'caller', type: 'address', indexed: true },
-    ],
+    name: 'UnauthorizedRecorder',
+    type: 'error',
+    inputs: [],
   },
 ] as const;
 
@@ -681,7 +658,13 @@ export const AuthCaptureEscrowABI = [
 ] as const;
 
 /**
- * StaticAddressCondition ABI - Condition that checks for a specific address
+ * StaticAddressCondition ABI - Condition that checks if caller matches a designated address
+ *
+ * @remarks
+ * The check() function takes 3 parameters matching ICondition interface:
+ * - paymentInfo: The payment details tuple
+ * - amount: The amount being checked (uint256)
+ * - caller: The address calling the condition check
  */
 export const StaticAddressConditionABI = [
   {
@@ -690,6 +673,7 @@ export const StaticAddressConditionABI = [
     stateMutability: 'view',
     inputs: [
       { name: 'paymentInfo', type: 'tuple', components: paymentInfoComponents },
+      { name: 'amount', type: 'uint256' },
       { name: 'caller', type: 'address' },
     ],
     outputs: [{ name: '', type: 'bool' }],
@@ -703,9 +687,201 @@ export const StaticAddressConditionABI = [
   },
 ] as const;
 
+/**
+ * FreezePolicy contract ABI
+ *
+ * FreezePolicy defines the conditions for freezing and unfreezing payments,
+ * as well as the freeze duration.
+ */
+export const FreezePolicyABI = [
+  // IFreezePolicy implementation
+  {
+    name: 'canFreeze',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'paymentInfo', type: 'tuple', components: paymentInfoComponents },
+      { name: 'caller', type: 'address' },
+    ],
+    outputs: [
+      { name: 'allowed', type: 'bool' },
+      { name: 'duration', type: 'uint256' },
+    ],
+  },
+  {
+    name: 'canUnfreeze',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'paymentInfo', type: 'tuple', components: paymentInfoComponents },
+      { name: 'caller', type: 'address' },
+    ],
+    outputs: [{ name: '', type: 'bool' }],
+  },
+  // Immutables
+  {
+    name: 'FREEZE_CONDITION',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+  },
+  {
+    name: 'UNFREEZE_CONDITION',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+  },
+  {
+    name: 'FREEZE_DURATION',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+] as const;
+
+/**
+ * Freeze contract ABI
+ *
+ * Freeze implements ICondition and manages payment freezing state.
+ * - freeze(): Freezes a payment (caller must pass freezePolicy.canFreeze)
+ * - unfreeze(): Unfreezes a payment (caller must pass freezePolicy.canUnfreeze)
+ * - check(): Returns false if payment is frozen, true otherwise
+ */
+export const FreezeABI = [
+  // ICondition implementation - returns false if frozen
+  {
+    name: 'check',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'paymentInfo', type: 'tuple', components: paymentInfoComponents },
+      { name: 'amount', type: 'uint256' },
+      { name: 'caller', type: 'address' },
+    ],
+    outputs: [{ name: 'allowed', type: 'bool' }],
+  },
+  // Freeze management
+  {
+    name: 'freeze',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'paymentInfo', type: 'tuple', components: paymentInfoComponents },
+    ],
+    outputs: [],
+  },
+  {
+    name: 'unfreeze',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'paymentInfo', type: 'tuple', components: paymentInfoComponents },
+    ],
+    outputs: [],
+  },
+  {
+    name: 'isFrozen',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'paymentInfo', type: 'tuple', components: paymentInfoComponents },
+    ],
+    outputs: [{ name: '', type: 'bool' }],
+  },
+  // Immutables
+  {
+    name: 'ESCROW',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+  },
+  {
+    name: 'FREEZE_POLICY',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+  },
+  {
+    name: 'ESCROW_PERIOD_CONTRACT',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+  },
+  // Mapping accessor
+  {
+    name: 'frozenUntil',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'paymentInfoHash', type: 'bytes32' }],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  // Events
+  {
+    name: 'PaymentFrozen',
+    type: 'event',
+    inputs: [
+      {
+        name: 'paymentInfo',
+        type: 'tuple',
+        components: paymentInfoComponents,
+        indexed: false,
+      },
+      { name: 'caller', type: 'address', indexed: true },
+      { name: 'frozenUntil', type: 'uint256', indexed: false },
+    ],
+  },
+  {
+    name: 'PaymentUnfrozen',
+    type: 'event',
+    inputs: [
+      {
+        name: 'paymentInfo',
+        type: 'tuple',
+        components: paymentInfoComponents,
+        indexed: false,
+      },
+      { name: 'caller', type: 'address', indexed: true },
+    ],
+  },
+  // Errors
+  {
+    name: 'FreezeWindowExpired',
+    type: 'error',
+    inputs: [],
+  },
+  {
+    name: 'UnauthorizedFreeze',
+    type: 'error',
+    inputs: [],
+  },
+  {
+    name: 'AlreadyFrozen',
+    type: 'error',
+    inputs: [],
+  },
+  {
+    name: 'NotFrozen',
+    type: 'error',
+    inputs: [],
+  },
+  {
+    name: 'UnauthorizedUnfreeze',
+    type: 'error',
+    inputs: [],
+  },
+] as const;
+
 // Export types for ABI consumers
 export type PaymentOperatorABIType = typeof PaymentOperatorABI;
 export type RefundRequestABIType = typeof RefundRequestABI;
 export type EscrowPeriodABIType = typeof EscrowPeriodABI;
 export type AuthCaptureEscrowABIType = typeof AuthCaptureEscrowABI;
 export type StaticAddressConditionABIType = typeof StaticAddressConditionABI;
+export type FreezePolicyABIType = typeof FreezePolicyABI;
+export type FreezeABIType = typeof FreezeABI;

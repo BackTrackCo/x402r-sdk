@@ -8,6 +8,7 @@ import {
   PaymentOperatorABI,
   RefundRequestABI,
   EscrowPeriodABI,
+  FreezeABI,
   RequestStatus,
   NotImplementedError,
   type PaymentInfo,
@@ -624,12 +625,12 @@ export class X402rArbiter {
    * ```
    */
   watchFreezeEvents(
-    escrowRecorderAddress: `0x${string}`,
+    freezeAddress: `0x${string}`,
     callback: (event: unknown) => void
   ): { unsubscribe: () => void } {
     const unsubscribeFrozen = this.publicClient.watchContractEvent({
-      address: escrowRecorderAddress,
-      abi: EscrowPeriodABI,
+      address: freezeAddress,
+      abi: FreezeABI,
       eventName: 'PaymentFrozen',
       onLogs: (logs) => {
         for (const log of logs) {
@@ -639,8 +640,8 @@ export class X402rArbiter {
     });
 
     const unsubscribeUnfrozen = this.publicClient.watchContractEvent({
-      address: escrowRecorderAddress,
-      abi: EscrowPeriodABI,
+      address: freezeAddress,
+      abi: FreezeABI,
       eventName: 'PaymentUnfrozen',
       onLogs: (logs) => {
         for (const log of logs) {

@@ -8,6 +8,7 @@ import {
   PaymentOperatorABI,
   RefundRequestABI,
   EscrowPeriodABI,
+  FreezeABI,
   NotImplementedError,
   type PaymentInfo,
   type PaymentState,
@@ -447,25 +448,25 @@ export class X402rClient {
     return request as unknown as RefundRequestData;
   }
 
-  // ============ Escrow Operations ============
+  // ============ Freeze Operations ============
 
   /**
    * Freeze a payment to extend the escrow period
    *
    * @param paymentInfo - The payment information struct
-   * @param recorderAddress - The EscrowPeriod contract address
+   * @param freezeAddress - The Freeze contract address
    * @returns Transaction hash
    * @throws Error if walletClient is not configured
    *
    * @example
    * ```typescript
-   * const { txHash } = await client.freezePayment(paymentInfo, recorderAddress);
+   * const { txHash } = await client.freezePayment(paymentInfo, freezeAddress);
    * console.log(`Payment frozen: ${txHash}`);
    * ```
    */
   async freezePayment(
     paymentInfo: PaymentInfo,
-    recorderAddress: `0x${string}`
+    freezeAddress: `0x${string}`
   ): Promise<{ txHash: `0x${string}` }> {
     if (!this.walletClient) {
       throw new Error('WalletClient required');
@@ -474,8 +475,8 @@ export class X402rClient {
     const txHash = await this.walletClient.writeContract({
       chain: this.walletClient.chain,
       account: this.walletClient.account!,
-      address: recorderAddress,
-      abi: EscrowPeriodABI,
+      address: freezeAddress,
+      abi: FreezeABI,
       functionName: 'freeze',
       args: [paymentInfo as never],
     });
@@ -487,19 +488,19 @@ export class X402rClient {
    * Unfreeze a payment that was previously frozen
    *
    * @param paymentInfo - The payment information struct
-   * @param recorderAddress - The EscrowPeriod contract address
+   * @param freezeAddress - The Freeze contract address
    * @returns Transaction hash
    * @throws Error if walletClient is not configured
    *
    * @example
    * ```typescript
-   * const { txHash } = await client.unfreezePayment(paymentInfo, recorderAddress);
+   * const { txHash } = await client.unfreezePayment(paymentInfo, freezeAddress);
    * console.log(`Payment unfrozen: ${txHash}`);
    * ```
    */
   async unfreezePayment(
     paymentInfo: PaymentInfo,
-    recorderAddress: `0x${string}`
+    freezeAddress: `0x${string}`
   ): Promise<{ txHash: `0x${string}` }> {
     if (!this.walletClient) {
       throw new Error('WalletClient required');
@@ -508,8 +509,8 @@ export class X402rClient {
     const txHash = await this.walletClient.writeContract({
       chain: this.walletClient.chain,
       account: this.walletClient.account!,
-      address: recorderAddress,
-      abi: EscrowPeriodABI,
+      address: freezeAddress,
+      abi: FreezeABI,
       functionName: 'unfreeze',
       args: [paymentInfo as never],
     });
@@ -521,23 +522,23 @@ export class X402rClient {
    * Check if a payment is currently frozen
    *
    * @param paymentInfo - The payment information struct
-   * @param recorderAddress - The EscrowPeriod contract address
+   * @param freezeAddress - The Freeze contract address
    * @returns True if payment is frozen
    *
    * @example
    * ```typescript
-   * if (await client.isFrozen(paymentInfo, recorderAddress)) {
+   * if (await client.isFrozen(paymentInfo, freezeAddress)) {
    *   console.log('Payment is frozen');
    * }
    * ```
    */
   async isFrozen(
     paymentInfo: PaymentInfo,
-    recorderAddress: `0x${string}`
+    freezeAddress: `0x${string}`
   ): Promise<boolean> {
     const frozen = await this.publicClient.readContract({
-      address: recorderAddress,
-      abi: EscrowPeriodABI,
+      address: freezeAddress,
+      abi: FreezeABI,
       functionName: 'isFrozen',
       args: [paymentInfo as never],
     });
@@ -545,25 +546,27 @@ export class X402rClient {
     return frozen as boolean;
   }
 
+  // ============ Escrow Period Operations ============
+
   /**
    * Get the authorization time for a payment
    *
    * @param paymentInfo - The payment information struct
-   * @param recorderAddress - The EscrowPeriod contract address
+   * @param escrowPeriodAddress - The EscrowPeriod contract address
    * @returns The timestamp when the payment was authorized
    *
    * @example
    * ```typescript
-   * const authTime = await client.getAuthorizationTime(paymentInfo, recorderAddress);
+   * const authTime = await client.getAuthorizationTime(paymentInfo, escrowPeriodAddress);
    * console.log(`Authorized at: ${new Date(Number(authTime) * 1000)}`);
    * ```
    */
   async getAuthorizationTime(
     paymentInfo: PaymentInfo,
-    recorderAddress: `0x${string}`
+    escrowPeriodAddress: `0x${string}`
   ): Promise<bigint> {
     const authTime = await this.publicClient.readContract({
-      address: recorderAddress,
+      address: escrowPeriodAddress,
       abi: EscrowPeriodABI,
       functionName: 'getAuthorizationTime',
       args: [paymentInfo as never],
@@ -573,32 +576,32 @@ export class X402rClient {
   }
 
   /**
-   * Check if the escrow period has passed for a payment
+   * Check if a payment is currently within its escrow period
    *
    * @param paymentInfo - The payment information struct
-   * @param recorderAddress - The EscrowPeriod contract address
-   * @returns Object with passed status and authorization time
+   * @param escrowPeriodAddress - The EscrowPeriod contract address
+   * @returns True if payment is still within escrow period, false if it has passed
    *
    * @example
    * ```typescript
-   * const { passed, authTime } = await client.isEscrowPeriodPassed(paymentInfo, recorderAddress);
-   * if (passed) {
-   *   console.log('Escrow period has passed');
+   * const inEscrow = await client.isDuringEscrowPeriod(paymentInfo, escrowPeriodAddress);
+   * if (!inEscrow) {
+   *   console.log('Escrow period has passed - funds can be released');
    * }
    * ```
    */
-  async isEscrowPeriodPassed(
+  async isDuringEscrowPeriod(
     paymentInfo: PaymentInfo,
-    recorderAddress: `0x${string}`
-  ): Promise<{ passed: boolean; authTime: bigint }> {
-    const [passed, authTime] = (await this.publicClient.readContract({
-      address: recorderAddress,
+    escrowPeriodAddress: `0x${string}`
+  ): Promise<boolean> {
+    const inEscrow = await this.publicClient.readContract({
+      address: escrowPeriodAddress,
       abi: EscrowPeriodABI,
-      functionName: 'isEscrowPeriodPassed',
+      functionName: 'isDuringEscrowPeriod',
       args: [paymentInfo as never],
-    })) as [boolean, bigint];
+    });
 
-    return { passed, authTime };
+    return inEscrow as boolean;
   }
 
   // ============ Subscriptions ============
@@ -797,15 +800,15 @@ export class X402rClient {
    * ```
    */
   watchFreezeEvents(
-    recorderAddress: `0x${string}`,
+    freezeAddress: `0x${string}`,
     callback: (event: unknown) => void
   ): { unsubscribe: () => void } {
     const unsubscribers: (() => void)[] = [];
 
     // Watch PaymentFrozen events
     const unsubscribeFrozen = this.publicClient.watchContractEvent({
-      address: recorderAddress,
-      abi: EscrowPeriodABI,
+      address: freezeAddress,
+      abi: FreezeABI,
       eventName: 'PaymentFrozen',
       onLogs: (logs) => {
         for (const log of logs) {
@@ -817,8 +820,8 @@ export class X402rClient {
 
     // Watch PaymentUnfrozen events
     const unsubscribeUnfrozen = this.publicClient.watchContractEvent({
-      address: recorderAddress,
-      abi: EscrowPeriodABI,
+      address: freezeAddress,
+      abi: FreezeABI,
       eventName: 'PaymentUnfrozen',
       onLogs: (logs) => {
         for (const log of logs) {

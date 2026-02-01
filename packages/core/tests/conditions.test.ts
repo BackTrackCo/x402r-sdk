@@ -25,11 +25,17 @@ describe('Condition ABIs', () => {
     expect(Array.isArray(IConditionABI)).toBe(true);
   });
 
-  it('should have check function in IConditionABI', () => {
+  it('should have check function in IConditionABI with 3 parameters', () => {
     const check = IConditionABI.find(
       (item) => item.type === 'function' && item.name === 'check'
     );
     expect(check).toBeDefined();
+    // Critical: check must have 3 parameters - paymentInfo, amount, caller
+    expect(check?.inputs).toHaveLength(3);
+    const inputNames = check?.inputs?.map((i) => i.name);
+    expect(inputNames).toContain('paymentInfo');
+    expect(inputNames).toContain('amount');
+    expect(inputNames).toContain('caller');
   });
 
   it('should export PayerConditionABI', () => {
@@ -99,9 +105,13 @@ describe('createConditionHelpers', () => {
     expect(helpers.ALWAYS_TRUE).toBe('0x785cC83DEa3d46D5509f3bf7496EAb26D42EE610');
   });
 
-  it('should throw when network has no condition singletons', () => {
-    // Base Mainnet has no conditions deployed yet (zero addresses)
-    expect(() => createConditionHelpers('eip155:8453')).toThrow();
+  it('should return helpers for Base Mainnet (conditions deployed)', () => {
+    // Base Mainnet also has condition singletons deployed
+    const helpers = createConditionHelpers('eip155:8453');
+    expect(helpers).toBeDefined();
+    expect(helpers.PAYER).toBe('0xb33D6502EdBbC47201cd1E53C49d703EC0a660b8');
+    expect(helpers.RECEIVER).toBe('0xed02d3E5167BCc9582D851885A89b050AB816a56');
+    expect(helpers.ALWAYS_TRUE).toBe('0xc9BbA6A2CF9838e7Dd8c19BC8B3BAC620B9D8178');
   });
 
   it('should throw for unsupported network', () => {

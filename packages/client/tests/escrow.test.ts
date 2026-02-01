@@ -162,39 +162,29 @@ describe('X402rClient - Escrow Operations', () => {
     });
   });
 
-  describe('isEscrowPeriodPassed', () => {
-    it('should return escrow period status and auth time', async () => {
+  describe('isDuringEscrowPeriod', () => {
+    it('should return true when still in escrow period', async () => {
       const client = new X402rClient({
         publicClient,
         operatorAddress,
       });
 
-      const timestamp = BigInt(1735689600);
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue([
-        true,
-        timestamp,
-      ]);
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(true);
 
-      const result = await client.isEscrowPeriodPassed(samplePaymentInfo, escrowRecorderAddress);
-      expect(result.passed).toBe(true);
-      expect(result.authTime).toBe(timestamp);
+      const result = await client.isDuringEscrowPeriod(samplePaymentInfo, escrowRecorderAddress);
+      expect(result).toBe(true);
     });
 
-    it('should return false when escrow period not passed', async () => {
+    it('should return false when escrow period has passed', async () => {
       const client = new X402rClient({
         publicClient,
         operatorAddress,
       });
 
-      const timestamp = BigInt(1735689600);
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue([
-        false,
-        timestamp,
-      ]);
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(false);
 
-      const result = await client.isEscrowPeriodPassed(samplePaymentInfo, escrowRecorderAddress);
-      expect(result.passed).toBe(false);
-      expect(result.authTime).toBe(timestamp);
+      const result = await client.isDuringEscrowPeriod(samplePaymentInfo, escrowRecorderAddress);
+      expect(result).toBe(false);
     });
   });
 });
