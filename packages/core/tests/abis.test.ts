@@ -159,12 +159,17 @@ describe('EscrowPeriodABI', () => {
     expect(inputNames).toContain('caller');
   });
 
-  it('should have record function (IRecorder)', () => {
+  it('should have record function (IRecorder) with 3 parameters', () => {
     const recordFn = EscrowPeriodABI.find(
       (item) => item.name === 'record' && item.type === 'function'
     );
     expect(recordFn).toBeDefined();
-    expect(recordFn?.inputs).toHaveLength(1);
+    // IRecorder.record(paymentInfo, amount, caller)
+    expect(recordFn?.inputs).toHaveLength(3);
+    const inputNames = recordFn?.inputs?.map((i) => i.name);
+    expect(inputNames).toContain('paymentInfo');
+    expect(inputNames).toContain('amount');
+    expect(inputNames).toContain('caller');
   });
 
   it('should have isDuringEscrowPeriod function', () => {

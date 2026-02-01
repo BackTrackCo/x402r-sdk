@@ -557,6 +557,8 @@ export const EscrowPeriodABI = [
     stateMutability: 'nonpayable',
     inputs: [
       { name: 'paymentInfo', type: 'tuple', components: paymentInfoComponents },
+      { name: 'amount', type: 'uint256' },
+      { name: 'caller', type: 'address' },
     ],
     outputs: [],
   },
