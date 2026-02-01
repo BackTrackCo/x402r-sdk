@@ -49,6 +49,8 @@ export interface NetworkConfig {
   refundRequest: `0x${string}`;
   /** ProtocolFeeConfig contract address */
   protocolFeeConfig: `0x${string}`;
+  /** UsdcTvlLimit condition contract address */
+  usdcTvlLimit: `0x${string}`;
   /** USDC token address */
   usdc: `0x${string}`;
   /** Factory addresses (optional - may not be deployed on all networks) */
@@ -74,6 +76,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     tokenCollector: '0xC80cd08d609673061597DE7fe54Af3978f10A825',
     refundRequest: '0x6926c05193c714ED4bA3867Ee93d6816Fdc14128',
     protocolFeeConfig: '0x1e52a74cE6b69F04a506eF815743E1052A1BD28F',
+    usdcTvlLimit: '0xcb9F7C34C6DecFB010385e1454ae1BF3182D78E7',
     usdc: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
     factories: {
       paymentOperator: '0xFa8C4Cb156053b867Ae7489220A29b5939E3Df70',
@@ -92,11 +95,11 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
   'eip155:8453': {
     name: 'Base Mainnet',
     chainId: 8453,
-    // TODO: Update with deployed contract addresses after mainnet deployment
-    authCaptureEscrow: '0x0000000000000000000000000000000000000000',
-    tokenCollector: '0x0000000000000000000000000000000000000000',
-    refundRequest: '0x0000000000000000000000000000000000000000',
-    protocolFeeConfig: '0x0000000000000000000000000000000000000000',
+    authCaptureEscrow: '0x320a3c35F131E5D2Fb36af56345726B298936037',
+    tokenCollector: '0x32d6AC59BCe8DFB3026F10BcaDB8D00AB218f5b6',
+    refundRequest: '0xc1256Bb30bd0cdDa07D8C8Cf67a59105f2EA1b98',
+    protocolFeeConfig: '0x230fd3A171750FA45db2976121376b7F47Cba308',
+    usdcTvlLimit: '0xE78648e7af7B1BaDE717FF6E410B922F92adE80f',
     usdc: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
     // factories and conditions not yet deployed on mainnet
   },
