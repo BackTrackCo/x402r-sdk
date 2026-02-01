@@ -6,6 +6,9 @@
 // Re-export StaticAddressConditionABI from abis for convenience
 export { StaticAddressConditionABI } from '../abis/index.js';
 
+// Import network config helpers
+import { getConditionSingletons as getNetworkConditionSingletons, type ConditionSingletonAddresses } from '../config/index.js';
+
 // ============ Types ============
 
 /**
@@ -54,34 +57,19 @@ export type ConditionConfig =
   | NotConditionConfig
   | StaticAddressConditionConfig;
 
-// ============ Singleton Addresses ============
-
-/**
- * Deployed singleton condition addresses
- * These are deployed once and can be reused across all operators
- *
- * @remarks
- * These addresses are placeholders and will be updated with real
- * deployed addresses on each network. Use with NETWORK_CONFIG
- * for network-specific addresses.
- */
-export const CONDITION_SINGLETONS = {
-  /** PayerCondition singleton - checks if caller is the payer */
-  PAYER: '0x0000000000000000000000000000000000000001' as ConditionAddress,
-  /** ReceiverCondition singleton - checks if caller is the receiver */
-  RECEIVER: '0x0000000000000000000000000000000000000002' as ConditionAddress,
-  /** AlwaysTrueCondition singleton - always returns true */
-  ALWAYS_TRUE: '0x0000000000000000000000000000000000000003' as ConditionAddress,
-} as const;
-
 // ============ Condition Builder ============
 
 /**
- * Helper functions for composing conditions
+ * Create a network-aware condition helper
+ *
+ * @param networkId - EIP-155 chain identifier
+ * @returns Condition helper with network-specific singleton addresses
  *
  * @example
  * ```typescript
- * // Simple: receiver OR designated arbiter
+ * const conditions = createConditionHelpers('eip155:84532');
+ *
+ * // Use network-specific singleton addresses
  * const releaseCondition = conditions.or([
  *   conditions.RECEIVER,
  *   arbiterConditionAddress,
@@ -94,70 +82,74 @@ export const CONDITION_SINGLETONS = {
  * ]);
  * ```
  */
-export const conditions = {
-  /** PayerCondition singleton address */
-  get PAYER(): ConditionAddress {
-    return CONDITION_SINGLETONS.PAYER;
-  },
+export function createConditionHelpers(networkId: string) {
+  const singletons = getNetworkConditionSingletons(networkId);
 
-  /** ReceiverCondition singleton address */
-  get RECEIVER(): ConditionAddress {
-    return CONDITION_SINGLETONS.RECEIVER;
-  },
+  return {
+    /** PayerCondition singleton address for this network */
+    get PAYER(): ConditionAddress {
+      return singletons.payer;
+    },
 
-  /** AlwaysTrueCondition singleton address */
-  get ALWAYS_TRUE(): ConditionAddress {
-    return CONDITION_SINGLETONS.ALWAYS_TRUE;
-  },
+    /** ReceiverCondition singleton address for this network */
+    get RECEIVER(): ConditionAddress {
+      return singletons.receiver;
+    },
 
-  /**
-   * Create an AND condition configuration
-   * @param conditionList - Array of conditions to combine with AND logic
-   * @returns AND condition config for deployment
-   */
-  and(conditionList: (ConditionAddress | ConditionConfig)[]): AndConditionConfig {
-    return {
-      type: 'and',
-      conditions: conditionList,
-    };
-  },
+    /** AlwaysTrueCondition singleton address for this network */
+    get ALWAYS_TRUE(): ConditionAddress {
+      return singletons.alwaysTrue;
+    },
 
-  /**
-   * Create an OR condition configuration
-   * @param conditionList - Array of conditions to combine with OR logic
-   * @returns OR condition config for deployment
-   */
-  or(conditionList: (ConditionAddress | ConditionConfig)[]): OrConditionConfig {
-    return {
-      type: 'or',
-      conditions: conditionList,
-    };
-  },
+    /**
+     * Create an AND condition configuration
+     * @param conditionList - Array of conditions to combine with AND logic
+     * @returns AND condition config for deployment
+     */
+    and(conditionList: (ConditionAddress | ConditionConfig)[]): AndConditionConfig {
+      return {
+        type: 'and',
+        conditions: conditionList,
+      };
+    },
 
-  /**
-   * Create a NOT condition configuration
-   * @param condition - Condition to negate
-   * @returns NOT condition config for deployment
-   */
-  not(condition: ConditionAddress | ConditionConfig): NotConditionConfig {
-    return {
-      type: 'not',
-      condition,
-    };
-  },
+    /**
+     * Create an OR condition configuration
+     * @param conditionList - Array of conditions to combine with OR logic
+     * @returns OR condition config for deployment
+     */
+    or(conditionList: (ConditionAddress | ConditionConfig)[]): OrConditionConfig {
+      return {
+        type: 'or',
+        conditions: conditionList,
+      };
+    },
 
-  /**
-   * Create a StaticAddressCondition configuration
-   * @param designatedAddress - The address that will be allowed
-   * @returns StaticAddressCondition config for deployment
-   */
-  staticAddress(designatedAddress: `0x${string}`): StaticAddressConditionConfig {
-    return {
-      type: 'staticAddress',
-      designatedAddress,
-    };
-  },
-} as const;
+    /**
+     * Create a NOT condition configuration
+     * @param condition - Condition to negate
+     * @returns NOT condition config for deployment
+     */
+    not(condition: ConditionAddress | ConditionConfig): NotConditionConfig {
+      return {
+        type: 'not',
+        condition,
+      };
+    },
+
+    /**
+     * Create a StaticAddressCondition configuration
+     * @param designatedAddress - The address that will be allowed
+     * @returns StaticAddressCondition config for deployment
+     */
+    staticAddress(designatedAddress: `0x${string}`): StaticAddressConditionConfig {
+      return {
+        type: 'staticAddress',
+        designatedAddress,
+      };
+    },
+  } as const;
+}
 
 // ============ Condition ABIs ============
 

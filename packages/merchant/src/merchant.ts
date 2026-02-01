@@ -8,7 +8,7 @@ import {
   PaymentOperatorABI,
   AuthCaptureEscrowABI,
   RefundRequestABI,
-  EscrowPeriodRecorderABI,
+  EscrowPeriodABI,
   RequestStatus,
   NotImplementedError,
   computePaymentInfoHash,
@@ -755,7 +755,7 @@ export class X402rMerchant {
    * Unfreeze a payment that was previously frozen
    *
    * @param paymentInfo - The payment information struct
-   * @param escrowRecorderAddress - The EscrowPeriodRecorder contract address
+   * @param escrowRecorderAddress - The EscrowPeriod contract address
    * @returns Transaction hash
    *
    * @example
@@ -772,7 +772,7 @@ export class X402rMerchant {
       chain: this.walletClient.chain,
       account: this.walletClient.account!,
       address: escrowRecorderAddress,
-      abi: EscrowPeriodRecorderABI,
+      abi: EscrowPeriodABI,
       functionName: 'unfreeze',
       args: [paymentInfo as never],
     });
@@ -784,7 +784,7 @@ export class X402rMerchant {
    * Check if a payment is currently frozen
    *
    * @param paymentInfo - The payment information struct
-   * @param escrowRecorderAddress - The EscrowPeriodRecorder contract address
+   * @param escrowRecorderAddress - The EscrowPeriod contract address
    * @returns True if the payment is frozen
    *
    * @example
@@ -801,7 +801,7 @@ export class X402rMerchant {
   ): Promise<boolean> {
     const frozen = await this.publicClient.readContract({
       address: escrowRecorderAddress,
-      abi: EscrowPeriodRecorderABI,
+      abi: EscrowPeriodABI,
       functionName: 'isFrozen',
       args: [paymentInfo as never],
     });
@@ -881,7 +881,7 @@ export class X402rMerchant {
   /**
    * Watch for freeze/unfreeze events on an escrow recorder
    *
-   * @param escrowRecorderAddress - The EscrowPeriodRecorder contract address
+   * @param escrowRecorderAddress - The EscrowPeriod contract address
    * @param callback - Function to call when a freeze event is received
    * @returns Object with unsubscribe function
    *
@@ -901,7 +901,7 @@ export class X402rMerchant {
   ): { unsubscribe: () => void } {
     const unsubscribeFrozen = this.publicClient.watchContractEvent({
       address: escrowRecorderAddress,
-      abi: EscrowPeriodRecorderABI,
+      abi: EscrowPeriodABI,
       eventName: 'PaymentFrozen',
       onLogs: (logs) => {
         for (const log of logs) {
@@ -912,7 +912,7 @@ export class X402rMerchant {
 
     const unsubscribeUnfrozen = this.publicClient.watchContractEvent({
       address: escrowRecorderAddress,
-      abi: EscrowPeriodRecorderABI,
+      abi: EscrowPeriodABI,
       eventName: 'PaymentUnfrozen',
       onLogs: (logs) => {
         for (const log of logs) {

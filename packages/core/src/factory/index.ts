@@ -17,6 +17,7 @@ export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as cons
  * ```typescript
  * const config: PaymentOperatorConfig = {
  *   feeRecipient: '0x...',
+ *   feeCalculator: '0x0000000000000000000000000000000000000000', // No operator fee
  *   authorizeCondition: '0x0000000000000000000000000000000000000000',
  *   // ... other fields default to zero address
  * };
@@ -25,6 +26,8 @@ export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as cons
 export interface PaymentOperatorConfig {
   /** Address to receive operator fees */
   feeRecipient: `0x${string}`;
+  /** Fee calculator contract (address(0) = no operator fee) */
+  feeCalculator: `0x${string}`;
   /** Condition to check before authorize (address(0) = always allow) */
   authorizeCondition: `0x${string}`;
   /** Recorder to call after authorize (address(0) = no-op) */
@@ -53,6 +56,7 @@ export interface PaymentOperatorConfig {
  */
 export interface PaymentOperatorConfigInput {
   feeRecipient: `0x${string}`;
+  feeCalculator?: `0x${string}`;
   authorizeCondition?: `0x${string}`;
   authorizeRecorder?: `0x${string}`;
   chargeCondition?: `0x${string}`;
@@ -73,16 +77,18 @@ export interface PaymentOperatorConfigInput {
  *
  * @example
  * ```typescript
+ * // EscrowPeriod is ONE contract - use same address for recorder AND condition
  * const config = createPaymentOperatorConfig({
  *   feeRecipient: '0x1234...',
- *   releaseCondition: escrowPeriodConditionAddress,
- *   releaseRecorder: escrowPeriodRecorderAddress,
+ *   authorizeRecorder: escrowPeriodAddress,  // Records authorization timestamp
+ *   releaseCondition: escrowPeriodAddress,   // Checks if escrow period passed
  * });
  * ```
  */
 export function createPaymentOperatorConfig(input: PaymentOperatorConfigInput): PaymentOperatorConfig {
   return {
     feeRecipient: input.feeRecipient,
+    feeCalculator: input.feeCalculator ?? ZERO_ADDRESS,
     authorizeCondition: input.authorizeCondition ?? ZERO_ADDRESS,
     authorizeRecorder: input.authorizeRecorder ?? ZERO_ADDRESS,
     chargeCondition: input.chargeCondition ?? ZERO_ADDRESS,
@@ -97,13 +103,22 @@ export function createPaymentOperatorConfig(input: PaymentOperatorConfigInput): 
 }
 
 /**
- * Configuration for deploying EscrowPeriodRecorder and EscrowPeriodCondition
+ * Zero bytes32 constant for authorizedCodehash (allows any operator)
+ */
+export const ZERO_BYTES32 = '0x0000000000000000000000000000000000000000000000000000000000000000' as const;
+
+/**
+ * Configuration for deploying an EscrowPeriod contract
+ *
+ * @remarks
+ * EscrowPeriod is a single contract that implements BOTH IRecorder and ICondition.
+ * It records authorization timestamps and checks if the escrow period has passed.
  */
 export interface EscrowPeriodConfig {
   /** Duration of the escrow period in seconds */
   escrowPeriod: bigint;
-  /** Address of the freeze policy (address(0) = no freeze capability) */
-  freezePolicy: `0x${string}`;
+  /** Runtime codehash of authorized caller (bytes32(0) = any operator can record) */
+  authorizedCodehash: `0x${string}`;
 }
 
 /**
@@ -111,7 +126,8 @@ export interface EscrowPeriodConfig {
  */
 export interface EscrowPeriodConfigInput {
   escrowPeriod: bigint;
-  freezePolicy?: `0x${string}`;
+  /** Runtime codehash of authorized caller (defaults to bytes32(0) = any operator) */
+  authorizedCodehash?: `0x${string}`;
 }
 
 /**
@@ -122,7 +138,7 @@ export interface EscrowPeriodConfigInput {
  *
  * @example
  * ```typescript
- * // 7 day escrow period without freeze
+ * // 7 day escrow period, any operator can record
  * const config = createEscrowPeriodConfig({
  *   escrowPeriod: 604800n,
  * });
@@ -131,7 +147,7 @@ export interface EscrowPeriodConfigInput {
 export function createEscrowPeriodConfig(input: EscrowPeriodConfigInput): EscrowPeriodConfig {
   return {
     escrowPeriod: input.escrowPeriod,
-    freezePolicy: input.freezePolicy ?? ZERO_ADDRESS,
+    authorizedCodehash: input.authorizedCodehash ?? ZERO_BYTES32,
   };
 }
 
@@ -183,10 +199,11 @@ export function createFreezePolicyConfig(input: FreezePolicyConfigInput): Freeze
 // ============ Factory ABIs ============
 
 /**
- * OperatorConfig struct components for ABI encoding
+ * OperatorConfig struct components for ABI encoding (12 fields total)
  */
 const operatorConfigComponents = [
   { name: 'feeRecipient', type: 'address' },
+  { name: 'feeCalculator', type: 'address' },
   { name: 'authorizeCondition', type: 'address' },
   { name: 'authorizeRecorder', type: 'address' },
   { name: 'chargeCondition', type: 'address' },
@@ -297,26 +314,34 @@ export const PaymentOperatorFactoryABI = [
 ] as const;
 
 /**
- * ABI for EscrowPeriodConditionFactory contract
+ * ABI for EscrowPeriodFactory contract
+ *
+ * @remarks
+ * EscrowPeriod is a SINGLE contract that implements both IRecorder and ICondition.
+ * The factory deploys one contract per (escrowPeriod, authorizedCodehash) combination.
  *
  * Key functions:
- * - computeAddresses(escrowPeriod, freezePolicy) - Get deterministic addresses
- * - deploy(escrowPeriod, freezePolicy) - Deploy recorder and condition pair
- * - getDeployed(escrowPeriod, freezePolicy) - Get deployed addresses
+ * - computeAddress(escrowPeriod, authorizedCodehash) - Get deterministic address
+ * - deploy(escrowPeriod, authorizedCodehash) - Deploy EscrowPeriod contract
+ * - getDeployed(escrowPeriod, authorizedCodehash) - Get deployed address
  */
-export const EscrowPeriodConditionFactoryABI = [
+export const EscrowPeriodFactoryABI = [
   // View functions
   {
     type: 'function',
-    name: 'computeAddresses',
+    name: 'ESCROW',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'computeAddress',
     inputs: [
       { name: 'escrowPeriod', type: 'uint256' },
-      { name: 'freezePolicy', type: 'address' },
+      { name: 'authorizedCodehash', type: 'bytes32' },
     ],
-    outputs: [
-      { name: 'recorder', type: 'address' },
-      { name: 'condition', type: 'address' },
-    ],
+    outputs: [{ name: '', type: 'address' }],
     stateMutability: 'view',
   },
   {
@@ -324,12 +349,9 @@ export const EscrowPeriodConditionFactoryABI = [
     name: 'getDeployed',
     inputs: [
       { name: 'escrowPeriod', type: 'uint256' },
-      { name: 'freezePolicy', type: 'address' },
+      { name: 'authorizedCodehash', type: 'bytes32' },
     ],
-    outputs: [
-      { name: 'recorder', type: 'address' },
-      { name: 'condition', type: 'address' },
-    ],
+    outputs: [{ name: '', type: 'address' }],
     stateMutability: 'view',
   },
   {
@@ -337,21 +359,14 @@ export const EscrowPeriodConditionFactoryABI = [
     name: 'getKey',
     inputs: [
       { name: 'escrowPeriod', type: 'uint256' },
-      { name: 'freezePolicy', type: 'address' },
+      { name: 'authorizedCodehash', type: 'bytes32' },
     ],
     outputs: [{ name: '', type: 'bytes32' }],
     stateMutability: 'pure',
   },
   {
     type: 'function',
-    name: 'recorders',
-    inputs: [{ name: '', type: 'bytes32' }],
-    outputs: [{ name: '', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'conditions',
+    name: 'deployments',
     inputs: [{ name: '', type: 'bytes32' }],
     outputs: [{ name: '', type: 'address' }],
     stateMutability: 'view',
@@ -362,25 +377,22 @@ export const EscrowPeriodConditionFactoryABI = [
     name: 'deploy',
     inputs: [
       { name: 'escrowPeriod', type: 'uint256' },
-      { name: 'freezePolicy', type: 'address' },
+      { name: 'authorizedCodehash', type: 'bytes32' },
     ],
-    outputs: [
-      { name: 'recorder', type: 'address' },
-      { name: 'condition', type: 'address' },
-    ],
+    outputs: [{ name: 'escrowPeriodAddr', type: 'address' }],
     stateMutability: 'nonpayable',
   },
   // Events
   {
     type: 'event',
-    name: 'EscrowPeriodConditionDeployed',
+    name: 'EscrowPeriodDeployed',
     inputs: [
-      { name: 'condition', type: 'address', indexed: true },
-      { name: 'recorder', type: 'address', indexed: false },
-      { name: 'escrowPeriod', type: 'uint256', indexed: false },
+      { name: 'escrowPeriod', type: 'address', indexed: true },
+      { name: 'escrowPeriodDuration', type: 'uint256', indexed: false },
     ],
   },
 ] as const;
+
 
 /**
  * ABI for FreezePolicyFactory contract
@@ -454,5 +466,214 @@ export const FreezePolicyFactoryABI = [
       { name: 'unfreezeCondition', type: 'address', indexed: false },
       { name: 'freezeDuration', type: 'uint256', indexed: false },
     ],
+  },
+] as const;
+
+/**
+ * ABI for FreezeFactory contract
+ *
+ * Deploys Freeze condition contracts that control payment freezing.
+ *
+ * Key functions:
+ * - computeAddress(freezePolicy, escrowPeriodContract) - Get deterministic address
+ * - deploy(freezePolicy, escrowPeriodContract) - Deploy Freeze contract
+ * - getDeployed(freezePolicy, escrowPeriodContract) - Get deployed address
+ */
+export const FreezeFactoryABI = [
+  // View functions
+  {
+    type: 'function',
+    name: 'ESCROW',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'computeAddress',
+    inputs: [
+      { name: 'freezePolicy', type: 'address' },
+      { name: 'escrowPeriodContract', type: 'address' },
+    ],
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getDeployed',
+    inputs: [
+      { name: 'freezePolicy', type: 'address' },
+      { name: 'escrowPeriodContract', type: 'address' },
+    ],
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getKey',
+    inputs: [
+      { name: 'freezePolicy', type: 'address' },
+      { name: 'escrowPeriodContract', type: 'address' },
+    ],
+    outputs: [{ name: '', type: 'bytes32' }],
+    stateMutability: 'pure',
+  },
+  {
+    type: 'function',
+    name: 'deployments',
+    inputs: [{ name: '', type: 'bytes32' }],
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+  },
+  // Write functions
+  {
+    type: 'function',
+    name: 'deploy',
+    inputs: [
+      { name: 'freezePolicy', type: 'address' },
+      { name: 'escrowPeriodContract', type: 'address' },
+    ],
+    outputs: [{ name: 'freezeAddr', type: 'address' }],
+    stateMutability: 'nonpayable',
+  },
+  // Events
+  {
+    type: 'event',
+    name: 'FreezeDeployed',
+    inputs: [
+      { name: 'freeze', type: 'address', indexed: true },
+      { name: 'freezePolicy', type: 'address', indexed: false },
+      { name: 'escrowPeriodContract', type: 'address', indexed: false },
+    ],
+  },
+] as const;
+
+/**
+ * ABI for StaticFeeCalculatorFactory contract
+ *
+ * Deploys StaticFeeCalculator contracts for fixed basis point fees.
+ *
+ * Key functions:
+ * - computeAddress(feeBps) - Get deterministic address
+ * - deploy(feeBps) - Deploy calculator
+ * - getDeployed(feeBps) - Get deployed address
+ */
+export const StaticFeeCalculatorFactoryABI = [
+  // View functions
+  {
+    type: 'function',
+    name: 'computeAddress',
+    inputs: [{ name: 'feeBps', type: 'uint256' }],
+    outputs: [{ name: 'calculator', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getDeployed',
+    inputs: [{ name: 'feeBps', type: 'uint256' }],
+    outputs: [{ name: 'calculator', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getKey',
+    inputs: [{ name: 'feeBps', type: 'uint256' }],
+    outputs: [{ name: '', type: 'bytes32' }],
+    stateMutability: 'pure',
+  },
+  {
+    type: 'function',
+    name: 'calculators',
+    inputs: [{ name: '', type: 'bytes32' }],
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+  },
+  // Write functions
+  {
+    type: 'function',
+    name: 'deploy',
+    inputs: [{ name: 'feeBps', type: 'uint256' }],
+    outputs: [{ name: 'calculator', type: 'address' }],
+    stateMutability: 'nonpayable',
+  },
+  // Events
+  {
+    type: 'event',
+    name: 'StaticFeeCalculatorDeployed',
+    inputs: [
+      { name: 'calculator', type: 'address', indexed: true },
+      { name: 'feeBps', type: 'uint256', indexed: false },
+    ],
+  },
+  // Errors
+  {
+    type: 'error',
+    name: 'FeeTooHigh',
+    inputs: [],
+  },
+] as const;
+
+/**
+ * ABI for StaticAddressConditionFactory contract
+ *
+ * Deploys StaticAddressCondition contracts that check if caller matches a designated address.
+ *
+ * Key functions:
+ * - computeAddress(designatedAddress) - Get deterministic address
+ * - deploy(designatedAddress) - Deploy condition
+ * - getDeployed(designatedAddress) - Get deployed address
+ */
+export const StaticAddressConditionFactoryABI = [
+  // View functions
+  {
+    type: 'function',
+    name: 'computeAddress',
+    inputs: [{ name: 'designatedAddress', type: 'address' }],
+    outputs: [{ name: 'condition', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getDeployed',
+    inputs: [{ name: 'designatedAddress', type: 'address' }],
+    outputs: [{ name: 'condition', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getKey',
+    inputs: [{ name: 'designatedAddress', type: 'address' }],
+    outputs: [{ name: '', type: 'bytes32' }],
+    stateMutability: 'pure',
+  },
+  {
+    type: 'function',
+    name: 'conditions',
+    inputs: [{ name: '', type: 'bytes32' }],
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+  },
+  // Write functions
+  {
+    type: 'function',
+    name: 'deploy',
+    inputs: [{ name: 'designatedAddress', type: 'address' }],
+    outputs: [{ name: 'condition', type: 'address' }],
+    stateMutability: 'nonpayable',
+  },
+  // Events
+  {
+    type: 'event',
+    name: 'StaticAddressConditionDeployed',
+    inputs: [
+      { name: 'condition', type: 'address', indexed: true },
+      { name: 'designatedAddress', type: 'address', indexed: true },
+    ],
+  },
+  // Errors
+  {
+    type: 'error',
+    name: 'ZeroAddress',
+    inputs: [],
   },
 ] as const;

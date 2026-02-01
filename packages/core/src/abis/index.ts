@@ -525,9 +525,16 @@ export const RefundRequestABI = [
 ] as const;
 
 /**
- * EscrowPeriodRecorder ABI - Tracks authorization times and freeze state
+ * EscrowPeriod contract ABI
+ *
+ * EscrowPeriod is a SINGLE contract implementing both IRecorder and ICondition.
+ * Use this ABI to read state (getAuthorizationTime, isFrozen, isEscrowPeriodPassed)
+ * and call recorder methods (freeze, unfreeze).
+ *
+ * The same deployed address is used for both authorizeRecorder and releaseCondition
+ * in PaymentOperatorConfig.
  */
-export const EscrowPeriodRecorderABI = [
+export const EscrowPeriodABI = [
   // Functions
   {
     name: 'freeze',
@@ -699,6 +706,6 @@ export const StaticAddressConditionABI = [
 // Export types for ABI consumers
 export type PaymentOperatorABIType = typeof PaymentOperatorABI;
 export type RefundRequestABIType = typeof RefundRequestABI;
-export type EscrowPeriodRecorderABIType = typeof EscrowPeriodRecorderABI;
+export type EscrowPeriodABIType = typeof EscrowPeriodABI;
 export type AuthCaptureEscrowABIType = typeof AuthCaptureEscrowABI;
 export type StaticAddressConditionABIType = typeof StaticAddressConditionABI;

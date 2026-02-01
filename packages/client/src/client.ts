@@ -7,7 +7,7 @@ import type { PublicClient, WalletClient } from 'viem';
 import {
   PaymentOperatorABI,
   RefundRequestABI,
-  EscrowPeriodRecorderABI,
+  EscrowPeriodABI,
   NotImplementedError,
   type PaymentInfo,
   type PaymentState,
@@ -453,7 +453,7 @@ export class X402rClient {
    * Freeze a payment to extend the escrow period
    *
    * @param paymentInfo - The payment information struct
-   * @param recorderAddress - The EscrowPeriodRecorder contract address
+   * @param recorderAddress - The EscrowPeriod contract address
    * @returns Transaction hash
    * @throws Error if walletClient is not configured
    *
@@ -475,7 +475,7 @@ export class X402rClient {
       chain: this.walletClient.chain,
       account: this.walletClient.account!,
       address: recorderAddress,
-      abi: EscrowPeriodRecorderABI,
+      abi: EscrowPeriodABI,
       functionName: 'freeze',
       args: [paymentInfo as never],
     });
@@ -487,7 +487,7 @@ export class X402rClient {
    * Unfreeze a payment that was previously frozen
    *
    * @param paymentInfo - The payment information struct
-   * @param recorderAddress - The EscrowPeriodRecorder contract address
+   * @param recorderAddress - The EscrowPeriod contract address
    * @returns Transaction hash
    * @throws Error if walletClient is not configured
    *
@@ -509,7 +509,7 @@ export class X402rClient {
       chain: this.walletClient.chain,
       account: this.walletClient.account!,
       address: recorderAddress,
-      abi: EscrowPeriodRecorderABI,
+      abi: EscrowPeriodABI,
       functionName: 'unfreeze',
       args: [paymentInfo as never],
     });
@@ -521,7 +521,7 @@ export class X402rClient {
    * Check if a payment is currently frozen
    *
    * @param paymentInfo - The payment information struct
-   * @param recorderAddress - The EscrowPeriodRecorder contract address
+   * @param recorderAddress - The EscrowPeriod contract address
    * @returns True if payment is frozen
    *
    * @example
@@ -537,7 +537,7 @@ export class X402rClient {
   ): Promise<boolean> {
     const frozen = await this.publicClient.readContract({
       address: recorderAddress,
-      abi: EscrowPeriodRecorderABI,
+      abi: EscrowPeriodABI,
       functionName: 'isFrozen',
       args: [paymentInfo as never],
     });
@@ -549,7 +549,7 @@ export class X402rClient {
    * Get the authorization time for a payment
    *
    * @param paymentInfo - The payment information struct
-   * @param recorderAddress - The EscrowPeriodRecorder contract address
+   * @param recorderAddress - The EscrowPeriod contract address
    * @returns The timestamp when the payment was authorized
    *
    * @example
@@ -564,7 +564,7 @@ export class X402rClient {
   ): Promise<bigint> {
     const authTime = await this.publicClient.readContract({
       address: recorderAddress,
-      abi: EscrowPeriodRecorderABI,
+      abi: EscrowPeriodABI,
       functionName: 'getAuthorizationTime',
       args: [paymentInfo as never],
     });
@@ -576,7 +576,7 @@ export class X402rClient {
    * Check if the escrow period has passed for a payment
    *
    * @param paymentInfo - The payment information struct
-   * @param recorderAddress - The EscrowPeriodRecorder contract address
+   * @param recorderAddress - The EscrowPeriod contract address
    * @returns Object with passed status and authorization time
    *
    * @example
@@ -593,7 +593,7 @@ export class X402rClient {
   ): Promise<{ passed: boolean; authTime: bigint }> {
     const [passed, authTime] = (await this.publicClient.readContract({
       address: recorderAddress,
-      abi: EscrowPeriodRecorderABI,
+      abi: EscrowPeriodABI,
       functionName: 'isEscrowPeriodPassed',
       args: [paymentInfo as never],
     })) as [boolean, bigint];
@@ -784,7 +784,7 @@ export class X402rClient {
   /**
    * Watch for freeze and unfreeze events
    *
-   * @param recorderAddress - The EscrowPeriodRecorder contract address
+   * @param recorderAddress - The EscrowPeriod contract address
    * @param callback - Callback function called on freeze events
    * @returns Object with unsubscribe function
    *
@@ -805,7 +805,7 @@ export class X402rClient {
     // Watch PaymentFrozen events
     const unsubscribeFrozen = this.publicClient.watchContractEvent({
       address: recorderAddress,
-      abi: EscrowPeriodRecorderABI,
+      abi: EscrowPeriodABI,
       eventName: 'PaymentFrozen',
       onLogs: (logs) => {
         for (const log of logs) {
@@ -818,7 +818,7 @@ export class X402rClient {
     // Watch PaymentUnfrozen events
     const unsubscribeUnfrozen = this.publicClient.watchContractEvent({
       address: recorderAddress,
-      abi: EscrowPeriodRecorderABI,
+      abi: EscrowPeriodABI,
       eventName: 'PaymentUnfrozen',
       onLogs: (logs) => {
         for (const log of logs) {

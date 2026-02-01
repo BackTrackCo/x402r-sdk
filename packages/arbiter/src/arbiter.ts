@@ -7,7 +7,7 @@ import type { PublicClient, WalletClient } from 'viem';
 import {
   PaymentOperatorABI,
   RefundRequestABI,
-  EscrowPeriodRecorderABI,
+  EscrowPeriodABI,
   RequestStatus,
   NotImplementedError,
   type PaymentInfo,
@@ -609,7 +609,7 @@ export class X402rArbiter {
   /**
    * Watch for freeze/unfreeze events on an escrow recorder
    *
-   * @param escrowRecorderAddress - The EscrowPeriodRecorder contract address
+   * @param escrowRecorderAddress - The EscrowPeriod contract address
    * @param callback - Function to call when a freeze event is received
    * @returns Object with unsubscribe function
    *
@@ -629,7 +629,7 @@ export class X402rArbiter {
   ): { unsubscribe: () => void } {
     const unsubscribeFrozen = this.publicClient.watchContractEvent({
       address: escrowRecorderAddress,
-      abi: EscrowPeriodRecorderABI,
+      abi: EscrowPeriodABI,
       eventName: 'PaymentFrozen',
       onLogs: (logs) => {
         for (const log of logs) {
@@ -640,7 +640,7 @@ export class X402rArbiter {
 
     const unsubscribeUnfrozen = this.publicClient.watchContractEvent({
       address: escrowRecorderAddress,
-      abi: EscrowPeriodRecorderABI,
+      abi: EscrowPeriodABI,
       eventName: 'PaymentUnfrozen',
       onLogs: (logs) => {
         for (const log of logs) {

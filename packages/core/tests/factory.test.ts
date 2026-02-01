@@ -7,9 +7,13 @@ import {
   createEscrowPeriodConfig,
   createFreezePolicyConfig,
   PaymentOperatorFactoryABI,
-  EscrowPeriodConditionFactoryABI,
+  EscrowPeriodFactoryABI,
   FreezePolicyFactoryABI,
+  FreezeFactoryABI,
+  StaticFeeCalculatorFactoryABI,
+  StaticAddressConditionFactoryABI,
   ZERO_ADDRESS,
+  ZERO_BYTES32,
 } from '../src/factory/index.js';
 
 describe('PaymentOperatorConfig', () => {
@@ -19,6 +23,7 @@ describe('PaymentOperatorConfig', () => {
     });
 
     expect(config.feeRecipient).toBe('0x1234567890123456789012345678901234567890');
+    expect(config.feeCalculator).toBe(ZERO_ADDRESS);
     expect(config.authorizeCondition).toBe(ZERO_ADDRESS);
     expect(config.authorizeRecorder).toBe(ZERO_ADDRESS);
     expect(config.releaseCondition).toBe(ZERO_ADDRESS);
@@ -28,6 +33,7 @@ describe('PaymentOperatorConfig', () => {
   it('should create a config with all conditions', () => {
     const config = createPaymentOperatorConfig({
       feeRecipient: '0x1234567890123456789012345678901234567890',
+      feeCalculator: '0x1111111111111111111111111111111111111111',
       authorizeCondition: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
       authorizeRecorder: '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
       releaseCondition: '0xcccccccccccccccccccccccccccccccccccccccc',
@@ -37,14 +43,16 @@ describe('PaymentOperatorConfig', () => {
     });
 
     expect(config.feeRecipient).toBe('0x1234567890123456789012345678901234567890');
+    expect(config.feeCalculator).toBe('0x1111111111111111111111111111111111111111');
     expect(config.authorizeCondition).toBe('0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
     expect(config.releaseCondition).toBe('0xcccccccccccccccccccccccccccccccccccccccc');
     expect(config.refundInEscrowCondition).toBe('0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee');
   });
 
-  it('should have correct type structure', () => {
+  it('should have correct type structure with 12 fields', () => {
     const config: PaymentOperatorConfig = {
       feeRecipient: '0x1234567890123456789012345678901234567890',
+      feeCalculator: '0x0000000000000000000000000000000000000000',
       authorizeCondition: '0x0000000000000000000000000000000000000000',
       authorizeRecorder: '0x0000000000000000000000000000000000000000',
       chargeCondition: '0x0000000000000000000000000000000000000000',
@@ -57,38 +65,39 @@ describe('PaymentOperatorConfig', () => {
       refundPostEscrowRecorder: '0x0000000000000000000000000000000000000000',
     };
 
-    expect(Object.keys(config)).toHaveLength(11);
+    expect(Object.keys(config)).toHaveLength(12);
   });
 });
 
 describe('EscrowPeriodConfig', () => {
-  it('should create config without freeze policy', () => {
+  it('should create config with default authorizedCodehash', () => {
     const config = createEscrowPeriodConfig({
       escrowPeriod: 86400n, // 1 day in seconds
     });
 
     expect(config.escrowPeriod).toBe(86400n);
-    expect(config.freezePolicy).toBe(ZERO_ADDRESS);
+    expect(config.authorizedCodehash).toBe(ZERO_BYTES32);
   });
 
-  it('should create config with freeze policy', () => {
+  it('should create config with custom authorizedCodehash', () => {
+    const customCodehash = '0x1234567890123456789012345678901234567890123456789012345678901234';
     const config = createEscrowPeriodConfig({
       escrowPeriod: 604800n, // 7 days
-      freezePolicy: '0x1234567890123456789012345678901234567890',
+      authorizedCodehash: customCodehash,
     });
 
     expect(config.escrowPeriod).toBe(604800n);
-    expect(config.freezePolicy).toBe('0x1234567890123456789012345678901234567890');
+    expect(config.authorizedCodehash).toBe(customCodehash);
   });
 
   it('should have correct type structure', () => {
     const config: EscrowPeriodConfig = {
       escrowPeriod: 86400n,
-      freezePolicy: '0x0000000000000000000000000000000000000000',
+      authorizedCodehash: ZERO_BYTES32,
     };
 
     expect(config.escrowPeriod).toBeDefined();
-    expect(config.freezePolicy).toBeDefined();
+    expect(config.authorizedCodehash).toBeDefined();
   });
 });
 
@@ -128,73 +137,158 @@ describe('FreezePolicyConfig', () => {
 });
 
 describe('Factory ABIs', () => {
-  it('should export PaymentOperatorFactoryABI', () => {
-    expect(PaymentOperatorFactoryABI).toBeDefined();
-    expect(Array.isArray(PaymentOperatorFactoryABI)).toBe(true);
+  describe('PaymentOperatorFactoryABI', () => {
+    it('should be defined and be an array', () => {
+      expect(PaymentOperatorFactoryABI).toBeDefined();
+      expect(Array.isArray(PaymentOperatorFactoryABI)).toBe(true);
+    });
+
+    it('should have computeAddress function', () => {
+      const computeAddress = PaymentOperatorFactoryABI.find(
+        (item) => item.type === 'function' && item.name === 'computeAddress'
+      );
+      expect(computeAddress).toBeDefined();
+    });
+
+    it('should have deployOperator function', () => {
+      const deployOperator = PaymentOperatorFactoryABI.find(
+        (item) => item.type === 'function' && item.name === 'deployOperator'
+      );
+      expect(deployOperator).toBeDefined();
+    });
+
+    it('should have getOperator function', () => {
+      const getOperator = PaymentOperatorFactoryABI.find(
+        (item) => item.type === 'function' && item.name === 'getOperator'
+      );
+      expect(getOperator).toBeDefined();
+    });
   });
 
-  it('should have computeAddress function in PaymentOperatorFactoryABI', () => {
-    const computeAddress = PaymentOperatorFactoryABI.find(
-      (item) => item.type === 'function' && item.name === 'computeAddress'
-    );
-    expect(computeAddress).toBeDefined();
+  describe('EscrowPeriodFactoryABI', () => {
+    it('should be defined and be an array', () => {
+      expect(EscrowPeriodFactoryABI).toBeDefined();
+      expect(Array.isArray(EscrowPeriodFactoryABI)).toBe(true);
+    });
+
+    it('should have deploy function', () => {
+      const deploy = EscrowPeriodFactoryABI.find(
+        (item) => item.type === 'function' && item.name === 'deploy'
+      );
+      expect(deploy).toBeDefined();
+    });
+
+    it('should have computeAddress function (not computeAddresses)', () => {
+      const computeAddress = EscrowPeriodFactoryABI.find(
+        (item) => item.type === 'function' && item.name === 'computeAddress'
+      );
+      expect(computeAddress).toBeDefined();
+
+      const computeAddresses = EscrowPeriodFactoryABI.find(
+        (item) => item.type === 'function' && item.name === 'computeAddresses'
+      );
+      expect(computeAddresses).toBeUndefined(); // Should NOT exist
+    });
+
+    it('should have getDeployed function', () => {
+      const getDeployed = EscrowPeriodFactoryABI.find(
+        (item) => item.type === 'function' && item.name === 'getDeployed'
+      );
+      expect(getDeployed).toBeDefined();
+    });
   });
 
-  it('should have deployOperator function in PaymentOperatorFactoryABI', () => {
-    const deployOperator = PaymentOperatorFactoryABI.find(
-      (item) => item.type === 'function' && item.name === 'deployOperator'
-    );
-    expect(deployOperator).toBeDefined();
+  describe('FreezePolicyFactoryABI', () => {
+    it('should be defined and be an array', () => {
+      expect(FreezePolicyFactoryABI).toBeDefined();
+      expect(Array.isArray(FreezePolicyFactoryABI)).toBe(true);
+    });
+
+    it('should have deploy function', () => {
+      const deploy = FreezePolicyFactoryABI.find(
+        (item) => item.type === 'function' && item.name === 'deploy'
+      );
+      expect(deploy).toBeDefined();
+    });
+
+    it('should have computeAddress function', () => {
+      const computeAddress = FreezePolicyFactoryABI.find(
+        (item) => item.type === 'function' && item.name === 'computeAddress'
+      );
+      expect(computeAddress).toBeDefined();
+    });
   });
 
-  it('should have getOperator function in PaymentOperatorFactoryABI', () => {
-    const getOperator = PaymentOperatorFactoryABI.find(
-      (item) => item.type === 'function' && item.name === 'getOperator'
-    );
-    expect(getOperator).toBeDefined();
+  describe('FreezeFactoryABI', () => {
+    it('should be defined and be an array', () => {
+      expect(FreezeFactoryABI).toBeDefined();
+      expect(Array.isArray(FreezeFactoryABI)).toBe(true);
+    });
+
+    it('should have deploy function', () => {
+      const deploy = FreezeFactoryABI.find(
+        (item) => item.type === 'function' && item.name === 'deploy'
+      );
+      expect(deploy).toBeDefined();
+    });
+
+    it('should have computeAddress function', () => {
+      const computeAddress = FreezeFactoryABI.find(
+        (item) => item.type === 'function' && item.name === 'computeAddress'
+      );
+      expect(computeAddress).toBeDefined();
+    });
   });
 
-  it('should export EscrowPeriodConditionFactoryABI', () => {
-    expect(EscrowPeriodConditionFactoryABI).toBeDefined();
-    expect(Array.isArray(EscrowPeriodConditionFactoryABI)).toBe(true);
+  describe('StaticFeeCalculatorFactoryABI', () => {
+    it('should be defined and be an array', () => {
+      expect(StaticFeeCalculatorFactoryABI).toBeDefined();
+      expect(Array.isArray(StaticFeeCalculatorFactoryABI)).toBe(true);
+    });
+
+    it('should have deploy function', () => {
+      const deploy = StaticFeeCalculatorFactoryABI.find(
+        (item) => item.type === 'function' && item.name === 'deploy'
+      );
+      expect(deploy).toBeDefined();
+    });
+
+    it('should have computeAddress function', () => {
+      const computeAddress = StaticFeeCalculatorFactoryABI.find(
+        (item) => item.type === 'function' && item.name === 'computeAddress'
+      );
+      expect(computeAddress).toBeDefined();
+    });
   });
 
-  it('should have deploy function in EscrowPeriodConditionFactoryABI', () => {
-    const deploy = EscrowPeriodConditionFactoryABI.find(
-      (item) => item.type === 'function' && item.name === 'deploy'
-    );
-    expect(deploy).toBeDefined();
-  });
+  describe('StaticAddressConditionFactoryABI', () => {
+    it('should be defined and be an array', () => {
+      expect(StaticAddressConditionFactoryABI).toBeDefined();
+      expect(Array.isArray(StaticAddressConditionFactoryABI)).toBe(true);
+    });
 
-  it('should have computeAddresses function in EscrowPeriodConditionFactoryABI', () => {
-    const computeAddresses = EscrowPeriodConditionFactoryABI.find(
-      (item) => item.type === 'function' && item.name === 'computeAddresses'
-    );
-    expect(computeAddresses).toBeDefined();
-  });
+    it('should have deploy function', () => {
+      const deploy = StaticAddressConditionFactoryABI.find(
+        (item) => item.type === 'function' && item.name === 'deploy'
+      );
+      expect(deploy).toBeDefined();
+    });
 
-  it('should export FreezePolicyFactoryABI', () => {
-    expect(FreezePolicyFactoryABI).toBeDefined();
-    expect(Array.isArray(FreezePolicyFactoryABI)).toBe(true);
-  });
-
-  it('should have deploy function in FreezePolicyFactoryABI', () => {
-    const deploy = FreezePolicyFactoryABI.find(
-      (item) => item.type === 'function' && item.name === 'deploy'
-    );
-    expect(deploy).toBeDefined();
-  });
-
-  it('should have computeAddress function in FreezePolicyFactoryABI', () => {
-    const computeAddress = FreezePolicyFactoryABI.find(
-      (item) => item.type === 'function' && item.name === 'computeAddress'
-    );
-    expect(computeAddress).toBeDefined();
+    it('should have computeAddress function', () => {
+      const computeAddress = StaticAddressConditionFactoryABI.find(
+        (item) => item.type === 'function' && item.name === 'computeAddress'
+      );
+      expect(computeAddress).toBeDefined();
+    });
   });
 });
 
-describe('ZERO_ADDRESS', () => {
-  it('should be a valid zero address', () => {
+describe('Constants', () => {
+  it('ZERO_ADDRESS should be a valid zero address', () => {
     expect(ZERO_ADDRESS).toBe('0x0000000000000000000000000000000000000000');
+  });
+
+  it('ZERO_BYTES32 should be a valid zero bytes32', () => {
+    expect(ZERO_BYTES32).toBe('0x0000000000000000000000000000000000000000000000000000000000000000');
   });
 });

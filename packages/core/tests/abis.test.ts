@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   PaymentOperatorABI,
   RefundRequestABI,
-  EscrowPeriodRecorderABI,
+  EscrowPeriodABI,
   AuthCaptureEscrowABI,
   StaticAddressConditionABI,
 } from '../src/abis/index.js';
@@ -144,37 +144,37 @@ describe('RefundRequestABI', () => {
   });
 });
 
-describe('EscrowPeriodRecorderABI', () => {
+describe('EscrowPeriodABI', () => {
   it('should have freeze function', () => {
-    const freezeFn = EscrowPeriodRecorderABI.find(
+    const freezeFn = EscrowPeriodABI.find(
       (item) => item.name === 'freeze' && item.type === 'function'
     );
     expect(freezeFn).toBeDefined();
   });
 
   it('should have unfreeze function', () => {
-    const unfreezeFn = EscrowPeriodRecorderABI.find(
+    const unfreezeFn = EscrowPeriodABI.find(
       (item) => item.name === 'unfreeze' && item.type === 'function'
     );
     expect(unfreezeFn).toBeDefined();
   });
 
   it('should have PaymentFrozen event', () => {
-    const event = EscrowPeriodRecorderABI.find(
+    const event = EscrowPeriodABI.find(
       (item) => item.name === 'PaymentFrozen' && item.type === 'event'
     );
     expect(event).toBeDefined();
   });
 
   it('should have PaymentUnfrozen event', () => {
-    const event = EscrowPeriodRecorderABI.find(
+    const event = EscrowPeriodABI.find(
       (item) => item.name === 'PaymentUnfrozen' && item.type === 'event'
     );
     expect(event).toBeDefined();
   });
 
   it('should have all required functions', () => {
-    const functionNames = EscrowPeriodRecorderABI.filter(
+    const functionNames = EscrowPeriodABI.filter(
       (item) => item.type === 'function'
     ).map((item) => item.name);
 
@@ -227,7 +227,7 @@ describe('ABI structure validation', () => {
   it('all ABIs should be readonly arrays', () => {
     expect(Array.isArray(PaymentOperatorABI)).toBe(true);
     expect(Array.isArray(RefundRequestABI)).toBe(true);
-    expect(Array.isArray(EscrowPeriodRecorderABI)).toBe(true);
+    expect(Array.isArray(EscrowPeriodABI)).toBe(true);
     expect(Array.isArray(AuthCaptureEscrowABI)).toBe(true);
     expect(Array.isArray(StaticAddressConditionABI)).toBe(true);
   });
@@ -236,7 +236,7 @@ describe('ABI structure validation', () => {
     const allAbis = [
       ...PaymentOperatorABI,
       ...RefundRequestABI,
-      ...EscrowPeriodRecorderABI,
+      ...EscrowPeriodABI,
       ...AuthCaptureEscrowABI,
       ...StaticAddressConditionABI,
     ];
