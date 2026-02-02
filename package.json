@@ -21,7 +21,9 @@
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
     "docs:generate": "typedoc",
     "docs:watch": "typedoc --watch",
-    "example:deploy-operator": "tsx examples/deploy-operator/index.ts"
+    "example:deploy-operator": "tsx examples/deploy-operator/index.ts",
+    "example:merchant-server": "tsx examples/merchant-server/src/index.ts",
+    "example:client-cli": "tsx examples/client-cli/src/index.ts"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",

@@ -14,8 +14,7 @@ Production-ready TypeScript SDK for the X402r refundable payments protocol.
 | `@x402r/client` | SDK for payers (payment queries, refund requests, freeze) |
 | `@x402r/merchant` | SDK for merchants (release, charge, refund handling) |
 | `@x402r/arbiter` | SDK for arbiters (dispute resolution, AI integration) |
-
-> **Note:** Server helpers (`refundable`) are included in `@x402r/helpers`.
+| `@x402r/helpers` | Server helpers for building payment requirements |
 
 ## Installation
 
@@ -124,8 +123,38 @@ const routes = {
 };
 ```
 
+## Examples
+
+Run a complete payment flow demo with the included examples:
+
+```bash
+# 1. Deploy an operator (one-time)
+PRIVATE_KEY=0x... pnpm example:deploy-operator
+
+# 2. Start the merchant server (configure .env first)
+cd examples/merchant-server && pnpm install && cp .env.example .env
+pnpm example:merchant-server  # from root, or: pnpm dev
+
+# 3. Make a payment with the client CLI (configure .env first)
+cd examples/client-cli && pnpm install && cp .env.example .env
+pnpm example:client-cli pay --url http://localhost:3000/weather
+```
+
+See the [Examples Guide](./docs/EXAMPLES_GUIDE.md) for the complete walkthrough including freeze and refund operations.
+
+### Example Operator (Base Sepolia)
+
+Pre-deployed operator you can use for testing:
+
+| Contract | Address |
+|----------|---------|
+| PaymentOperator | `0xbb4f390b80E4F4895B96B95AE382B65fDC45974B` |
+| Freeze | `0xD0f99B7667076f151FD8240b277f1765d147e48C` |
+| EscrowPeriod | `0xFcFb7e197823D304D53F47BE1E9761e9D102589b` |
+
 ## Documentation
 
+- [Examples Guide](./docs/EXAMPLES_GUIDE.md) - Complete walkthrough of merchant server and client CLI
 - [Operator Deployment Guide](./docs/OPERATOR_DEPLOYMENT_GUIDE.md) - Deploy payment operators
 - [SDK Documentation](https://docs.x402r.org/sdk/overview) - Guides and tutorials
 - [API Reference](https://backtrackco.github.io/x402r-sdk) - Auto-generated TypeDoc

@@ -9,7 +9,7 @@
  * - Private key with Base Sepolia ETH for gas
  *
  * Usage:
- *   PRIVATE_KEY=0x... pnpm tsx examples/deploy-operator/index.ts
+ *   PRIVATE_KEY=0x... pnpm example:deploy-operator
  */
 
 import { createWalletClient, createPublicClient, http, formatEther } from 'viem';
