@@ -299,11 +299,8 @@ console.log(config.conditions.payer);    // PayerCondition singleton
 ```bash
 cd x402r-sdk
 
-# Set your private key
-export PRIVATE_KEY="0x..."
-
-# Run the example
-pnpm ts-node examples/deploy-operator/index.ts
+# Deploy an operator (requires PRIVATE_KEY env var)
+PRIVATE_KEY=0x... pnpm example:deploy-operator
 ```
 
 ### 2. Verify on Block Explorer
