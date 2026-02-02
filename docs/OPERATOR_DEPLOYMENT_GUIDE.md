@@ -425,9 +425,3 @@ console.log('Refundable:', state.refundableAmount);
 ## API Reference
 
 See the [TypeDoc API Reference](https://backtrackco.github.io/x402r-sdk) for complete documentation.
-
-## Next Steps
-
-- [Client SDK Guide](./CLIENT_GUIDE.md) - Payer operations
-- [Merchant SDK Guide](./MERCHANT_GUIDE.md) - Merchant operations
-- [Arbiter SDK Guide](./ARBITER_GUIDE.md) - Dispute resolution

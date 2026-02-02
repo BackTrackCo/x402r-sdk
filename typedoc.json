@@ -4,7 +4,8 @@
     "packages/core/src/index.ts",
     "packages/client/src/index.ts",
     "packages/merchant/src/index.ts",
-    "packages/arbiter/src/index.ts"
+    "packages/arbiter/src/index.ts",
+    "packages/helpers/src/index.ts"
   ],
   "entryPointStrategy": "expand",
   "out": "docs-generated",

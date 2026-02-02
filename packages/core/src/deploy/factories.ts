@@ -41,19 +41,44 @@ export interface DeploymentResult {
 // ============ Helper Functions ============
 
 /**
- * Wait for a transaction and return the deployed address
+ * Sleep for a specified number of milliseconds
  */
-async function waitForDeployment(
-  publicClient: PublicClient,
-  txHash: Hash
-): Promise<Address> {
-  const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
-  if (receipt.status !== 'success') {
-    throw new Error(`Deployment transaction failed: ${txHash}`);
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Retry a function with delay between attempts
+ * Used to handle RPC caching/propagation delays after deployments
+ */
+async function retryWithDelay<T>(
+  fn: () => Promise<T>,
+  validate: (result: T) => boolean,
+  options: { maxRetries?: number; delayMs?: number; description?: string } = {}
+): Promise<T> {
+  const { maxRetries = 3, delayMs = 2000, description = 'operation' } = options;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const result = await fn();
+    if (validate(result)) {
+      return result;
+    }
+
+    if (attempt < maxRetries) {
+      // Wait before retrying - RPC might have stale cache
+      await sleep(delayMs);
+    }
   }
-  // The deployed address is typically in the logs, but factories return it directly
-  // We need to decode from transaction receipt or use getDeployed after
-  return receipt.contractAddress ?? ZERO_ADDRESS;
+
+  // Final attempt failed
+  const finalResult = await fn();
+  if (!validate(finalResult)) {
+    throw new Error(
+      `${description} failed after ${maxRetries} retries. ` +
+        `This may be due to RPC caching. Try again in a few seconds.`
+    );
+  }
+  return finalResult;
 }
 
 // ============ Static Fee Calculator ============
@@ -130,10 +155,18 @@ export async function deployStaticFeeCalculator(
   });
 
   const txHash = await walletClient.writeContract(request);
-  await publicClient.waitForTransactionReceipt({ hash: txHash });
+  const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
 
-  // Get the deployed address
-  const address = await getDeployedStaticFeeCalculator(publicClient, networkId, feeBps);
+  if (receipt.status !== 'success') {
+    throw new Error(`StaticFeeCalculator deployment failed. TX: ${txHash}. Args: feeBps=${feeBps}`);
+  }
+
+  // Query deployed address with retry (handles RPC caching delays)
+  const address = await retryWithDelay(
+    () => getDeployedStaticFeeCalculator(publicClient, networkId, feeBps),
+    (addr) => addr !== ZERO_ADDRESS,
+    { description: 'StaticFeeCalculator getDeployed' }
+  );
 
   return { address, txHash, isNewDeployment: true };
 }
@@ -206,9 +239,21 @@ export async function deployEscrowPeriod(
   });
 
   const txHash = await walletClient.writeContract(request);
-  await publicClient.waitForTransactionReceipt({ hash: txHash });
+  const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
 
-  const address = await getDeployedEscrowPeriod(publicClient, networkId, config);
+  if (receipt.status !== 'success') {
+    throw new Error(
+      `EscrowPeriod deployment failed. TX: ${txHash}. ` +
+        `Args: escrowPeriod=${fullConfig.escrowPeriod}, authorizedCodehash=${fullConfig.authorizedCodehash}`
+    );
+  }
+
+  // Query deployed address with retry (handles RPC caching delays)
+  const address = await retryWithDelay(
+    () => getDeployedEscrowPeriod(publicClient, networkId, config),
+    (addr) => addr !== ZERO_ADDRESS,
+    { description: 'EscrowPeriod getDeployed' }
+  );
 
   return { address, txHash, isNewDeployment: true };
 }
@@ -281,9 +326,23 @@ export async function deployFreezePolicy(
   });
 
   const txHash = await walletClient.writeContract(request);
-  await publicClient.waitForTransactionReceipt({ hash: txHash });
+  const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
 
-  const address = await getDeployedFreezePolicy(publicClient, networkId, config);
+  if (receipt.status !== 'success') {
+    throw new Error(
+      `FreezePolicy deployment failed. TX: ${txHash}. ` +
+        `Args: freezeCondition=${fullConfig.freezeCondition}, ` +
+        `unfreezeCondition=${fullConfig.unfreezeCondition}, ` +
+        `freezeDuration=${fullConfig.freezeDuration}`
+    );
+  }
+
+  // Query deployed address with retry (handles RPC caching delays)
+  const address = await retryWithDelay(
+    () => getDeployedFreezePolicy(publicClient, networkId, config),
+    (addr) => addr !== ZERO_ADDRESS,
+    { description: 'FreezePolicy getDeployed' }
+  );
 
   return { address, txHash, isNewDeployment: true };
 }
@@ -356,9 +415,21 @@ export async function deployFreeze(
   });
 
   const txHash = await walletClient.writeContract(request);
-  await publicClient.waitForTransactionReceipt({ hash: txHash });
+  const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
 
-  const address = await getDeployedFreeze(publicClient, networkId, freezePolicy, escrowPeriodContract);
+  if (receipt.status !== 'success') {
+    throw new Error(
+      `Freeze deployment failed. TX: ${txHash}. ` +
+        `Args: freezePolicy=${freezePolicy}, escrowPeriodContract=${escrowPeriodContract}`
+    );
+  }
+
+  // Query deployed address with retry (handles RPC caching delays)
+  const address = await retryWithDelay(
+    () => getDeployedFreeze(publicClient, networkId, freezePolicy, escrowPeriodContract),
+    (addr) => addr !== ZERO_ADDRESS,
+    { description: 'Freeze getDeployed' }
+  );
 
   return { address, txHash, isNewDeployment: true };
 }
@@ -428,9 +499,20 @@ export async function deployStaticAddressCondition(
   });
 
   const txHash = await walletClient.writeContract(request);
-  await publicClient.waitForTransactionReceipt({ hash: txHash });
+  const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
 
-  const address = await getDeployedStaticAddressCondition(publicClient, networkId, designatedAddress);
+  if (receipt.status !== 'success') {
+    throw new Error(
+      `StaticAddressCondition deployment failed. TX: ${txHash}. Args: designatedAddress=${designatedAddress}`
+    );
+  }
+
+  // Query deployed address with retry (handles RPC caching delays)
+  const address = await retryWithDelay(
+    () => getDeployedStaticAddressCondition(publicClient, networkId, designatedAddress),
+    (addr) => addr !== ZERO_ADDRESS,
+    { description: 'StaticAddressCondition getDeployed' }
+  );
 
   return { address, txHash, isNewDeployment: true };
 }
@@ -500,9 +582,18 @@ export async function deployAndCondition(
   });
 
   const txHash = await walletClient.writeContract(request);
-  await publicClient.waitForTransactionReceipt({ hash: txHash });
+  const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
 
-  const address = await getDeployedAndCondition(publicClient, networkId, conditions);
+  if (receipt.status !== 'success') {
+    throw new Error(`AndCondition deployment failed. TX: ${txHash}. Args: conditions=${conditions.join(',')}`);
+  }
+
+  // Query deployed address with retry (handles RPC caching delays)
+  const address = await retryWithDelay(
+    () => getDeployedAndCondition(publicClient, networkId, conditions),
+    (addr) => addr !== ZERO_ADDRESS,
+    { description: 'AndCondition getDeployed' }
+  );
 
   return { address, txHash, isNewDeployment: true };
 }
@@ -570,9 +661,18 @@ export async function deployOrCondition(
   });
 
   const txHash = await walletClient.writeContract(request);
-  await publicClient.waitForTransactionReceipt({ hash: txHash });
+  const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
 
-  const address = await getDeployedOrCondition(publicClient, networkId, conditions);
+  if (receipt.status !== 'success') {
+    throw new Error(`OrCondition deployment failed. TX: ${txHash}. Args: conditions=${conditions.join(',')}`);
+  }
+
+  // Query deployed address with retry (handles RPC caching delays)
+  const address = await retryWithDelay(
+    () => getDeployedOrCondition(publicClient, networkId, conditions),
+    (addr) => addr !== ZERO_ADDRESS,
+    { description: 'OrCondition getDeployed' }
+  );
 
   return { address, txHash, isNewDeployment: true };
 }
@@ -640,9 +740,18 @@ export async function deployNotCondition(
   });
 
   const txHash = await walletClient.writeContract(request);
-  await publicClient.waitForTransactionReceipt({ hash: txHash });
+  const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
 
-  const address = await getDeployedNotCondition(publicClient, networkId, condition);
+  if (receipt.status !== 'success') {
+    throw new Error(`NotCondition deployment failed. TX: ${txHash}. Args: condition=${condition}`);
+  }
+
+  // Query deployed address with retry (handles RPC caching delays)
+  const address = await retryWithDelay(
+    () => getDeployedNotCondition(publicClient, networkId, condition),
+    (addr) => addr !== ZERO_ADDRESS,
+    { description: 'NotCondition getDeployed' }
+  );
 
   return { address, txHash, isNewDeployment: true };
 }
@@ -712,9 +821,18 @@ export async function deployRecorderCombinator(
   });
 
   const txHash = await walletClient.writeContract(request);
-  await publicClient.waitForTransactionReceipt({ hash: txHash });
+  const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
 
-  const address = await getDeployedRecorderCombinator(publicClient, networkId, recorders);
+  if (receipt.status !== 'success') {
+    throw new Error(`RecorderCombinator deployment failed. TX: ${txHash}. Args: recorders=${recorders.join(',')}`);
+  }
+
+  // Query deployed address with retry (handles RPC caching delays)
+  const address = await retryWithDelay(
+    () => getDeployedRecorderCombinator(publicClient, networkId, recorders),
+    (addr) => addr !== ZERO_ADDRESS,
+    { description: 'RecorderCombinator getDeployed' }
+  );
 
   return { address, txHash, isNewDeployment: true };
 }
@@ -784,9 +902,18 @@ export async function deployOperator(
   });
 
   const txHash = await walletClient.writeContract(request);
-  await publicClient.waitForTransactionReceipt({ hash: txHash });
+  const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
 
-  const address = await getDeployedOperator(publicClient, networkId, config);
+  if (receipt.status !== 'success') {
+    throw new Error(`PaymentOperator deployment failed. TX: ${txHash}`);
+  }
+
+  // Query deployed address with retry (handles RPC caching delays)
+  const address = await retryWithDelay(
+    () => getDeployedOperator(publicClient, networkId, config),
+    (addr) => addr !== ZERO_ADDRESS,
+    { description: 'PaymentOperator getDeployed' }
+  );
 
   return { address, txHash, isNewDeployment: true };
 }

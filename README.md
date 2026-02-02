@@ -2,7 +2,7 @@
 
 Production-ready TypeScript SDK for the X402r refundable payments protocol.
 
-[![Tests](https://img.shields.io/badge/tests-244%20passing-brightgreen)](https://github.com/BackTrackCo/x402r-sdk)
+[![Tests](https://img.shields.io/badge/tests-271%20passing-brightgreen)](https://github.com/BackTrackCo/x402r-sdk)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -126,6 +126,7 @@ const routes = {
 
 ## Documentation
 
+- [Operator Deployment Guide](./docs/OPERATOR_DEPLOYMENT_GUIDE.md) - Deploy payment operators
 - [SDK Documentation](https://docs.x402r.org/sdk/overview) - Guides and tutorials
 - [API Reference](https://backtrackco.github.io/x402r-sdk) - Auto-generated TypeDoc
 

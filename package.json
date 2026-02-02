@@ -7,7 +7,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/x402r/x402r-sdk.git"
+    "url": "https://github.com/BackTrackCo/x402r-sdk.git"
   },
   "scripts": {
     "build": "turbo run build",
