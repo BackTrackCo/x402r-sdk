@@ -18,7 +18,7 @@ import { privateKeyToAccount } from 'viem/accounts';
 import {
   deployMarketplaceOperator,
   previewMarketplaceOperator,
-} from '@x402r/core';
+} from '../../packages/core/dist/index.js';
 
 // Network configuration
 const NETWORK_ID = 'eip155:84532'; // Base Sepolia
