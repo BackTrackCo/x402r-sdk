@@ -1,10 +1,11 @@
 # X402r SDK
 
-Production-ready TypeScript SDK for the X402r refundable payments protocol.
+TypeScript SDK for the X402r refundable payments protocol.
 
-[![Tests](https://img.shields.io/badge/tests-271%20passing-brightgreen)](https://github.com/BackTrackCo/x402r-sdk)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)](https://www.typescriptlang.org/)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+> **⚠️ UNDER DEVELOPMENT - NOT PRODUCTION READY**
+>
+> This SDK is in active development and may have breaking changes, bugs, or incomplete features.
+> Use for testing and experimentation only. Packages are not yet published to npm.
 
 ## Packages
 
@@ -15,192 +16,6 @@ Production-ready TypeScript SDK for the X402r refundable payments protocol.
 | `@x402r/merchant` | SDK for merchants (release, charge, refund handling) |
 | `@x402r/arbiter` | SDK for arbiters (dispute resolution, AI integration) |
 | `@x402r/helpers` | Server helpers for building payment requirements |
-
-## Installation
-
-```bash
-# Install all packages
-pnpm add @x402r/core @x402r/client @x402r/merchant @x402r/arbiter
-
-# Or install individually
-pnpm add @x402r/client  # For payers
-pnpm add @x402r/merchant  # For merchants
-pnpm add @x402r/arbiter  # For arbiters
-
-# For server route helpers (optional)
-pnpm add @x402r/helpers
-```
-
-## Quick Start
-
-### Client (Payer)
-
-```typescript
-import { X402rClient } from '@x402r/client';
-import { createPublicClient, createWalletClient, http } from 'viem';
-import { baseSepolia } from 'viem/chains';
-
-const client = new X402rClient({
-  publicClient: createPublicClient({ chain: baseSepolia, transport: http() }),
-  walletClient: createWalletClient({ chain: baseSepolia, transport: http() }),
-  operatorAddress: '0x...',
-});
-
-// Check payment state
-const state = await client.getPaymentState(paymentInfo);
-
-// Request a refund
-const { txHash } = await client.requestRefund(paymentInfo);
-```
-
-### Merchant
-
-```typescript
-import { X402rMerchant } from '@x402r/merchant';
-
-const merchant = new X402rMerchant({
-  publicClient,
-  walletClient,
-  operatorAddress: '0x...',
-});
-
-// Release funds from escrow
-await merchant.release(paymentInfo, amount);
-
-// Charge (immediate settlement)
-await merchant.charge(paymentInfo, amount, tokenCollector, collectorData);
-
-// Refund after release
-await merchant.refundPostEscrow(paymentInfo, amount, tokenCollector, collectorData);
-
-// Get operator config
-const config = await merchant.getOperatorConfig();
-```
-
-### Arbiter
-
-```typescript
-import { X402rArbiter, createWebhookHandler } from '@x402r/arbiter';
-
-const arbiter = new X402rArbiter({
-  publicClient,
-  walletClient,
-  operatorAddress: '0x...',
-});
-
-// Approve or deny refunds
-await arbiter.approveRefund(paymentInfo);
-await arbiter.denyRefund(paymentInfo);
-
-// AI-powered dispute resolution
-const handler = createWebhookHandler({
-  arbiter,
-  evaluationHook: async (context) => ({
-    decision: context.paymentInfo.maxAmount < 5000000n ? 'approve' : 'deny',
-    reasoning: 'Auto-approved small amount',
-  }),
-  autoExecute: true,
-});
-```
-
-### Server Helpers
-
-```typescript
-import { refundable } from '@x402r/helpers';
-
-// Define routes with refundable payment options
-const routes = {
-  '/api/resource': {
-    accepts: [
-      refundable({
-        scheme: 'escrow',
-        payTo: '0xMerchantAddress...',
-        price: '$0.01',
-        network: 'eip155:84532',
-      }, '0xOperatorAddress...'),
-    ],
-  },
-};
-```
-
-## Examples
-
-Run a complete payment flow demo with the included examples:
-
-```bash
-# 1. Deploy an operator (one-time)
-PRIVATE_KEY=0x... pnpm example:deploy-operator
-
-# 2. Start the merchant server (configure .env first)
-cd examples/merchant-server && pnpm install && cp .env.example .env
-pnpm example:merchant-server  # from root, or: pnpm dev
-
-# 3. Make a payment with the client CLI (configure .env first)
-cd examples/client-cli && pnpm install && cp .env.example .env
-pnpm example:client-cli pay --url http://localhost:3000/weather
-```
-
-See the [Examples Guide](./docs/EXAMPLES_GUIDE.md) for the complete walkthrough including freeze and refund operations.
-
-### Example Operator (Base Sepolia)
-
-Pre-deployed operator you can use for testing:
-
-| Contract | Address |
-|----------|---------|
-| PaymentOperator | `0xbb4f390b80E4F4895B96B95AE382B65fDC45974B` |
-| Freeze | `0xD0f99B7667076f151FD8240b277f1765d147e48C` |
-| EscrowPeriod | `0xFcFb7e197823D304D53F47BE1E9761e9D102589b` |
-
-## Documentation
-
-- [Examples Guide](./docs/EXAMPLES_GUIDE.md) - Complete walkthrough of merchant server and client CLI
-- [Operator Deployment Guide](./docs/OPERATOR_DEPLOYMENT_GUIDE.md) - Deploy payment operators
-- [SDK Documentation](https://docs.x402r.org/sdk/overview) - Guides and tutorials
-- [API Reference](https://backtrackco.github.io/x402r-sdk) - Auto-generated TypeDoc
-
-## Deploying Operators
-
-Deploy a complete marketplace operator with escrow, freeze, and arbiter support:
-
-```typescript
-import { deployMarketplaceOperator } from '@x402r/core';
-
-const result = await deployMarketplaceOperator(
-  walletClient,
-  publicClient,
-  'eip155:84532', // Base Sepolia
-  {
-    feeRecipient: '0x...',
-    arbiter: '0x...',
-    escrowPeriodSeconds: 604800n, // 7 days
-    operatorFeeBps: 100n, // 1%
-  }
-);
-
-console.log('Operator deployed at:', result.operatorAddress);
-```
-
-See `examples/deploy-operator/` for a complete example.
-
-## Network Support
-
-| Network | Chain ID | Status |
-|---------|----------|--------|
-| Base Sepolia | 84532 | ✅ Supported |
-| Base Mainnet | 8453 | ✅ Supported |
-
-## Subgraph Dependency
-
-Some query methods require a subgraph/indexer and will throw `NotImplementedError` until deployed:
-
-| Package | Method |
-|---------|--------|
-| `@x402r/client` | `getPaymentState()`, `paymentExists()`, `isInEscrow()`, `getPaymentDetails()`, `getMyPayments()` |
-| `@x402r/merchant` | `getPaymentState()`, `getReceiverPayments()` |
-| `@x402r/arbiter` | `getPaymentState()` |
-
-All write operations (refunds, releases, charges) work directly on-chain without the subgraph.
 
 ## Development
 
@@ -214,9 +29,77 @@ pnpm build
 # Run tests
 pnpm test
 
+# Run tests with coverage
+pnpm test:coverage
+
+# Type check all packages
+pnpm typecheck
+
+# Lint
+pnpm lint
+pnpm lint:fix
+
+# Format code
+pnpm format
+
+# Clean build artifacts
+pnpm clean
+
 # Generate API docs
 pnpm docs:generate
+pnpm docs:watch
 ```
+
+## Running Examples
+
+The SDK includes working examples for a complete payment flow:
+
+```bash
+# 1. Deploy an operator (one-time setup)
+PRIVATE_KEY=0x... pnpm example:deploy-operator
+
+# 2. Start the merchant server
+cd examples/merchant-server && cp .env.example .env  # Configure first
+pnpm example:merchant-server
+
+# 3. Make a payment with the client CLI
+cd examples/client-cli && cp .env.example .env  # Configure first
+pnpm example:client-cli pay --url http://localhost:3000/weather
+```
+
+See the [Examples Guide](./docs/EXAMPLES_GUIDE.md) for the complete walkthrough including freeze and refund operations.
+
+### Pre-deployed Test Operator (Base Sepolia)
+
+Use this operator for testing:
+
+| Contract | Address |
+|----------|---------|
+| PaymentOperator | `0xbb4f390b80E4F4895B96B95AE382B65fDC45974B` |
+| Freeze | `0xD0f99B7667076f151FD8240b277f1765d147e48C` |
+| EscrowPeriod | `0xFcFb7e197823D304D53F47BE1E9761e9D102589b` |
+
+## Documentation
+
+- [Examples Guide](./docs/EXAMPLES_GUIDE.md) - Merchant server and client CLI walkthrough
+- [Operator Deployment Guide](./docs/OPERATOR_DEPLOYMENT_GUIDE.md) - Deploy payment operators
+- [API Reference](https://backtrackco.github.io/x402r-sdk) - Auto-generated TypeDoc
+
+## Network Support
+
+| Network | Chain ID | Status |
+|---------|----------|--------|
+| Base Sepolia | 84532 | ✅ Supported |
+| Base Mainnet | 8453 | 🚧 Pending |
+
+## Known Limitations
+
+**Subgraph Not Deployed**: Query methods that require indexing will throw `NotImplementedError`:
+- `client.getPaymentState()`, `paymentExists()`, `isInEscrow()`, `getPaymentDetails()`, `getMyPayments()`
+- `merchant.getPaymentState()`, `getReceiverPayments()`
+- `arbiter.getPaymentState()`
+
+All write operations (refunds, releases, charges) work directly on-chain.
 
 ## License
 
