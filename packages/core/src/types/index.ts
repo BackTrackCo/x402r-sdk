@@ -196,3 +196,15 @@ export function isValidPaymentInfo(paymentInfo: PaymentInfo): boolean {
   // All checks passed
   return true;
 }
+
+/**
+ * Result from listing arbiters in the registry
+ */
+export interface ArbiterList {
+  /** Array of arbiter addresses */
+  arbiters: readonly `0x${string}`[];
+  /** Array of corresponding URIs */
+  uris: readonly string[];
+  /** Total number of registered arbiters */
+  total: bigint;
+}

@@ -8,11 +8,13 @@ import {
   PaymentOperatorABI,
   RefundRequestABI,
   FreezeABI,
+  ArbiterRegistryABI,
   RequestStatus,
   NotImplementedError,
   type PaymentInfo,
   type PaymentState,
   type RefundRequestData,
+  type ArbiterList,
 } from '@x402r/core';
 
 /**
@@ -29,6 +31,8 @@ export interface X402rArbiterConfig {
   escrowAddress?: `0x${string}`;
   /** Optional RefundRequest contract address (defaults from network config) */
   refundRequestAddress?: `0x${string}`;
+  /** Optional ArbiterRegistry contract address */
+  arbiterRegistryAddress?: `0x${string}`;
   /** Chain ID for hash computation (default: 84532 for Base Sepolia) */
   chainId?: number;
 }
@@ -71,7 +75,7 @@ export interface X402rArbiterConfig {
  * });
  *
  * // Approve a refund request
- * const { txHash } = await arbiter.approveRefund(paymentInfo);
+ * const { txHash } = await arbiter.approveRefundRequest(paymentInfo, 0n);
  * ```
  */
 export class X402rArbiter {
@@ -85,6 +89,8 @@ export class X402rArbiter {
   readonly escrowAddress?: `0x${string}`;
   /** RefundRequest contract address */
   readonly refundRequestAddress?: `0x${string}`;
+  /** ArbiterRegistry contract address */
+  readonly arbiterRegistryAddress?: `0x${string}`;
   /** Chain ID */
   readonly chainId: number;
 
@@ -94,6 +100,7 @@ export class X402rArbiter {
     this.operatorAddress = config.operatorAddress;
     this.escrowAddress = config.escrowAddress;
     this.refundRequestAddress = config.refundRequestAddress;
+    this.arbiterRegistryAddress = config.arbiterRegistryAddress;
     this.chainId = config.chainId ?? 84532;
   }
 
@@ -191,11 +198,11 @@ export class X402rArbiter {
    *
    * @example
    * ```typescript
-   * const { txHash } = await arbiter.approveRefund(paymentInfo, 0n);
+   * const { txHash } = await arbiter.approveRefundRequest(paymentInfo, 0n);
    * console.log(`Refund approved: ${txHash}`);
    * ```
    */
-  async approveRefund(
+  async approveRefundRequest(
     paymentInfo: PaymentInfo,
     nonce: bigint
   ): Promise<{ txHash: `0x${string}` }> {
@@ -225,11 +232,11 @@ export class X402rArbiter {
    *
    * @example
    * ```typescript
-   * const { txHash } = await arbiter.denyRefund(paymentInfo, 0n);
+   * const { txHash } = await arbiter.denyRefundRequest(paymentInfo, 0n);
    * console.log(`Refund denied: ${txHash}`);
    * ```
    */
-  async denyRefund(
+  async denyRefundRequest(
     paymentInfo: PaymentInfo,
     nonce: bigint
   ): Promise<{ txHash: `0x${string}` }> {
@@ -320,7 +327,7 @@ export class X402rArbiter {
     const results: { txHash: `0x${string}` }[] = [];
 
     for (const { paymentInfo, nonce } of items) {
-      const result = await this.approveRefund(paymentInfo, nonce);
+      const result = await this.approveRefundRequest(paymentInfo, nonce);
       results.push(result);
     }
 
@@ -359,7 +366,7 @@ export class X402rArbiter {
     const results: { txHash: `0x${string}` }[] = [];
 
     for (const { paymentInfo, nonce } of items) {
-      const result = await this.denyRefund(paymentInfo, nonce);
+      const result = await this.denyRefundRequest(paymentInfo, nonce);
       results.push(result);
     }
 
@@ -379,11 +386,11 @@ export class X402rArbiter {
    *
    * @example
    * ```typescript
-   * const { keys, total } = await arbiter.getPendingCases(0n, 10n, '0x...');
+   * const { keys, total } = await arbiter.getPendingRefundRequests(0n, 10n, '0x...');
    * console.log(`${total} total cases, showing first ${keys.length}`);
    * ```
    */
-  async getPendingCases(
+  async getPendingRefundRequests(
     offset: bigint,
     count: bigint,
     receiverAddress?: `0x${string}`
@@ -436,42 +443,6 @@ export class X402rArbiter {
     });
 
     return status as typeof RequestStatus[keyof typeof RequestStatus];
-  }
-
-  /**
-   * Get paginated refund request keys for a receiver
-   *
-   * @param offset - Starting index (0-based)
-   * @param count - Number of keys to return
-   * @param receiverAddress - The receiver address to query (defaults to wallet account)
-   * @returns Object with keys array and total count
-   * @throws Error if refundRequestAddress is not configured
-   *
-   * @example
-   * ```typescript
-   * const { keys, total } = await arbiter.getArbiterPayments(0n, 10n, '0x...');
-   * console.log(`Found ${total} refund requests, showing first ${keys.length}`);
-   * ```
-   */
-  async getArbiterPayments(
-    offset: bigint,
-    count: bigint,
-    receiverAddress?: `0x${string}`
-  ): Promise<{ keys: readonly `0x${string}`[]; total: bigint }> {
-    if (!this.refundRequestAddress) {
-      throw new Error('RefundRequest address required');
-    }
-
-    const address = receiverAddress ?? this.walletClient.account!.address;
-
-    const [keys, total] = (await this.publicClient.readContract({
-      address: this.refundRequestAddress,
-      abi: RefundRequestABI,
-      functionName: 'getReceiverRefundRequests',
-      args: [address, offset, count],
-    })) as [readonly `0x${string}`[], bigint];
-
-    return { keys, total };
   }
 
   /**
@@ -530,6 +501,36 @@ export class X402rArbiter {
     });
 
     return request as unknown as RefundRequestData;
+  }
+
+  // ============ Freeze Operations ============
+
+  /**
+   * Check if a payment is currently frozen
+   *
+   * @param paymentInfo - The payment information struct
+   * @param freezeAddress - The Freeze contract address
+   * @returns True if payment is frozen
+   *
+   * @example
+   * ```typescript
+   * if (await arbiter.isFrozen(paymentInfo, freezeAddress)) {
+   *   console.log('Payment is frozen');
+   * }
+   * ```
+   */
+  async isFrozen(
+    paymentInfo: PaymentInfo,
+    freezeAddress: `0x${string}`
+  ): Promise<boolean> {
+    const frozen = await this.publicClient.readContract({
+      address: freezeAddress,
+      abi: FreezeABI,
+      functionName: 'isFrozen',
+      args: [paymentInfo as never],
+    });
+
+    return frozen as boolean;
   }
 
   // ============ Subscriptions ============
@@ -655,5 +656,211 @@ export class X402rArbiter {
         unsubscribeUnfrozen();
       },
     };
+  }
+
+  // ============ Registry Operations ============
+
+  /**
+   * Register as an arbiter in the ArbiterRegistry
+   *
+   * @param uri - The URI pointing to arbiter metadata/API endpoint
+   * @returns Transaction hash
+   * @throws Error if arbiterRegistryAddress is not configured
+   *
+   * @example
+   * ```typescript
+   * const { txHash } = await arbiter.registerArbiter('https://arbiter.example.com/api/disputes');
+   * console.log(`Registered: ${txHash}`);
+   * ```
+   */
+  async registerArbiter(uri: string): Promise<{ txHash: `0x${string}` }> {
+    if (!this.arbiterRegistryAddress) {
+      throw new Error('ArbiterRegistry address required');
+    }
+
+    const txHash = await this.walletClient.writeContract({
+      chain: this.walletClient.chain,
+      account: this.walletClient.account!,
+      address: this.arbiterRegistryAddress,
+      abi: ArbiterRegistryABI,
+      functionName: 'register',
+      args: [uri],
+    });
+
+    return { txHash: txHash as `0x${string}` };
+  }
+
+  /**
+   * Update the URI for a registered arbiter
+   *
+   * @param newUri - The new URI
+   * @returns Transaction hash
+   * @throws Error if arbiterRegistryAddress is not configured
+   *
+   * @example
+   * ```typescript
+   * const { txHash } = await arbiter.updateArbiterUri('https://new-arbiter.example.com/api');
+   * console.log(`Updated: ${txHash}`);
+   * ```
+   */
+  async updateArbiterUri(newUri: string): Promise<{ txHash: `0x${string}` }> {
+    if (!this.arbiterRegistryAddress) {
+      throw new Error('ArbiterRegistry address required');
+    }
+
+    const txHash = await this.walletClient.writeContract({
+      chain: this.walletClient.chain,
+      account: this.walletClient.account!,
+      address: this.arbiterRegistryAddress,
+      abi: ArbiterRegistryABI,
+      functionName: 'updateUri',
+      args: [newUri],
+    });
+
+    return { txHash: txHash as `0x${string}` };
+  }
+
+  /**
+   * Deregister from the ArbiterRegistry
+   *
+   * @returns Transaction hash
+   * @throws Error if arbiterRegistryAddress is not configured
+   *
+   * @example
+   * ```typescript
+   * const { txHash } = await arbiter.deregisterArbiter();
+   * console.log(`Deregistered: ${txHash}`);
+   * ```
+   */
+  async deregisterArbiter(): Promise<{ txHash: `0x${string}` }> {
+    if (!this.arbiterRegistryAddress) {
+      throw new Error('ArbiterRegistry address required');
+    }
+
+    const txHash = await this.walletClient.writeContract({
+      chain: this.walletClient.chain,
+      account: this.walletClient.account!,
+      address: this.arbiterRegistryAddress,
+      abi: ArbiterRegistryABI,
+      functionName: 'deregister',
+      args: [],
+    });
+
+    return { txHash: txHash as `0x${string}` };
+  }
+
+  /**
+   * Get the URI for a registered arbiter
+   *
+   * @param arbiter - The arbiter address to query
+   * @returns The arbiter's URI (empty string if not registered)
+   * @throws Error if arbiterRegistryAddress is not configured
+   *
+   * @example
+   * ```typescript
+   * const uri = await arbiter.getArbiterUri('0x...');
+   * console.log(`URI: ${uri}`);
+   * ```
+   */
+  async getArbiterUri(arbiter: `0x${string}`): Promise<string> {
+    if (!this.arbiterRegistryAddress) {
+      throw new Error('ArbiterRegistry address required');
+    }
+
+    const uri = await this.publicClient.readContract({
+      address: this.arbiterRegistryAddress,
+      abi: ArbiterRegistryABI,
+      functionName: 'getUri',
+      args: [arbiter],
+    });
+
+    return uri as string;
+  }
+
+  /**
+   * Check if an address is a registered arbiter
+   *
+   * @param arbiter - The address to check
+   * @returns True if registered
+   * @throws Error if arbiterRegistryAddress is not configured
+   *
+   * @example
+   * ```typescript
+   * const isRegistered = await arbiter.isArbiterRegistered('0x...');
+   * console.log(`Registered: ${isRegistered}`);
+   * ```
+   */
+  async isArbiterRegistered(arbiter: `0x${string}`): Promise<boolean> {
+    if (!this.arbiterRegistryAddress) {
+      throw new Error('ArbiterRegistry address required');
+    }
+
+    const isRegistered = await this.publicClient.readContract({
+      address: this.arbiterRegistryAddress,
+      abi: ArbiterRegistryABI,
+      functionName: 'isRegistered',
+      args: [arbiter],
+    });
+
+    return isRegistered as boolean;
+  }
+
+  /**
+   * Get the total number of registered arbiters
+   *
+   * @returns The count of registered arbiters
+   * @throws Error if arbiterRegistryAddress is not configured
+   *
+   * @example
+   * ```typescript
+   * const count = await arbiter.getArbiterCount();
+   * console.log(`Total arbiters: ${count}`);
+   * ```
+   */
+  async getArbiterCount(): Promise<bigint> {
+    if (!this.arbiterRegistryAddress) {
+      throw new Error('ArbiterRegistry address required');
+    }
+
+    const count = await this.publicClient.readContract({
+      address: this.arbiterRegistryAddress,
+      abi: ArbiterRegistryABI,
+      functionName: 'arbiterCount',
+      args: [],
+    });
+
+    return count as bigint;
+  }
+
+  /**
+   * Get a paginated list of arbiters
+   *
+   * @param offset - Starting index (0-based)
+   * @param count - Number of arbiters to return
+   * @returns Object with arbiters array, uris array, and total count
+   * @throws Error if arbiterRegistryAddress is not configured
+   *
+   * @example
+   * ```typescript
+   * const { arbiters, uris, total } = await arbiter.listArbiters(0n, 10n);
+   * console.log(`Found ${total} total arbiters, showing first ${arbiters.length}`);
+   * for (let i = 0; i < arbiters.length; i++) {
+   *   console.log(`${arbiters[i]}: ${uris[i]}`);
+   * }
+   * ```
+   */
+  async listArbiters(offset: bigint, count: bigint): Promise<ArbiterList> {
+    if (!this.arbiterRegistryAddress) {
+      throw new Error('ArbiterRegistry address required');
+    }
+
+    const [arbiters, uris, total] = (await this.publicClient.readContract({
+      address: this.arbiterRegistryAddress,
+      abi: ArbiterRegistryABI,
+      functionName: 'getArbiters',
+      args: [offset, count],
+    })) as [readonly `0x${string}`[], readonly string[], bigint];
+
+    return { arbiters, uris, total };
   }
 }

@@ -49,7 +49,7 @@ describe('X402rArbiter - Decision Submission', () => {
     vi.clearAllMocks();
   });
 
-  describe('approveRefund', () => {
+  describe('approveRefundRequest', () => {
     it('should submit approve transaction', async () => {
       const arbiter = new X402rArbiter({
         publicClient,
@@ -58,13 +58,14 @@ describe('X402rArbiter - Decision Submission', () => {
         refundRequestAddress,
       });
 
-      const result = await arbiter.approveRefund(samplePaymentInfo);
+      const nonce = 0n;
+      const result = await arbiter.approveRefundRequest(samplePaymentInfo, nonce);
 
       expect(walletClient.writeContract).toHaveBeenCalledWith(
         expect.objectContaining({
           address: refundRequestAddress,
           functionName: 'updateStatus',
-          args: expect.arrayContaining([expect.anything(), RequestStatus.Approved]),
+          args: expect.arrayContaining([expect.anything(), nonce, RequestStatus.Approved]),
         })
       );
       expect(result.txHash).toBe('0xtxhash');
@@ -77,13 +78,13 @@ describe('X402rArbiter - Decision Submission', () => {
         operatorAddress,
       });
 
-      await expect(arbiter.approveRefund(samplePaymentInfo)).rejects.toThrow(
+      await expect(arbiter.approveRefundRequest(samplePaymentInfo, 0n)).rejects.toThrow(
         'RefundRequest address required'
       );
     });
   });
 
-  describe('denyRefund', () => {
+  describe('denyRefundRequest', () => {
     it('should submit deny transaction', async () => {
       const arbiter = new X402rArbiter({
         publicClient,
@@ -92,13 +93,14 @@ describe('X402rArbiter - Decision Submission', () => {
         refundRequestAddress,
       });
 
-      const result = await arbiter.denyRefund(samplePaymentInfo);
+      const nonce = 0n;
+      const result = await arbiter.denyRefundRequest(samplePaymentInfo, nonce);
 
       expect(walletClient.writeContract).toHaveBeenCalledWith(
         expect.objectContaining({
           address: refundRequestAddress,
           functionName: 'updateStatus',
-          args: expect.arrayContaining([expect.anything(), RequestStatus.Denied]),
+          args: expect.arrayContaining([expect.anything(), nonce, RequestStatus.Denied]),
         })
       );
       expect(result.txHash).toBe('0xtxhash');
@@ -111,7 +113,7 @@ describe('X402rArbiter - Decision Submission', () => {
         operatorAddress,
       });
 
-      await expect(arbiter.denyRefund(samplePaymentInfo)).rejects.toThrow(
+      await expect(arbiter.denyRefundRequest(samplePaymentInfo, 0n)).rejects.toThrow(
         'RefundRequest address required'
       );
     });

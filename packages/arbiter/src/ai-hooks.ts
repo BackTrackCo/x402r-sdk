@@ -126,11 +126,11 @@ export function createWebhookHandler(
       if (confidence >= confidenceThreshold) {
         try {
           if (decision.decision === 'approve') {
-            const { txHash } = await arbiter.approveRefund(context.paymentInfo, context.nonce);
+            const { txHash } = await arbiter.approveRefundRequest(context.paymentInfo, context.nonce);
             result.txHash = txHash;
             result.executed = true;
           } else {
-            const { txHash } = await arbiter.denyRefund(context.paymentInfo, context.nonce);
+            const { txHash } = await arbiter.denyRefundRequest(context.paymentInfo, context.nonce);
             result.txHash = txHash;
             result.executed = true;
           }
