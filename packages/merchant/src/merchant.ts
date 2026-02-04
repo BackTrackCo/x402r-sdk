@@ -8,7 +8,6 @@ import {
   PaymentOperatorABI,
   AuthCaptureEscrowABI,
   RefundRequestABI,
-  EscrowPeriodABI,
   FreezeABI,
   RequestStatus,
   NotImplementedError,

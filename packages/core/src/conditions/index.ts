@@ -7,7 +7,7 @@
 export { StaticAddressConditionABI } from '../abis/index.js';
 
 // Import network config helpers
-import { getConditionSingletons as getNetworkConditionSingletons, type ConditionSingletonAddresses } from '../config/index.js';
+import { getConditionSingletons as getNetworkConditionSingletons } from '../config/index.js';
 
 // ============ Types ============
 

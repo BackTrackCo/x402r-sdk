@@ -4,7 +4,7 @@
  */
 
 import type { WalletClient, PublicClient, Address, Hash } from 'viem';
-import { getFactoryAddress, getNetworkConfig } from '../config/index.js';
+import { getFactoryAddress } from '../config/index.js';
 import {
   PaymentOperatorFactoryABI,
   EscrowPeriodFactoryABI,

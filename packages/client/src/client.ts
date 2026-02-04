@@ -609,7 +609,7 @@ export class X402rClient {
   /**
    * Watch for payment state changes (releases and refunds)
    *
-   * @param paymentInfoHash - The hash of the PaymentInfo to watch
+   * @param _paymentInfoHash - The hash of the PaymentInfo to watch
    * @param callback - Callback function called when state changes
    * @returns Object with unsubscribe function
    *
@@ -787,13 +787,13 @@ export class X402rClient {
   /**
    * Watch for freeze and unfreeze events
    *
-   * @param recorderAddress - The EscrowPeriod contract address
+   * @param freezeAddress - The Freeze contract address
    * @param callback - Callback function called on freeze events
    * @returns Object with unsubscribe function
    *
    * @example
    * ```typescript
-   * const { unsubscribe } = client.watchFreezeEvents(recorderAddress, (event) => {
+   * const { unsubscribe } = client.watchFreezeEvents(freezeAddress, (event) => {
    *   console.log('Freeze event:', event);
    * });
    * // Later: unsubscribe();

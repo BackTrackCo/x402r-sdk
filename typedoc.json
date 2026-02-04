@@ -17,5 +17,6 @@
   "sort": ["alphabetical"],
   "readme": "README.md",
   "githubPages": true,
-  "name": "X402r SDK API Reference"
+  "name": "X402r SDK API Reference",
+  "highlightLanguages": ["typescript", "javascript", "json", "bash", "solidity"]
 }

@@ -113,6 +113,57 @@ pnpm start refund-status \
   --operator-address 0xbb4f390b80E4F4895B96B95AE382B65fDC45974B
 ```
 
+## Step 6: Merchant Operations (Using Merchant CLI)
+
+The merchant-cli provides direct access to merchant operations without running a server.
+
+### Setup
+
+```bash
+cd x402r-sdk/examples/merchant-cli
+pnpm install
+cp .env.example .env
+# Edit .env with your merchant private key
+```
+
+### Release Funds
+
+After the escrow period passes, release funds to the merchant:
+
+```bash
+pnpm start release \
+  --payment-json '{"operator":"0x...","payer":"0x...",...}' \
+  --amount 10000
+```
+
+### Check Payment Amounts
+
+```bash
+pnpm start payment-amounts --payment-json '...'
+```
+
+### Approve/Deny Refund Requests
+
+```bash
+# List pending refunds
+pnpm start pending-refunds
+
+# Approve a refund
+pnpm start approve-refund --payment-json '...'
+
+# Or deny it
+pnpm start deny-refund --payment-json '...'
+```
+
+## Merchant CLI vs Merchant Server
+
+| Aspect | Merchant Server | Merchant CLI |
+|--------|-----------------|--------------|
+| **Use Case** | Build APIs that accept payments | Manual merchant operations |
+| **How it works** | HTTP server with payment middleware | Command-line tool |
+| **When to use** | Production services, web apps | Testing, debugging, manual releases |
+| **Example** | Weather API that requires payment | Release funds after delivery |
+
 ## Reference Addresses (Base Sepolia)
 
 ### Example Operator
@@ -133,6 +184,8 @@ pnpm start refund-status \
 
 ## CLI Commands Reference
 
+### Client CLI (payer operations)
+
 | Command | Description |
 |---------|-------------|
 | `pay --url <url>` | Make a payment to a 402 endpoint |
@@ -142,4 +195,16 @@ pnpm start refund-status \
 | `refund --payment-json <json> --amount <amt> --operator-address <addr>` | Request refund |
 | `refund-status ...` | Check refund request status |
 | `cancel-refund ...` | Cancel pending refund request |
+| `info` | Show wallet and protocol addresses |
+
+### Merchant CLI (merchant operations)
+
+| Command | Description |
+|---------|-------------|
+| `release --payment-json <json> --amount <amt>` | Release escrowed funds to merchant |
+| `payment-amounts --payment-json <json>` | Check authorized/captured/released amounts |
+| `pending-refunds` | List all pending refund requests |
+| `approve-refund --payment-json <json>` | Approve a refund request |
+| `deny-refund --payment-json <json>` | Deny a refund request |
+| `operator-config` | Show operator configuration |
 | `info` | Show wallet and protocol addresses |

@@ -5,7 +5,7 @@
 
 import type { WalletClient, PublicClient, Address, Hash } from 'viem';
 import { getNetworkConfig, getConditionSingletons } from '../config/index.js';
-import { createPaymentOperatorConfig, ZERO_ADDRESS } from '../factory/index.js';
+import { ZERO_ADDRESS } from '../factory/index.js';
 import {
   deployEscrowPeriod,
   deployFreezePolicy,

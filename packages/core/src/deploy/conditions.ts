@@ -4,14 +4,7 @@
  */
 
 import type { WalletClient, PublicClient, Address } from 'viem';
-import type {
-  ConditionConfig,
-  ConditionAddress,
-  AndConditionConfig,
-  OrConditionConfig,
-  NotConditionConfig,
-  StaticAddressConditionConfig,
-} from '../conditions/index.js';
+import type { ConditionConfig, ConditionAddress } from '../conditions/index.js';
 import {
   deployAndCondition,
   deployOrCondition,

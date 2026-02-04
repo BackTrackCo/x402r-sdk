@@ -89,12 +89,18 @@ export async function pay(options: PayOptions): Promise<PayResult> {
     },
   });
 
+  // Build complete paymentInfo with payer field included
+  const completePaymentInfo = {
+    ...paymentPayload.paymentInfo,
+    payer: paymentPayload.authorization.from,
+  };
+
   if (!paidResponse.ok) {
     const error = await paidResponse.json().catch(() => ({ message: 'Unknown error' }));
     return {
       success: false,
       error: `Payment failed: ${error.message || error.error || paidResponse.statusText}`,
-      paymentInfo: paymentPayload.paymentInfo,
+      paymentInfo: completePaymentInfo,
     };
   }
 
@@ -104,7 +110,7 @@ export async function pay(options: PayOptions): Promise<PayResult> {
   return {
     success: true,
     response,
-    paymentInfo: paymentPayload.paymentInfo,
+    paymentInfo: completePaymentInfo,
     transaction: response.payment?.transaction,
   };
 }

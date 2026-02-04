@@ -48,6 +48,21 @@ const app = new Hono();
 // Enable CORS for browser clients
 app.use('*', cors());
 
+// Import merchant SDK for release operations
+import { X402rMerchant } from '@x402r/merchant';
+import { type PaymentInfo, getNetworkConfig } from '@x402r/core';
+
+// Create merchant SDK instance
+const networkConfig = getNetworkConfig(NETWORK_ID)!;
+const merchant = new X402rMerchant({
+  publicClient,
+  walletClient,
+  operatorAddress: config.operatorAddress,
+  escrowAddress: networkConfig.authCaptureEscrow,
+  refundRequestAddress: networkConfig.refundRequest,
+  chainId: 84532,
+});
+
 // Health check endpoint
 app.get('/', (c) => {
   return c.json({
@@ -57,6 +72,8 @@ app.get('/', (c) => {
       '/': 'This endpoint (health check)',
       '/weather': 'Get weather data (requires payment)',
       '/info': 'Get payment info (no payment required)',
+      '/release': 'POST - Release funds from escrow',
+      '/payment-amounts': 'POST - Get capturable/refundable amounts',
     },
   });
 });
@@ -121,6 +138,79 @@ app.get(
     return c.json(weather);
   }
 );
+
+// Release endpoint - merchant releases funds from escrow
+app.post('/release', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { paymentInfo, amount } = body as { paymentInfo: PaymentInfo; amount: string };
+
+    if (!paymentInfo) {
+      return c.json({ error: 'paymentInfo is required' }, 400);
+    }
+
+    // Convert string amounts to bigint
+    const parsedPaymentInfo: PaymentInfo = {
+      ...paymentInfo,
+      maxAmount: BigInt(paymentInfo.maxAmount),
+      salt: BigInt(paymentInfo.salt),
+    };
+
+    const releaseAmount = amount ? BigInt(amount) : parsedPaymentInfo.maxAmount;
+
+    console.log('[release] Releasing funds...');
+    console.log('  Payer:', parsedPaymentInfo.payer);
+    console.log('  Amount:', releaseAmount.toString());
+
+    const result = await merchant.release(parsedPaymentInfo, releaseAmount);
+
+    console.log('[release] Success! TX:', result.txHash);
+
+    return c.json({
+      success: true,
+      txHash: result.txHash,
+      explorerUrl: `https://sepolia.basescan.org/tx/${result.txHash}`,
+    });
+  } catch (error) {
+    console.error('[release] Error:', error);
+    return c.json({
+      error: 'Release failed',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    }, 500);
+  }
+});
+
+// Get payment amounts endpoint
+app.post('/payment-amounts', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { paymentInfo } = body as { paymentInfo: PaymentInfo };
+
+    if (!paymentInfo) {
+      return c.json({ error: 'paymentInfo is required' }, 400);
+    }
+
+    // Convert string amounts to bigint
+    const parsedPaymentInfo: PaymentInfo = {
+      ...paymentInfo,
+      maxAmount: BigInt(paymentInfo.maxAmount),
+      salt: BigInt(paymentInfo.salt),
+    };
+
+    const amounts = await merchant.getPaymentAmounts(parsedPaymentInfo);
+
+    return c.json({
+      capturableAmount: amounts.capturableAmount.toString(),
+      refundableAmount: amounts.refundableAmount.toString(),
+    });
+  } catch (error) {
+    console.error('[payment-amounts] Error:', error);
+    return c.json({
+      error: 'Failed to get payment amounts',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    }, 500);
+  }
+});
 
 // Start server
 const port = config.port;
