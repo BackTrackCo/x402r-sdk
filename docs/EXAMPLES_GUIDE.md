@@ -195,6 +195,7 @@ pnpm start deny-refund --payment-json '...'
 | `refund --payment-json <json> --amount <amt> --operator-address <addr>` | Request refund |
 | `refund-status ...` | Check refund request status |
 | `cancel-refund ...` | Cancel pending refund request |
+| `preview-fee --operator-address <addr> --amount <amt>` | Preview fees before paying |
 | `info` | Show wallet and protocol addresses |
 
 ### Merchant CLI (merchant operations)
@@ -206,5 +207,6 @@ pnpm start deny-refund --payment-json '...'
 | `pending-refunds` | List all pending refund requests |
 | `approve-refund --payment-json <json>` | Approve a refund request |
 | `deny-refund --payment-json <json>` | Deny a refund request |
+| `calculate-fee --amount <amt>` | Calculate fees for an amount |
 | `operator-config` | Show operator configuration |
 | `info` | Show wallet and protocol addresses |

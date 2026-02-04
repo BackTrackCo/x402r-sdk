@@ -27,3 +27,6 @@ export * from './deploy/index.js';
 
 // Shared utilities
 export * from './utils/index.js';
+
+// Fee calculation utilities
+export * from './fees/index.js';

@@ -545,6 +545,26 @@ export const IRecorderABI = [
 ] as const;
 
 /**
+ * IFeeCalculator interface ABI
+ *
+ * Fee calculators compute fee in basis points for a given payment action.
+ * Used by both protocol-level and operator-level fee calculators.
+ */
+export const IFeeCalculatorABI = [
+  {
+    type: 'function',
+    name: 'calculateFee',
+    inputs: [
+      { name: 'paymentInfo', type: 'tuple', components: paymentInfoComponents },
+      { name: 'amount', type: 'uint256' },
+      { name: 'caller', type: 'address' },
+    ],
+    outputs: [{ name: 'feeBps', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+] as const;
+
+/**
  * EscrowPeriod contract ABI
  *
  * EscrowPeriod implements both IRecorder and ICondition:
@@ -899,12 +919,101 @@ export const FreezeABI = [
   },
 ] as const;
 
+/**
+ * ProtocolFeeConfig ABI - Shared protocol fee configuration contract
+ *
+ * Owned by protocol multisig. Contains:
+ * - A swappable IFeeCalculator with 7-day timelock
+ * - Protocol fee recipient address
+ */
+export const ProtocolFeeConfigABI = [
+  // View functions
+  {
+    name: 'getProtocolFeeBps',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'paymentInfo', type: 'tuple', components: paymentInfoComponents },
+      { name: 'amount', type: 'uint256' },
+      { name: 'caller', type: 'address' },
+    ],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    name: 'getProtocolFeeRecipient',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+  },
+  {
+    name: 'calculator',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+  },
+  {
+    name: 'protocolFeeRecipient',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+  },
+  // Constants
+  {
+    name: 'TIMELOCK_DELAY',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    name: 'MAX_PROTOCOL_FEE_BPS',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  // Timelock state
+  {
+    name: 'pendingCalculator',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+  },
+  {
+    name: 'pendingCalculatorTimestamp',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    name: 'pendingRecipient',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+  },
+  {
+    name: 'pendingRecipientTimestamp',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+] as const;
+
 // Export types for ABI consumers
 export type PaymentOperatorABIType = typeof PaymentOperatorABI;
 export type RefundRequestABIType = typeof RefundRequestABI;
 export type IRecorderABIType = typeof IRecorderABI;
+export type IFeeCalculatorABIType = typeof IFeeCalculatorABI;
 export type EscrowPeriodABIType = typeof EscrowPeriodABI;
 export type AuthCaptureEscrowABIType = typeof AuthCaptureEscrowABI;
 export type StaticAddressConditionABIType = typeof StaticAddressConditionABI;
 export type FreezePolicyABIType = typeof FreezePolicyABI;
 export type FreezeABIType = typeof FreezeABI;
+export type ProtocolFeeConfigABIType = typeof ProtocolFeeConfigABI;

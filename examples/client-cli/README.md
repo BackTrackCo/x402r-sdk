@@ -88,6 +88,31 @@ pnpm start cancel-refund \
   --operator-address 0xbb4f390b80E4F4895B96B95AE382B65fDC45974B
 ```
 
+### Preview Fees
+Preview the fee breakdown before making a payment:
+```bash
+pnpm start preview-fee \
+  --operator-address 0xbb4f390b80E4F4895B96B95AE382B65fDC45974B \
+  --amount 10000000
+```
+
+Output:
+```
+Fee Breakdown:
+  Protocol Fee: 50 bps (0.50%) = 0.050000 USDC
+  Operator Fee: 100 bps (1.00%) = 0.100000 USDC
+  Total Fee:    150 bps (1.50%) = 0.150000 USDC
+  Net Amount:   9.850000 USDC
+```
+
+Optionally validate against payment bounds:
+```bash
+pnpm start preview-fee \
+  --operator-address 0x... \
+  --amount 10000000 \
+  --payment-json '{"operator":"0x...","minFeeBps":0,"maxFeeBps":200,...}'
+```
+
 ## Pre-deployed Addresses (Base Sepolia)
 
 | Contract | Address |

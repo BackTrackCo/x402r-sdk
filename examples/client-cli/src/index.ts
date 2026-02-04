@@ -18,7 +18,13 @@ import { privateKeyToAccount } from 'viem/accounts';
 import { config as dotenvConfig } from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { getNetworkConfig, type PaymentInfo } from '@x402r/core';
+import {
+  getNetworkConfig,
+  calculateTotalFees,
+  formatFeeBreakdown,
+  validateFeeBounds,
+  type PaymentInfo,
+} from '@x402r/core';
 import { pay } from './commands/pay.js';
 import { freeze, unfreeze, checkFrozen } from './commands/freeze.js';
 import { requestRefund, cancelRefund, getRefundStatus } from './commands/refund.js';
@@ -315,6 +321,69 @@ program
     console.log('  RefundRequest:', networkConfig.refundRequest);
     console.log('  TokenCollector:', networkConfig.tokenCollector);
     console.log('  USDC:', networkConfig.usdc);
+  });
+
+// Preview fee command
+program
+  .command('preview-fee')
+  .description('Preview fees for a payment before authorizing')
+  .requiredOption('-o, --operator-address <address>', 'Operator address')
+  .requiredOption('-a, --amount <amount>', 'Amount to calculate fees for (in token units)')
+  .option('-p, --payment-json <json>', 'Payment info JSON (optional, for bounds validation)')
+  .action(async (options) => {
+    const { publicClient, account } = createClients();
+    const operatorAddress = options.operatorAddress as `0x${string}`;
+    const amount = BigInt(options.amount);
+    const networkConfig = getNetworkConfig(NETWORK_ID)!;
+
+    // Create a minimal payment info for fee calculation if not provided
+    const paymentInfo: PaymentInfo = options.paymentJson
+      ? parsePaymentInfo(options.paymentJson)
+      : {
+          operator: operatorAddress,
+          payer: account.address,
+          receiver: '0x0000000000000000000000000000000000000001',
+          token: networkConfig.usdc,
+          maxAmount: amount,
+          preApprovalExpiry: 0n,
+          authorizationExpiry: 0n,
+          refundExpiry: 0n,
+          minFeeBps: 0,
+          maxFeeBps: 10000, // 100%
+          feeReceiver: '0x0000000000000000000000000000000000000001',
+          salt: 0n,
+        };
+
+    console.log('\nPreviewing fees...');
+    console.log('  Amount:', amount.toString());
+    console.log('  Operator:', operatorAddress);
+    console.log('  Payer:', account.address);
+
+    try {
+      const fees = await calculateTotalFees(
+        publicClient,
+        operatorAddress,
+        paymentInfo,
+        amount,
+        account.address
+      );
+
+      console.log('\n' + formatFeeBreakdown(fees));
+
+      // Validate bounds if payment info was provided
+      if (options.paymentJson) {
+        const isValid = validateFeeBounds(fees, paymentInfo);
+        console.log(
+          `\nFee Bounds: ${isValid ? 'VALID' : 'INVALID'} (min: ${paymentInfo.minFeeBps} bps, max: ${paymentInfo.maxFeeBps} bps)`
+        );
+        if (!isValid) {
+          console.log('WARNING: Fees are outside the acceptable bounds for this payment!');
+        }
+      }
+    } catch (error) {
+      console.error('\nFailed to preview fees:', error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
   });
 
 program.parse();

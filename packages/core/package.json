@@ -36,6 +36,10 @@
     "./conditions": {
       "import": "./dist/conditions/index.js",
       "types": "./dist/conditions/index.d.ts"
+    },
+    "./fees": {
+      "import": "./dist/fees/index.js",
+      "types": "./dist/fees/index.d.ts"
     }
   },
   "files": [

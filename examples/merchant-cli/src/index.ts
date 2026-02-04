@@ -19,7 +19,13 @@ import { config as dotenvConfig } from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { X402rMerchant } from '@x402r/merchant';
-import { getNetworkConfig, type PaymentInfo } from '@x402r/core';
+import {
+  getNetworkConfig,
+  calculateTotalFees,
+  formatFeeBreakdown,
+  validateFeeBounds,
+  type PaymentInfo,
+} from '@x402r/core';
 
 // Load environment from the example directory
 const __filename = fileURLToPath(import.meta.url);
@@ -393,6 +399,65 @@ program
       console.log('  Refund Post Escrow:', config.refundPostEscrowRecorder);
     } catch (error) {
       console.error('\nFailed to get config:', error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
+
+// Calculate fee command
+program
+  .command('calculate-fee')
+  .description('Calculate fees for a payment amount')
+  .requiredOption('-a, --amount <amount>', 'Amount to calculate fees for (in token units)')
+  .option('-p, --payment-json <json>', 'Payment info JSON (optional, for bounds validation)')
+  .option('-c, --caller <address>', 'Caller address (defaults to merchant address)')
+  .action(async (options) => {
+    const { publicClient, account, operatorAddress } = createMerchant();
+    const amount = BigInt(options.amount);
+    const caller = (options.caller as `0x${string}`) || account.address;
+
+    // Create a minimal payment info for fee calculation if not provided
+    const paymentInfo: PaymentInfo = options.paymentJson
+      ? parsePaymentInfo(options.paymentJson)
+      : {
+          operator: operatorAddress,
+          payer: '0x0000000000000000000000000000000000000001',
+          receiver: account.address,
+          token: '0x036CbD53842c5426634e7929541eC2318f3dCF7e', // USDC on Base Sepolia
+          maxAmount: amount,
+          preApprovalExpiry: 0,
+          authorizationExpiry: 0,
+          refundExpiry: 0,
+          minFeeBps: 0,
+          maxFeeBps: 10000, // 100%
+          feeReceiver: account.address,
+          salt: 0n,
+        };
+
+    console.log('\nCalculating fees...');
+    console.log('  Amount:', amount.toString());
+    console.log('  Operator:', operatorAddress);
+    console.log('  Caller:', caller);
+
+    try {
+      const fees = await calculateTotalFees(
+        publicClient,
+        operatorAddress,
+        paymentInfo,
+        amount,
+        caller
+      );
+
+      console.log('\n' + formatFeeBreakdown(fees));
+
+      // Validate bounds if payment info was provided
+      if (options.paymentJson) {
+        const isValid = validateFeeBounds(fees, paymentInfo);
+        console.log(
+          `\nFee Bounds: ${isValid ? 'VALID' : 'INVALID'} (min: ${paymentInfo.minFeeBps} bps, max: ${paymentInfo.maxFeeBps} bps)`
+        );
+      }
+    } catch (error) {
+      console.error('\nFailed to calculate fees:', error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });

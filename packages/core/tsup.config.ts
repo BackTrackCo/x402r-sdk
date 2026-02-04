@@ -9,6 +9,7 @@ export default defineConfig({
     'src/errors/index.ts',
     'src/factory/index.ts',
     'src/conditions/index.ts',
+    'src/fees/index.ts',
   ],
   format: ['esm'],
   dts: true,

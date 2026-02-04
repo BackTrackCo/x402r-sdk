@@ -244,6 +244,44 @@ const complexCondition = await resolveConditionConfig(
 );
 ```
 
+## Fee Calculation
+
+Fees are **additive**: Total = Protocol Fee + Operator Fee
+
+- **Protocol Fee**: 0-100 bps, managed by `ProtocolFeeConfig` with 7-day timelock
+- **Operator Fee**: Set at deployment via `StaticFeeCalculator`, immutable
+
+```typescript
+import { calculateTotalFees, formatFeeBreakdown, validateFeeBounds } from '@x402r/core';
+
+const fees = await calculateTotalFees(
+  publicClient,
+  operatorAddress,
+  paymentInfo,
+  10_000_000n,  // 10 USDC
+  callerAddress
+);
+
+console.log(formatFeeBreakdown(fees));
+// Fee Breakdown:
+//   Protocol Fee: 50 bps (0.50%) = 0.050000 USDC
+//   Operator Fee: 100 bps (1.00%) = 0.100000 USDC
+//   Total Fee:    150 bps (1.50%) = 0.150000 USDC
+//   Net Amount:   9.850000 USDC
+
+// Validate fees are within payment bounds
+const isValid = validateFeeBounds(fees, paymentInfo);
+```
+
+| Function | Purpose |
+|----------|---------|
+| `calculateTotalFees()` | Full fee breakdown (protocol + operator) |
+| `calculateOperatorFeeBps()` | Operator fee in basis points |
+| `calculateProtocolFeeBps()` | Protocol fee in basis points |
+| `getFeeAddresses()` | Fee calculator and recipient addresses |
+| `validateFeeBounds()` | Check fees are within payment bounds |
+| `formatFeeBreakdown()` | Human-readable fee string |
+
 ## Available Conditions
 
 ### Singleton Conditions (Pre-deployed)

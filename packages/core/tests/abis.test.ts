@@ -3,11 +3,13 @@ import {
   PaymentOperatorABI,
   RefundRequestABI,
   IRecorderABI,
+  IFeeCalculatorABI,
   EscrowPeriodABI,
   AuthCaptureEscrowABI,
   StaticAddressConditionABI,
   FreezePolicyABI,
   FreezeABI,
+  ProtocolFeeConfigABI,
 } from '../src/abis/index.js';
 
 describe('PaymentOperatorABI', () => {
@@ -165,6 +167,36 @@ describe('IRecorderABI', () => {
       (item) => item.name === 'record' && item.type === 'function'
     );
     expect(recordFn?.stateMutability).toBe('nonpayable');
+  });
+});
+
+describe('IFeeCalculatorABI', () => {
+  it('should have calculateFee function with 3 parameters', () => {
+    const calculateFeeFn = IFeeCalculatorABI.find(
+      (item) => item.name === 'calculateFee' && item.type === 'function'
+    );
+    expect(calculateFeeFn).toBeDefined();
+    expect(calculateFeeFn?.inputs).toHaveLength(3);
+    const inputNames = calculateFeeFn?.inputs?.map((i) => i.name);
+    expect(inputNames).toContain('paymentInfo');
+    expect(inputNames).toContain('amount');
+    expect(inputNames).toContain('caller');
+  });
+
+  it('should return feeBps as uint256', () => {
+    const calculateFeeFn = IFeeCalculatorABI.find(
+      (item) => item.name === 'calculateFee' && item.type === 'function'
+    );
+    expect(calculateFeeFn?.outputs).toHaveLength(1);
+    expect(calculateFeeFn?.outputs?.[0]?.name).toBe('feeBps');
+    expect(calculateFeeFn?.outputs?.[0]?.type).toBe('uint256');
+  });
+
+  it('should be view', () => {
+    const calculateFeeFn = IFeeCalculatorABI.find(
+      (item) => item.name === 'calculateFee' && item.type === 'function'
+    );
+    expect(calculateFeeFn?.stateMutability).toBe('view');
   });
 });
 
@@ -381,26 +413,79 @@ describe('StaticAddressConditionABI', () => {
   });
 });
 
+describe('ProtocolFeeConfigABI', () => {
+  it('should have getProtocolFeeBps function with 3 parameters', () => {
+    const fn = ProtocolFeeConfigABI.find(
+      (item) => item.name === 'getProtocolFeeBps' && item.type === 'function'
+    );
+    expect(fn).toBeDefined();
+    expect(fn?.inputs).toHaveLength(3);
+    const inputNames = fn?.inputs?.map((i) => i.name);
+    expect(inputNames).toContain('paymentInfo');
+    expect(inputNames).toContain('amount');
+    expect(inputNames).toContain('caller');
+    expect(fn?.outputs?.[0]?.type).toBe('uint256');
+  });
+
+  it('should have getProtocolFeeRecipient function', () => {
+    const fn = ProtocolFeeConfigABI.find(
+      (item) => item.name === 'getProtocolFeeRecipient' && item.type === 'function'
+    );
+    expect(fn).toBeDefined();
+    expect(fn?.stateMutability).toBe('view');
+    expect(fn?.outputs?.[0]?.type).toBe('address');
+  });
+
+  it('should have calculator function', () => {
+    const fn = ProtocolFeeConfigABI.find(
+      (item) => item.name === 'calculator' && item.type === 'function'
+    );
+    expect(fn).toBeDefined();
+    expect(fn?.outputs?.[0]?.type).toBe('address');
+  });
+
+  it('should have all required functions', () => {
+    const functionNames = ProtocolFeeConfigABI.filter(
+      (item) => item.type === 'function'
+    ).map((item) => item.name);
+
+    expect(functionNames).toContain('getProtocolFeeBps');
+    expect(functionNames).toContain('getProtocolFeeRecipient');
+    expect(functionNames).toContain('calculator');
+    expect(functionNames).toContain('protocolFeeRecipient');
+    expect(functionNames).toContain('TIMELOCK_DELAY');
+    expect(functionNames).toContain('MAX_PROTOCOL_FEE_BPS');
+    expect(functionNames).toContain('pendingCalculator');
+    expect(functionNames).toContain('pendingCalculatorTimestamp');
+  });
+});
+
 describe('ABI structure validation', () => {
   it('all ABIs should be readonly arrays', () => {
     expect(Array.isArray(PaymentOperatorABI)).toBe(true);
     expect(Array.isArray(RefundRequestABI)).toBe(true);
+    expect(Array.isArray(IRecorderABI)).toBe(true);
+    expect(Array.isArray(IFeeCalculatorABI)).toBe(true);
     expect(Array.isArray(EscrowPeriodABI)).toBe(true);
     expect(Array.isArray(AuthCaptureEscrowABI)).toBe(true);
     expect(Array.isArray(StaticAddressConditionABI)).toBe(true);
     expect(Array.isArray(FreezePolicyABI)).toBe(true);
     expect(Array.isArray(FreezeABI)).toBe(true);
+    expect(Array.isArray(ProtocolFeeConfigABI)).toBe(true);
   });
 
   it('all ABI items should have name and type', () => {
     const allAbis = [
       ...PaymentOperatorABI,
       ...RefundRequestABI,
+      ...IRecorderABI,
+      ...IFeeCalculatorABI,
       ...EscrowPeriodABI,
       ...AuthCaptureEscrowABI,
       ...StaticAddressConditionABI,
       ...FreezePolicyABI,
       ...FreezeABI,
+      ...ProtocolFeeConfigABI,
     ];
 
     allAbis.forEach((item) => {

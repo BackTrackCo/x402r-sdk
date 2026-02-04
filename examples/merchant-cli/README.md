@@ -94,6 +94,28 @@ pnpm start unfreeze \
   --freeze-address 0xD0f99B7667076f151FD8240b277f1765d147e48C
 ```
 
+### Calculate Fees
+Calculate the fee breakdown for a payment amount:
+```bash
+pnpm start calculate-fee --amount 10000000
+```
+
+Output:
+```
+Fee Breakdown:
+  Protocol Fee: 50 bps (0.50%) = 0.050000 USDC
+  Operator Fee: 100 bps (1.00%) = 0.100000 USDC
+  Total Fee:    150 bps (1.50%) = 0.150000 USDC
+  Net Amount:   9.850000 USDC
+```
+
+Validate against payment bounds:
+```bash
+pnpm start calculate-fee \
+  --amount 10000000 \
+  --payment-json '{"operator":"0x...","minFeeBps":0,"maxFeeBps":200,...}'
+```
+
 ## Pre-deployed Addresses (Base Sepolia)
 
 | Contract | Address |
@@ -161,3 +183,4 @@ pnpm start deny-refund --payment-json '...'
 | Refund in escrow | - | `refund-in-escrow` |
 | Payment amounts | - | `payment-amounts` |
 | Operator config | - | `operator-config` |
+| Calculate fees | `preview-fee` | `calculate-fee` |
