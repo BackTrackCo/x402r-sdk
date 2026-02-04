@@ -57,6 +57,34 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@20.19.30)
 
+  examples/arbiter-cli:
+    dependencies:
+      '@x402r/arbiter':
+        specifier: workspace:*
+        version: link:../../packages/arbiter
+      '@x402r/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      commander:
+        specifier: ^12.1.0
+        version: 12.1.0
+      dotenv:
+        specifier: ^16.4.0
+        version: 16.6.1
+      viem:
+        specifier: ^2.21.0
+        version: 2.45.0(typescript@5.9.3)
+    devDependencies:
+      '@types/node':
+        specifier: ^20.11.0
+        version: 20.19.30
+      tsx:
+        specifier: ^4.7.0
+        version: 4.21.0
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
   examples/client-cli:
     dependencies:
       '@x402r/client':
