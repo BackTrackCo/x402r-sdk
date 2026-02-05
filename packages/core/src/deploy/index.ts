@@ -37,10 +37,6 @@ export {
   computeEscrowPeriodAddress,
   getDeployedEscrowPeriod,
   deployEscrowPeriod,
-  // FreezePolicy
-  computeFreezePolicyAddress,
-  getDeployedFreezePolicy,
-  deployFreezePolicy,
   // Freeze
   computeFreezeAddress,
   getDeployedFreeze,

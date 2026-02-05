@@ -8,14 +8,12 @@ import { getNetworkConfig, getConditionSingletons } from '../config/index.js';
 import { ZERO_ADDRESS } from '../factory/index.js';
 import {
   deployEscrowPeriod,
-  deployFreezePolicy,
   deployFreeze,
   deployStaticFeeCalculator,
   deployStaticAddressCondition,
   deployOrCondition,
   deployOperator,
   computeEscrowPeriodAddress,
-  computeFreezePolicyAddress,
   computeFreezeAddress,
   computeStaticFeeCalculatorAddress,
   computeStaticAddressConditionAddress,
@@ -51,8 +49,6 @@ export interface MarketplaceOperatorDeployment {
   operatorAddress: Address;
   /** The EscrowPeriod contract address */
   escrowPeriodAddress: Address;
-  /** The FreezePolicy contract address */
-  freezePolicyAddress: Address;
   /** The Freeze contract address */
   freezeAddress: Address;
   /** StaticAddressCondition for arbiter */
@@ -76,7 +72,6 @@ export interface MarketplaceOperatorDeployment {
 export interface MarketplaceOperatorPreview {
   operatorAddress: Address;
   escrowPeriodAddress: Address;
-  freezePolicyAddress: Address;
   freezeAddress: Address;
   arbiterConditionAddress: Address;
   refundInEscrowCondition: Address;
@@ -115,40 +110,33 @@ export async function previewMarketplaceOperator(
     { escrowPeriod: options.escrowPeriodSeconds }
   );
 
-  // 2. Compute FreezePolicy address (payer can freeze, receiver can unfreeze)
-  const freezePolicyAddress = await computeFreezePolicyAddress(
+  // 2. Compute Freeze address (payer can freeze, receiver can unfreeze)
+  const freezeAddress = await computeFreezeAddress(
     publicClient,
     networkId,
     {
       freezeCondition: singletons.payer,
       unfreezeCondition: singletons.receiver,
       freezeDuration: options.freezeDurationSeconds ?? 0n,
+      escrowPeriodContract: escrowPeriodAddress,
     }
   );
 
-  // 3. Compute Freeze address
-  const freezeAddress = await computeFreezeAddress(
-    publicClient,
-    networkId,
-    freezePolicyAddress,
-    escrowPeriodAddress
-  );
-
-  // 4. Compute arbiter condition address
+  // 3. Compute arbiter condition address
   const arbiterConditionAddress = await computeStaticAddressConditionAddress(
     publicClient,
     networkId,
     options.arbiter
   );
 
-  // 5. Compute refundInEscrow condition: OR(Receiver, Arbiter)
+  // 4. Compute refundInEscrow condition: OR(Receiver, Arbiter)
   const refundInEscrowCondition = await computeOrConditionAddress(
     publicClient,
     networkId,
     [singletons.receiver, arbiterConditionAddress]
   );
 
-  // 6. Compute fee calculator if needed
+  // 5. Compute fee calculator if needed
   let feeCalculatorAddress: Address | null = null;
   if (options.operatorFeeBps && options.operatorFeeBps > 0n) {
     feeCalculatorAddress = await computeStaticFeeCalculatorAddress(
@@ -158,7 +146,7 @@ export async function previewMarketplaceOperator(
     );
   }
 
-  // 7. Compute operator address
+  // 6. Compute operator address
   const operatorConfig = createConfig({
     feeRecipient: options.feeRecipient,
     feeCalculator: feeCalculatorAddress ?? ZERO_ADDRESS,
@@ -178,7 +166,6 @@ export async function previewMarketplaceOperator(
   return {
     operatorAddress,
     escrowPeriodAddress,
-    freezePolicyAddress,
     freezeAddress,
     arbiterConditionAddress,
     refundInEscrowCondition,
@@ -257,8 +244,8 @@ export async function deployMarketplaceOperator(
   );
   trackDeployment(escrowPeriodResult);
 
-  // 2. Deploy FreezePolicy (payer can freeze, receiver can unfreeze)
-  const freezePolicyResult = await deployFreezePolicy(
+  // 2. Deploy Freeze (payer can freeze, receiver can unfreeze)
+  const freezeResult = await deployFreeze(
     walletClient,
     publicClient,
     networkId,
@@ -266,21 +253,12 @@ export async function deployMarketplaceOperator(
       freezeCondition: singletons.payer,
       unfreezeCondition: singletons.receiver,
       freezeDuration: options.freezeDurationSeconds ?? 0n,
+      escrowPeriodContract: escrowPeriodResult.address,
     }
-  );
-  trackDeployment(freezePolicyResult);
-
-  // 3. Deploy Freeze
-  const freezeResult = await deployFreeze(
-    walletClient,
-    publicClient,
-    networkId,
-    freezePolicyResult.address,
-    escrowPeriodResult.address
   );
   trackDeployment(freezeResult);
 
-  // 4. Deploy arbiter condition
+  // 3. Deploy arbiter condition
   const arbiterConditionResult = await deployStaticAddressCondition(
     walletClient,
     publicClient,
@@ -289,7 +267,7 @@ export async function deployMarketplaceOperator(
   );
   trackDeployment(arbiterConditionResult);
 
-  // 5. Deploy refundInEscrow condition: OR(Receiver, Arbiter)
+  // 4. Deploy refundInEscrow condition: OR(Receiver, Arbiter)
   const refundInEscrowResult = await deployOrCondition(
     walletClient,
     publicClient,
@@ -298,7 +276,7 @@ export async function deployMarketplaceOperator(
   );
   trackDeployment(refundInEscrowResult);
 
-  // 6. Deploy fee calculator if needed
+  // 5. Deploy fee calculator if needed
   let feeCalculatorAddress: Address | null = null;
   if (options.operatorFeeBps && options.operatorFeeBps > 0n) {
     const feeCalcResult = await deployStaticFeeCalculator(
@@ -311,7 +289,7 @@ export async function deployMarketplaceOperator(
     feeCalculatorAddress = feeCalcResult.address;
   }
 
-  // 7. Deploy the PaymentOperator
+  // 6. Deploy the PaymentOperator
   const operatorConfig = createConfig({
     feeRecipient: options.feeRecipient,
     feeCalculator: feeCalculatorAddress ?? ZERO_ADDRESS,
@@ -333,7 +311,6 @@ export async function deployMarketplaceOperator(
   return {
     operatorAddress: operatorResult.address,
     escrowPeriodAddress: escrowPeriodResult.address,
-    freezePolicyAddress: freezePolicyResult.address,
     freezeAddress: freezeResult.address,
     arbiterConditionAddress: arbiterConditionResult.address,
     refundInEscrowCondition: refundInEscrowResult.address,

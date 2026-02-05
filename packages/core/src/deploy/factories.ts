@@ -8,7 +8,6 @@ import { getFactoryAddress } from '../config/index.js';
 import {
   PaymentOperatorFactoryABI,
   EscrowPeriodFactoryABI,
-  FreezePolicyFactoryABI,
   FreezeFactoryABI,
   StaticFeeCalculatorFactoryABI,
   StaticAddressConditionFactoryABI,
@@ -18,9 +17,9 @@ import {
   RecorderCombinatorFactoryABI,
   type PaymentOperatorConfig,
   type EscrowPeriodConfigInput,
-  type FreezePolicyConfigInput,
+  type FreezeConfigInput,
   createEscrowPeriodConfig,
-  createFreezePolicyConfig,
+  createFreezeConfig,
   ZERO_ADDRESS,
 } from '../factory/index.js';
 
@@ -258,95 +257,6 @@ export async function deployEscrowPeriod(
   return { address, txHash, isNewDeployment: true };
 }
 
-// ============ FreezePolicy ============
-
-/**
- * Compute the deterministic address for a FreezePolicy
- */
-export async function computeFreezePolicyAddress(
-  publicClient: PublicClient,
-  networkId: string,
-  config: FreezePolicyConfigInput
-): Promise<Address> {
-  const factoryAddress = getFactoryAddress(networkId, 'freezePolicy');
-  const fullConfig = createFreezePolicyConfig(config);
-
-  return publicClient.readContract({
-    address: factoryAddress,
-    abi: FreezePolicyFactoryABI,
-    functionName: 'computeAddress',
-    args: [fullConfig.freezeCondition, fullConfig.unfreezeCondition, fullConfig.freezeDuration],
-  });
-}
-
-/**
- * Get the deployed FreezePolicy address (returns zero if not deployed)
- */
-export async function getDeployedFreezePolicy(
-  publicClient: PublicClient,
-  networkId: string,
-  config: FreezePolicyConfigInput
-): Promise<Address> {
-  const factoryAddress = getFactoryAddress(networkId, 'freezePolicy');
-  const fullConfig = createFreezePolicyConfig(config);
-
-  return publicClient.readContract({
-    address: factoryAddress,
-    abi: FreezePolicyFactoryABI,
-    functionName: 'getDeployed',
-    args: [fullConfig.freezeCondition, fullConfig.unfreezeCondition, fullConfig.freezeDuration],
-  });
-}
-
-/**
- * Deploy a FreezePolicy via factory
- */
-export async function deployFreezePolicy(
-  walletClient: WalletClient,
-  publicClient: PublicClient,
-  networkId: string,
-  config: FreezePolicyConfigInput
-): Promise<DeploymentResult> {
-  const factoryAddress = getFactoryAddress(networkId, 'freezePolicy');
-  const fullConfig = createFreezePolicyConfig(config);
-
-  // Check if already deployed
-  const existing = await getDeployedFreezePolicy(publicClient, networkId, config);
-  if (existing !== ZERO_ADDRESS) {
-    return { address: existing, isNewDeployment: false };
-  }
-
-  // Deploy via factory
-  const { request } = await publicClient.simulateContract({
-    address: factoryAddress,
-    abi: FreezePolicyFactoryABI,
-    functionName: 'deploy',
-    args: [fullConfig.freezeCondition, fullConfig.unfreezeCondition, fullConfig.freezeDuration],
-    account: walletClient.account!,
-  });
-
-  const txHash = await walletClient.writeContract(request);
-  const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
-
-  if (receipt.status !== 'success') {
-    throw new Error(
-      `FreezePolicy deployment failed. TX: ${txHash}. ` +
-        `Args: freezeCondition=${fullConfig.freezeCondition}, ` +
-        `unfreezeCondition=${fullConfig.unfreezeCondition}, ` +
-        `freezeDuration=${fullConfig.freezeDuration}`
-    );
-  }
-
-  // Query deployed address with retry (handles RPC caching delays)
-  const address = await retryWithDelay(
-    () => getDeployedFreezePolicy(publicClient, networkId, config),
-    (addr) => addr !== ZERO_ADDRESS,
-    { description: 'FreezePolicy getDeployed' }
-  );
-
-  return { address, txHash, isNewDeployment: true };
-}
-
 // ============ Freeze ============
 
 /**
@@ -355,16 +265,16 @@ export async function deployFreezePolicy(
 export async function computeFreezeAddress(
   publicClient: PublicClient,
   networkId: string,
-  freezePolicy: Address,
-  escrowPeriodContract: Address
+  config: FreezeConfigInput
 ): Promise<Address> {
   const factoryAddress = getFactoryAddress(networkId, 'freeze');
+  const fullConfig = createFreezeConfig(config);
 
   return publicClient.readContract({
     address: factoryAddress,
     abi: FreezeFactoryABI,
     functionName: 'computeAddress',
-    args: [freezePolicy, escrowPeriodContract],
+    args: [fullConfig.freezeCondition, fullConfig.unfreezeCondition, fullConfig.freezeDuration, fullConfig.escrowPeriodContract],
   });
 }
 
@@ -374,16 +284,16 @@ export async function computeFreezeAddress(
 export async function getDeployedFreeze(
   publicClient: PublicClient,
   networkId: string,
-  freezePolicy: Address,
-  escrowPeriodContract: Address
+  config: FreezeConfigInput
 ): Promise<Address> {
   const factoryAddress = getFactoryAddress(networkId, 'freeze');
+  const fullConfig = createFreezeConfig(config);
 
   return publicClient.readContract({
     address: factoryAddress,
     abi: FreezeFactoryABI,
     functionName: 'getDeployed',
-    args: [freezePolicy, escrowPeriodContract],
+    args: [fullConfig.freezeCondition, fullConfig.unfreezeCondition, fullConfig.freezeDuration, fullConfig.escrowPeriodContract],
   });
 }
 
@@ -394,13 +304,13 @@ export async function deployFreeze(
   walletClient: WalletClient,
   publicClient: PublicClient,
   networkId: string,
-  freezePolicy: Address,
-  escrowPeriodContract: Address
+  config: FreezeConfigInput
 ): Promise<DeploymentResult> {
   const factoryAddress = getFactoryAddress(networkId, 'freeze');
+  const fullConfig = createFreezeConfig(config);
 
   // Check if already deployed
-  const existing = await getDeployedFreeze(publicClient, networkId, freezePolicy, escrowPeriodContract);
+  const existing = await getDeployedFreeze(publicClient, networkId, config);
   if (existing !== ZERO_ADDRESS) {
     return { address: existing, isNewDeployment: false };
   }
@@ -410,7 +320,7 @@ export async function deployFreeze(
     address: factoryAddress,
     abi: FreezeFactoryABI,
     functionName: 'deploy',
-    args: [freezePolicy, escrowPeriodContract],
+    args: [fullConfig.freezeCondition, fullConfig.unfreezeCondition, fullConfig.freezeDuration, fullConfig.escrowPeriodContract],
     account: walletClient.account!,
   });
 
@@ -420,13 +330,16 @@ export async function deployFreeze(
   if (receipt.status !== 'success') {
     throw new Error(
       `Freeze deployment failed. TX: ${txHash}. ` +
-        `Args: freezePolicy=${freezePolicy}, escrowPeriodContract=${escrowPeriodContract}`
+        `Args: freezeCondition=${fullConfig.freezeCondition}, ` +
+        `unfreezeCondition=${fullConfig.unfreezeCondition}, ` +
+        `freezeDuration=${fullConfig.freezeDuration}, ` +
+        `escrowPeriodContract=${fullConfig.escrowPeriodContract}`
     );
   }
 
   // Query deployed address with retry (handles RPC caching delays)
   const address = await retryWithDelay(
-    () => getDeployedFreeze(publicClient, networkId, freezePolicy, escrowPeriodContract),
+    () => getDeployedFreeze(publicClient, networkId, config),
     (addr) => addr !== ZERO_ADDRESS,
     { description: 'Freeze getDeployed' }
   );

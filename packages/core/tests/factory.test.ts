@@ -2,13 +2,12 @@ import { describe, it, expect } from 'vitest';
 import {
   PaymentOperatorConfig,
   EscrowPeriodConfig,
-  FreezePolicyConfig,
+  FreezeConfig,
   createPaymentOperatorConfig,
   createEscrowPeriodConfig,
-  createFreezePolicyConfig,
+  createFreezeConfig,
   PaymentOperatorFactoryABI,
   EscrowPeriodFactoryABI,
-  FreezePolicyFactoryABI,
   FreezeFactoryABI,
   StaticFeeCalculatorFactoryABI,
   StaticAddressConditionFactoryABI,
@@ -101,9 +100,9 @@ describe('EscrowPeriodConfig', () => {
   });
 });
 
-describe('FreezePolicyConfig', () => {
+describe('FreezeConfig', () => {
   it('should create config with permanent freeze', () => {
-    const config = createFreezePolicyConfig({
+    const config = createFreezeConfig({
       freezeCondition: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
       unfreezeCondition: '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
     });
@@ -111,28 +110,34 @@ describe('FreezePolicyConfig', () => {
     expect(config.freezeCondition).toBe('0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
     expect(config.unfreezeCondition).toBe('0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb');
     expect(config.freezeDuration).toBe(0n); // permanent
+    expect(config.escrowPeriodContract).toBe(ZERO_ADDRESS);
   });
 
-  it('should create config with timed freeze', () => {
-    const config = createFreezePolicyConfig({
+  it('should create config with timed freeze and escrow period', () => {
+    const config = createFreezeConfig({
       freezeCondition: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
       unfreezeCondition: '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
       freezeDuration: 259200n, // 3 days
+      escrowPeriodContract: '0xcccccccccccccccccccccccccccccccccccccccc',
     });
 
     expect(config.freezeDuration).toBe(259200n);
+    expect(config.escrowPeriodContract).toBe('0xcccccccccccccccccccccccccccccccccccccccc');
   });
 
-  it('should have correct type structure', () => {
-    const config: FreezePolicyConfig = {
+  it('should have correct type structure with 4 fields', () => {
+    const config: FreezeConfig = {
       freezeCondition: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
       unfreezeCondition: '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
       freezeDuration: 0n,
+      escrowPeriodContract: '0x0000000000000000000000000000000000000000',
     };
 
     expect(config.freezeCondition).toBeDefined();
     expect(config.unfreezeCondition).toBeDefined();
     expect(config.freezeDuration).toBeDefined();
+    expect(config.escrowPeriodContract).toBeDefined();
+    expect(Object.keys(config)).toHaveLength(4);
   });
 });
 
@@ -198,45 +203,34 @@ describe('Factory ABIs', () => {
     });
   });
 
-  describe('FreezePolicyFactoryABI', () => {
-    it('should be defined and be an array', () => {
-      expect(FreezePolicyFactoryABI).toBeDefined();
-      expect(Array.isArray(FreezePolicyFactoryABI)).toBe(true);
-    });
-
-    it('should have deploy function', () => {
-      const deploy = FreezePolicyFactoryABI.find(
-        (item) => item.type === 'function' && item.name === 'deploy'
-      );
-      expect(deploy).toBeDefined();
-    });
-
-    it('should have computeAddress function', () => {
-      const computeAddress = FreezePolicyFactoryABI.find(
-        (item) => item.type === 'function' && item.name === 'computeAddress'
-      );
-      expect(computeAddress).toBeDefined();
-    });
-  });
-
   describe('FreezeFactoryABI', () => {
     it('should be defined and be an array', () => {
       expect(FreezeFactoryABI).toBeDefined();
       expect(Array.isArray(FreezeFactoryABI)).toBe(true);
     });
 
-    it('should have deploy function', () => {
+    it('should have deploy function with 4 params', () => {
       const deploy = FreezeFactoryABI.find(
         (item) => item.type === 'function' && item.name === 'deploy'
       );
       expect(deploy).toBeDefined();
+      if (deploy && 'inputs' in deploy) {
+        expect(deploy.inputs).toHaveLength(4);
+        expect(deploy.inputs[0].name).toBe('freezeCondition');
+        expect(deploy.inputs[1].name).toBe('unfreezeCondition');
+        expect(deploy.inputs[2].name).toBe('freezeDuration');
+        expect(deploy.inputs[3].name).toBe('escrowPeriodContract');
+      }
     });
 
-    it('should have computeAddress function', () => {
+    it('should have computeAddress function with 4 params', () => {
       const computeAddress = FreezeFactoryABI.find(
         (item) => item.type === 'function' && item.name === 'computeAddress'
       );
       expect(computeAddress).toBeDefined();
+      if (computeAddress && 'inputs' in computeAddress) {
+        expect(computeAddress.inputs).toHaveLength(4);
+      }
     });
   });
 
