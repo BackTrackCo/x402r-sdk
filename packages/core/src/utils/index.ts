@@ -7,6 +7,40 @@ import { keccak256, encodeAbiParameters, toHex } from 'viem';
 import type { PaymentInfo } from '../types/index.js';
 
 /**
+ * Parse a PaymentInfo JSON string into a typed PaymentInfo object.
+ *
+ * Uses BigInt() for all bigint-typed fields (maxAmount, preApprovalExpiry,
+ * authorizationExpiry, refundExpiry, salt) to avoid precision loss from Number().
+ *
+ * @param json - JSON string representation of PaymentInfo
+ * @returns Properly typed PaymentInfo with bigint fields
+ * @throws Error if JSON is invalid or missing required fields
+ *
+ * @example
+ * ```typescript
+ * const paymentInfo = parsePaymentInfo('{"operator":"0x...","payer":"0x...",...}');
+ * console.log(paymentInfo.maxAmount); // bigint
+ * ```
+ */
+export function parsePaymentInfo(json: string): PaymentInfo {
+  const parsed = JSON.parse(json);
+  return {
+    operator: parsed.operator,
+    payer: parsed.payer,
+    receiver: parsed.receiver,
+    token: parsed.token,
+    maxAmount: BigInt(parsed.maxAmount),
+    preApprovalExpiry: BigInt(parsed.preApprovalExpiry),
+    authorizationExpiry: BigInt(parsed.authorizationExpiry),
+    refundExpiry: BigInt(parsed.refundExpiry),
+    minFeeBps: Number(parsed.minFeeBps),
+    maxFeeBps: Number(parsed.maxFeeBps),
+    feeReceiver: parsed.feeReceiver,
+    salt: BigInt(parsed.salt),
+  };
+}
+
+/**
  * EIP-712 typehash for PaymentInfo struct
  *
  * Computed as: keccak256("PaymentInfo(address operator,address payer,address receiver,address token,uint120 maxAmount,uint48 preApprovalExpiry,uint48 authorizationExpiry,uint48 refundExpiry,uint16 minFeeBps,uint16 maxFeeBps,address feeReceiver,uint256 salt)")

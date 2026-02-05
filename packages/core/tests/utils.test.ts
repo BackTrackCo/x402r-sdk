@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   computePaymentInfoHash,
+  parsePaymentInfo,
   PAYMENT_INFO_TYPEHASH,
 } from '../src/utils/index.js';
 import type { PaymentInfo } from '../src/types/index.js';
@@ -105,5 +106,90 @@ describe('computePaymentInfoHash', () => {
 
     const hash = computePaymentInfoHash(largePaymentInfo, escrowAddress, chainId);
     expect(hash).toMatch(/^0x[a-fA-F0-9]{64}$/);
+  });
+});
+
+describe('parsePaymentInfo', () => {
+  const sampleJson = JSON.stringify({
+    operator: '0x1234567890123456789012345678901234567890',
+    payer: '0x2345678901234567890123456789012345678901',
+    receiver: '0x3456789012345678901234567890123456789012',
+    token: '0x4567890123456789012345678901234567890123',
+    maxAmount: '1000000',
+    preApprovalExpiry: '0',
+    authorizationExpiry: '1735689600',
+    refundExpiry: '1738368000',
+    minFeeBps: 0,
+    maxFeeBps: 500,
+    feeReceiver: '0x5678901234567890123456789012345678901234',
+    salt: '81985529216486895',
+  });
+
+  it('should parse valid JSON into PaymentInfo', () => {
+    const result = parsePaymentInfo(sampleJson);
+    expect(result.operator).toBe('0x1234567890123456789012345678901234567890');
+    expect(result.payer).toBe('0x2345678901234567890123456789012345678901');
+    expect(result.receiver).toBe('0x3456789012345678901234567890123456789012');
+    expect(result.token).toBe('0x4567890123456789012345678901234567890123');
+    expect(result.feeReceiver).toBe('0x5678901234567890123456789012345678901234');
+  });
+
+  it('should convert string amounts to bigint', () => {
+    const result = parsePaymentInfo(sampleJson);
+    expect(result.maxAmount).toBe(BigInt('1000000'));
+    expect(typeof result.maxAmount).toBe('bigint');
+  });
+
+  it('should convert string timestamps to bigint', () => {
+    const result = parsePaymentInfo(sampleJson);
+    expect(result.preApprovalExpiry).toBe(0n);
+    expect(result.authorizationExpiry).toBe(BigInt(1735689600));
+    expect(result.refundExpiry).toBe(BigInt(1738368000));
+    expect(typeof result.authorizationExpiry).toBe('bigint');
+  });
+
+  it('should convert salt to bigint', () => {
+    const result = parsePaymentInfo(sampleJson);
+    expect(typeof result.salt).toBe('bigint');
+    expect(result.salt).toBe(BigInt('81985529216486895'));
+  });
+
+  it('should keep fee bps as numbers', () => {
+    const result = parsePaymentInfo(sampleJson);
+    expect(result.minFeeBps).toBe(0);
+    expect(result.maxFeeBps).toBe(500);
+    expect(typeof result.minFeeBps).toBe('number');
+    expect(typeof result.maxFeeBps).toBe('number');
+  });
+
+  it('should produce a hash-compatible result', () => {
+    const result = parsePaymentInfo(sampleJson);
+    const escrowAddress = '0xb9488351E48b23D798f24e8174514F28B741Eb4f' as const;
+    const hash = computePaymentInfoHash(result, escrowAddress, 84532);
+    expect(hash).toMatch(/^0x[a-fA-F0-9]{64}$/);
+  });
+
+  it('should throw on invalid JSON', () => {
+    expect(() => parsePaymentInfo('not json')).toThrow();
+  });
+
+  it('should handle hex-encoded bigint values', () => {
+    const hexJson = JSON.stringify({
+      operator: '0x1234567890123456789012345678901234567890',
+      payer: '0x2345678901234567890123456789012345678901',
+      receiver: '0x3456789012345678901234567890123456789012',
+      token: '0x4567890123456789012345678901234567890123',
+      maxAmount: '0xF4240',
+      preApprovalExpiry: '0',
+      authorizationExpiry: '1735689600',
+      refundExpiry: '1738368000',
+      minFeeBps: 0,
+      maxFeeBps: 500,
+      feeReceiver: '0x5678901234567890123456789012345678901234',
+      salt: '0x123456789abcdef',
+    });
+    const result = parsePaymentInfo(hexJson);
+    expect(result.maxAmount).toBe(BigInt('0xF4240'));
+    expect(result.salt).toBe(BigInt('0x123456789abcdef'));
   });
 });

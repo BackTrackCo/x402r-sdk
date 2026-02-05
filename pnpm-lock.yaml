@@ -116,6 +116,49 @@ importers:
         specifier: ^5.7.0
         version: 5.9.3
 
+  examples/e2e-dispute:
+    dependencies:
+      '@hono/node-server':
+        specifier: ^1.13.0
+        version: 1.19.9(hono@4.11.7)
+      '@x402r/arbiter':
+        specifier: workspace:*
+        version: link:../../packages/arbiter
+      '@x402r/client':
+        specifier: workspace:*
+        version: link:../../packages/client
+      '@x402r/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@x402r/evm':
+        specifier: file:../../../x402r-scheme/packages/evm
+        version: file:../x402r-scheme/packages/evm(viem@2.45.0(typescript@5.9.3))
+      '@x402r/helpers':
+        specifier: workspace:*
+        version: link:../../packages/helpers
+      '@x402r/merchant':
+        specifier: workspace:*
+        version: link:../../packages/merchant
+      dotenv:
+        specifier: ^16.4.0
+        version: 16.6.1
+      hono:
+        specifier: ^4.6.0
+        version: 4.11.7
+      viem:
+        specifier: ^2.21.0
+        version: 2.45.0(typescript@5.9.3)
+    devDependencies:
+      '@types/node':
+        specifier: ^20.11.0
+        version: 20.19.30
+      tsx:
+        specifier: ^4.7.0
+        version: 4.21.0
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
   examples/merchant-cli:
     dependencies:
       '@x402r/core':

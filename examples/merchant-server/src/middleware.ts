@@ -4,49 +4,10 @@
  */
 
 import type { Context, Next } from 'hono';
-import { createPublicClient, createWalletClient, http, type Address, type WalletClient, type PublicClient } from 'viem';
-import { baseSepolia } from 'viem/chains';
-import { privateKeyToAccount } from 'viem/accounts';
-import { EscrowFacilitatorScheme, type FacilitatorEvmSigner, type PaymentPayload, type PaymentRequirements } from '@x402r/evm/escrow/facilitator';
+import { EscrowFacilitatorScheme, createFacilitatorSigner, type FacilitatorEvmSigner, type PaymentPayload, type PaymentRequirements } from '@x402r/evm/escrow/facilitator';
 
 // Re-export for ease of use
-export { EscrowFacilitatorScheme };
-
-/**
- * Create a FacilitatorEvmSigner from viem clients
- */
-export function createFacilitatorSigner(
-  walletClient: WalletClient,
-  publicClient: PublicClient
-): FacilitatorEvmSigner {
-  const account = walletClient.account!;
-
-  return {
-    address: account.address,
-    async writeContract(args) {
-      const hash = await walletClient.writeContract({
-        chain: walletClient.chain,
-        account,
-        address: args.address,
-        abi: args.abi,
-        functionName: args.functionName,
-        args: args.args as unknown[],
-      });
-      return hash;
-    },
-    async verifyTypedData(args) {
-      const valid = await publicClient.verifyTypedData({
-        address: args.address,
-        domain: args.domain as Parameters<typeof publicClient.verifyTypedData>[0]['domain'],
-        types: args.types as Record<string, { name: string; type: string }[]>,
-        primaryType: args.primaryType,
-        message: args.message,
-        signature: args.signature,
-      });
-      return valid;
-    },
-  };
-}
+export { EscrowFacilitatorScheme, createFacilitatorSigner };
 
 export interface X402MiddlewareOptions {
   /** Payment requirements to return in 402 response */

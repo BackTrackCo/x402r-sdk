@@ -23,12 +23,12 @@ import {
   calculateTotalFees,
   formatFeeBreakdown,
   validateFeeBounds,
+  parsePaymentInfo,
   type PaymentInfo,
 } from '@x402r/core';
 import { pay } from './commands/pay.js';
 import { freeze, unfreeze, checkFrozen } from './commands/freeze.js';
 import { requestRefund, cancelRefund, getRefundStatus } from './commands/refund.js';
-import { parsePaymentInfo } from '../../shared/utils.js';
 
 // Load environment from the example directory
 const __filename = fileURLToPath(import.meta.url);

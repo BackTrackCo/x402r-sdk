@@ -23,8 +23,8 @@ import { config as dotenvConfig } from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { X402rArbiter } from '@x402r/arbiter';
-import { getNetworkConfig, RequestStatus, type PaymentInfo } from '@x402r/core';
-import { parsePaymentInfo, shortAddress, formatUSDC } from '../../shared/utils.js';
+import { getNetworkConfig, RequestStatus, parsePaymentInfo, type PaymentInfo } from '@x402r/core';
+import { shortAddress, formatUSDC } from '../../shared/utils.js';
 
 // Load environment from the example directory
 const __filename = fileURLToPath(import.meta.url);
@@ -198,25 +198,50 @@ program
     }
   });
 
+/**
+ * Resolve PaymentInfo and nonce for a command — either from --payment-json or via event lookup
+ */
+async function resolvePaymentInfo(
+  arbiter: InstanceType<typeof X402rArbiter>,
+  key: string,
+  options: { paymentJson?: string; nonce?: string }
+): Promise<{ paymentInfo: PaymentInfo; nonce: bigint }> {
+  if (options.paymentJson) {
+    return {
+      paymentInfo: parsePaymentInfo(options.paymentJson),
+      nonce: BigInt(options.nonce ?? '0'),
+    };
+  }
+
+  // Auto-lookup from events
+  console.log('  Looking up PaymentInfo from events...');
+  const result = await arbiter.getPaymentInfoFromEvents(key as `0x${string}`);
+  if (!result) {
+    console.error('\nError: Could not find PaymentInfo in event logs for this key.');
+    console.error('Provide --payment-json explicitly, or ensure the RefundRequested event is accessible.');
+    process.exit(1);
+  }
+  console.log('  Found PaymentInfo from events');
+  return result;
+}
+
 // Approve a refund request by key
 program
   .command('approve <key>')
-  .description('Approve a refund request (requires payment JSON)')
-  .requiredOption('-p, --payment-json <json>', 'Payment info JSON')
+  .description('Approve a refund request (auto-resolves PaymentInfo from events if --payment-json omitted)')
+  .option('-p, --payment-json <json>', 'Payment info JSON (optional — looked up from events if omitted)')
   .option('-n, --nonce <nonce>', 'Nonce (record index)', '0')
   .action(async (key: string, options) => {
     const { arbiter } = createArbiter();
-    const paymentInfo = parsePaymentInfo(options.paymentJson);
-    const nonce = BigInt(options.nonce);
 
-    // The key parameter is for display/audit trail only.
-    // The actual on-chain operation uses paymentInfo + nonce to identify the request.
     console.log('\nApproving refund request...');
     console.log('  Key:', key);
-    console.log('  Payer:', paymentInfo.payer);
-    console.log('  Nonce:', nonce.toString());
 
     try {
+      const { paymentInfo, nonce } = await resolvePaymentInfo(arbiter, key, options);
+      console.log('  Payer:', paymentInfo.payer);
+      console.log('  Nonce:', nonce.toString());
+
       const result = await arbiter.approveRefundRequest(paymentInfo, nonce);
       console.log('\n✅ Refund request approved!');
       console.log('  Transaction:', result.txHash);
@@ -230,22 +255,20 @@ program
 // Deny a refund request by key
 program
   .command('deny <key>')
-  .description('Deny a refund request (requires payment JSON)')
-  .requiredOption('-p, --payment-json <json>', 'Payment info JSON')
+  .description('Deny a refund request (auto-resolves PaymentInfo from events if --payment-json omitted)')
+  .option('-p, --payment-json <json>', 'Payment info JSON (optional — looked up from events if omitted)')
   .option('-n, --nonce <nonce>', 'Nonce (record index)', '0')
   .action(async (key: string, options) => {
     const { arbiter } = createArbiter();
-    const paymentInfo = parsePaymentInfo(options.paymentJson);
-    const nonce = BigInt(options.nonce);
 
-    // The key parameter is for display/audit trail only.
-    // The actual on-chain operation uses paymentInfo + nonce to identify the request.
     console.log('\nDenying refund request...');
     console.log('  Key:', key);
-    console.log('  Payer:', paymentInfo.payer);
-    console.log('  Nonce:', nonce.toString());
 
     try {
+      const { paymentInfo, nonce } = await resolvePaymentInfo(arbiter, key, options);
+      console.log('  Payer:', paymentInfo.payer);
+      console.log('  Nonce:', nonce.toString());
+
       const result = await arbiter.denyRefundRequest(paymentInfo, nonce);
       console.log('\n❌ Refund request denied!');
       console.log('  Transaction:', result.txHash);
@@ -258,20 +281,23 @@ program
 
 // Execute a refund (after approval)
 program
-  .command('execute')
-  .description('Execute a refund for an approved request')
-  .requiredOption('-p, --payment-json <json>', 'Payment info JSON')
+  .command('execute <key>')
+  .description('Execute a refund for an approved request (auto-resolves PaymentInfo from events if --payment-json omitted)')
+  .option('-p, --payment-json <json>', 'Payment info JSON (optional — looked up from events if omitted)')
   .option('-a, --amount <amount>', 'Amount to refund (defaults to maxAmount)')
-  .action(async (options) => {
+  .action(async (key: string, options) => {
     const { arbiter } = createArbiter();
-    const paymentInfo = parsePaymentInfo(options.paymentJson);
-    const amount = options.amount ? BigInt(options.amount) : undefined;
 
     console.log('\nExecuting refund...');
-    console.log('  Payer:', paymentInfo.payer);
-    console.log('  Amount:', amount ? formatUSDC(amount) : 'maxAmount');
+    console.log('  Key:', key);
 
     try {
+      const { paymentInfo } = await resolvePaymentInfo(arbiter, key, options);
+      const amount = options.amount ? BigInt(options.amount) : undefined;
+
+      console.log('  Payer:', paymentInfo.payer);
+      console.log('  Amount:', amount ? formatUSDC(amount) : 'maxAmount');
+
       const result = await arbiter.executeRefundInEscrow(paymentInfo, amount);
       console.log('\n✅ Refund executed!');
       console.log('  Transaction:', result.txHash);

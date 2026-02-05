@@ -10,6 +10,7 @@ import {
   ArbiterRegistryABI,
   RequestStatus,
   NotImplementedError,
+  computePaymentInfoHash,
   hasRefundRequest as sharedHasRefundRequest,
   getRefundRequest as sharedGetRefundRequest,
   getRefundStatus as sharedGetRefundStatus,
@@ -474,6 +475,125 @@ export class X402rArbiter {
    */
   async getRefundRequestByKey(compositeKey: `0x${string}`): Promise<RefundRequestData> {
     return sharedGetRefundRequestByKey(this.getRefundCtx(), compositeKey);
+  }
+
+  /**
+   * Resolve PaymentInfo and nonce from a composite key by scanning RefundRequested events.
+   *
+   * The RefundRequest contract stores only the hash of PaymentInfo, not the full struct.
+   * However, `RefundRequested` events emit the full PaymentInfo. This method scans those
+   * events, computes hashes, and returns the matching PaymentInfo for a given composite key.
+   *
+   * @param compositeKey - The composite key from getPendingRefundRequests
+   * @param fromBlock - Block to start scanning from (default: earliest, 0n)
+   * @returns The PaymentInfo and nonce, or null if not found in event logs
+   * @throws Error if refundRequestAddress or escrowAddress is not configured
+   *
+   * @example
+   * ```typescript
+   * const result = await arbiter.getPaymentInfoFromEvents(compositeKey);
+   * if (result) {
+   *   await arbiter.approveRefundRequest(result.paymentInfo, result.nonce);
+   * }
+   * ```
+   */
+  async getPaymentInfoFromEvents(
+    compositeKey: `0x${string}`,
+    fromBlock: bigint = 0n
+  ): Promise<{ paymentInfo: PaymentInfo; nonce: bigint } | null> {
+    if (!this.refundRequestAddress) {
+      throw new Error('RefundRequest address required');
+    }
+    if (!this.escrowAddress) {
+      throw new Error('Escrow address required for hash computation');
+    }
+
+    // First, get the stored paymentInfoHash and nonce from the request data
+    const requestData = await this.getRefundRequestByKey(compositeKey);
+    const targetPaymentInfoHash = requestData.paymentInfoHash;
+    const targetNonce = requestData.nonce;
+
+    // Scan RefundRequested events to find the matching PaymentInfo
+    const logs = await this.publicClient.getLogs({
+      address: this.refundRequestAddress,
+      event: {
+        name: 'RefundRequested',
+        type: 'event',
+        inputs: [
+          {
+            name: 'paymentInfo',
+            type: 'tuple',
+            indexed: false,
+            components: [
+              { name: 'operator', type: 'address' },
+              { name: 'payer', type: 'address' },
+              { name: 'receiver', type: 'address' },
+              { name: 'token', type: 'address' },
+              { name: 'maxAmount', type: 'uint120' },
+              { name: 'preApprovalExpiry', type: 'uint48' },
+              { name: 'authorizationExpiry', type: 'uint48' },
+              { name: 'refundExpiry', type: 'uint48' },
+              { name: 'minFeeBps', type: 'uint16' },
+              { name: 'maxFeeBps', type: 'uint16' },
+              { name: 'feeReceiver', type: 'address' },
+              { name: 'salt', type: 'uint256' },
+            ],
+          },
+          { name: 'payer', type: 'address', indexed: true },
+          { name: 'receiver', type: 'address', indexed: true },
+          { name: 'amount', type: 'uint120', indexed: false },
+          { name: 'nonce', type: 'uint256', indexed: false },
+        ],
+      },
+      fromBlock,
+      toBlock: 'latest',
+    });
+
+    for (const log of logs) {
+      const args = log.args as {
+        paymentInfo?: {
+          operator: `0x${string}`;
+          payer: `0x${string}`;
+          receiver: `0x${string}`;
+          token: `0x${string}`;
+          maxAmount: bigint;
+          preApprovalExpiry: bigint;
+          authorizationExpiry: bigint;
+          refundExpiry: bigint;
+          minFeeBps: number;
+          maxFeeBps: number;
+          feeReceiver: `0x${string}`;
+          salt: bigint;
+        };
+        nonce?: bigint;
+      };
+
+      if (!args.paymentInfo) continue;
+
+      const paymentInfo: PaymentInfo = {
+        operator: args.paymentInfo.operator,
+        payer: args.paymentInfo.payer,
+        receiver: args.paymentInfo.receiver,
+        token: args.paymentInfo.token,
+        maxAmount: args.paymentInfo.maxAmount,
+        preApprovalExpiry: args.paymentInfo.preApprovalExpiry,
+        authorizationExpiry: args.paymentInfo.authorizationExpiry,
+        refundExpiry: args.paymentInfo.refundExpiry,
+        minFeeBps: args.paymentInfo.minFeeBps,
+        maxFeeBps: args.paymentInfo.maxFeeBps,
+        feeReceiver: args.paymentInfo.feeReceiver,
+        salt: args.paymentInfo.salt,
+      };
+
+      // Compute the hash using the same algorithm as the escrow contract
+      const hash = computePaymentInfoHash(paymentInfo, this.escrowAddress, this.chainId);
+
+      if (hash === targetPaymentInfoHash && args.nonce === targetNonce) {
+        return { paymentInfo, nonce: targetNonce };
+      }
+    }
+
+    return null;
   }
 
   // ============ Freeze Operations ============
