@@ -147,7 +147,7 @@ describe('AI Integration', () => {
       const handler = createWebhookHandler({
         arbiter,
         evaluationHook,
-        autoExecute: true,
+        autoSubmitDecision: true,
       });
 
       const context: CaseEvaluationContext = {
@@ -178,7 +178,7 @@ describe('AI Integration', () => {
       const handler = createWebhookHandler({
         arbiter,
         evaluationHook,
-        autoExecute: false,
+        autoSubmitDecision: false,
       });
 
       const context: CaseEvaluationContext = {

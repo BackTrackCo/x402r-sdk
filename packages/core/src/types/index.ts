@@ -208,3 +208,56 @@ export interface ArbiterList {
   /** Total number of registered arbiters */
   total: bigint;
 }
+
+// ============ Event Log Types ============
+
+/**
+ * Typed event log for PaymentFrozen and PaymentUnfrozen events from the Freeze contract
+ */
+export interface FreezeEventLog {
+  eventName: 'PaymentFrozen' | 'PaymentUnfrozen';
+  args: {
+    paymentInfoHash?: `0x${string}`;
+    caller?: `0x${string}`;
+  };
+  address: `0x${string}`;
+  blockNumber: bigint;
+  transactionHash: `0x${string}`;
+  logIndex: number;
+}
+
+/**
+ * Typed event log for RefundRequested, RefundRequestStatusUpdated, and RefundRequestCancelled events
+ */
+export interface RefundRequestEventLog {
+  eventName: 'RefundRequested' | 'RefundRequestStatusUpdated' | 'RefundRequestCancelled';
+  args: {
+    paymentInfoHash?: `0x${string}`;
+    payer?: `0x${string}`;
+    receiver?: `0x${string}`;
+    amount?: bigint;
+    nonce?: bigint;
+    status?: number;
+  };
+  address: `0x${string}`;
+  blockNumber: bigint;
+  transactionHash: `0x${string}`;
+  logIndex: number;
+}
+
+/**
+ * Typed event log for PaymentOperator events (ReleaseExecuted, AuthorizationCreated, etc.)
+ */
+export interface PaymentOperatorEventLog {
+  eventName: 'ReleaseExecuted' | 'RefundInEscrowExecuted' | 'RefundPostEscrowExecuted' | 'AuthorizationCreated' | 'ChargeExecuted';
+  args: {
+    paymentInfoHash?: `0x${string}`;
+    payer?: `0x${string}`;
+    receiver?: `0x${string}`;
+    amount?: bigint;
+  };
+  address: `0x${string}`;
+  blockNumber: bigint;
+  transactionHash: `0x${string}`;
+  logIndex: number;
+}

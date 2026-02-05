@@ -28,14 +28,15 @@ import {
 import { pay } from './commands/pay.js';
 import { freeze, unfreeze, checkFrozen } from './commands/freeze.js';
 import { requestRefund, cancelRefund, getRefundStatus } from './commands/refund.js';
+import { parsePaymentInfo } from '../../shared/utils.js';
 
 // Load environment from the example directory
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenvConfig({ path: join(__dirname, '..', '.env') });
 
-const NETWORK_ID = 'eip155:84532';
-const RPC_URL = 'https://sepolia.base.org';
+const NETWORK_ID = process.env.NETWORK_ID || 'eip155:84532';
+const RPC_URL = process.env.RPC_URL || 'https://sepolia.base.org';
 
 // Create viem clients
 function createClients() {
@@ -59,32 +60,6 @@ function createClients() {
   });
 
   return { publicClient, walletClient, account };
-}
-
-// Parse PaymentInfo from JSON string
-function parsePaymentInfo(json: string): PaymentInfo {
-  try {
-    const parsed = JSON.parse(json);
-    // Convert string amounts to bigints
-    return {
-      operator: parsed.operator,
-      payer: parsed.payer,
-      receiver: parsed.receiver,
-      token: parsed.token,
-      maxAmount: BigInt(parsed.maxAmount),
-      preApprovalExpiry: Number(parsed.preApprovalExpiry),
-      authorizationExpiry: Number(parsed.authorizationExpiry),
-      refundExpiry: Number(parsed.refundExpiry),
-      minFeeBps: Number(parsed.minFeeBps),
-      maxFeeBps: Number(parsed.maxFeeBps),
-      feeReceiver: parsed.feeReceiver,
-      salt: BigInt(parsed.salt),
-    };
-  } catch (error) {
-    console.error('Error: Invalid payment JSON');
-    console.error('Expected format: {"operator":"0x...","payer":"0x...",...}');
-    process.exit(1);
-  }
 }
 
 // Create CLI

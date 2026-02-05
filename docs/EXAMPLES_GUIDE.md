@@ -117,6 +117,11 @@ pnpm start refund-status \
 
 The arbiter-cli handles dispute resolution for refund requests.
 
+```bash
+# From x402r-sdk root:
+pnpm example:arbiter-cli <command>
+```
+
 ### Setup
 
 ```bash
@@ -238,6 +243,7 @@ pnpm start deny-refund --payment-json '...'
 |----------|---------|
 | AuthCaptureEscrow | `0xb9488351E48b23D798f24e8174514F28B741Eb4f` |
 | RefundRequest | `0x6926c05193c714ED4bA3867Ee93d6816Fdc14128` |
+| ArbiterRegistry | `0xFcE18CB2f44a85D043E5F86f200dfFc9649622DF` |
 | USDC | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` |
 
 ## CLI Commands Reference

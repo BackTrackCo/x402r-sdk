@@ -53,8 +53,9 @@ export interface WebhookHandlerConfig {
   arbiter: X402rArbiter;
   /** The evaluation hook function */
   evaluationHook: ArbiterHook;
-  /** Whether to automatically execute the decision (default: false) */
-  autoExecute?: boolean;
+  /** Whether to automatically submit the approve/deny decision on-chain (default: false).
+   *  Note: this submits the decision only — executing the actual refund transfer is a separate step. */
+  autoSubmitDecision?: boolean;
   /** Minimum confidence threshold for auto-execution (default: 0.8) */
   confidenceThreshold?: number;
 }
@@ -95,7 +96,7 @@ export interface WebhookResult extends DecisionResult {
  *       confidence: response.confidence,
  *     };
  *   },
- *   autoExecute: true,
+ *   autoSubmitDecision: true,
  *   confidenceThreshold: 0.9,
  * });
  *
@@ -109,7 +110,7 @@ export interface WebhookResult extends DecisionResult {
 export function createWebhookHandler(
   config: WebhookHandlerConfig
 ): (context: CaseEvaluationContext) => Promise<WebhookResult> {
-  const { arbiter, evaluationHook, autoExecute = false, confidenceThreshold = 0.8 } = config;
+  const { arbiter, evaluationHook, autoSubmitDecision = false, confidenceThreshold = 0.8 } = config;
 
   return async (context: CaseEvaluationContext): Promise<WebhookResult> => {
     // Evaluate the case using the provided hook
@@ -120,8 +121,8 @@ export function createWebhookHandler(
       executed: false,
     };
 
-    // Auto-execute if enabled and confidence is above threshold
-    if (autoExecute) {
+    // Auto-submit decision on-chain if enabled and confidence is above threshold
+    if (autoSubmitDecision) {
       const confidence = decision.confidence ?? 1;
       if (confidence >= confidenceThreshold) {
         try {

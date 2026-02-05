@@ -24,14 +24,15 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { X402rArbiter } from '@x402r/arbiter';
 import { getNetworkConfig, RequestStatus, type PaymentInfo } from '@x402r/core';
+import { parsePaymentInfo, shortAddress, formatUSDC } from '../../shared/utils.js';
 
 // Load environment from the example directory
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenvConfig({ path: join(__dirname, '..', '.env') });
 
-const NETWORK_ID = 'eip155:84532';
-const RPC_URL = 'https://sepolia.base.org';
+const NETWORK_ID = process.env.NETWORK_ID || 'eip155:84532';
+const RPC_URL = process.env.RPC_URL || 'https://sepolia.base.org';
 
 // Status name mapping
 const STATUS_NAMES = ['Pending', 'Approved', 'Denied', 'Cancelled'] as const;
@@ -64,12 +65,15 @@ function createArbiter() {
     transport: http(RPC_URL),
   });
 
+  const arbiterRegistryAddress = process.env.ARBITER_REGISTRY_ADDRESS as `0x${string}` | undefined;
+
   const arbiter = new X402rArbiter({
     publicClient,
     walletClient,
     operatorAddress,
     escrowAddress: networkConfig.authCaptureEscrow,
     refundRequestAddress: networkConfig.refundRequest,
+    arbiterRegistryAddress,
     chainId: 84532,
   });
 
@@ -77,44 +81,6 @@ function createArbiter() {
   const freezeAddress = process.env.FREEZE_ADDRESS as `0x${string}` | undefined;
 
   return { arbiter, account, publicClient, walletClient, operatorAddress, networkConfig, receiverAddress, freezeAddress };
-}
-
-// Parse PaymentInfo from JSON string
-function parsePaymentInfo(json: string): PaymentInfo {
-  try {
-    const parsed = JSON.parse(json);
-    return {
-      operator: parsed.operator,
-      payer: parsed.payer,
-      receiver: parsed.receiver,
-      token: parsed.token,
-      maxAmount: BigInt(parsed.maxAmount),
-      preApprovalExpiry: Number(parsed.preApprovalExpiry),
-      authorizationExpiry: Number(parsed.authorizationExpiry),
-      refundExpiry: Number(parsed.refundExpiry),
-      minFeeBps: Number(parsed.minFeeBps),
-      maxFeeBps: Number(parsed.maxFeeBps),
-      feeReceiver: parsed.feeReceiver,
-      salt: BigInt(parsed.salt),
-    };
-  } catch (error) {
-    console.error('Error: Invalid payment JSON');
-    console.error('Expected format: {"operator":"0x...","payer":"0x...",...}');
-    process.exit(1);
-  }
-}
-
-// Format address for display
-function shortAddress(address: string): string {
-  return `${address.slice(0, 10)}...${address.slice(-8)}`;
-}
-
-// Format amount for display (USDC has 6 decimals)
-function formatUSDC(amount: bigint): string {
-  const decimals = 6;
-  const whole = amount / BigInt(10 ** decimals);
-  const fractional = amount % BigInt(10 ** decimals);
-  return `${whole}.${fractional.toString().padStart(decimals, '0')} USDC`;
 }
 
 // Create CLI
@@ -216,8 +182,8 @@ program
       console.log('  Key:', key);
       console.log('  Amount:', formatUSDC(request.amount));
       console.log('  Status:', statusName);
-      console.log('  Payer:', request.payer);
-      console.log('  Receiver:', request.receiver);
+      console.log('  Payment Hash:', request.paymentInfoHash);
+      console.log('  Nonce:', request.nonce.toString());
 
       if (request.status === RequestStatus.Pending) {
         console.log('\n💡 This request is pending. You can approve or deny it:');
@@ -243,6 +209,8 @@ program
     const paymentInfo = parsePaymentInfo(options.paymentJson);
     const nonce = BigInt(options.nonce);
 
+    // The key parameter is for display/audit trail only.
+    // The actual on-chain operation uses paymentInfo + nonce to identify the request.
     console.log('\nApproving refund request...');
     console.log('  Key:', key);
     console.log('  Payer:', paymentInfo.payer);
@@ -270,6 +238,8 @@ program
     const paymentInfo = parsePaymentInfo(options.paymentJson);
     const nonce = BigInt(options.nonce);
 
+    // The key parameter is for display/audit trail only.
+    // The actual on-chain operation uses paymentInfo + nonce to identify the request.
     console.log('\nDenying refund request...');
     console.log('  Key:', key);
     console.log('  Payer:', paymentInfo.payer);
@@ -423,6 +393,128 @@ program
       console.log(`\nTotal refund requests: ${count}`);
     } catch (error) {
       console.error('\nFailed to get count:', error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
+
+// ============ Registry Commands ============
+
+// Register as arbiter
+program
+  .command('register')
+  .description('Register as an arbiter in the ArbiterRegistry')
+  .requiredOption('-u, --uri <uri>', 'URI for arbiter metadata/API endpoint')
+  .action(async (options) => {
+    const { arbiter } = createArbiter();
+
+    console.log('\nRegistering as arbiter...');
+    console.log('  URI:', options.uri);
+
+    try {
+      const result = await arbiter.registerArbiter(options.uri);
+      console.log('\n✅ Registered!');
+      console.log('  Transaction:', result.txHash);
+      console.log(`\nhttps://sepolia.basescan.org/tx/${result.txHash}`);
+    } catch (error) {
+      console.error('\n❌ Registration failed:', error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
+
+// Update arbiter URI
+program
+  .command('update-uri')
+  .description('Update your arbiter URI')
+  .requiredOption('-u, --uri <uri>', 'New URI')
+  .action(async (options) => {
+    const { arbiter } = createArbiter();
+
+    console.log('\nUpdating arbiter URI...');
+    console.log('  New URI:', options.uri);
+
+    try {
+      const result = await arbiter.updateArbiterUri(options.uri);
+      console.log('\n✅ URI updated!');
+      console.log('  Transaction:', result.txHash);
+      console.log(`\nhttps://sepolia.basescan.org/tx/${result.txHash}`);
+    } catch (error) {
+      console.error('\n❌ Update failed:', error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
+
+// Deregister
+program
+  .command('deregister')
+  .description('Deregister from the ArbiterRegistry')
+  .action(async () => {
+    const { arbiter } = createArbiter();
+
+    console.log('\nDeregistering...');
+
+    try {
+      const result = await arbiter.deregisterArbiter();
+      console.log('\n✅ Deregistered!');
+      console.log('  Transaction:', result.txHash);
+      console.log(`\nhttps://sepolia.basescan.org/tx/${result.txHash}`);
+    } catch (error) {
+      console.error('\n❌ Deregistration failed:', error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
+
+// List registered arbiters
+program
+  .command('registry-list')
+  .description('List registered arbiters')
+  .option('-o, --offset <offset>', 'Starting offset', '0')
+  .option('-c, --count <count>', 'Number of arbiters to fetch', '10')
+  .action(async (options) => {
+    const { arbiter } = createArbiter();
+    const offset = BigInt(options.offset);
+    const count = BigInt(options.count);
+
+    try {
+      const { arbiters, uris, total } = await arbiter.listArbiters(offset, count);
+      console.log(`\nFound ${total} registered arbiters`);
+
+      if (arbiters.length === 0) {
+        console.log('No arbiters found');
+        return;
+      }
+
+      console.log(`\nShowing ${arbiters.length} (offset: ${offset}):\n`);
+      for (let i = 0; i < arbiters.length; i++) {
+        console.log(`${Number(offset) + i + 1}. ${arbiters[i]}`);
+        console.log(`   URI: ${uris[i]}`);
+        console.log('');
+      }
+    } catch (error) {
+      console.error('\nFailed to list arbiters:', error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
+
+// Check if address is registered
+program
+  .command('registry-check')
+  .description('Check if an address is a registered arbiter')
+  .requiredOption('-a, --address <address>', 'Address to check')
+  .action(async (options) => {
+    const { arbiter } = createArbiter();
+    const address = options.address as `0x${string}`;
+
+    try {
+      const isRegistered = await arbiter.isArbiterRegistered(address);
+      if (isRegistered) {
+        const uri = await arbiter.getArbiterUri(address);
+        console.log(`\n✅ ${address} is a registered arbiter`);
+        console.log(`   URI: ${uri}`);
+      } else {
+        console.log(`\n❌ ${address} is NOT a registered arbiter`);
+      }
+    } catch (error) {
+      console.error('\nFailed to check:', error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });

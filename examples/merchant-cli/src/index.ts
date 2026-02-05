@@ -26,14 +26,15 @@ import {
   validateFeeBounds,
   type PaymentInfo,
 } from '@x402r/core';
+import { parsePaymentInfo } from '../../shared/utils.js';
 
 // Load environment from the example directory
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenvConfig({ path: join(__dirname, '..', '.env') });
 
-const NETWORK_ID = 'eip155:84532';
-const RPC_URL = 'https://sepolia.base.org';
+const NETWORK_ID = process.env.NETWORK_ID || 'eip155:84532';
+const RPC_URL = process.env.RPC_URL || 'https://sepolia.base.org';
 
 // Create viem clients and merchant SDK
 function createMerchant() {
@@ -73,31 +74,6 @@ function createMerchant() {
   });
 
   return { merchant, account, publicClient, walletClient, operatorAddress, networkConfig };
-}
-
-// Parse PaymentInfo from JSON string
-function parsePaymentInfo(json: string): PaymentInfo {
-  try {
-    const parsed = JSON.parse(json);
-    return {
-      operator: parsed.operator,
-      payer: parsed.payer,
-      receiver: parsed.receiver,
-      token: parsed.token,
-      maxAmount: BigInt(parsed.maxAmount),
-      preApprovalExpiry: Number(parsed.preApprovalExpiry),
-      authorizationExpiry: Number(parsed.authorizationExpiry),
-      refundExpiry: Number(parsed.refundExpiry),
-      minFeeBps: Number(parsed.minFeeBps),
-      maxFeeBps: Number(parsed.maxFeeBps),
-      feeReceiver: parsed.feeReceiver,
-      salt: BigInt(parsed.salt),
-    };
-  } catch (error) {
-    console.error('Error: Invalid payment JSON');
-    console.error('Expected format: {"operator":"0x...","payer":"0x...",...}');
-    process.exit(1);
-  }
 }
 
 // Create CLI
