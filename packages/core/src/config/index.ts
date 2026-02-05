@@ -11,8 +11,6 @@ export interface FactoryAddresses {
   paymentOperator: `0x${string}`;
   /** EscrowPeriodFactory address */
   escrowPeriod: `0x${string}`;
-  /** FreezePolicyFactory address */
-  freezePolicy: `0x${string}`;
   /** FreezeFactory address */
   freeze: `0x${string}`;
   /** StaticFeeCalculatorFactory address */
@@ -92,7 +90,6 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     factories: {
       paymentOperator: '0xe01CEd771A30A23a7A4C9c1db604C74D4Dc4ebe8',
       escrowPeriod: '0x206D4DbB6E7b876e4B5EFAAD2a04e7d7813FB6ba',
-      freezePolicy: '0x9D4146EF898c8E60B3e865AE254ef438E7cEd2A0',
       freeze: '0x199fed16577773Bb6b2D76CC3cD1c76c22D28835',
       staticFeeCalculator: '0x35fb2EFEfAc3Ee9f6E52A9AAE5C9655bC08dEc00',
       staticAddressCondition: '0x68684ff8CD38483B8023a1443Af97C58eD29Cb06',
@@ -120,7 +117,6 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     factories: {
       paymentOperator: '0xA50F51254E8B08899EdB76Bd24b4DC6A61ba7dE7',
       escrowPeriod: '0x2714EA3e839Ac50F52B2e2a5788F614cACeE5316',
-      freezePolicy: '0x46C44071BDf9753482400B76d88A5850318b776F',
       freeze: '0xCAEd9474c06bf9139AC36C874dED838e1Bcb9310',
       staticFeeCalculator: '0x0DdF51E62DDD41B5f67BEaF2DCE9F2E99E2C5aF5',
       staticAddressCondition: '0x89257cA1114139C3332bb73655BC2e4C924aC678',

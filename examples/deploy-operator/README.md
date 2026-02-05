@@ -27,8 +27,7 @@ The script deploys a complete marketplace operator with:
 |----------|---------|
 | **PaymentOperator** | Main entry point for payments |
 | **EscrowPeriod** | Records authorization time, enforces escrow period |
-| **FreezePolicy** | Defines who can freeze/unfreeze (payer/receiver) |
-| **Freeze** | Tracks frozen payments |
+| **Freeze** | Manages payment freezing (includes freeze/unfreeze conditions and duration) |
 | **StaticAddressCondition** | Arbiter address condition |
 | **OrCondition** | Combines receiver + arbiter for refund conditions |
 | **StaticFeeCalculator** | Optional operator fee (if > 0%) |
@@ -85,14 +84,13 @@ EscrowPeriod: 0xFcFb7e197823D304D53F47BE1E9761e9D102589b
 Deployment completed in 45.2s
 
 --- Deployment Summary ---
-New deployments: 7
+New deployments: 6
 Already existed: 0
-Transaction count: 7
+Transaction count: 6
 
 --- Deployed Addresses ---
 PaymentOperator: 0xbb4f390b80E4F4895B96B95AE382B65fDC45974B
 EscrowPeriod: 0xFcFb7e197823D304D53F47BE1E9761e9D102589b
-FreezePolicy: 0x...
 Freeze: 0xD0f99B7667076f151FD8240b277f1765d147e48C
 ...
 ```

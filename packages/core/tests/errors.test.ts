@@ -27,7 +27,6 @@ describe('CONTRACT_ERRORS', () => {
     expect(CONTRACT_ERRORS.EscrowPeriodExpired).toBeDefined();
     expect(CONTRACT_ERRORS.AlreadyFrozen).toBeDefined();
     expect(CONTRACT_ERRORS.NotFrozen).toBeDefined();
-    expect(CONTRACT_ERRORS.NoFreezePolicy).toBeDefined();
     expect(CONTRACT_ERRORS.UnauthorizedFreeze).toBeDefined();
   });
 
@@ -128,7 +127,6 @@ describe('ContractErrorName type', () => {
       'EscrowPeriodExpired',
       'AlreadyFrozen',
       'NotFrozen',
-      'NoFreezePolicy',
       'UnauthorizedFreeze',
     ];
 

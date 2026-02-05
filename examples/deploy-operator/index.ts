@@ -79,7 +79,6 @@ async function main() {
   const preview = await previewMarketplaceOperator(publicClient, NETWORK_ID, options);
   console.log('Operator:', preview.operatorAddress);
   console.log('EscrowPeriod:', preview.escrowPeriodAddress);
-  console.log('FreezePolicy:', preview.freezePolicyAddress);
   console.log('Freeze:', preview.freezeAddress);
   console.log('ArbiterCondition:', preview.arbiterConditionAddress);
   console.log('RefundInEscrowCondition:', preview.refundInEscrowCondition);
@@ -108,7 +107,6 @@ async function main() {
   console.log('\n--- Deployed Addresses ---');
   console.log('PaymentOperator:', result.operatorAddress);
   console.log('EscrowPeriod:', result.escrowPeriodAddress);
-  console.log('FreezePolicy:', result.freezePolicyAddress);
   console.log('Freeze:', result.freezeAddress);
   console.log('ArbiterCondition:', result.arbiterConditionAddress);
   console.log('RefundInEscrowCondition:', result.refundInEscrowCondition);

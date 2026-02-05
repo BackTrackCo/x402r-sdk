@@ -24,7 +24,6 @@ export type ContractErrorName =
   | 'EscrowPeriodExpired'
   | 'AlreadyFrozen'
   | 'NotFrozen'
-  | 'NoFreezePolicy'
   | 'UnauthorizedFreeze';
 
 /**
@@ -129,11 +128,6 @@ export const CONTRACT_ERRORS: Record<ContractErrorName, ContractErrorDefinition>
   ),
   AlreadyFrozen: defineError('AlreadyFrozen', 'AlreadyFrozen()', 'This payment is already frozen'),
   NotFrozen: defineError('NotFrozen', 'NotFrozen()', 'This payment is not frozen'),
-  NoFreezePolicy: defineError(
-    'NoFreezePolicy',
-    'NoFreezePolicy()',
-    'No freeze policy is configured for this payment'
-  ),
   UnauthorizedFreeze: defineError(
     'UnauthorizedFreeze',
     'UnauthorizedFreeze()',

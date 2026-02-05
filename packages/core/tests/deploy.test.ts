@@ -11,8 +11,6 @@ import {
   deployStaticFeeCalculator,
   computeEscrowPeriodAddress,
   deployEscrowPeriod,
-  computeFreezePolicyAddress,
-  deployFreezePolicy,
   computeFreezeAddress,
   deployFreeze,
   computeStaticAddressConditionAddress,
@@ -39,8 +37,6 @@ describe('Deploy module exports', () => {
     expect(deployStaticFeeCalculator).toBeDefined();
     expect(computeEscrowPeriodAddress).toBeDefined();
     expect(deployEscrowPeriod).toBeDefined();
-    expect(computeFreezePolicyAddress).toBeDefined();
-    expect(deployFreezePolicy).toBeDefined();
     expect(computeFreezeAddress).toBeDefined();
     expect(deployFreeze).toBeDefined();
     expect(computeStaticAddressConditionAddress).toBeDefined();
@@ -157,7 +153,6 @@ describe('MarketplaceOperatorDeployment type', () => {
     const deployment: MarketplaceOperatorDeployment = {
       operatorAddress: '0x1234567890123456789012345678901234567890',
       escrowPeriodAddress: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-      freezePolicyAddress: '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
       freezeAddress: '0xcccccccccccccccccccccccccccccccccccccccc',
       arbiterConditionAddress: '0xdddddddddddddddddddddddddddddddddddddddd',
       refundInEscrowCondition: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
@@ -179,7 +174,6 @@ describe('MarketplaceOperatorPreview type', () => {
     const preview: MarketplaceOperatorPreview = {
       operatorAddress: '0x1234567890123456789012345678901234567890',
       escrowPeriodAddress: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-      freezePolicyAddress: '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
       freezeAddress: '0xcccccccccccccccccccccccccccccccccccccccc',
       arbiterConditionAddress: '0xdddddddddddddddddddddddddddddddddddddddd',
       refundInEscrowCondition: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
@@ -193,7 +187,6 @@ describe('MarketplaceOperatorPreview type', () => {
     const preview: MarketplaceOperatorPreview = {
       operatorAddress: '0x1234567890123456789012345678901234567890',
       escrowPeriodAddress: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-      freezePolicyAddress: '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
       freezeAddress: '0xcccccccccccccccccccccccccccccccccccccccc',
       arbiterConditionAddress: '0xdddddddddddddddddddddddddddddddddddddddd',
       refundInEscrowCondition: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',

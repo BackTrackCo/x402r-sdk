@@ -99,8 +99,7 @@ The `deployMarketplaceOperator()` preset deploys:
 | Contract | Purpose |
 |----------|---------|
 | **EscrowPeriod** | Records authorization time, enforces escrow period |
-| **FreezePolicy** | Defines who can freeze (payer) and unfreeze (receiver) |
-| **Freeze** | Manages payment freezing during escrow |
+| **Freeze** | Manages payment freezing during escrow (includes freeze/unfreeze conditions and duration) |
 | **StaticAddressCondition** | Arbiter access for refund approval |
 | **OrCondition** | Combines receiver + arbiter for refund-in-escrow |
 | **StaticFeeCalculator** | Operator fee calculation (if feeBps > 0) |
@@ -127,7 +126,6 @@ For custom configurations, use the factory wrappers directly:
 ```typescript
 import {
   deployEscrowPeriod,
-  deployFreezePolicy,
   deployFreeze,
   deployStaticAddressCondition,
   deployStaticFeeCalculator,
@@ -151,30 +149,20 @@ const escrowPeriod = await deployEscrowPeriod(
   }
 );
 
-// 2. Deploy FreezePolicy
-const freezePolicy = await deployFreezePolicy(
+// 2. Deploy Freeze (includes freeze/unfreeze conditions and duration)
+const freeze = await deployFreeze(
   walletClient,
   publicClient,
   networkId,
   {
     freezeCondition: config.conditions.payer,     // Payer can freeze
     unfreezeCondition: config.conditions.receiver, // Receiver can unfreeze
-    freezeDuration: 0n,  // Permanent until unfrozen
-  }
-);
-
-// 3. Deploy Freeze
-const freeze = await deployFreeze(
-  walletClient,
-  publicClient,
-  networkId,
-  {
-    freezePolicy,
+    freezeDuration: 0n,                            // Permanent until unfrozen
     escrowPeriodContract: escrowPeriod,
   }
 );
 
-// 4. Deploy arbiter condition
+// 3. Deploy arbiter condition
 const arbiterCondition = await deployStaticAddressCondition(
   walletClient,
   publicClient,
@@ -182,7 +170,7 @@ const arbiterCondition = await deployStaticAddressCondition(
   arbiterAddress
 );
 
-// 5. Combine conditions with OR
+// 4. Combine conditions with OR
 const refundCondition = await deployOrCondition(
   walletClient,
   publicClient,
@@ -190,7 +178,7 @@ const refundCondition = await deployOrCondition(
   [config.conditions.receiver, arbiterCondition]
 );
 
-// 6. Deploy operator
+// 5. Deploy operator
 const operator = await deployOperator(
   walletClient,
   publicClient,

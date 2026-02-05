@@ -152,47 +152,52 @@ export function createEscrowPeriodConfig(input: EscrowPeriodConfigInput): Escrow
 }
 
 /**
- * Configuration for deploying a FreezePolicy
+ * Configuration for deploying a Freeze contract via FreezeFactory
  */
-export interface FreezePolicyConfig {
+export interface FreezeConfig {
   /** Condition that authorizes freeze calls */
   freezeCondition: `0x${string}`;
   /** Condition that authorizes unfreeze calls */
   unfreezeCondition: `0x${string}`;
   /** Duration that freezes last (0 = permanent) */
   freezeDuration: bigint;
+  /** EscrowPeriod contract address (address(0) = no escrow period integration) */
+  escrowPeriodContract: `0x${string}`;
 }
 
 /**
- * Partial config input for creating FreezePolicyConfig
+ * Partial config input for creating FreezeConfig
  */
-export interface FreezePolicyConfigInput {
+export interface FreezeConfigInput {
   freezeCondition: `0x${string}`;
   unfreezeCondition: `0x${string}`;
   freezeDuration?: bigint;
+  escrowPeriodContract?: `0x${string}`;
 }
 
 /**
- * Create a FreezePolicyConfig with defaults for missing fields
+ * Create a FreezeConfig with defaults for missing fields
  *
  * @param input - Partial config with required freeze/unfreeze conditions
- * @returns Full FreezePolicyConfig
+ * @returns Full FreezeConfig
  *
  * @example
  * ```typescript
  * // Payer can freeze/unfreeze with 3 day limit
- * const config = createFreezePolicyConfig({
+ * const config = createFreezeConfig({
  *   freezeCondition: payerConditionAddress,
  *   unfreezeCondition: payerConditionAddress,
  *   freezeDuration: 259200n, // 3 days
+ *   escrowPeriodContract: escrowPeriodAddress,
  * });
  * ```
  */
-export function createFreezePolicyConfig(input: FreezePolicyConfigInput): FreezePolicyConfig {
+export function createFreezeConfig(input: FreezeConfigInput): FreezeConfig {
   return {
     freezeCondition: input.freezeCondition,
     unfreezeCondition: input.unfreezeCondition,
     freezeDuration: input.freezeDuration ?? 0n,
+    escrowPeriodContract: input.escrowPeriodContract ?? ZERO_ADDRESS,
   };
 }
 
@@ -374,89 +379,15 @@ export const EscrowPeriodFactoryABI = [
 
 
 /**
- * ABI for FreezePolicyFactory contract
- *
- * Key functions:
- * - computeAddress(freezeCondition, unfreezeCondition, freezeDuration) - Get deterministic address
- * - deploy(freezeCondition, unfreezeCondition, freezeDuration) - Deploy policy
- * - getDeployed(freezeCondition, unfreezeCondition, freezeDuration) - Get deployed address
- */
-export const FreezePolicyFactoryABI = [
-  // View functions
-  {
-    type: 'function',
-    name: 'computeAddress',
-    inputs: [
-      { name: 'freezeCondition', type: 'address' },
-      { name: 'unfreezeCondition', type: 'address' },
-      { name: 'freezeDuration', type: 'uint256' },
-    ],
-    outputs: [{ name: 'policy', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'getDeployed',
-    inputs: [
-      { name: 'freezeCondition', type: 'address' },
-      { name: 'unfreezeCondition', type: 'address' },
-      { name: 'freezeDuration', type: 'uint256' },
-    ],
-    outputs: [{ name: 'policy', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'getKey',
-    inputs: [
-      { name: 'freezeCondition', type: 'address' },
-      { name: 'unfreezeCondition', type: 'address' },
-      { name: 'freezeDuration', type: 'uint256' },
-    ],
-    outputs: [{ name: '', type: 'bytes32' }],
-    stateMutability: 'pure',
-  },
-  {
-    type: 'function',
-    name: 'policies',
-    inputs: [{ name: '', type: 'bytes32' }],
-    outputs: [{ name: '', type: 'address' }],
-    stateMutability: 'view',
-  },
-  // Write functions
-  {
-    type: 'function',
-    name: 'deploy',
-    inputs: [
-      { name: 'freezeCondition', type: 'address' },
-      { name: 'unfreezeCondition', type: 'address' },
-      { name: 'freezeDuration', type: 'uint256' },
-    ],
-    outputs: [{ name: 'policy', type: 'address' }],
-    stateMutability: 'nonpayable',
-  },
-  // Events
-  {
-    type: 'event',
-    name: 'FreezePolicyDeployed',
-    inputs: [
-      { name: 'policy', type: 'address', indexed: true },
-      { name: 'freezeCondition', type: 'address', indexed: false },
-      { name: 'unfreezeCondition', type: 'address', indexed: false },
-      { name: 'freezeDuration', type: 'uint256', indexed: false },
-    ],
-  },
-] as const;
-
-/**
  * ABI for FreezeFactory contract
  *
- * Deploys Freeze condition contracts that control payment freezing.
+ * Deploys Freeze contracts that control payment freezing.
+ * The factory takes 4 params directly (freeze/unfreeze conditions, duration, escrow period).
  *
  * Key functions:
- * - computeAddress(freezePolicy, escrowPeriodContract) - Get deterministic address
- * - deploy(freezePolicy, escrowPeriodContract) - Deploy Freeze contract
- * - getDeployed(freezePolicy, escrowPeriodContract) - Get deployed address
+ * - computeAddress(freezeCondition, unfreezeCondition, freezeDuration, escrowPeriodContract) - Get deterministic address
+ * - deploy(freezeCondition, unfreezeCondition, freezeDuration, escrowPeriodContract) - Deploy Freeze contract
+ * - getDeployed(freezeCondition, unfreezeCondition, freezeDuration, escrowPeriodContract) - Get deployed address
  */
 export const FreezeFactoryABI = [
   // View functions
@@ -471,7 +402,9 @@ export const FreezeFactoryABI = [
     type: 'function',
     name: 'computeAddress',
     inputs: [
-      { name: 'freezePolicy', type: 'address' },
+      { name: 'freezeCondition', type: 'address' },
+      { name: 'unfreezeCondition', type: 'address' },
+      { name: 'freezeDuration', type: 'uint256' },
       { name: 'escrowPeriodContract', type: 'address' },
     ],
     outputs: [{ name: '', type: 'address' }],
@@ -481,7 +414,9 @@ export const FreezeFactoryABI = [
     type: 'function',
     name: 'getDeployed',
     inputs: [
-      { name: 'freezePolicy', type: 'address' },
+      { name: 'freezeCondition', type: 'address' },
+      { name: 'unfreezeCondition', type: 'address' },
+      { name: 'freezeDuration', type: 'uint256' },
       { name: 'escrowPeriodContract', type: 'address' },
     ],
     outputs: [{ name: '', type: 'address' }],
@@ -491,7 +426,9 @@ export const FreezeFactoryABI = [
     type: 'function',
     name: 'getKey',
     inputs: [
-      { name: 'freezePolicy', type: 'address' },
+      { name: 'freezeCondition', type: 'address' },
+      { name: 'unfreezeCondition', type: 'address' },
+      { name: 'freezeDuration', type: 'uint256' },
       { name: 'escrowPeriodContract', type: 'address' },
     ],
     outputs: [{ name: '', type: 'bytes32' }],
@@ -509,7 +446,9 @@ export const FreezeFactoryABI = [
     type: 'function',
     name: 'deploy',
     inputs: [
-      { name: 'freezePolicy', type: 'address' },
+      { name: 'freezeCondition', type: 'address' },
+      { name: 'unfreezeCondition', type: 'address' },
+      { name: 'freezeDuration', type: 'uint256' },
       { name: 'escrowPeriodContract', type: 'address' },
     ],
     outputs: [{ name: 'freezeAddr', type: 'address' }],
@@ -521,7 +460,9 @@ export const FreezeFactoryABI = [
     name: 'FreezeDeployed',
     inputs: [
       { name: 'freeze', type: 'address', indexed: true },
-      { name: 'freezePolicy', type: 'address', indexed: false },
+      { name: 'freezeCondition', type: 'address', indexed: false },
+      { name: 'unfreezeCondition', type: 'address', indexed: false },
+      { name: 'freezeDuration', type: 'uint256', indexed: false },
       { name: 'escrowPeriodContract', type: 'address', indexed: false },
     ],
   },
