@@ -113,7 +113,70 @@ pnpm start refund-status \
   --operator-address 0xbb4f390b80E4F4895B96B95AE382B65fDC45974B
 ```
 
-## Step 6: Merchant Operations (Using Merchant CLI)
+## Step 6: Arbiter Operations (Dispute Resolution)
+
+The arbiter-cli handles dispute resolution for refund requests.
+
+```bash
+# From x402r-sdk root:
+pnpm example:arbiter-cli <command>
+```
+
+### Setup
+
+```bash
+cd x402r-sdk/examples/arbiter-cli
+pnpm install
+cp .env.example .env
+```
+
+Edit `.env`:
+```env
+PRIVATE_KEY=0x...your_arbiter_private_key...
+OPERATOR_ADDRESS=0xbb4f390b80E4F4895B96B95AE382B65fDC45974B
+FREEZE_ADDRESS=0xD0f99B7667076f151FD8240b277f1765d147e48C
+```
+
+### List Pending Refund Requests
+
+```bash
+pnpm start list
+pnpm start list --offset 0 --count 20
+```
+
+### View Request Details
+
+```bash
+pnpm start show 0x1234...abcd
+```
+
+### Approve or Deny a Refund
+
+```bash
+# Approve
+pnpm start approve 0x1234...abcd \
+  --payment-json '{"operator":"0x...",...}'
+
+# Deny
+pnpm start deny 0x1234...abcd \
+  --payment-json '{"operator":"0x...",...}'
+```
+
+### Execute an Approved Refund
+
+```bash
+pnpm start execute --payment-json '{"operator":"0x...",...}'
+```
+
+### Watch for New Requests
+
+Monitor incoming refund requests in real-time:
+
+```bash
+pnpm start watch
+```
+
+## Step 7: Merchant Operations (Using Merchant CLI)
 
 The merchant-cli provides direct access to merchant operations without running a server.
 
@@ -180,6 +243,7 @@ pnpm start deny-refund --payment-json '...'
 |----------|---------|
 | AuthCaptureEscrow | `0xb9488351E48b23D798f24e8174514F28B741Eb4f` |
 | RefundRequest | `0x6926c05193c714ED4bA3867Ee93d6816Fdc14128` |
+| ArbiterRegistry | `0xFcE18CB2f44a85D043E5F86f200dfFc9649622DF` |
 | USDC | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` |
 
 ## CLI Commands Reference
@@ -210,3 +274,18 @@ pnpm start deny-refund --payment-json '...'
 | `calculate-fee --amount <amt>` | Calculate fees for an amount |
 | `operator-config` | Show operator configuration |
 | `info` | Show wallet and protocol addresses |
+
+### Arbiter CLI (dispute resolution)
+
+| Command | Description |
+|---------|-------------|
+| `list` | List pending refund requests |
+| `show <key>` | Show detailed request info |
+| `approve <key> --payment-json <json>` | Approve a refund request |
+| `deny <key> --payment-json <json>` | Deny a refund request |
+| `execute --payment-json <json>` | Execute an approved refund |
+| `status --payment-json <json>` | Check refund request status |
+| `is-frozen --payment-json <json>` | Check if payment is frozen |
+| `watch` | Watch for new refund requests in real-time |
+| `count` | Get total refund request count |
+| `info` | Show arbiter wallet and config |

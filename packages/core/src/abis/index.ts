@@ -1006,6 +1006,99 @@ export const ProtocolFeeConfigABI = [
   },
 ] as const;
 
+/**
+ * ArbiterRegistry ABI - On-chain registry for arbiters
+ *
+ * Arbiters self-register with a URI pointing to their metadata/API endpoint.
+ * The URI can be:
+ * - https://arbiter.example.com/api/disputes
+ * - ipfs://QmXxx...
+ * - Any other resolvable URI
+ */
+export const ArbiterRegistryABI = [
+  // Write functions
+  {
+    name: 'register',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'uri', type: 'string' }],
+    outputs: [],
+  },
+  {
+    name: 'updateUri',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'newUri', type: 'string' }],
+    outputs: [],
+  },
+  {
+    name: 'deregister',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [],
+    outputs: [],
+  },
+  // View functions
+  {
+    name: 'getUri',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'arbiter', type: 'address' }],
+    outputs: [{ name: '', type: 'string' }],
+  },
+  {
+    name: 'isRegistered',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'arbiter', type: 'address' }],
+    outputs: [{ name: '', type: 'bool' }],
+  },
+  {
+    name: 'arbiterCount',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    name: 'getArbiters',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'offset', type: 'uint256' },
+      { name: 'count', type: 'uint256' },
+    ],
+    outputs: [
+      { name: 'arbiters', type: 'address[]' },
+      { name: 'uris', type: 'string[]' },
+      { name: 'total', type: 'uint256' },
+    ],
+  },
+  // Events
+  {
+    name: 'ArbiterRegistered',
+    type: 'event',
+    inputs: [
+      { name: 'arbiter', type: 'address', indexed: true },
+      { name: 'uri', type: 'string', indexed: false },
+    ],
+  },
+  {
+    name: 'ArbiterUriUpdated',
+    type: 'event',
+    inputs: [
+      { name: 'arbiter', type: 'address', indexed: true },
+      { name: 'oldUri', type: 'string', indexed: false },
+      { name: 'newUri', type: 'string', indexed: false },
+    ],
+  },
+  {
+    name: 'ArbiterDeregistered',
+    type: 'event',
+    inputs: [{ name: 'arbiter', type: 'address', indexed: true }],
+  },
+] as const;
+
 // Export types for ABI consumers
 export type PaymentOperatorABIType = typeof PaymentOperatorABI;
 export type RefundRequestABIType = typeof RefundRequestABI;
@@ -1017,3 +1110,4 @@ export type StaticAddressConditionABIType = typeof StaticAddressConditionABI;
 export type FreezePolicyABIType = typeof FreezePolicyABI;
 export type FreezeABIType = typeof FreezeABI;
 export type ProtocolFeeConfigABIType = typeof ProtocolFeeConfigABI;
+export type ArbiterRegistryABIType = typeof ArbiterRegistryABI;

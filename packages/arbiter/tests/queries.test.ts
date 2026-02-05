@@ -49,7 +49,7 @@ describe('X402rArbiter - Case Queries', () => {
     vi.clearAllMocks();
   });
 
-  describe('getPendingCases', () => {
+  describe('getPendingRefundRequests', () => {
     it('should return paginated pending refund request keys for arbiter', async () => {
       const arbiter = new X402rArbiter({
         publicClient,
@@ -65,7 +65,7 @@ describe('X402rArbiter - Case Queries', () => {
 
       (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue([mockKeys, 2n]);
 
-      const result = await arbiter.getPendingCases(0n, 10n);
+      const result = await arbiter.getPendingRefundRequests(0n, 10n);
       expect(result.keys).toHaveLength(2);
       expect(result.total).toBe(2n);
     });
@@ -77,7 +77,7 @@ describe('X402rArbiter - Case Queries', () => {
         operatorAddress,
       });
 
-      await expect(arbiter.getPendingCases(0n, 10n)).rejects.toThrow(
+      await expect(arbiter.getPendingRefundRequests(0n, 10n)).rejects.toThrow(
         'RefundRequest address required'
       );
     });
@@ -113,8 +113,8 @@ describe('X402rArbiter - Case Queries', () => {
     });
   });
 
-  describe('getArbiterPayments', () => {
-    it('should return paginated payment keys where arbiter has authority', async () => {
+  describe('getRefundRequestCount', () => {
+    it('should return total count of refund requests for a receiver', async () => {
       const arbiter = new X402rArbiter({
         publicClient,
         walletClient,
@@ -122,17 +122,10 @@ describe('X402rArbiter - Case Queries', () => {
         refundRequestAddress,
       });
 
-      const mockKeys = [
-        '0x1111111111111111111111111111111111111111111111111111111111111111',
-        '0x2222222222222222222222222222222222222222222222222222222222222222',
-        '0x3333333333333333333333333333333333333333333333333333333333333333',
-      ] as const;
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(5n);
 
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue([mockKeys, 3n]);
-
-      const result = await arbiter.getArbiterPayments(0n, 10n);
-      expect(result.keys).toHaveLength(3);
-      expect(result.total).toBe(3n);
+      const count = await arbiter.getRefundRequestCount();
+      expect(count).toBe(5n);
     });
 
     it('should throw if refundRequestAddress not configured', async () => {
@@ -142,7 +135,45 @@ describe('X402rArbiter - Case Queries', () => {
         operatorAddress,
       });
 
-      await expect(arbiter.getArbiterPayments(0n, 10n)).rejects.toThrow(
+      await expect(arbiter.getRefundRequestCount()).rejects.toThrow(
+        'RefundRequest address required'
+      );
+    });
+  });
+
+  describe('getRefundRequestByKey', () => {
+    it('should return refund request data by composite key', async () => {
+      const arbiter = new X402rArbiter({
+        publicClient,
+        walletClient,
+        operatorAddress,
+        refundRequestAddress,
+      });
+
+      const mockRequest = {
+        amount: 1000000n,
+        status: RequestStatus.Pending,
+        payer: '0x1234567890123456789012345678901234567890',
+        receiver: '0xabcdef1234567890123456789012345678901234',
+      };
+
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequest);
+
+      const compositeKey = '0x1111111111111111111111111111111111111111111111111111111111111111' as const;
+      const result = await arbiter.getRefundRequestByKey(compositeKey);
+      expect(result.amount).toBe(1000000n);
+      expect(result.status).toBe(RequestStatus.Pending);
+    });
+
+    it('should throw if refundRequestAddress not configured', async () => {
+      const arbiter = new X402rArbiter({
+        publicClient,
+        walletClient,
+        operatorAddress,
+      });
+
+      const compositeKey = '0x1111111111111111111111111111111111111111111111111111111111111111' as const;
+      await expect(arbiter.getRefundRequestByKey(compositeKey)).rejects.toThrow(
         'RefundRequest address required'
       );
     });

@@ -33,6 +33,15 @@ The script deploys a complete marketplace operator with:
 | **OrCondition** | Combines receiver + arbiter for refund conditions |
 | **StaticFeeCalculator** | Optional operator fee (if > 0%) |
 
+### Condition Composition
+
+The deployment script composes conditions for refund authorization:
+
+- **RefundInEscrowCondition** = `OR(ReceiverCondition, ArbiterCondition)` — during the escrow period, either the merchant or the arbiter can approve refunds
+- **RefundPostEscrowCondition** = `ReceiverCondition` — after escrow ends, only the merchant can approve refunds
+
+This means disputes can be resolved by the arbiter while escrow is active, but once the escrow period passes, only the merchant retains refund authority.
+
 ## Default Configuration
 
 ```typescript

@@ -10,10 +10,19 @@ import {
   EscrowPeriodABI,
   FreezeABI,
   NotImplementedError,
+  hasRefundRequest as sharedHasRefundRequest,
+  getRefundRequest as sharedGetRefundRequest,
+  getRefundStatus as sharedGetRefundStatus,
+  getRefundRequestByKey as sharedGetRefundRequestByKey,
+  isFrozen as sharedIsFrozen,
+  watchFreezeEvents as sharedWatchFreezeEvents,
   type PaymentInfo,
   type PaymentState,
   type RequestStatus,
   type RefundRequestData,
+  type FreezeEventLog,
+  type PaymentOperatorEventLog,
+  type RefundRequestEventLog,
 } from '@x402r/core';
 
 /**
@@ -30,6 +39,8 @@ export interface X402rClientConfig {
   escrowAddress?: `0x${string}`;
   /** Optional RefundRequest contract address (defaults from network config) */
   refundRequestAddress?: `0x${string}`;
+  /** Chain ID for hash computation (default: 84532 for Base Sepolia) */
+  chainId?: number;
 }
 
 /**
@@ -71,6 +82,8 @@ export class X402rClient {
   readonly escrowAddress?: `0x${string}`;
   /** RefundRequest contract address */
   readonly refundRequestAddress?: `0x${string}`;
+  /** Chain ID */
+  readonly chainId: number;
 
   constructor(config: X402rClientConfig) {
     this.publicClient = config.publicClient;
@@ -78,6 +91,29 @@ export class X402rClient {
     this.operatorAddress = config.operatorAddress;
     this.escrowAddress = config.escrowAddress;
     this.refundRequestAddress = config.refundRequestAddress;
+    this.chainId = config.chainId ?? 84532;
+  }
+
+  /** Get the refund read context, throwing if refundRequestAddress is not configured */
+  private getRefundCtx() {
+    if (!this.refundRequestAddress) {
+      throw new Error('RefundRequest address required');
+    }
+    return { publicClient: this.publicClient, refundRequestAddress: this.refundRequestAddress };
+  }
+
+  /** Assert that walletClient and account are available for write operations */
+  private requireWalletAccount() {
+    if (!this.walletClient) {
+      throw new Error('WalletClient required');
+    }
+    if (!this.walletClient.account) {
+      throw new Error(
+        'WalletClient must have an account. Pass an account when creating the WalletClient: ' +
+        'createWalletClient({ account, chain, transport })'
+      );
+    }
+    return this.walletClient as WalletClient & { account: NonNullable<WalletClient['account']> };
   }
 
   // ============ Payment Queries ============
@@ -193,18 +229,7 @@ export class X402rClient {
    * ```
    */
   async hasRefundRequest(paymentInfo: PaymentInfo, nonce: bigint): Promise<boolean> {
-    if (!this.refundRequestAddress) {
-      throw new Error('RefundRequest address required');
-    }
-
-    const exists = await this.publicClient.readContract({
-      address: this.refundRequestAddress,
-      abi: RefundRequestABI,
-      functionName: 'hasRefundRequest',
-      args: [paymentInfo as never, nonce],
-    });
-
-    return exists as boolean;
+    return sharedHasRefundRequest(this.getRefundCtx(), paymentInfo, nonce);
   }
 
   /**
@@ -224,18 +249,7 @@ export class X402rClient {
    * ```
    */
   async getRefundStatus(paymentInfo: PaymentInfo, nonce: bigint): Promise<RequestStatus> {
-    if (!this.refundRequestAddress) {
-      throw new Error('RefundRequest address required');
-    }
-
-    const status = await this.publicClient.readContract({
-      address: this.refundRequestAddress,
-      abi: RefundRequestABI,
-      functionName: 'getRefundRequestStatus',
-      args: [paymentInfo as never, nonce],
-    });
-
-    return status as RequestStatus;
+    return sharedGetRefundStatus(this.getRefundCtx(), paymentInfo, nonce);
   }
 
   /**
@@ -253,18 +267,7 @@ export class X402rClient {
    * ```
    */
   async getRefundRequest(paymentInfo: PaymentInfo, nonce: bigint): Promise<RefundRequestData> {
-    if (!this.refundRequestAddress) {
-      throw new Error('RefundRequest address required');
-    }
-
-    const request = await this.publicClient.readContract({
-      address: this.refundRequestAddress,
-      abi: RefundRequestABI,
-      functionName: 'getRefundRequest',
-      args: [paymentInfo as never, nonce],
-    });
-
-    return request as unknown as RefundRequestData;
+    return sharedGetRefundRequest(this.getRefundCtx(), paymentInfo, nonce);
   }
 
   /**
@@ -288,17 +291,15 @@ export class X402rClient {
     amount: bigint,
     nonce: bigint
   ): Promise<{ txHash: `0x${string}` }> {
-    if (!this.walletClient) {
-      throw new Error('WalletClient required');
-    }
+    const walletClient = this.requireWalletAccount();
 
     if (!this.refundRequestAddress) {
       throw new Error('RefundRequest address required');
     }
 
-    const txHash = await this.walletClient.writeContract({
-      chain: this.walletClient.chain,
-      account: this.walletClient.account!,
+    const txHash = await walletClient.writeContract({
+      chain: walletClient.chain,
+      account: walletClient.account,
       address: this.refundRequestAddress,
       abi: RefundRequestABI,
       functionName: 'requestRefund',
@@ -327,17 +328,15 @@ export class X402rClient {
     paymentInfo: PaymentInfo,
     nonce: bigint
   ): Promise<{ txHash: `0x${string}` }> {
-    if (!this.walletClient) {
-      throw new Error('WalletClient required');
-    }
+    const walletClient = this.requireWalletAccount();
 
     if (!this.refundRequestAddress) {
       throw new Error('RefundRequest address required');
     }
 
-    const txHash = await this.walletClient.writeContract({
-      chain: this.walletClient.chain,
-      account: this.walletClient.account!,
+    const txHash = await walletClient.writeContract({
+      chain: walletClient.chain,
+      account: walletClient.account,
       address: this.refundRequestAddress,
       abi: RefundRequestABI,
       functionName: 'cancelRefundRequest',
@@ -434,18 +433,7 @@ export class X402rClient {
    * ```
    */
   async getRefundRequestByKey(compositeKey: `0x${string}`): Promise<RefundRequestData> {
-    if (!this.refundRequestAddress) {
-      throw new Error('RefundRequest address required');
-    }
-
-    const request = await this.publicClient.readContract({
-      address: this.refundRequestAddress,
-      abi: RefundRequestABI,
-      functionName: 'getRefundRequestByKey',
-      args: [compositeKey],
-    });
-
-    return request as unknown as RefundRequestData;
+    return sharedGetRefundRequestByKey(this.getRefundCtx(), compositeKey);
   }
 
   // ============ Freeze Operations ============
@@ -468,13 +456,11 @@ export class X402rClient {
     paymentInfo: PaymentInfo,
     freezeAddress: `0x${string}`
   ): Promise<{ txHash: `0x${string}` }> {
-    if (!this.walletClient) {
-      throw new Error('WalletClient required');
-    }
+    const walletClient = this.requireWalletAccount();
 
-    const txHash = await this.walletClient.writeContract({
-      chain: this.walletClient.chain,
-      account: this.walletClient.account!,
+    const txHash = await walletClient.writeContract({
+      chain: walletClient.chain,
+      account: walletClient.account,
       address: freezeAddress,
       abi: FreezeABI,
       functionName: 'freeze',
@@ -502,13 +488,11 @@ export class X402rClient {
     paymentInfo: PaymentInfo,
     freezeAddress: `0x${string}`
   ): Promise<{ txHash: `0x${string}` }> {
-    if (!this.walletClient) {
-      throw new Error('WalletClient required');
-    }
+    const walletClient = this.requireWalletAccount();
 
-    const txHash = await this.walletClient.writeContract({
-      chain: this.walletClient.chain,
-      account: this.walletClient.account!,
+    const txHash = await walletClient.writeContract({
+      chain: walletClient.chain,
+      account: walletClient.account,
       address: freezeAddress,
       abi: FreezeABI,
       functionName: 'unfreeze',
@@ -536,14 +520,7 @@ export class X402rClient {
     paymentInfo: PaymentInfo,
     freezeAddress: `0x${string}`
   ): Promise<boolean> {
-    const frozen = await this.publicClient.readContract({
-      address: freezeAddress,
-      abi: FreezeABI,
-      functionName: 'isFrozen',
-      args: [paymentInfo as never],
-    });
-
-    return frozen as boolean;
+    return sharedIsFrozen({ publicClient: this.publicClient }, paymentInfo, freezeAddress);
   }
 
   // ============ Escrow Period Operations ============
@@ -623,7 +600,7 @@ export class X402rClient {
    */
   watchPaymentState(
     _paymentInfoHash: `0x${string}`,
-    callback: (event: unknown) => void
+    callback: (event: PaymentOperatorEventLog) => void
   ): { unsubscribe: () => void } {
     const unsubscribers: (() => void)[] = [];
 
@@ -634,7 +611,7 @@ export class X402rClient {
       eventName: 'ReleaseExecuted',
       onLogs: (logs) => {
         for (const log of logs) {
-          callback(log);
+          callback(log as unknown as PaymentOperatorEventLog);
         }
       },
     });
@@ -647,7 +624,7 @@ export class X402rClient {
       eventName: 'RefundInEscrowExecuted',
       onLogs: (logs) => {
         for (const log of logs) {
-          callback(log);
+          callback(log as unknown as PaymentOperatorEventLog);
         }
       },
     });
@@ -660,7 +637,7 @@ export class X402rClient {
       eventName: 'RefundPostEscrowExecuted',
       onLogs: (logs) => {
         for (const log of logs) {
-          callback(log);
+          callback(log as unknown as PaymentOperatorEventLog);
         }
       },
     });
@@ -690,7 +667,7 @@ export class X402rClient {
    * // Later: unsubscribe();
    * ```
    */
-  watchRefundRequests(callback: (event: unknown) => void): { unsubscribe: () => void } {
+  watchRefundRequests(callback: (event: RefundRequestEventLog) => void): { unsubscribe: () => void } {
     if (!this.refundRequestAddress) {
       throw new Error('RefundRequest address required');
     }
@@ -704,7 +681,7 @@ export class X402rClient {
       eventName: 'RefundRequested',
       onLogs: (logs) => {
         for (const log of logs) {
-          callback(log);
+          callback(log as unknown as RefundRequestEventLog);
         }
       },
     });
@@ -717,7 +694,7 @@ export class X402rClient {
       eventName: 'RefundRequestStatusUpdated',
       onLogs: (logs) => {
         for (const log of logs) {
-          callback(log);
+          callback(log as unknown as RefundRequestEventLog);
         }
       },
     });
@@ -730,7 +707,7 @@ export class X402rClient {
       eventName: 'RefundRequestCancelled',
       onLogs: (logs) => {
         for (const log of logs) {
-          callback(log);
+          callback(log as unknown as RefundRequestEventLog);
         }
       },
     });
@@ -760,7 +737,7 @@ export class X402rClient {
    * // Later: unsubscribe();
    * ```
    */
-  watchMyPayments(callback: (event: unknown) => void): { unsubscribe: () => void } {
+  watchMyPayments(callback: (event: PaymentOperatorEventLog) => void): { unsubscribe: () => void } {
     if (!this.walletClient?.account) {
       throw new Error('WalletClient required');
     }
@@ -776,7 +753,7 @@ export class X402rClient {
       },
       onLogs: (logs) => {
         for (const log of logs) {
-          callback(log);
+          callback(log as unknown as PaymentOperatorEventLog);
         }
       },
     });
@@ -801,42 +778,8 @@ export class X402rClient {
    */
   watchFreezeEvents(
     freezeAddress: `0x${string}`,
-    callback: (event: unknown) => void
+    callback: (event: FreezeEventLog) => void
   ): { unsubscribe: () => void } {
-    const unsubscribers: (() => void)[] = [];
-
-    // Watch PaymentFrozen events
-    const unsubscribeFrozen = this.publicClient.watchContractEvent({
-      address: freezeAddress,
-      abi: FreezeABI,
-      eventName: 'PaymentFrozen',
-      onLogs: (logs) => {
-        for (const log of logs) {
-          callback(log);
-        }
-      },
-    });
-    unsubscribers.push(unsubscribeFrozen);
-
-    // Watch PaymentUnfrozen events
-    const unsubscribeUnfrozen = this.publicClient.watchContractEvent({
-      address: freezeAddress,
-      abi: FreezeABI,
-      eventName: 'PaymentUnfrozen',
-      onLogs: (logs) => {
-        for (const log of logs) {
-          callback(log);
-        }
-      },
-    });
-    unsubscribers.push(unsubscribeUnfrozen);
-
-    return {
-      unsubscribe: () => {
-        for (const unsub of unsubscribers) {
-          unsub();
-        }
-      },
-    };
+    return sharedWatchFreezeEvents({ publicClient: this.publicClient }, freezeAddress, callback);
   }
 }

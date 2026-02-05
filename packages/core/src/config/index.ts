@@ -59,6 +59,8 @@ export interface NetworkConfig {
   protocolFeeConfig: `0x${string}`;
   /** UsdcTvlLimit condition contract address */
   usdcTvlLimit: `0x${string}`;
+  /** ArbiterRegistry contract address */
+  arbiterRegistry: `0x${string}`;
   /** USDC token address */
   usdc: `0x${string}`;
   /** Factory addresses (optional - may not be deployed on all networks) */
@@ -83,11 +85,12 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     authCaptureEscrow: '0xb9488351E48b23D798f24e8174514F28B741Eb4f',
     tokenCollector: '0xC80cd08d609673061597DE7fe54Af3978f10A825',
     refundRequest: '0x6926c05193c714ED4bA3867Ee93d6816Fdc14128',
-    protocolFeeConfig: '0x1e52a74cE6b69F04a506eF815743E1052A1BD28F',
-    usdcTvlLimit: '0xcb9F7C34C6DecFB010385e1454ae1BF3182D78E7',
+    protocolFeeConfig: '0x99FcEd5517879878518994B79B253198f41490F7',
+    usdcTvlLimit: '0xd524fE1DFA0ED5105883AB928E4F6e3F37AC3fDD',
+    arbiterRegistry: '0xFcE18CB2f44a85D043E5F86f200dfFc9649622DF',
     usdc: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
     factories: {
-      paymentOperator: '0xFa8C4Cb156053b867Ae7489220A29b5939E3Df70',
+      paymentOperator: '0xe01CEd771A30A23a7A4C9c1db604C74D4Dc4ebe8',
       escrowPeriod: '0x206D4DbB6E7b876e4B5EFAAD2a04e7d7813FB6ba',
       freezePolicy: '0x9D4146EF898c8E60B3e865AE254ef438E7cEd2A0',
       freeze: '0x199fed16577773Bb6b2D76CC3cD1c76c22D28835',
@@ -110,11 +113,12 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     authCaptureEscrow: '0x320a3c35F131E5D2Fb36af56345726B298936037',
     tokenCollector: '0x32d6AC59BCe8DFB3026F10BcaDB8D00AB218f5b6',
     refundRequest: '0xc1256Bb30bd0cdDa07D8C8Cf67a59105f2EA1b98',
-    protocolFeeConfig: '0x230fd3A171750FA45db2976121376b7F47Cba308',
-    usdcTvlLimit: '0xE78648e7af7B1BaDE717FF6E410B922F92adE80f',
+    protocolFeeConfig: '0x19a798c7F66E6401f6004b732dA604196952e843',
+    usdcTvlLimit: '0xd709e87DF198eF3C15C5eaE81E3EbD8Fd7AC908a',
+    arbiterRegistry: '0x9B16ff5bcF5C0B2c31Cd17032a306E91CA67F546',
     usdc: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
     factories: {
-      paymentOperator: '0xD979dBfBdA5f4b16AAF60Eaab32A44f352076838',
+      paymentOperator: '0xA50F51254E8B08899EdB76Bd24b4DC6A61ba7dE7',
       escrowPeriod: '0x2714EA3e839Ac50F52B2e2a5788F614cACeE5316',
       freezePolicy: '0x46C44071BDf9753482400B76d88A5850318b776F',
       freeze: '0xCAEd9474c06bf9139AC36C874dED838e1Bcb9310',

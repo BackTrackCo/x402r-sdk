@@ -30,3 +30,6 @@ export * from './utils/index.js';
 
 // Fee calculation utilities
 export * from './fees/index.js';
+
+// Shared operations (refund, freeze)
+export * from './shared/index.js';
