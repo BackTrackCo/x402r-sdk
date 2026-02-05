@@ -730,66 +730,13 @@ export const StaticAddressConditionABI = [
 ] as const;
 
 /**
- * FreezePolicy contract ABI
- *
- * FreezePolicy defines the conditions for freezing and unfreezing payments,
- * as well as the freeze duration.
- */
-export const FreezePolicyABI = [
-  // IFreezePolicy implementation
-  {
-    name: 'canFreeze',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [
-      { name: 'paymentInfo', type: 'tuple', components: paymentInfoComponents },
-      { name: 'caller', type: 'address' },
-    ],
-    outputs: [
-      { name: 'allowed', type: 'bool' },
-      { name: 'duration', type: 'uint256' },
-    ],
-  },
-  {
-    name: 'canUnfreeze',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [
-      { name: 'paymentInfo', type: 'tuple', components: paymentInfoComponents },
-      { name: 'caller', type: 'address' },
-    ],
-    outputs: [{ name: '', type: 'bool' }],
-  },
-  // Immutables
-  {
-    name: 'FREEZE_CONDITION',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'address' }],
-  },
-  {
-    name: 'UNFREEZE_CONDITION',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'address' }],
-  },
-  {
-    name: 'FREEZE_DURATION',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
-] as const;
-
-/**
  * Freeze contract ABI
  *
  * Freeze implements ICondition and manages payment freezing state.
- * - freeze(): Freezes a payment (caller must pass freezePolicy.canFreeze)
- * - unfreeze(): Unfreezes a payment (caller must pass freezePolicy.canUnfreeze)
+ * FreezePolicy has been merged into Freeze — freeze/unfreeze authorization
+ * is now handled directly via FREEZE_CONDITION and UNFREEZE_CONDITION immutables.
+ * - freeze(): Freezes a payment (caller must pass FREEZE_CONDITION)
+ * - unfreeze(): Unfreezes a payment (caller must pass UNFREEZE_CONDITION)
  * - check(): Returns false if payment is frozen, true otherwise
  */
 export const FreezeABI = [
@@ -842,11 +789,25 @@ export const FreezeABI = [
     outputs: [{ name: '', type: 'address' }],
   },
   {
-    name: 'FREEZE_POLICY',
+    name: 'FREEZE_CONDITION',
     type: 'function',
     stateMutability: 'view',
     inputs: [],
     outputs: [{ name: '', type: 'address' }],
+  },
+  {
+    name: 'UNFREEZE_CONDITION',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+  },
+  {
+    name: 'FREEZE_DURATION',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
   },
   {
     name: 'ESCROW_PERIOD_CONTRACT',
@@ -875,7 +836,6 @@ export const FreezeABI = [
         indexed: false,
       },
       { name: 'caller', type: 'address', indexed: true },
-      { name: 'frozenUntil', type: 'uint256', indexed: false },
     ],
   },
   {
@@ -1107,7 +1067,6 @@ export type IFeeCalculatorABIType = typeof IFeeCalculatorABI;
 export type EscrowPeriodABIType = typeof EscrowPeriodABI;
 export type AuthCaptureEscrowABIType = typeof AuthCaptureEscrowABI;
 export type StaticAddressConditionABIType = typeof StaticAddressConditionABI;
-export type FreezePolicyABIType = typeof FreezePolicyABI;
 export type FreezeABIType = typeof FreezeABI;
 export type ProtocolFeeConfigABIType = typeof ProtocolFeeConfigABI;
 export type ArbiterRegistryABIType = typeof ArbiterRegistryABI;

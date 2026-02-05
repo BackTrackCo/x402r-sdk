@@ -7,7 +7,6 @@ import {
   EscrowPeriodABI,
   AuthCaptureEscrowABI,
   StaticAddressConditionABI,
-  FreezePolicyABI,
   FreezeABI,
   ProtocolFeeConfigABI,
 } from '../src/abis/index.js';
@@ -268,34 +267,6 @@ describe('EscrowPeriodABI', () => {
   });
 });
 
-describe('FreezePolicyABI', () => {
-  it('should have canFreeze function', () => {
-    const fn = FreezePolicyABI.find(
-      (item) => item.name === 'canFreeze' && item.type === 'function'
-    );
-    expect(fn).toBeDefined();
-    expect(fn?.outputs).toHaveLength(2); // (bool allowed, uint256 duration)
-  });
-
-  it('should have canUnfreeze function', () => {
-    const fn = FreezePolicyABI.find(
-      (item) => item.name === 'canUnfreeze' && item.type === 'function'
-    );
-    expect(fn).toBeDefined();
-    expect(fn?.outputs).toHaveLength(1); // bool
-  });
-
-  it('should have all immutables', () => {
-    const functionNames = FreezePolicyABI.filter(
-      (item) => item.type === 'function'
-    ).map((item) => item.name);
-
-    expect(functionNames).toContain('FREEZE_CONDITION');
-    expect(functionNames).toContain('UNFREEZE_CONDITION');
-    expect(functionNames).toContain('FREEZE_DURATION');
-  });
-});
-
 describe('FreezeABI', () => {
   it('should have check function with 3 parameters (ICondition)', () => {
     const checkFn = FreezeABI.find(
@@ -356,7 +327,9 @@ describe('FreezeABI', () => {
     expect(functionNames).toContain('unfreeze');
     expect(functionNames).toContain('isFrozen');
     expect(functionNames).toContain('ESCROW');
-    expect(functionNames).toContain('FREEZE_POLICY');
+    expect(functionNames).toContain('FREEZE_CONDITION');
+    expect(functionNames).toContain('UNFREEZE_CONDITION');
+    expect(functionNames).toContain('FREEZE_DURATION');
     expect(functionNames).toContain('ESCROW_PERIOD_CONTRACT');
     expect(functionNames).toContain('frozenUntil');
   });
@@ -469,7 +442,6 @@ describe('ABI structure validation', () => {
     expect(Array.isArray(EscrowPeriodABI)).toBe(true);
     expect(Array.isArray(AuthCaptureEscrowABI)).toBe(true);
     expect(Array.isArray(StaticAddressConditionABI)).toBe(true);
-    expect(Array.isArray(FreezePolicyABI)).toBe(true);
     expect(Array.isArray(FreezeABI)).toBe(true);
     expect(Array.isArray(ProtocolFeeConfigABI)).toBe(true);
   });
@@ -483,7 +455,6 @@ describe('ABI structure validation', () => {
       ...EscrowPeriodABI,
       ...AuthCaptureEscrowABI,
       ...StaticAddressConditionABI,
-      ...FreezePolicyABI,
       ...FreezeABI,
       ...ProtocolFeeConfigABI,
     ];
