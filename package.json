@@ -45,6 +45,12 @@
     "viem": "^2.21.0",
     "vitest": "^2.1.0"
   },
+  "pnpm": {
+    "overrides": {
+      "@x402/core": "file:../x402/typescript/packages/core",
+      "@x402/extensions": "file:../x402/typescript/packages/extensions"
+    }
+  },
   "packageManager": "pnpm@9.15.0",
   "engines": {
     "node": ">=20"

@@ -1,6 +1,6 @@
 # x402r Examples Guide
 
-End-to-end demo: Client pays for weather data → Merchant receives payment in escrow → Can release after escrow period.
+End-to-end demo: Client pays for weather data → Merchant delegates to Facilitator → Facilitator settles on-chain → Merchant releases after escrow period.
 
 ## Prerequisites
 
@@ -8,6 +8,7 @@ End-to-end demo: Client pays for weather data → Merchant receives payment in e
 - Wallet with Base Sepolia ETH and USDC
 
 **Get testnet tokens:**
+
 - ETH: https://www.coinbase.com/faucets/base-ethereum-sepolia-faucet
 - USDC: https://faucet.circle.com/ (select Base Sepolia)
 
@@ -22,7 +23,31 @@ PRIVATE_KEY=0x... pnpm example:deploy-operator
 
 Save the output addresses for the next steps.
 
-## Step 2: Start the Merchant Server
+## Step 2: Start the Facilitator
+
+The facilitator service handles payment verification and on-chain settlement. The merchant server delegates to it via x402's standard middleware.
+
+```bash
+cd x402r-sdk/examples/facilitator
+cp .env.example .env
+```
+
+Edit `.env`:
+
+```env
+PRIVATE_KEY=0x...your_facilitator_private_key...
+OPERATOR_ADDRESS=0xbb4f390b80E4F4895B96B95AE382B65fDC45974B
+```
+
+Start:
+
+```bash
+pnpm dev
+```
+
+The facilitator runs at http://localhost:4022.
+
+## Step 3: Start the Merchant Server
 
 ```bash
 cd x402r-sdk/examples/merchant-server
@@ -31,14 +56,15 @@ cp .env.example .env
 ```
 
 Edit `.env`:
+
 ```env
 PRIVATE_KEY=0x...your_merchant_private_key...
 OPERATOR_ADDRESS=0xbb4f390b80E4F4895B96B95AE382B65fDC45974B
-FREEZE_ADDRESS=0xD0f99B7667076f151FD8240b277f1765d147e48C
-ESCROW_PERIOD_ADDRESS=0xFcFb7e197823D304D53F47BE1E9761e9D102589b
+FACILITATOR_URL=http://localhost:4022
 ```
 
 Start:
+
 ```bash
 # From examples/merchant-server directory:
 pnpm dev
@@ -47,12 +73,15 @@ pnpm dev
 pnpm example:merchant-server
 ```
 
+The merchant server uses x402's standard `paymentMiddleware` and delegates verify/settle to the facilitator.
+
 Test it returns 402:
+
 ```bash
 curl http://localhost:3000/weather
 ```
 
-## Step 3: Make a Payment
+## Step 4: Make a Payment
 
 In a new terminal:
 
@@ -63,11 +92,13 @@ cp .env.example .env
 ```
 
 Edit `.env`:
+
 ```env
 PRIVATE_KEY=0x...your_payer_private_key...
 ```
 
 Pay for weather data:
+
 ```bash
 # From examples/client-cli directory:
 pnpm start pay --url http://localhost:3000/weather
@@ -78,7 +109,7 @@ pnpm example:client-cli pay --url http://localhost:3000/weather
 
 **Save the Payment Info JSON from the output** - you need it for freeze/refund.
 
-## Step 4: Freeze a Payment (Optional)
+## Step 5: Freeze a Payment (Optional)
 
 Freezing blocks the merchant from releasing funds:
 
@@ -90,6 +121,7 @@ pnpm start freeze \
 ```
 
 Check status:
+
 ```bash
 pnpm start is-frozen \
   --payment-json '...' \
@@ -97,7 +129,7 @@ pnpm start is-frozen \
   --operator-address 0xbb4f390b80E4F4895B96B95AE382B65fDC45974B
 ```
 
-## Step 5: Request a Refund (Optional)
+## Step 6: Request a Refund (Optional)
 
 ```bash
 pnpm start refund \
@@ -107,13 +139,14 @@ pnpm start refund \
 ```
 
 Check refund status:
+
 ```bash
 pnpm start refund-status \
   --payment-json '...' \
   --operator-address 0xbb4f390b80E4F4895B96B95AE382B65fDC45974B
 ```
 
-## Step 6: Arbiter Operations (Dispute Resolution)
+## Step 7: Arbiter Operations (Dispute Resolution)
 
 The arbiter-cli handles dispute resolution for refund requests.
 
@@ -131,6 +164,7 @@ cp .env.example .env
 ```
 
 Edit `.env`:
+
 ```env
 PRIVATE_KEY=0x...your_arbiter_private_key...
 OPERATOR_ADDRESS=0xbb4f390b80E4F4895B96B95AE382B65fDC45974B
@@ -176,7 +210,7 @@ Monitor incoming refund requests in real-time:
 pnpm start watch
 ```
 
-## Step 7: Merchant Operations (Using Merchant CLI)
+## Step 8: Merchant Operations (Using Merchant CLI)
 
 The merchant-cli provides direct access to merchant operations without running a server.
 
@@ -220,72 +254,72 @@ pnpm start deny-refund --payment-json '...'
 
 ## Merchant CLI vs Merchant Server
 
-| Aspect | Merchant Server | Merchant CLI |
-|--------|-----------------|--------------|
-| **Use Case** | Build APIs that accept payments | Manual merchant operations |
-| **How it works** | HTTP server with payment middleware | Command-line tool |
-| **When to use** | Production services, web apps | Testing, debugging, manual releases |
-| **Example** | Weather API that requires payment | Release funds after delivery |
+| Aspect           | Merchant Server                     | Merchant CLI                        |
+| ---------------- | ----------------------------------- | ----------------------------------- |
+| **Use Case**     | Build APIs that accept payments     | Manual merchant operations          |
+| **How it works** | HTTP server with payment middleware | Command-line tool                   |
+| **When to use**  | Production services, web apps       | Testing, debugging, manual releases |
+| **Example**      | Weather API that requires payment   | Release funds after delivery        |
 
 ## Reference Addresses (Base Sepolia)
 
 ### Example Operator
 
-| Contract | Address |
-|----------|---------|
+| Contract        | Address                                      |
+| --------------- | -------------------------------------------- |
 | PaymentOperator | `0xbb4f390b80E4F4895B96B95AE382B65fDC45974B` |
-| EscrowPeriod | `0xFcFb7e197823D304D53F47BE1E9761e9D102589b` |
-| Freeze | `0xD0f99B7667076f151FD8240b277f1765d147e48C` |
+| EscrowPeriod    | `0xFcFb7e197823D304D53F47BE1E9761e9D102589b` |
+| Freeze          | `0xD0f99B7667076f151FD8240b277f1765d147e48C` |
 
 ### Protocol Contracts
 
-| Contract | Address |
-|----------|---------|
+| Contract          | Address                                      |
+| ----------------- | -------------------------------------------- |
 | AuthCaptureEscrow | `0xb9488351E48b23D798f24e8174514F28B741Eb4f` |
-| RefundRequest | `0x6926c05193c714ED4bA3867Ee93d6816Fdc14128` |
-| ArbiterRegistry | `0xFcE18CB2f44a85D043E5F86f200dfFc9649622DF` |
-| USDC | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` |
+| RefundRequest     | `0x6926c05193c714ED4bA3867Ee93d6816Fdc14128` |
+| ArbiterRegistry   | `0xFcE18CB2f44a85D043E5F86f200dfFc9649622DF` |
+| USDC              | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` |
 
 ## CLI Commands Reference
 
 ### Client CLI (payer operations)
 
-| Command | Description |
-|---------|-------------|
-| `pay --url <url>` | Make a payment to a 402 endpoint |
-| `freeze --payment-json <json> --freeze-address <addr> --operator-address <addr>` | Freeze a payment |
-| `unfreeze ...` | Unfreeze a payment |
-| `is-frozen ...` | Check if payment is frozen |
-| `refund --payment-json <json> --amount <amt> --operator-address <addr>` | Request refund |
-| `refund-status ...` | Check refund request status |
-| `cancel-refund ...` | Cancel pending refund request |
-| `preview-fee --operator-address <addr> --amount <amt>` | Preview fees before paying |
-| `info` | Show wallet and protocol addresses |
+| Command                                                                          | Description                        |
+| -------------------------------------------------------------------------------- | ---------------------------------- |
+| `pay --url <url>`                                                                | Make a payment to a 402 endpoint   |
+| `freeze --payment-json <json> --freeze-address <addr> --operator-address <addr>` | Freeze a payment                   |
+| `unfreeze ...`                                                                   | Unfreeze a payment                 |
+| `is-frozen ...`                                                                  | Check if payment is frozen         |
+| `refund --payment-json <json> --amount <amt> --operator-address <addr>`          | Request refund                     |
+| `refund-status ...`                                                              | Check refund request status        |
+| `cancel-refund ...`                                                              | Cancel pending refund request      |
+| `preview-fee --operator-address <addr> --amount <amt>`                           | Preview fees before paying         |
+| `info`                                                                           | Show wallet and protocol addresses |
 
 ### Merchant CLI (merchant operations)
 
-| Command | Description |
-|---------|-------------|
-| `release --payment-json <json> --amount <amt>` | Release escrowed funds to merchant |
-| `payment-amounts --payment-json <json>` | Check authorized/captured/released amounts |
-| `pending-refunds` | List all pending refund requests |
-| `approve-refund --payment-json <json>` | Approve a refund request |
-| `deny-refund --payment-json <json>` | Deny a refund request |
-| `calculate-fee --amount <amt>` | Calculate fees for an amount |
-| `operator-config` | Show operator configuration |
-| `info` | Show wallet and protocol addresses |
+| Command                                        | Description                                |
+| ---------------------------------------------- | ------------------------------------------ |
+| `release --payment-json <json> --amount <amt>` | Release escrowed funds to merchant         |
+| `payment-amounts --payment-json <json>`        | Check authorized/captured/released amounts |
+| `pending-refunds`                              | List all pending refund requests           |
+| `approve-refund --payment-json <json>`         | Approve a refund request                   |
+| `deny-refund --payment-json <json>`            | Deny a refund request                      |
+| `calculate-fee --amount <amt>`                 | Calculate fees for an amount               |
+| `operator-config`                              | Show operator configuration                |
+| `info`                                         | Show wallet and protocol addresses         |
 
 ### Arbiter CLI (dispute resolution)
 
-| Command | Description |
-|---------|-------------|
-| `list` | List pending refund requests |
-| `show <key>` | Show detailed request info |
-| `approve <key> --payment-json <json>` | Approve a refund request |
-| `deny <key> --payment-json <json>` | Deny a refund request |
-| `execute --payment-json <json>` | Execute an approved refund |
-| `status --payment-json <json>` | Check refund request status |
-| `is-frozen --payment-json <json>` | Check if payment is frozen |
-| `watch` | Watch for new refund requests in real-time |
-| `count` | Get total refund request count |
-| `info` | Show arbiter wallet and config |
+| Command                               | Description                                |
+| ------------------------------------- | ------------------------------------------ |
+| `list`                                | List pending refund requests               |
+| `show <key>`                          | Show detailed request info                 |
+| `approve <key> --payment-json <json>` | Approve a refund request                   |
+| `deny <key> --payment-json <json>`    | Deny a refund request                      |
+| `execute --payment-json <json>`       | Execute an approved refund                 |
+| `status --payment-json <json>`        | Check refund request status                |
+| `is-frozen --payment-json <json>`     | Check if payment is frozen                 |
+| `watch`                               | Watch for new refund requests in real-time |
+| `count`                               | Get total refund request count             |
+| `info`                                | Show arbiter wallet and config             |

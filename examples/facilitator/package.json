@@ -1,5 +1,5 @@
 {
-  "name": "merchant-server-example",
+  "name": "x402r-facilitator",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -9,10 +9,10 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.13.0",
-    "@x402/core": "file:../../../x402/typescript/packages/core",
-    "@x402/hono": "file:../../../x402/typescript/packages/http/hono",
+    "@x402/core": "^2.3.0",
+    "@x402/evm": "^2.3.0",
+    "@x402r/core": "workspace:*",
     "@x402r/evm": "file:../../../x402r-scheme/packages/evm",
-    "@x402r/helpers": "workspace:*",
     "dotenv": "^16.4.0",
     "hono": "^4.6.0",
     "viem": "^2.21.0"

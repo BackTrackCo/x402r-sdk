@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { X402rArbiter } from '../src/arbiter.js';
-import { PaymentState, NotImplementedError } from '@x402r/core';
+import { NotImplementedError } from '@x402r/core';
 import type { PublicClient, WalletClient } from 'viem';
 
 // Mock viem clients

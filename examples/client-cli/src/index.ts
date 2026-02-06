@@ -11,38 +11,65 @@
  *   pnpm start refund --payment-json '{"operator":...}' --amount 10000
  */
 
-import { Command } from 'commander';
-import { createPublicClient, createWalletClient, http } from 'viem';
-import { baseSepolia } from 'viem/chains';
-import { privateKeyToAccount } from 'viem/accounts';
-import { config as dotenvConfig } from 'dotenv';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { Command } from "commander";
+import { createPublicClient, createWalletClient, http } from "viem";
+import { baseSepolia } from "viem/chains";
+import { privateKeyToAccount } from "viem/accounts";
+import { config as dotenvConfig } from "dotenv";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
 import {
   getNetworkConfig,
   calculateTotalFees,
   formatFeeBreakdown,
   validateFeeBounds,
   type PaymentInfo,
-} from '@x402r/core';
-import { pay } from './commands/pay.js';
-import { freeze, unfreeze, checkFrozen } from './commands/freeze.js';
-import { requestRefund, cancelRefund, getRefundStatus } from './commands/refund.js';
-import { parsePaymentInfo } from '../../shared/utils.js';
+} from "@x402r/core";
+import { pay } from "./commands/pay.js";
+import { freeze, unfreeze, checkFrozen } from "./commands/freeze.js";
+import {
+  requestRefund,
+  cancelRefund,
+  getRefundStatus,
+} from "./commands/refund.js";
+
+function parsePaymentInfo(json: string): PaymentInfo {
+  try {
+    const parsed = JSON.parse(json);
+    return {
+      operator: parsed.operator,
+      payer: parsed.payer,
+      receiver: parsed.receiver,
+      token: parsed.token,
+      maxAmount: BigInt(parsed.maxAmount),
+      preApprovalExpiry: BigInt(parsed.preApprovalExpiry),
+      authorizationExpiry: BigInt(parsed.authorizationExpiry),
+      refundExpiry: BigInt(parsed.refundExpiry),
+      minFeeBps: Number(parsed.minFeeBps),
+      maxFeeBps: Number(parsed.maxFeeBps),
+      feeReceiver: parsed.feeReceiver,
+      salt: BigInt(parsed.salt),
+    };
+  } catch {
+    console.error("Error: Invalid payment JSON");
+    console.error('Expected format: {"operator":"0x...","payer":"0x...",...}');
+    process.exit(1);
+  }
+}
 
 // Load environment from the example directory
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-dotenvConfig({ path: join(__dirname, '..', '.env') });
+dotenvConfig({ path: join(__dirname, "..", ".env") });
 
-const NETWORK_ID = process.env.NETWORK_ID || 'eip155:84532';
-const RPC_URL = process.env.RPC_URL || 'https://sepolia.base.org';
+const NETWORK_ID = process.env.NETWORK_ID || "eip155:84532";
+const RPC_URL = process.env.RPC_URL || "https://sepolia.base.org";
 
 // Create viem clients
 function createClients() {
   const privateKey = process.env.PRIVATE_KEY as `0x${string}`;
   if (!privateKey) {
-    console.error('Error: PRIVATE_KEY environment variable is required');
+    console.error("Error: PRIVATE_KEY environment variable is required");
     process.exit(1);
   }
 
@@ -66,15 +93,15 @@ function createClients() {
 const program = new Command();
 
 program
-  .name('x402r-client')
-  .description('CLI tool for x402r payments')
-  .version('0.0.1');
+  .name("x402r-client")
+  .description("CLI tool for x402r payments")
+  .version("0.0.1");
 
 // Pay command
 program
-  .command('pay')
-  .description('Make a payment to a URL that returns 402')
-  .requiredOption('-u, --url <url>', 'URL to pay for')
+  .command("pay")
+  .description("Make a payment to a URL that returns 402")
+  .requiredOption("-u, --url <url>", "URL to pay for")
   .action(async (options) => {
     const { walletClient } = createClients();
 
@@ -84,33 +111,37 @@ program
     });
 
     if (result.success) {
-      console.log('\n=== Response ===');
+      console.log("\n=== Response ===");
       console.log(JSON.stringify(result.response, null, 2));
 
       if (result.paymentInfo) {
-        console.log('\n=== Payment Info (save for freeze/refund) ===');
-        console.log(JSON.stringify(result.paymentInfo, (_, v) =>
-          typeof v === 'bigint' ? v.toString() : v
-        , 2));
+        console.log("\n=== Payment Info (save for freeze/refund) ===");
+        console.log(
+          JSON.stringify(
+            result.paymentInfo,
+            (_, v) => (typeof v === "bigint" ? v.toString() : v),
+            2,
+          ),
+        );
       }
 
       if (result.transaction) {
-        console.log('\n=== Transaction ===');
+        console.log("\n=== Transaction ===");
         console.log(`https://sepolia.basescan.org/tx/${result.transaction}`);
       }
     } else {
-      console.error('\nPayment failed:', result.error);
+      console.error("\nPayment failed:", result.error);
       process.exit(1);
     }
   });
 
 // Freeze command
 program
-  .command('freeze')
-  .description('Freeze a payment to extend escrow period')
-  .requiredOption('-p, --payment-json <json>', 'Payment info JSON')
-  .requiredOption('-f, --freeze-address <address>', 'Freeze contract address')
-  .requiredOption('-o, --operator-address <address>', 'Operator address')
+  .command("freeze")
+  .description("Freeze a payment to extend escrow period")
+  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .requiredOption("-f, --freeze-address <address>", "Freeze contract address")
+  .requiredOption("-o, --operator-address <address>", "Operator address")
   .action(async (options) => {
     const { publicClient, walletClient } = createClients();
     const paymentInfo = parsePaymentInfo(options.paymentJson);
@@ -128,18 +159,18 @@ program
         console.log(`\nhttps://sepolia.basescan.org/tx/${result.txHash}`);
       }
     } else {
-      console.error('\nFreeze failed:', result.error);
+      console.error("\nFreeze failed:", result.error);
       process.exit(1);
     }
   });
 
 // Unfreeze command
 program
-  .command('unfreeze')
-  .description('Unfreeze a previously frozen payment')
-  .requiredOption('-p, --payment-json <json>', 'Payment info JSON')
-  .requiredOption('-f, --freeze-address <address>', 'Freeze contract address')
-  .requiredOption('-o, --operator-address <address>', 'Operator address')
+  .command("unfreeze")
+  .description("Unfreeze a previously frozen payment")
+  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .requiredOption("-f, --freeze-address <address>", "Freeze contract address")
+  .requiredOption("-o, --operator-address <address>", "Operator address")
   .action(async (options) => {
     const { publicClient, walletClient } = createClients();
     const paymentInfo = parsePaymentInfo(options.paymentJson);
@@ -157,18 +188,18 @@ program
         console.log(`\nhttps://sepolia.basescan.org/tx/${result.txHash}`);
       }
     } else {
-      console.error('\nUnfreeze failed:', result.error);
+      console.error("\nUnfreeze failed:", result.error);
       process.exit(1);
     }
   });
 
 // Check frozen status command
 program
-  .command('is-frozen')
-  .description('Check if a payment is frozen')
-  .requiredOption('-p, --payment-json <json>', 'Payment info JSON')
-  .requiredOption('-f, --freeze-address <address>', 'Freeze contract address')
-  .requiredOption('-o, --operator-address <address>', 'Operator address')
+  .command("is-frozen")
+  .description("Check if a payment is frozen")
+  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .requiredOption("-f, --freeze-address <address>", "Freeze contract address")
+  .requiredOption("-o, --operator-address <address>", "Operator address")
   .action(async (options) => {
     const { publicClient } = createClients();
     const paymentInfo = parsePaymentInfo(options.paymentJson);
@@ -180,17 +211,17 @@ program
       publicClient,
     });
 
-    console.log(`\nPayment is ${isFrozen ? 'FROZEN' : 'NOT FROZEN'}`);
+    console.log(`\nPayment is ${isFrozen ? "FROZEN" : "NOT FROZEN"}`);
   });
 
 // Refund command
 program
-  .command('refund')
-  .description('Request a refund for a payment')
-  .requiredOption('-p, --payment-json <json>', 'Payment info JSON')
-  .requiredOption('-a, --amount <amount>', 'Amount to refund (in token units)')
-  .requiredOption('-o, --operator-address <address>', 'Operator address')
-  .option('-n, --nonce <nonce>', 'Nonce (record index)', '0')
+  .command("refund")
+  .description("Request a refund for a payment")
+  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .requiredOption("-a, --amount <amount>", "Amount to refund (in token units)")
+  .requiredOption("-o, --operator-address <address>", "Operator address")
+  .option("-n, --nonce <nonce>", "Nonce (record index)", "0")
   .action(async (options) => {
     const { publicClient, walletClient } = createClients();
     const paymentInfo = parsePaymentInfo(options.paymentJson);
@@ -211,21 +242,21 @@ program
         console.log(`\nhttps://sepolia.basescan.org/tx/${result.txHash}`);
       }
       if (result.status !== undefined) {
-        console.log('\nCurrent status:', result.status);
+        console.log("\nCurrent status:", result.status);
       }
     } else {
-      console.error('\nRefund request failed:', result.error);
+      console.error("\nRefund request failed:", result.error);
       process.exit(1);
     }
   });
 
 // Cancel refund command
 program
-  .command('cancel-refund')
-  .description('Cancel a pending refund request')
-  .requiredOption('-p, --payment-json <json>', 'Payment info JSON')
-  .requiredOption('-o, --operator-address <address>', 'Operator address')
-  .option('-n, --nonce <nonce>', 'Nonce (record index)', '0')
+  .command("cancel-refund")
+  .description("Cancel a pending refund request")
+  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .requiredOption("-o, --operator-address <address>", "Operator address")
+  .option("-n, --nonce <nonce>", "Nonce (record index)", "0")
   .action(async (options) => {
     const { publicClient, walletClient } = createClients();
     const paymentInfo = parsePaymentInfo(options.paymentJson);
@@ -245,18 +276,18 @@ program
         console.log(`\nhttps://sepolia.basescan.org/tx/${result.txHash}`);
       }
     } else {
-      console.error('\nCancel refund failed:', result.error);
+      console.error("\nCancel refund failed:", result.error);
       process.exit(1);
     }
   });
 
 // Refund status command
 program
-  .command('refund-status')
-  .description('Check the status of a refund request')
-  .requiredOption('-p, --payment-json <json>', 'Payment info JSON')
-  .requiredOption('-o, --operator-address <address>', 'Operator address')
-  .option('-n, --nonce <nonce>', 'Nonce (record index)', '0')
+  .command("refund-status")
+  .description("Check the status of a refund request")
+  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .requiredOption("-o, --operator-address <address>", "Operator address")
+  .option("-n, --nonce <nonce>", "Nonce (record index)", "0")
   .action(async (options) => {
     const { publicClient } = createClients();
     const paymentInfo = parsePaymentInfo(options.paymentJson);
@@ -271,40 +302,46 @@ program
     });
 
     if (status === null) {
-      console.log('\nNo refund request found for this payment');
+      console.log("\nNo refund request found for this payment");
     } else {
-      const statusNames = ['Pending', 'Approved', 'Denied', 'Cancelled'];
+      const statusNames = ["Pending", "Approved", "Denied", "Cancelled"];
       console.log(`\nRefund status: ${statusNames[status] || status}`);
     }
   });
 
 // Info command
 program
-  .command('info')
-  .description('Show configuration info')
+  .command("info")
+  .description("Show configuration info")
   .action(() => {
     const { account } = createClients();
     const networkConfig = getNetworkConfig(NETWORK_ID)!;
 
-    console.log('\n=== Client Info ===');
-    console.log('  Address:', account.address);
-    console.log('  Network:', NETWORK_ID);
-    console.log('  RPC:', RPC_URL);
+    console.log("\n=== Client Info ===");
+    console.log("  Address:", account.address);
+    console.log("  Network:", NETWORK_ID);
+    console.log("  RPC:", RPC_URL);
 
-    console.log('\n=== Protocol Addresses ===');
-    console.log('  Escrow:', networkConfig.authCaptureEscrow);
-    console.log('  RefundRequest:', networkConfig.refundRequest);
-    console.log('  TokenCollector:', networkConfig.tokenCollector);
-    console.log('  USDC:', networkConfig.usdc);
+    console.log("\n=== Protocol Addresses ===");
+    console.log("  Escrow:", networkConfig.authCaptureEscrow);
+    console.log("  RefundRequest:", networkConfig.refundRequest);
+    console.log("  TokenCollector:", networkConfig.tokenCollector);
+    console.log("  USDC:", networkConfig.usdc);
   });
 
 // Preview fee command
 program
-  .command('preview-fee')
-  .description('Preview fees for a payment before authorizing')
-  .requiredOption('-o, --operator-address <address>', 'Operator address')
-  .requiredOption('-a, --amount <amount>', 'Amount to calculate fees for (in token units)')
-  .option('-p, --payment-json <json>', 'Payment info JSON (optional, for bounds validation)')
+  .command("preview-fee")
+  .description("Preview fees for a payment before authorizing")
+  .requiredOption("-o, --operator-address <address>", "Operator address")
+  .requiredOption(
+    "-a, --amount <amount>",
+    "Amount to calculate fees for (in token units)",
+  )
+  .option(
+    "-p, --payment-json <json>",
+    "Payment info JSON (optional, for bounds validation)",
+  )
   .action(async (options) => {
     const { publicClient, account } = createClients();
     const operatorAddress = options.operatorAddress as `0x${string}`;
@@ -317,7 +354,7 @@ program
       : {
           operator: operatorAddress,
           payer: account.address,
-          receiver: '0x0000000000000000000000000000000000000001',
+          receiver: "0x0000000000000000000000000000000000000001",
           token: networkConfig.usdc,
           maxAmount: amount,
           preApprovalExpiry: 0n,
@@ -325,14 +362,14 @@ program
           refundExpiry: 0n,
           minFeeBps: 0,
           maxFeeBps: 10000, // 100%
-          feeReceiver: '0x0000000000000000000000000000000000000001',
+          feeReceiver: "0x0000000000000000000000000000000000000001",
           salt: 0n,
         };
 
-    console.log('\nPreviewing fees...');
-    console.log('  Amount:', amount.toString());
-    console.log('  Operator:', operatorAddress);
-    console.log('  Payer:', account.address);
+    console.log("\nPreviewing fees...");
+    console.log("  Amount:", amount.toString());
+    console.log("  Operator:", operatorAddress);
+    console.log("  Payer:", account.address);
 
     try {
       const fees = await calculateTotalFees(
@@ -340,23 +377,28 @@ program
         operatorAddress,
         paymentInfo,
         amount,
-        account.address
+        account.address,
       );
 
-      console.log('\n' + formatFeeBreakdown(fees));
+      console.log("\n" + formatFeeBreakdown(fees));
 
       // Validate bounds if payment info was provided
       if (options.paymentJson) {
         const isValid = validateFeeBounds(fees, paymentInfo);
         console.log(
-          `\nFee Bounds: ${isValid ? 'VALID' : 'INVALID'} (min: ${paymentInfo.minFeeBps} bps, max: ${paymentInfo.maxFeeBps} bps)`
+          `\nFee Bounds: ${isValid ? "VALID" : "INVALID"} (min: ${paymentInfo.minFeeBps} bps, max: ${paymentInfo.maxFeeBps} bps)`,
         );
         if (!isValid) {
-          console.log('WARNING: Fees are outside the acceptable bounds for this payment!');
+          console.log(
+            "WARNING: Fees are outside the acceptable bounds for this payment!",
+          );
         }
       }
     } catch (error) {
-      console.error('\nFailed to preview fees:', error instanceof Error ? error.message : error);
+      console.error(
+        "\nFailed to preview fees:",
+        error instanceof Error ? error.message : error,
+      );
       process.exit(1);
     }
   });
