@@ -67,44 +67,6 @@ Returns payment configuration (no payment required):
 Without payment header → 402 with payment requirements
 With valid Payment-Signature header → Weather JSON
 
-### POST /release
-
-Release funds from escrow to the merchant wallet.
-
-```bash
-curl -X POST http://localhost:3000/release \
-  -H "Content-Type: application/json" \
-  -d '{
-    "paymentInfo": {
-      "operator": "0x...",
-      "payer": "0x...",
-      "receiver": "0x...",
-      "token": "0x...",
-      "maxAmount": "10000",
-      "preApprovalExpiry": 281474976710655,
-      "authorizationExpiry": 281474976710655,
-      "refundExpiry": 281474976710655,
-      "minFeeBps": 0,
-      "maxFeeBps": 1000,
-      "feeReceiver": "0x...",
-      "salt": "0x..."
-    },
-    "amount": "10000"
-  }'
-```
-
-### POST /payment-amounts
-
-Get capturable and refundable amounts for a payment.
-
-```bash
-curl -X POST http://localhost:3000/payment-amounts \
-  -H "Content-Type: application/json" \
-  -d '{
-    "paymentInfo": { ... }
-  }'
-```
-
 ## Pre-deployed Addresses (Base Sepolia)
 
 | Contract | Address                                      |
@@ -127,11 +89,6 @@ curl http://localhost:3000/info
 # Make a payment using client-cli
 cd ../client-cli
 pnpm start pay --url http://localhost:3000/weather
-
-# After escrow period, release funds
-curl -X POST http://localhost:3000/release \
-  -H "Content-Type: application/json" \
-  -d '{"paymentInfo": {...}, "amount": "10000"}'
 ```
 
 ## Two Services, Two Concerns
@@ -141,11 +98,9 @@ This example uses two separate services:
 | Service | Role | Port |
 |---------|------|------|
 | **Facilitator** (`examples/facilitator`) | Handles x402 payment protocol: verify signatures, settle on-chain via `authorize()` | 4022 |
-| **Merchant Server** (this) | Your API + post-payment operations: release escrowed funds, handle refunds | 3000 |
+| **Merchant Server** (this) | Your resource API — serves content behind x402 payment middleware | 3000 |
 
-**Why `HTTPFacilitatorClient`?** — The merchant server uses x402's standard `paymentMiddleware` which delegates signature verification and on-chain settlement to a facilitator service over HTTP.
-
-**Why `X402rMerchant`?** — After payment is settled, the merchant needs to manage escrowed funds: release them after the escrow period, check capturable amounts, or respond to refund requests. `X402rMerchant` handles these post-payment operations directly on-chain.
+**Why `HTTPFacilitatorClient`?** — The merchant server uses x402's standard `paymentMiddleware` which delegates signature verification and on-chain settlement to a facilitator service over HTTP. The merchant server itself is a pure resource server — it only serves content, it doesn't handle on-chain operations.
 
 ## Architecture
 
@@ -166,9 +121,4 @@ Client                    Merchant Server          Facilitator           Blockch
   |                            |                       |-- authorize() ----->|
   |                            |                       |<-- tx hash ---------|
   |<-- 200 + weather data -----|<-- success + tx ------|                     |
-  |                            |                       |                     |
-  |      (escrow period)       |                       |                     |
-  |                            |                       |                     |
-  |                            |-- POST /release --------------------------------->|
-  |                            |<-- funds transferred -----------------------------|
 ```

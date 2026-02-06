@@ -61,43 +61,6 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@20.19.30)
 
-  apps/facilitator:
-    dependencies:
-      '@hono/node-server':
-        specifier: ^1.13.0
-        version: 1.19.9(hono@4.11.7)
-      '@x402/core':
-        specifier: file:../../../x402/typescript/packages/core
-        version: file:../x402/typescript/packages/core
-      '@x402/evm':
-        specifier: ^2.3.0
-        version: 2.3.0(typescript@5.9.3)
-      '@x402r/core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@x402r/evm':
-        specifier: file:../../../x402r-scheme/packages/evm
-        version: file:../x402r-scheme/packages/evm(@x402/core@file:../x402/typescript/packages/core)(@x402/evm@2.3.0(typescript@5.9.3))(viem@2.45.0(typescript@5.9.3)(zod@3.25.76))
-      dotenv:
-        specifier: ^16.4.0
-        version: 16.6.1
-      hono:
-        specifier: ^4.6.0
-        version: 4.11.7
-      viem:
-        specifier: ^2.21.0
-        version: 2.45.0(typescript@5.9.3)(zod@3.25.76)
-    devDependencies:
-      '@types/node':
-        specifier: ^20.11.0
-        version: 20.19.30
-      tsx:
-        specifier: ^4.7.0
-        version: 4.21.0
-      typescript:
-        specifier: ^5.7.0
-        version: 5.9.3
-
   examples/arbiter-cli:
     dependencies:
       '@x402r/arbiter':
@@ -157,6 +120,43 @@ importers:
         specifier: ^5.7.0
         version: 5.9.3
 
+  examples/facilitator:
+    dependencies:
+      '@hono/node-server':
+        specifier: ^1.13.0
+        version: 1.19.9(hono@4.11.7)
+      '@x402/core':
+        specifier: file:../../../x402/typescript/packages/core
+        version: file:../x402/typescript/packages/core
+      '@x402/evm':
+        specifier: ^2.3.0
+        version: 2.3.0(typescript@5.9.3)
+      '@x402r/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@x402r/evm':
+        specifier: file:../../../x402r-scheme/packages/evm
+        version: file:../x402r-scheme/packages/evm(@x402/core@file:../x402/typescript/packages/core)(@x402/evm@2.3.0(typescript@5.9.3))(viem@2.45.0(typescript@5.9.3)(zod@3.25.76))
+      dotenv:
+        specifier: ^16.4.0
+        version: 16.6.1
+      hono:
+        specifier: ^4.6.0
+        version: 4.11.7
+      viem:
+        specifier: ^2.21.0
+        version: 2.45.0(typescript@5.9.3)(zod@3.25.76)
+    devDependencies:
+      '@types/node':
+        specifier: ^20.11.0
+        version: 20.19.30
+      tsx:
+        specifier: ^4.7.0
+        version: 4.21.0
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
   examples/merchant-cli:
     dependencies:
       '@x402r/core':
@@ -196,18 +196,12 @@ importers:
       '@x402/hono':
         specifier: file:../../../x402/typescript/packages/http/hono
         version: file:../x402/typescript/packages/http/hono(hono@4.11.7)
-      '@x402r/core':
-        specifier: workspace:*
-        version: link:../../packages/core
       '@x402r/evm':
         specifier: file:../../../x402r-scheme/packages/evm
         version: file:../x402r-scheme/packages/evm(@x402/core@file:../x402/typescript/packages/core)(@x402/evm@2.3.0(typescript@5.9.3))(viem@2.45.0(typescript@5.9.3)(zod@3.25.76))
       '@x402r/helpers':
         specifier: workspace:*
         version: link:../../packages/helpers
-      '@x402r/merchant':
-        specifier: workspace:*
-        version: link:../../packages/merchant
       dotenv:
         specifier: ^16.4.0
         version: 16.6.1
