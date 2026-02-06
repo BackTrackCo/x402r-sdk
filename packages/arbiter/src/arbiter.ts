@@ -3,7 +3,7 @@
  * @module arbiter
  */
 
-import type { PublicClient, WalletClient } from 'viem';
+import type { PublicClient, WalletClient } from "viem";
 import {
   PaymentOperatorABI,
   RefundRequestABI,
@@ -24,7 +24,7 @@ import {
   type ArbiterList,
   type FreezeEventLog,
   type RefundRequestEventLog,
-} from '@x402r/core';
+} from "@x402r/core";
 
 /**
  * Configuration for X402rArbiter
@@ -106,8 +106,8 @@ export class X402rArbiter {
   constructor(config: X402rArbiterConfig) {
     if (!config.walletClient.account) {
       throw new Error(
-        'WalletClient must have an account. Pass an account when creating the WalletClient: ' +
-        'createWalletClient({ account, chain, transport })'
+        "WalletClient must have an account. Pass an account when creating the WalletClient: " +
+          "createWalletClient({ account, chain, transport })",
       );
     }
     this.publicClient = config.publicClient;
@@ -122,15 +122,18 @@ export class X402rArbiter {
   /** Get the refund read context, throwing if refundRequestAddress is not configured */
   private getRefundCtx() {
     if (!this.refundRequestAddress) {
-      throw new Error('RefundRequest address required');
+      throw new Error("RefundRequest address required");
     }
-    return { publicClient: this.publicClient, refundRequestAddress: this.refundRequestAddress };
+    return {
+      publicClient: this.publicClient,
+      refundRequestAddress: this.refundRequestAddress,
+    };
   }
 
   /** Get the refund write context, throwing if refundRequestAddress is not configured */
   private getRefundWriteCtx() {
     if (!this.refundRequestAddress) {
-      throw new Error('RefundRequest address required');
+      throw new Error("RefundRequest address required");
     }
     return {
       publicClient: this.publicClient,
@@ -158,7 +161,7 @@ export class X402rArbiter {
    * ```
    */
   async getPaymentState(_paymentInfo: PaymentInfo): Promise<PaymentState> {
-    throw new NotImplementedError('getPaymentState');
+    throw new NotImplementedError("getPaymentState");
   }
 
   /**
@@ -177,7 +180,10 @@ export class X402rArbiter {
    * }
    * ```
    */
-  async hasRefundRequest(paymentInfo: PaymentInfo, nonce: bigint): Promise<boolean> {
+  async hasRefundRequest(
+    paymentInfo: PaymentInfo,
+    nonce: bigint,
+  ): Promise<boolean> {
     return sharedHasRefundRequest(this.getRefundCtx(), paymentInfo, nonce);
   }
 
@@ -195,7 +201,10 @@ export class X402rArbiter {
    * console.log(`Requesting ${request.amount} refund, status: ${request.status}`);
    * ```
    */
-  async getRefundRequest(paymentInfo: PaymentInfo, nonce: bigint): Promise<RefundRequestData> {
+  async getRefundRequest(
+    paymentInfo: PaymentInfo,
+    nonce: bigint,
+  ): Promise<RefundRequestData> {
     return sharedGetRefundRequest(this.getRefundCtx(), paymentInfo, nonce);
   }
 
@@ -217,9 +226,13 @@ export class X402rArbiter {
    */
   async approveRefundRequest(
     paymentInfo: PaymentInfo,
-    nonce: bigint
+    nonce: bigint,
   ): Promise<{ txHash: `0x${string}` }> {
-    return sharedApproveRefundRequest(this.getRefundWriteCtx(), paymentInfo, nonce);
+    return sharedApproveRefundRequest(
+      this.getRefundWriteCtx(),
+      paymentInfo,
+      nonce,
+    );
   }
 
   /**
@@ -238,9 +251,13 @@ export class X402rArbiter {
    */
   async denyRefundRequest(
     paymentInfo: PaymentInfo,
-    nonce: bigint
+    nonce: bigint,
   ): Promise<{ txHash: `0x${string}` }> {
-    return sharedDenyRefundRequest(this.getRefundWriteCtx(), paymentInfo, nonce);
+    return sharedDenyRefundRequest(
+      this.getRefundWriteCtx(),
+      paymentInfo,
+      nonce,
+    );
   }
 
   /**
@@ -264,7 +281,7 @@ export class X402rArbiter {
    */
   async executeRefundInEscrow(
     paymentInfo: PaymentInfo,
-    amount?: bigint
+    amount?: bigint,
   ): Promise<{ txHash: `0x${string}` }> {
     const refundAmount = amount ?? paymentInfo.maxAmount;
 
@@ -273,7 +290,7 @@ export class X402rArbiter {
       account: this.walletClient.account!,
       address: this.operatorAddress,
       abi: PaymentOperatorABI,
-      functionName: 'refundInEscrow',
+      functionName: "refundInEscrow",
       args: [paymentInfo as never, refundAmount],
     });
 
@@ -305,10 +322,10 @@ export class X402rArbiter {
    * ```
    */
   async batchApprove(
-    items: Array<{ paymentInfo: PaymentInfo; nonce: bigint }>
+    items: Array<{ paymentInfo: PaymentInfo; nonce: bigint }>,
   ): Promise<{ txHash: `0x${string}` }[]> {
     if (!this.refundRequestAddress) {
-      throw new Error('RefundRequest address required');
+      throw new Error("RefundRequest address required");
     }
 
     if (items.length === 0) {
@@ -348,10 +365,10 @@ export class X402rArbiter {
    * ```
    */
   async batchDeny(
-    items: Array<{ paymentInfo: PaymentInfo; nonce: bigint }>
+    items: Array<{ paymentInfo: PaymentInfo; nonce: bigint }>,
   ): Promise<{ txHash: `0x${string}` }[]> {
     if (!this.refundRequestAddress) {
-      throw new Error('RefundRequest address required');
+      throw new Error("RefundRequest address required");
     }
 
     if (items.length === 0) {
@@ -388,10 +405,10 @@ export class X402rArbiter {
   async getPendingRefundRequests(
     offset: bigint,
     count: bigint,
-    receiverAddress?: `0x${string}`
+    receiverAddress?: `0x${string}`,
   ): Promise<{ keys: readonly `0x${string}`[]; total: bigint }> {
     if (!this.refundRequestAddress) {
-      throw new Error('RefundRequest address required');
+      throw new Error("RefundRequest address required");
     }
 
     const address = receiverAddress ?? this.walletClient.account!.address;
@@ -399,7 +416,7 @@ export class X402rArbiter {
     const [keys, total] = (await this.publicClient.readContract({
       address: this.refundRequestAddress,
       abi: RefundRequestABI,
-      functionName: 'getReceiverRefundRequests',
+      functionName: "getReceiverRefundRequests",
       args: [address, offset, count],
     })) as [readonly `0x${string}`[], bigint];
 
@@ -424,8 +441,8 @@ export class X402rArbiter {
    */
   async getRefundStatus(
     paymentInfo: PaymentInfo,
-    nonce: bigint
-  ): Promise<typeof RequestStatus[keyof typeof RequestStatus]> {
+    nonce: bigint,
+  ): Promise<(typeof RequestStatus)[keyof typeof RequestStatus]> {
     return sharedGetRefundStatus(this.getRefundCtx(), paymentInfo, nonce);
   }
 
@@ -442,9 +459,11 @@ export class X402rArbiter {
    * console.log(`Total refund requests: ${count}`);
    * ```
    */
-  async getRefundRequestCount(receiverAddress?: `0x${string}`): Promise<bigint> {
+  async getRefundRequestCount(
+    receiverAddress?: `0x${string}`,
+  ): Promise<bigint> {
     if (!this.refundRequestAddress) {
-      throw new Error('RefundRequest address required');
+      throw new Error("RefundRequest address required");
     }
 
     const address = receiverAddress ?? this.walletClient.account!.address;
@@ -452,7 +471,7 @@ export class X402rArbiter {
     const count = await this.publicClient.readContract({
       address: this.refundRequestAddress,
       abi: RefundRequestABI,
-      functionName: 'receiverRefundRequestCount',
+      functionName: "receiverRefundRequestCount",
       args: [address],
     });
 
@@ -472,7 +491,9 @@ export class X402rArbiter {
    * console.log(`Amount: ${request.amount}, Status: ${request.status}`);
    * ```
    */
-  async getRefundRequestByKey(compositeKey: `0x${string}`): Promise<RefundRequestData> {
+  async getRefundRequestByKey(
+    compositeKey: `0x${string}`,
+  ): Promise<RefundRequestData> {
     return sharedGetRefundRequestByKey(this.getRefundCtx(), compositeKey);
   }
 
@@ -494,9 +515,13 @@ export class X402rArbiter {
    */
   async isFrozen(
     paymentInfo: PaymentInfo,
-    freezeAddress: `0x${string}`
+    freezeAddress: `0x${string}`,
   ): Promise<boolean> {
-    return sharedIsFrozen({ publicClient: this.publicClient }, paymentInfo, freezeAddress);
+    return sharedIsFrozen(
+      { publicClient: this.publicClient },
+      paymentInfo,
+      freezeAddress,
+    );
   }
 
   // ============ Subscriptions ============
@@ -518,15 +543,17 @@ export class X402rArbiter {
    * unsubscribe();
    * ```
    */
-  watchNewCases(callback: (event: RefundRequestEventLog) => void): { unsubscribe: () => void } {
+  watchNewCases(callback: (event: RefundRequestEventLog) => void): {
+    unsubscribe: () => void;
+  } {
     if (!this.refundRequestAddress) {
-      throw new Error('RefundRequest address required');
+      throw new Error("RefundRequest address required");
     }
 
     const unsubscribe = this.publicClient.watchContractEvent({
       address: this.refundRequestAddress,
       abi: RefundRequestABI,
-      eventName: 'RefundRequested',
+      eventName: "RefundRequested",
       onLogs: (logs) => {
         for (const log of logs) {
           callback(log as unknown as RefundRequestEventLog);
@@ -554,15 +581,17 @@ export class X402rArbiter {
    * unsubscribe();
    * ```
    */
-  watchDecisions(callback: (event: RefundRequestEventLog) => void): { unsubscribe: () => void } {
+  watchDecisions(callback: (event: RefundRequestEventLog) => void): {
+    unsubscribe: () => void;
+  } {
     if (!this.refundRequestAddress) {
-      throw new Error('RefundRequest address required');
+      throw new Error("RefundRequest address required");
     }
 
     const unsubscribe = this.publicClient.watchContractEvent({
       address: this.refundRequestAddress,
       abi: RefundRequestABI,
-      eventName: 'RefundRequestStatusUpdated',
+      eventName: "RefundRequestStatusUpdated",
       onLogs: (logs) => {
         for (const log of logs) {
           callback(log as unknown as RefundRequestEventLog);
@@ -592,9 +621,13 @@ export class X402rArbiter {
    */
   watchFreezeEvents(
     freezeAddress: `0x${string}`,
-    callback: (event: FreezeEventLog) => void
+    callback: (event: FreezeEventLog) => void,
   ): { unsubscribe: () => void } {
-    return sharedWatchFreezeEvents({ publicClient: this.publicClient }, freezeAddress, callback);
+    return sharedWatchFreezeEvents(
+      { publicClient: this.publicClient },
+      freezeAddress,
+      callback,
+    );
   }
 
   // ============ Registry Operations ============
@@ -614,7 +647,7 @@ export class X402rArbiter {
    */
   async registerArbiter(uri: string): Promise<{ txHash: `0x${string}` }> {
     if (!this.arbiterRegistryAddress) {
-      throw new Error('ArbiterRegistry address required');
+      throw new Error("ArbiterRegistry address required");
     }
 
     const txHash = await this.walletClient.writeContract({
@@ -622,7 +655,7 @@ export class X402rArbiter {
       account: this.walletClient.account!,
       address: this.arbiterRegistryAddress,
       abi: ArbiterRegistryABI,
-      functionName: 'register',
+      functionName: "register",
       args: [uri],
     });
 
@@ -644,7 +677,7 @@ export class X402rArbiter {
    */
   async updateArbiterUri(newUri: string): Promise<{ txHash: `0x${string}` }> {
     if (!this.arbiterRegistryAddress) {
-      throw new Error('ArbiterRegistry address required');
+      throw new Error("ArbiterRegistry address required");
     }
 
     const txHash = await this.walletClient.writeContract({
@@ -652,7 +685,7 @@ export class X402rArbiter {
       account: this.walletClient.account!,
       address: this.arbiterRegistryAddress,
       abi: ArbiterRegistryABI,
-      functionName: 'updateUri',
+      functionName: "updateUri",
       args: [newUri],
     });
 
@@ -673,7 +706,7 @@ export class X402rArbiter {
    */
   async deregisterArbiter(): Promise<{ txHash: `0x${string}` }> {
     if (!this.arbiterRegistryAddress) {
-      throw new Error('ArbiterRegistry address required');
+      throw new Error("ArbiterRegistry address required");
     }
 
     const txHash = await this.walletClient.writeContract({
@@ -681,7 +714,7 @@ export class X402rArbiter {
       account: this.walletClient.account!,
       address: this.arbiterRegistryAddress,
       abi: ArbiterRegistryABI,
-      functionName: 'deregister',
+      functionName: "deregister",
       args: [],
     });
 
@@ -703,13 +736,13 @@ export class X402rArbiter {
    */
   async getArbiterUri(arbiter: `0x${string}`): Promise<string> {
     if (!this.arbiterRegistryAddress) {
-      throw new Error('ArbiterRegistry address required');
+      throw new Error("ArbiterRegistry address required");
     }
 
     const uri = await this.publicClient.readContract({
       address: this.arbiterRegistryAddress,
       abi: ArbiterRegistryABI,
-      functionName: 'getUri',
+      functionName: "getUri",
       args: [arbiter],
     });
 
@@ -731,13 +764,13 @@ export class X402rArbiter {
    */
   async isArbiterRegistered(arbiter: `0x${string}`): Promise<boolean> {
     if (!this.arbiterRegistryAddress) {
-      throw new Error('ArbiterRegistry address required');
+      throw new Error("ArbiterRegistry address required");
     }
 
     const isRegistered = await this.publicClient.readContract({
       address: this.arbiterRegistryAddress,
       abi: ArbiterRegistryABI,
-      functionName: 'isRegistered',
+      functionName: "isRegistered",
       args: [arbiter],
     });
 
@@ -758,13 +791,13 @@ export class X402rArbiter {
    */
   async getArbiterCount(): Promise<bigint> {
     if (!this.arbiterRegistryAddress) {
-      throw new Error('ArbiterRegistry address required');
+      throw new Error("ArbiterRegistry address required");
     }
 
     const count = await this.publicClient.readContract({
       address: this.arbiterRegistryAddress,
       abi: ArbiterRegistryABI,
-      functionName: 'arbiterCount',
+      functionName: "arbiterCount",
       args: [],
     });
 
@@ -790,13 +823,13 @@ export class X402rArbiter {
    */
   async listArbiters(offset: bigint, count: bigint): Promise<ArbiterList> {
     if (!this.arbiterRegistryAddress) {
-      throw new Error('ArbiterRegistry address required');
+      throw new Error("ArbiterRegistry address required");
     }
 
     const [arbiters, uris, total] = (await this.publicClient.readContract({
       address: this.arbiterRegistryAddress,
       abi: ArbiterRegistryABI,
-      functionName: 'getArbiters',
+      functionName: "getArbiters",
       args: [offset, count],
     })) as [readonly `0x${string}`[], readonly string[], bigint];
 

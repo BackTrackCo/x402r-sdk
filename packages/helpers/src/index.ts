@@ -4,5 +4,5 @@
  * @packageDocumentation
  */
 
-export { refundable } from './refundable.js';
-export type { EscrowExtra, PaymentOption, RefundableOptions } from './types.js';
+export { refundable } from "./refundable.js";
+export type { EscrowExtra, PaymentOption, RefundableOptions } from "./types.js";

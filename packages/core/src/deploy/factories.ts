@@ -3,8 +3,8 @@
  * @module deploy/factories
  */
 
-import type { WalletClient, PublicClient, Address, Hash } from 'viem';
-import { getFactoryAddress } from '../config/index.js';
+import type { WalletClient, PublicClient, Address, Hash } from "viem";
+import { getFactoryAddress } from "../config/index.js";
 import {
   PaymentOperatorFactoryABI,
   EscrowPeriodFactoryABI,
@@ -21,7 +21,7 @@ import {
   createEscrowPeriodConfig,
   createFreezeConfig,
   ZERO_ADDRESS,
-} from '../factory/index.js';
+} from "../factory/index.js";
 
 // ============ Types ============
 
@@ -53,9 +53,9 @@ function sleep(ms: number): Promise<void> {
 async function retryWithDelay<T>(
   fn: () => Promise<T>,
   validate: (result: T) => boolean,
-  options: { maxRetries?: number; delayMs?: number; description?: string } = {}
+  options: { maxRetries?: number; delayMs?: number; description?: string } = {},
 ): Promise<T> {
-  const { maxRetries = 3, delayMs = 2000, description = 'operation' } = options;
+  const { maxRetries = 3, delayMs = 2000, description = "operation" } = options;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     const result = await fn();
@@ -74,7 +74,7 @@ async function retryWithDelay<T>(
   if (!validate(finalResult)) {
     throw new Error(
       `${description} failed after ${maxRetries} retries. ` +
-        `This may be due to RPC caching. Try again in a few seconds.`
+        `This may be due to RPC caching. Try again in a few seconds.`,
     );
   }
   return finalResult;
@@ -93,13 +93,13 @@ async function retryWithDelay<T>(
 export async function computeStaticFeeCalculatorAddress(
   publicClient: PublicClient,
   networkId: string,
-  feeBps: bigint
+  feeBps: bigint,
 ): Promise<Address> {
-  const factoryAddress = getFactoryAddress(networkId, 'staticFeeCalculator');
+  const factoryAddress = getFactoryAddress(networkId, "staticFeeCalculator");
   return publicClient.readContract({
     address: factoryAddress,
     abi: StaticFeeCalculatorFactoryABI,
-    functionName: 'computeAddress',
+    functionName: "computeAddress",
     args: [feeBps],
   });
 }
@@ -110,13 +110,13 @@ export async function computeStaticFeeCalculatorAddress(
 export async function getDeployedStaticFeeCalculator(
   publicClient: PublicClient,
   networkId: string,
-  feeBps: bigint
+  feeBps: bigint,
 ): Promise<Address> {
-  const factoryAddress = getFactoryAddress(networkId, 'staticFeeCalculator');
+  const factoryAddress = getFactoryAddress(networkId, "staticFeeCalculator");
   return publicClient.readContract({
     address: factoryAddress,
     abi: StaticFeeCalculatorFactoryABI,
-    functionName: 'getDeployed',
+    functionName: "getDeployed",
     args: [feeBps],
   });
 }
@@ -134,12 +134,16 @@ export async function deployStaticFeeCalculator(
   walletClient: WalletClient,
   publicClient: PublicClient,
   networkId: string,
-  feeBps: bigint
+  feeBps: bigint,
 ): Promise<DeploymentResult> {
-  const factoryAddress = getFactoryAddress(networkId, 'staticFeeCalculator');
+  const factoryAddress = getFactoryAddress(networkId, "staticFeeCalculator");
 
   // Check if already deployed
-  const existing = await getDeployedStaticFeeCalculator(publicClient, networkId, feeBps);
+  const existing = await getDeployedStaticFeeCalculator(
+    publicClient,
+    networkId,
+    feeBps,
+  );
   if (existing !== ZERO_ADDRESS) {
     return { address: existing, isNewDeployment: false };
   }
@@ -148,23 +152,27 @@ export async function deployStaticFeeCalculator(
   const { request } = await publicClient.simulateContract({
     address: factoryAddress,
     abi: StaticFeeCalculatorFactoryABI,
-    functionName: 'deploy',
+    functionName: "deploy",
     args: [feeBps],
     account: walletClient.account!,
   });
 
   const txHash = await walletClient.writeContract(request);
-  const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+  const receipt = await publicClient.waitForTransactionReceipt({
+    hash: txHash,
+  });
 
-  if (receipt.status !== 'success') {
-    throw new Error(`StaticFeeCalculator deployment failed. TX: ${txHash}. Args: feeBps=${feeBps}`);
+  if (receipt.status !== "success") {
+    throw new Error(
+      `StaticFeeCalculator deployment failed. TX: ${txHash}. Args: feeBps=${feeBps}`,
+    );
   }
 
   // Query deployed address with retry (handles RPC caching delays)
   const address = await retryWithDelay(
     () => getDeployedStaticFeeCalculator(publicClient, networkId, feeBps),
     (addr) => addr !== ZERO_ADDRESS,
-    { description: 'StaticFeeCalculator getDeployed' }
+    { description: "StaticFeeCalculator getDeployed" },
   );
 
   return { address, txHash, isNewDeployment: true };
@@ -178,15 +186,15 @@ export async function deployStaticFeeCalculator(
 export async function computeEscrowPeriodAddress(
   publicClient: PublicClient,
   networkId: string,
-  config: EscrowPeriodConfigInput
+  config: EscrowPeriodConfigInput,
 ): Promise<Address> {
-  const factoryAddress = getFactoryAddress(networkId, 'escrowPeriod');
+  const factoryAddress = getFactoryAddress(networkId, "escrowPeriod");
   const fullConfig = createEscrowPeriodConfig(config);
 
   return publicClient.readContract({
     address: factoryAddress,
     abi: EscrowPeriodFactoryABI,
-    functionName: 'computeAddress',
+    functionName: "computeAddress",
     args: [fullConfig.escrowPeriod, fullConfig.authorizedCodehash],
   });
 }
@@ -197,15 +205,15 @@ export async function computeEscrowPeriodAddress(
 export async function getDeployedEscrowPeriod(
   publicClient: PublicClient,
   networkId: string,
-  config: EscrowPeriodConfigInput
+  config: EscrowPeriodConfigInput,
 ): Promise<Address> {
-  const factoryAddress = getFactoryAddress(networkId, 'escrowPeriod');
+  const factoryAddress = getFactoryAddress(networkId, "escrowPeriod");
   const fullConfig = createEscrowPeriodConfig(config);
 
   return publicClient.readContract({
     address: factoryAddress,
     abi: EscrowPeriodFactoryABI,
-    functionName: 'getDeployed',
+    functionName: "getDeployed",
     args: [fullConfig.escrowPeriod, fullConfig.authorizedCodehash],
   });
 }
@@ -217,13 +225,17 @@ export async function deployEscrowPeriod(
   walletClient: WalletClient,
   publicClient: PublicClient,
   networkId: string,
-  config: EscrowPeriodConfigInput
+  config: EscrowPeriodConfigInput,
 ): Promise<DeploymentResult> {
-  const factoryAddress = getFactoryAddress(networkId, 'escrowPeriod');
+  const factoryAddress = getFactoryAddress(networkId, "escrowPeriod");
   const fullConfig = createEscrowPeriodConfig(config);
 
   // Check if already deployed
-  const existing = await getDeployedEscrowPeriod(publicClient, networkId, config);
+  const existing = await getDeployedEscrowPeriod(
+    publicClient,
+    networkId,
+    config,
+  );
   if (existing !== ZERO_ADDRESS) {
     return { address: existing, isNewDeployment: false };
   }
@@ -232,18 +244,20 @@ export async function deployEscrowPeriod(
   const { request } = await publicClient.simulateContract({
     address: factoryAddress,
     abi: EscrowPeriodFactoryABI,
-    functionName: 'deploy',
+    functionName: "deploy",
     args: [fullConfig.escrowPeriod, fullConfig.authorizedCodehash],
     account: walletClient.account!,
   });
 
   const txHash = await walletClient.writeContract(request);
-  const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+  const receipt = await publicClient.waitForTransactionReceipt({
+    hash: txHash,
+  });
 
-  if (receipt.status !== 'success') {
+  if (receipt.status !== "success") {
     throw new Error(
       `EscrowPeriod deployment failed. TX: ${txHash}. ` +
-        `Args: escrowPeriod=${fullConfig.escrowPeriod}, authorizedCodehash=${fullConfig.authorizedCodehash}`
+        `Args: escrowPeriod=${fullConfig.escrowPeriod}, authorizedCodehash=${fullConfig.authorizedCodehash}`,
     );
   }
 
@@ -251,7 +265,7 @@ export async function deployEscrowPeriod(
   const address = await retryWithDelay(
     () => getDeployedEscrowPeriod(publicClient, networkId, config),
     (addr) => addr !== ZERO_ADDRESS,
-    { description: 'EscrowPeriod getDeployed' }
+    { description: "EscrowPeriod getDeployed" },
   );
 
   return { address, txHash, isNewDeployment: true };
@@ -265,16 +279,21 @@ export async function deployEscrowPeriod(
 export async function computeFreezeAddress(
   publicClient: PublicClient,
   networkId: string,
-  config: FreezeConfigInput
+  config: FreezeConfigInput,
 ): Promise<Address> {
-  const factoryAddress = getFactoryAddress(networkId, 'freeze');
+  const factoryAddress = getFactoryAddress(networkId, "freeze");
   const fullConfig = createFreezeConfig(config);
 
   return publicClient.readContract({
     address: factoryAddress,
     abi: FreezeFactoryABI,
-    functionName: 'computeAddress',
-    args: [fullConfig.freezeCondition, fullConfig.unfreezeCondition, fullConfig.freezeDuration, fullConfig.escrowPeriodContract],
+    functionName: "computeAddress",
+    args: [
+      fullConfig.freezeCondition,
+      fullConfig.unfreezeCondition,
+      fullConfig.freezeDuration,
+      fullConfig.escrowPeriodContract,
+    ],
   });
 }
 
@@ -284,16 +303,21 @@ export async function computeFreezeAddress(
 export async function getDeployedFreeze(
   publicClient: PublicClient,
   networkId: string,
-  config: FreezeConfigInput
+  config: FreezeConfigInput,
 ): Promise<Address> {
-  const factoryAddress = getFactoryAddress(networkId, 'freeze');
+  const factoryAddress = getFactoryAddress(networkId, "freeze");
   const fullConfig = createFreezeConfig(config);
 
   return publicClient.readContract({
     address: factoryAddress,
     abi: FreezeFactoryABI,
-    functionName: 'getDeployed',
-    args: [fullConfig.freezeCondition, fullConfig.unfreezeCondition, fullConfig.freezeDuration, fullConfig.escrowPeriodContract],
+    functionName: "getDeployed",
+    args: [
+      fullConfig.freezeCondition,
+      fullConfig.unfreezeCondition,
+      fullConfig.freezeDuration,
+      fullConfig.escrowPeriodContract,
+    ],
   });
 }
 
@@ -304,9 +328,9 @@ export async function deployFreeze(
   walletClient: WalletClient,
   publicClient: PublicClient,
   networkId: string,
-  config: FreezeConfigInput
+  config: FreezeConfigInput,
 ): Promise<DeploymentResult> {
-  const factoryAddress = getFactoryAddress(networkId, 'freeze');
+  const factoryAddress = getFactoryAddress(networkId, "freeze");
   const fullConfig = createFreezeConfig(config);
 
   // Check if already deployed
@@ -319,21 +343,28 @@ export async function deployFreeze(
   const { request } = await publicClient.simulateContract({
     address: factoryAddress,
     abi: FreezeFactoryABI,
-    functionName: 'deploy',
-    args: [fullConfig.freezeCondition, fullConfig.unfreezeCondition, fullConfig.freezeDuration, fullConfig.escrowPeriodContract],
+    functionName: "deploy",
+    args: [
+      fullConfig.freezeCondition,
+      fullConfig.unfreezeCondition,
+      fullConfig.freezeDuration,
+      fullConfig.escrowPeriodContract,
+    ],
     account: walletClient.account!,
   });
 
   const txHash = await walletClient.writeContract(request);
-  const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+  const receipt = await publicClient.waitForTransactionReceipt({
+    hash: txHash,
+  });
 
-  if (receipt.status !== 'success') {
+  if (receipt.status !== "success") {
     throw new Error(
       `Freeze deployment failed. TX: ${txHash}. ` +
         `Args: freezeCondition=${fullConfig.freezeCondition}, ` +
         `unfreezeCondition=${fullConfig.unfreezeCondition}, ` +
         `freezeDuration=${fullConfig.freezeDuration}, ` +
-        `escrowPeriodContract=${fullConfig.escrowPeriodContract}`
+        `escrowPeriodContract=${fullConfig.escrowPeriodContract}`,
     );
   }
 
@@ -341,7 +372,7 @@ export async function deployFreeze(
   const address = await retryWithDelay(
     () => getDeployedFreeze(publicClient, networkId, config),
     (addr) => addr !== ZERO_ADDRESS,
-    { description: 'Freeze getDeployed' }
+    { description: "Freeze getDeployed" },
   );
 
   return { address, txHash, isNewDeployment: true };
@@ -355,14 +386,14 @@ export async function deployFreeze(
 export async function computeStaticAddressConditionAddress(
   publicClient: PublicClient,
   networkId: string,
-  designatedAddress: Address
+  designatedAddress: Address,
 ): Promise<Address> {
-  const factoryAddress = getFactoryAddress(networkId, 'staticAddressCondition');
+  const factoryAddress = getFactoryAddress(networkId, "staticAddressCondition");
 
   return publicClient.readContract({
     address: factoryAddress,
     abi: StaticAddressConditionFactoryABI,
-    functionName: 'computeAddress',
+    functionName: "computeAddress",
     args: [designatedAddress],
   });
 }
@@ -373,14 +404,14 @@ export async function computeStaticAddressConditionAddress(
 export async function getDeployedStaticAddressCondition(
   publicClient: PublicClient,
   networkId: string,
-  designatedAddress: Address
+  designatedAddress: Address,
 ): Promise<Address> {
-  const factoryAddress = getFactoryAddress(networkId, 'staticAddressCondition');
+  const factoryAddress = getFactoryAddress(networkId, "staticAddressCondition");
 
   return publicClient.readContract({
     address: factoryAddress,
     abi: StaticAddressConditionFactoryABI,
-    functionName: 'getDeployed',
+    functionName: "getDeployed",
     args: [designatedAddress],
   });
 }
@@ -392,12 +423,16 @@ export async function deployStaticAddressCondition(
   walletClient: WalletClient,
   publicClient: PublicClient,
   networkId: string,
-  designatedAddress: Address
+  designatedAddress: Address,
 ): Promise<DeploymentResult> {
-  const factoryAddress = getFactoryAddress(networkId, 'staticAddressCondition');
+  const factoryAddress = getFactoryAddress(networkId, "staticAddressCondition");
 
   // Check if already deployed
-  const existing = await getDeployedStaticAddressCondition(publicClient, networkId, designatedAddress);
+  const existing = await getDeployedStaticAddressCondition(
+    publicClient,
+    networkId,
+    designatedAddress,
+  );
   if (existing !== ZERO_ADDRESS) {
     return { address: existing, isNewDeployment: false };
   }
@@ -406,25 +441,32 @@ export async function deployStaticAddressCondition(
   const { request } = await publicClient.simulateContract({
     address: factoryAddress,
     abi: StaticAddressConditionFactoryABI,
-    functionName: 'deploy',
+    functionName: "deploy",
     args: [designatedAddress],
     account: walletClient.account!,
   });
 
   const txHash = await walletClient.writeContract(request);
-  const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+  const receipt = await publicClient.waitForTransactionReceipt({
+    hash: txHash,
+  });
 
-  if (receipt.status !== 'success') {
+  if (receipt.status !== "success") {
     throw new Error(
-      `StaticAddressCondition deployment failed. TX: ${txHash}. Args: designatedAddress=${designatedAddress}`
+      `StaticAddressCondition deployment failed. TX: ${txHash}. Args: designatedAddress=${designatedAddress}`,
     );
   }
 
   // Query deployed address with retry (handles RPC caching delays)
   const address = await retryWithDelay(
-    () => getDeployedStaticAddressCondition(publicClient, networkId, designatedAddress),
+    () =>
+      getDeployedStaticAddressCondition(
+        publicClient,
+        networkId,
+        designatedAddress,
+      ),
     (addr) => addr !== ZERO_ADDRESS,
-    { description: 'StaticAddressCondition getDeployed' }
+    { description: "StaticAddressCondition getDeployed" },
   );
 
   return { address, txHash, isNewDeployment: true };
@@ -438,14 +480,14 @@ export async function deployStaticAddressCondition(
 export async function computeAndConditionAddress(
   publicClient: PublicClient,
   networkId: string,
-  conditions: Address[]
+  conditions: Address[],
 ): Promise<Address> {
-  const factoryAddress = getFactoryAddress(networkId, 'andCondition');
+  const factoryAddress = getFactoryAddress(networkId, "andCondition");
 
   return publicClient.readContract({
     address: factoryAddress,
     abi: AndConditionFactoryABI,
-    functionName: 'computeAddress',
+    functionName: "computeAddress",
     args: [conditions],
   });
 }
@@ -456,14 +498,14 @@ export async function computeAndConditionAddress(
 export async function getDeployedAndCondition(
   publicClient: PublicClient,
   networkId: string,
-  conditions: Address[]
+  conditions: Address[],
 ): Promise<Address> {
-  const factoryAddress = getFactoryAddress(networkId, 'andCondition');
+  const factoryAddress = getFactoryAddress(networkId, "andCondition");
 
   return publicClient.readContract({
     address: factoryAddress,
     abi: AndConditionFactoryABI,
-    functionName: 'getDeployed',
+    functionName: "getDeployed",
     args: [conditions],
   });
 }
@@ -475,12 +517,16 @@ export async function deployAndCondition(
   walletClient: WalletClient,
   publicClient: PublicClient,
   networkId: string,
-  conditions: Address[]
+  conditions: Address[],
 ): Promise<DeploymentResult> {
-  const factoryAddress = getFactoryAddress(networkId, 'andCondition');
+  const factoryAddress = getFactoryAddress(networkId, "andCondition");
 
   // Check if already deployed
-  const existing = await getDeployedAndCondition(publicClient, networkId, conditions);
+  const existing = await getDeployedAndCondition(
+    publicClient,
+    networkId,
+    conditions,
+  );
   if (existing !== ZERO_ADDRESS) {
     return { address: existing, isNewDeployment: false };
   }
@@ -489,23 +535,27 @@ export async function deployAndCondition(
   const { request } = await publicClient.simulateContract({
     address: factoryAddress,
     abi: AndConditionFactoryABI,
-    functionName: 'deploy',
+    functionName: "deploy",
     args: [conditions],
     account: walletClient.account!,
   });
 
   const txHash = await walletClient.writeContract(request);
-  const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+  const receipt = await publicClient.waitForTransactionReceipt({
+    hash: txHash,
+  });
 
-  if (receipt.status !== 'success') {
-    throw new Error(`AndCondition deployment failed. TX: ${txHash}. Args: conditions=${conditions.join(',')}`);
+  if (receipt.status !== "success") {
+    throw new Error(
+      `AndCondition deployment failed. TX: ${txHash}. Args: conditions=${conditions.join(",")}`,
+    );
   }
 
   // Query deployed address with retry (handles RPC caching delays)
   const address = await retryWithDelay(
     () => getDeployedAndCondition(publicClient, networkId, conditions),
     (addr) => addr !== ZERO_ADDRESS,
-    { description: 'AndCondition getDeployed' }
+    { description: "AndCondition getDeployed" },
   );
 
   return { address, txHash, isNewDeployment: true };
@@ -517,14 +567,14 @@ export async function deployAndCondition(
 export async function computeOrConditionAddress(
   publicClient: PublicClient,
   networkId: string,
-  conditions: Address[]
+  conditions: Address[],
 ): Promise<Address> {
-  const factoryAddress = getFactoryAddress(networkId, 'orCondition');
+  const factoryAddress = getFactoryAddress(networkId, "orCondition");
 
   return publicClient.readContract({
     address: factoryAddress,
     abi: OrConditionFactoryABI,
-    functionName: 'computeAddress',
+    functionName: "computeAddress",
     args: [conditions],
   });
 }
@@ -535,14 +585,14 @@ export async function computeOrConditionAddress(
 export async function getDeployedOrCondition(
   publicClient: PublicClient,
   networkId: string,
-  conditions: Address[]
+  conditions: Address[],
 ): Promise<Address> {
-  const factoryAddress = getFactoryAddress(networkId, 'orCondition');
+  const factoryAddress = getFactoryAddress(networkId, "orCondition");
 
   return publicClient.readContract({
     address: factoryAddress,
     abi: OrConditionFactoryABI,
-    functionName: 'getDeployed',
+    functionName: "getDeployed",
     args: [conditions],
   });
 }
@@ -554,12 +604,16 @@ export async function deployOrCondition(
   walletClient: WalletClient,
   publicClient: PublicClient,
   networkId: string,
-  conditions: Address[]
+  conditions: Address[],
 ): Promise<DeploymentResult> {
-  const factoryAddress = getFactoryAddress(networkId, 'orCondition');
+  const factoryAddress = getFactoryAddress(networkId, "orCondition");
 
   // Check if already deployed
-  const existing = await getDeployedOrCondition(publicClient, networkId, conditions);
+  const existing = await getDeployedOrCondition(
+    publicClient,
+    networkId,
+    conditions,
+  );
   if (existing !== ZERO_ADDRESS) {
     return { address: existing, isNewDeployment: false };
   }
@@ -568,23 +622,27 @@ export async function deployOrCondition(
   const { request } = await publicClient.simulateContract({
     address: factoryAddress,
     abi: OrConditionFactoryABI,
-    functionName: 'deploy',
+    functionName: "deploy",
     args: [conditions],
     account: walletClient.account!,
   });
 
   const txHash = await walletClient.writeContract(request);
-  const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+  const receipt = await publicClient.waitForTransactionReceipt({
+    hash: txHash,
+  });
 
-  if (receipt.status !== 'success') {
-    throw new Error(`OrCondition deployment failed. TX: ${txHash}. Args: conditions=${conditions.join(',')}`);
+  if (receipt.status !== "success") {
+    throw new Error(
+      `OrCondition deployment failed. TX: ${txHash}. Args: conditions=${conditions.join(",")}`,
+    );
   }
 
   // Query deployed address with retry (handles RPC caching delays)
   const address = await retryWithDelay(
     () => getDeployedOrCondition(publicClient, networkId, conditions),
     (addr) => addr !== ZERO_ADDRESS,
-    { description: 'OrCondition getDeployed' }
+    { description: "OrCondition getDeployed" },
   );
 
   return { address, txHash, isNewDeployment: true };
@@ -596,14 +654,14 @@ export async function deployOrCondition(
 export async function computeNotConditionAddress(
   publicClient: PublicClient,
   networkId: string,
-  condition: Address
+  condition: Address,
 ): Promise<Address> {
-  const factoryAddress = getFactoryAddress(networkId, 'notCondition');
+  const factoryAddress = getFactoryAddress(networkId, "notCondition");
 
   return publicClient.readContract({
     address: factoryAddress,
     abi: NotConditionFactoryABI,
-    functionName: 'computeAddress',
+    functionName: "computeAddress",
     args: [condition],
   });
 }
@@ -614,14 +672,14 @@ export async function computeNotConditionAddress(
 export async function getDeployedNotCondition(
   publicClient: PublicClient,
   networkId: string,
-  condition: Address
+  condition: Address,
 ): Promise<Address> {
-  const factoryAddress = getFactoryAddress(networkId, 'notCondition');
+  const factoryAddress = getFactoryAddress(networkId, "notCondition");
 
   return publicClient.readContract({
     address: factoryAddress,
     abi: NotConditionFactoryABI,
-    functionName: 'getDeployed',
+    functionName: "getDeployed",
     args: [condition],
   });
 }
@@ -633,12 +691,16 @@ export async function deployNotCondition(
   walletClient: WalletClient,
   publicClient: PublicClient,
   networkId: string,
-  condition: Address
+  condition: Address,
 ): Promise<DeploymentResult> {
-  const factoryAddress = getFactoryAddress(networkId, 'notCondition');
+  const factoryAddress = getFactoryAddress(networkId, "notCondition");
 
   // Check if already deployed
-  const existing = await getDeployedNotCondition(publicClient, networkId, condition);
+  const existing = await getDeployedNotCondition(
+    publicClient,
+    networkId,
+    condition,
+  );
   if (existing !== ZERO_ADDRESS) {
     return { address: existing, isNewDeployment: false };
   }
@@ -647,23 +709,27 @@ export async function deployNotCondition(
   const { request } = await publicClient.simulateContract({
     address: factoryAddress,
     abi: NotConditionFactoryABI,
-    functionName: 'deploy',
+    functionName: "deploy",
     args: [condition],
     account: walletClient.account!,
   });
 
   const txHash = await walletClient.writeContract(request);
-  const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+  const receipt = await publicClient.waitForTransactionReceipt({
+    hash: txHash,
+  });
 
-  if (receipt.status !== 'success') {
-    throw new Error(`NotCondition deployment failed. TX: ${txHash}. Args: condition=${condition}`);
+  if (receipt.status !== "success") {
+    throw new Error(
+      `NotCondition deployment failed. TX: ${txHash}. Args: condition=${condition}`,
+    );
   }
 
   // Query deployed address with retry (handles RPC caching delays)
   const address = await retryWithDelay(
     () => getDeployedNotCondition(publicClient, networkId, condition),
     (addr) => addr !== ZERO_ADDRESS,
-    { description: 'NotCondition getDeployed' }
+    { description: "NotCondition getDeployed" },
   );
 
   return { address, txHash, isNewDeployment: true };
@@ -677,14 +743,14 @@ export async function deployNotCondition(
 export async function computeRecorderCombinatorAddress(
   publicClient: PublicClient,
   networkId: string,
-  recorders: Address[]
+  recorders: Address[],
 ): Promise<Address> {
-  const factoryAddress = getFactoryAddress(networkId, 'recorderCombinator');
+  const factoryAddress = getFactoryAddress(networkId, "recorderCombinator");
 
   return publicClient.readContract({
     address: factoryAddress,
     abi: RecorderCombinatorFactoryABI,
-    functionName: 'computeAddress',
+    functionName: "computeAddress",
     args: [recorders],
   });
 }
@@ -695,14 +761,14 @@ export async function computeRecorderCombinatorAddress(
 export async function getDeployedRecorderCombinator(
   publicClient: PublicClient,
   networkId: string,
-  recorders: Address[]
+  recorders: Address[],
 ): Promise<Address> {
-  const factoryAddress = getFactoryAddress(networkId, 'recorderCombinator');
+  const factoryAddress = getFactoryAddress(networkId, "recorderCombinator");
 
   return publicClient.readContract({
     address: factoryAddress,
     abi: RecorderCombinatorFactoryABI,
-    functionName: 'getDeployed',
+    functionName: "getDeployed",
     args: [recorders],
   });
 }
@@ -714,12 +780,16 @@ export async function deployRecorderCombinator(
   walletClient: WalletClient,
   publicClient: PublicClient,
   networkId: string,
-  recorders: Address[]
+  recorders: Address[],
 ): Promise<DeploymentResult> {
-  const factoryAddress = getFactoryAddress(networkId, 'recorderCombinator');
+  const factoryAddress = getFactoryAddress(networkId, "recorderCombinator");
 
   // Check if already deployed
-  const existing = await getDeployedRecorderCombinator(publicClient, networkId, recorders);
+  const existing = await getDeployedRecorderCombinator(
+    publicClient,
+    networkId,
+    recorders,
+  );
   if (existing !== ZERO_ADDRESS) {
     return { address: existing, isNewDeployment: false };
   }
@@ -728,23 +798,27 @@ export async function deployRecorderCombinator(
   const { request } = await publicClient.simulateContract({
     address: factoryAddress,
     abi: RecorderCombinatorFactoryABI,
-    functionName: 'deploy',
+    functionName: "deploy",
     args: [recorders],
     account: walletClient.account!,
   });
 
   const txHash = await walletClient.writeContract(request);
-  const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+  const receipt = await publicClient.waitForTransactionReceipt({
+    hash: txHash,
+  });
 
-  if (receipt.status !== 'success') {
-    throw new Error(`RecorderCombinator deployment failed. TX: ${txHash}. Args: recorders=${recorders.join(',')}`);
+  if (receipt.status !== "success") {
+    throw new Error(
+      `RecorderCombinator deployment failed. TX: ${txHash}. Args: recorders=${recorders.join(",")}`,
+    );
   }
 
   // Query deployed address with retry (handles RPC caching delays)
   const address = await retryWithDelay(
     () => getDeployedRecorderCombinator(publicClient, networkId, recorders),
     (addr) => addr !== ZERO_ADDRESS,
-    { description: 'RecorderCombinator getDeployed' }
+    { description: "RecorderCombinator getDeployed" },
   );
 
   return { address, txHash, isNewDeployment: true };
@@ -758,14 +832,14 @@ export async function deployRecorderCombinator(
 export async function computeOperatorAddress(
   publicClient: PublicClient,
   networkId: string,
-  config: PaymentOperatorConfig
+  config: PaymentOperatorConfig,
 ): Promise<Address> {
-  const factoryAddress = getFactoryAddress(networkId, 'paymentOperator');
+  const factoryAddress = getFactoryAddress(networkId, "paymentOperator");
 
   return publicClient.readContract({
     address: factoryAddress,
     abi: PaymentOperatorFactoryABI,
-    functionName: 'computeAddress',
+    functionName: "computeAddress",
     args: [config],
   });
 }
@@ -776,14 +850,14 @@ export async function computeOperatorAddress(
 export async function getDeployedOperator(
   publicClient: PublicClient,
   networkId: string,
-  config: PaymentOperatorConfig
+  config: PaymentOperatorConfig,
 ): Promise<Address> {
-  const factoryAddress = getFactoryAddress(networkId, 'paymentOperator');
+  const factoryAddress = getFactoryAddress(networkId, "paymentOperator");
 
   return publicClient.readContract({
     address: factoryAddress,
     abi: PaymentOperatorFactoryABI,
-    functionName: 'getOperator',
+    functionName: "getOperator",
     args: [config],
   });
 }
@@ -795,9 +869,9 @@ export async function deployOperator(
   walletClient: WalletClient,
   publicClient: PublicClient,
   networkId: string,
-  config: PaymentOperatorConfig
+  config: PaymentOperatorConfig,
 ): Promise<DeploymentResult> {
-  const factoryAddress = getFactoryAddress(networkId, 'paymentOperator');
+  const factoryAddress = getFactoryAddress(networkId, "paymentOperator");
 
   // Check if already deployed
   const existing = await getDeployedOperator(publicClient, networkId, config);
@@ -809,15 +883,17 @@ export async function deployOperator(
   const { request } = await publicClient.simulateContract({
     address: factoryAddress,
     abi: PaymentOperatorFactoryABI,
-    functionName: 'deployOperator',
+    functionName: "deployOperator",
     args: [config],
     account: walletClient.account!,
   });
 
   const txHash = await walletClient.writeContract(request);
-  const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+  const receipt = await publicClient.waitForTransactionReceipt({
+    hash: txHash,
+  });
 
-  if (receipt.status !== 'success') {
+  if (receipt.status !== "success") {
     throw new Error(`PaymentOperator deployment failed. TX: ${txHash}`);
   }
 
@@ -825,7 +901,7 @@ export async function deployOperator(
   const address = await retryWithDelay(
     () => getDeployedOperator(publicClient, networkId, config),
     (addr) => addr !== ZERO_ADDRESS,
-    { description: 'PaymentOperator getDeployed' }
+    { description: "PaymentOperator getDeployed" },
   );
 
   return { address, txHash, isNewDeployment: true };

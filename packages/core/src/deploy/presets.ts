@@ -3,9 +3,9 @@
  * @module deploy/presets
  */
 
-import type { WalletClient, PublicClient, Address, Hash } from 'viem';
-import { getNetworkConfig, getConditionSingletons } from '../config/index.js';
-import { ZERO_ADDRESS } from '../factory/index.js';
+import type { WalletClient, PublicClient, Address, Hash } from "viem";
+import { getNetworkConfig, getConditionSingletons } from "../config/index.js";
+import { ZERO_ADDRESS } from "../factory/index.js";
 import {
   deployEscrowPeriod,
   deployFreeze,
@@ -20,8 +20,8 @@ import {
   computeOrConditionAddress,
   computeOperatorAddress,
   type DeploymentResult,
-} from './factories.js';
-import { createPaymentOperatorConfig as createConfig } from '../factory/index.js';
+} from "./factories.js";
+import { createPaymentOperatorConfig as createConfig } from "../factory/index.js";
 
 // ============ Types ============
 
@@ -94,7 +94,7 @@ export interface MarketplaceOperatorPreview {
 export async function previewMarketplaceOperator(
   publicClient: PublicClient,
   networkId: string,
-  options: MarketplaceOperatorOptions
+  options: MarketplaceOperatorOptions,
 ): Promise<MarketplaceOperatorPreview> {
   const config = getNetworkConfig(networkId);
   if (!config) {
@@ -107,33 +107,29 @@ export async function previewMarketplaceOperator(
   const escrowPeriodAddress = await computeEscrowPeriodAddress(
     publicClient,
     networkId,
-    { escrowPeriod: options.escrowPeriodSeconds }
+    { escrowPeriod: options.escrowPeriodSeconds },
   );
 
   // 2. Compute Freeze address (payer can freeze, receiver can unfreeze)
-  const freezeAddress = await computeFreezeAddress(
-    publicClient,
-    networkId,
-    {
-      freezeCondition: singletons.payer,
-      unfreezeCondition: singletons.receiver,
-      freezeDuration: options.freezeDurationSeconds ?? 0n,
-      escrowPeriodContract: escrowPeriodAddress,
-    }
-  );
+  const freezeAddress = await computeFreezeAddress(publicClient, networkId, {
+    freezeCondition: singletons.payer,
+    unfreezeCondition: singletons.receiver,
+    freezeDuration: options.freezeDurationSeconds ?? 0n,
+    escrowPeriodContract: escrowPeriodAddress,
+  });
 
   // 3. Compute arbiter condition address
   const arbiterConditionAddress = await computeStaticAddressConditionAddress(
     publicClient,
     networkId,
-    options.arbiter
+    options.arbiter,
   );
 
   // 4. Compute refundInEscrow condition: OR(Receiver, Arbiter)
   const refundInEscrowCondition = await computeOrConditionAddress(
     publicClient,
     networkId,
-    [singletons.receiver, arbiterConditionAddress]
+    [singletons.receiver, arbiterConditionAddress],
   );
 
   // 5. Compute fee calculator if needed
@@ -142,7 +138,7 @@ export async function previewMarketplaceOperator(
     feeCalculatorAddress = await computeStaticFeeCalculatorAddress(
       publicClient,
       networkId,
-      options.operatorFeeBps
+      options.operatorFeeBps,
     );
   }
 
@@ -160,7 +156,7 @@ export async function previewMarketplaceOperator(
   const operatorAddress = await computeOperatorAddress(
     publicClient,
     networkId,
-    operatorConfig
+    operatorConfig,
   );
 
   return {
@@ -212,7 +208,7 @@ export async function deployMarketplaceOperator(
   walletClient: WalletClient,
   publicClient: PublicClient,
   networkId: string,
-  options: MarketplaceOperatorOptions
+  options: MarketplaceOperatorOptions,
 ): Promise<MarketplaceOperatorDeployment> {
   const config = getNetworkConfig(networkId);
   if (!config) {
@@ -240,7 +236,7 @@ export async function deployMarketplaceOperator(
     walletClient,
     publicClient,
     networkId,
-    { escrowPeriod: options.escrowPeriodSeconds }
+    { escrowPeriod: options.escrowPeriodSeconds },
   );
   trackDeployment(escrowPeriodResult);
 
@@ -254,7 +250,7 @@ export async function deployMarketplaceOperator(
       unfreezeCondition: singletons.receiver,
       freezeDuration: options.freezeDurationSeconds ?? 0n,
       escrowPeriodContract: escrowPeriodResult.address,
-    }
+    },
   );
   trackDeployment(freezeResult);
 
@@ -263,7 +259,7 @@ export async function deployMarketplaceOperator(
     walletClient,
     publicClient,
     networkId,
-    options.arbiter
+    options.arbiter,
   );
   trackDeployment(arbiterConditionResult);
 
@@ -272,7 +268,7 @@ export async function deployMarketplaceOperator(
     walletClient,
     publicClient,
     networkId,
-    [singletons.receiver, arbiterConditionResult.address]
+    [singletons.receiver, arbiterConditionResult.address],
   );
   trackDeployment(refundInEscrowResult);
 
@@ -283,7 +279,7 @@ export async function deployMarketplaceOperator(
       walletClient,
       publicClient,
       networkId,
-      options.operatorFeeBps
+      options.operatorFeeBps,
     );
     trackDeployment(feeCalcResult);
     feeCalculatorAddress = feeCalcResult.address;
@@ -304,7 +300,7 @@ export async function deployMarketplaceOperator(
     walletClient,
     publicClient,
     networkId,
-    operatorConfig
+    operatorConfig,
   );
   trackDeployment(operatorResult);
 

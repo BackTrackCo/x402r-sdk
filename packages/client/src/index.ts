@@ -5,7 +5,7 @@
  */
 
 // Client class
-export { X402rClient, type X402rClientConfig } from './client.js';
+export { X402rClient, type X402rClientConfig } from "./client.js";
 
 // Re-export types from core for convenience
 export {
@@ -13,4 +13,4 @@ export {
   RequestStatus,
   type PaymentInfo,
   type RefundRequestData,
-} from '@x402r/core';
+} from "@x402r/core";

@@ -3,9 +3,13 @@
  * @module shared/refund-operations
  */
 
-import type { PublicClient, WalletClient } from 'viem';
-import { RefundRequestABI } from '../abis/index.js';
-import { RequestStatus, type PaymentInfo, type RefundRequestData } from '../types/index.js';
+import type { PublicClient, WalletClient } from "viem";
+import { RefundRequestABI } from "../abis/index.js";
+import {
+  RequestStatus,
+  type PaymentInfo,
+  type RefundRequestData,
+} from "../types/index.js";
 
 /** Read-only context for refund operations */
 export interface RefundReadContext {
@@ -23,11 +27,15 @@ export interface RefundWriteContext extends RefundReadContext {
  * Throws a descriptive error if the account is missing, which can happen when
  * a WalletClient is created without passing an account (e.g., for browser wallet integration).
  */
-function requireAccount(walletClient: WalletClient): asserts walletClient is WalletClient & { account: NonNullable<WalletClient['account']> } {
+function requireAccount(
+  walletClient: WalletClient,
+): asserts walletClient is WalletClient & {
+  account: NonNullable<WalletClient["account"]>;
+} {
   if (!walletClient.account) {
     throw new Error(
-      'WalletClient must have an account. Pass an account when creating the WalletClient: ' +
-      'createWalletClient({ account, chain, transport })'
+      "WalletClient must have an account. Pass an account when creating the WalletClient: " +
+        "createWalletClient({ account, chain, transport })",
     );
   }
 }
@@ -50,7 +58,7 @@ export async function hasRefundRequest(
   const exists = await ctx.publicClient.readContract({
     address: ctx.refundRequestAddress,
     abi: RefundRequestABI,
-    functionName: 'hasRefundRequest',
+    functionName: "hasRefundRequest",
     args: [paymentInfo as never, nonce],
   });
 
@@ -73,7 +81,7 @@ export async function getRefundRequest(
   const request = await ctx.publicClient.readContract({
     address: ctx.refundRequestAddress,
     abi: RefundRequestABI,
-    functionName: 'getRefundRequest',
+    functionName: "getRefundRequest",
     args: [paymentInfo as never, nonce],
   });
 
@@ -98,7 +106,7 @@ export async function getRefundStatus(
   const status = await ctx.publicClient.readContract({
     address: ctx.refundRequestAddress,
     abi: RefundRequestABI,
-    functionName: 'getRefundRequestStatus',
+    functionName: "getRefundRequestStatus",
     args: [paymentInfo as never, nonce],
   });
 
@@ -119,7 +127,7 @@ export async function getRefundRequestByKey(
   const request = await ctx.publicClient.readContract({
     address: ctx.refundRequestAddress,
     abi: RefundRequestABI,
-    functionName: 'getRefundRequestByKey',
+    functionName: "getRefundRequestByKey",
     args: [compositeKey],
   });
 
@@ -146,7 +154,7 @@ export async function approveRefundRequest(
     account: ctx.walletClient.account,
     address: ctx.refundRequestAddress,
     abi: RefundRequestABI,
-    functionName: 'updateStatus',
+    functionName: "updateStatus",
     args: [paymentInfo as never, nonce, RequestStatus.Approved],
   });
 
@@ -173,7 +181,7 @@ export async function denyRefundRequest(
     account: ctx.walletClient.account,
     address: ctx.refundRequestAddress,
     abi: RefundRequestABI,
-    functionName: 'updateStatus',
+    functionName: "updateStatus",
     args: [paymentInfo as never, nonce, RequestStatus.Denied],
   });
 

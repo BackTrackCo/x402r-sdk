@@ -73,14 +73,19 @@ export async function pay(options: PayOptions): Promise<PayResult> {
   }
 
   // Use first payment option (escrow scheme)
-  const requirements = (paymentRequired.accepts as Record<string, unknown>[])[0];
+  const requirements = (
+    paymentRequired.accepts as Record<string, unknown>[]
+  )[0];
 
   console.log("\nPayment Requirements:");
   console.log("  Scheme:", requirements.scheme);
   console.log("  Network:", requirements.network);
   console.log("  Amount:", requirements.amount, "units");
   console.log("  Pay To:", requirements.payTo);
-  console.log("  Operator:", (requirements.extra as Record<string, unknown>)?.operatorAddress);
+  console.log(
+    "  Operator:",
+    (requirements.extra as Record<string, unknown>)?.operatorAddress,
+  );
 
   // Step 2: Create payment payload
   console.log("\nCreating payment payload...");

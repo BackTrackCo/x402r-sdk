@@ -4,7 +4,7 @@
  * @packageDocumentation
  */
 
-export { X402rArbiter, type X402rArbiterConfig } from './arbiter.js';
+export { X402rArbiter, type X402rArbiterConfig } from "./arbiter.js";
 export {
   createWebhookHandler,
   type CaseEvaluationContext,
@@ -12,4 +12,4 @@ export {
   type ArbiterHook,
   type WebhookHandlerConfig,
   type WebhookResult,
-} from './ai-hooks.js';
+} from "./ai-hooks.js";

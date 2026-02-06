@@ -3,7 +3,7 @@
  * @module merchant
  */
 
-import type { PublicClient, WalletClient } from 'viem';
+import type { PublicClient, WalletClient } from "viem";
 import {
   PaymentOperatorABI,
   AuthCaptureEscrowABI,
@@ -28,7 +28,7 @@ import {
   type FreezeEventLog,
   type PaymentOperatorEventLog,
   type RefundRequestEventLog,
-} from '@x402r/core';
+} from "@x402r/core";
 
 /**
  * Configuration for X402rMerchant
@@ -105,8 +105,8 @@ export class X402rMerchant {
   constructor(config: X402rMerchantConfig) {
     if (!config.walletClient.account) {
       throw new Error(
-        'WalletClient must have an account. Pass an account when creating the WalletClient: ' +
-        'createWalletClient({ account, chain, transport })'
+        "WalletClient must have an account. Pass an account when creating the WalletClient: " +
+          "createWalletClient({ account, chain, transport })",
       );
     }
     this.publicClient = config.publicClient;
@@ -120,15 +120,18 @@ export class X402rMerchant {
   /** Get the refund read context, throwing if refundRequestAddress is not configured */
   private getRefundCtx() {
     if (!this.refundRequestAddress) {
-      throw new Error('RefundRequest address required');
+      throw new Error("RefundRequest address required");
     }
-    return { publicClient: this.publicClient, refundRequestAddress: this.refundRequestAddress };
+    return {
+      publicClient: this.publicClient,
+      refundRequestAddress: this.refundRequestAddress,
+    };
   }
 
   /** Get the refund write context, throwing if refundRequestAddress is not configured */
   private getRefundWriteCtx() {
     if (!this.refundRequestAddress) {
-      throw new Error('RefundRequest address required');
+      throw new Error("RefundRequest address required");
     }
     return {
       publicClient: this.publicClient,
@@ -158,7 +161,7 @@ export class X402rMerchant {
    * ```
    */
   async getPaymentState(_paymentInfo: PaymentInfo): Promise<PaymentState> {
-    throw new NotImplementedError('getPaymentState');
+    throw new NotImplementedError("getPaymentState");
   }
 
   /**
@@ -176,7 +179,7 @@ export class X402rMerchant {
    * ```
    */
   async getReceiverPayments(): Promise<{ hashes: readonly `0x${string}`[] }> {
-    throw new NotImplementedError('getReceiverPayments');
+    throw new NotImplementedError("getReceiverPayments");
   }
 
   /**
@@ -193,26 +196,30 @@ export class X402rMerchant {
    * ```
    */
   async getPaymentAmounts(
-    paymentInfo: PaymentInfo
+    paymentInfo: PaymentInfo,
   ): Promise<{ capturableAmount: bigint; refundableAmount: bigint }> {
     if (!this.escrowAddress) {
-      throw new Error('Escrow address required');
+      throw new Error("Escrow address required");
     }
 
     const paymentInfoHash = computePaymentInfoHash(
       paymentInfo,
       this.escrowAddress,
-      this.chainId
+      this.chainId,
     );
 
     const state = await this.publicClient.readContract({
       address: this.escrowAddress,
       abi: AuthCaptureEscrowABI,
-      functionName: 'paymentState',
+      functionName: "paymentState",
       args: [paymentInfoHash],
     });
 
-    const [, capturableAmount, refundableAmount] = state as [boolean, bigint, bigint];
+    const [, capturableAmount, refundableAmount] = state as [
+      boolean,
+      bigint,
+      bigint,
+    ];
 
     return { capturableAmount, refundableAmount };
   }
@@ -234,14 +241,14 @@ export class X402rMerchant {
    */
   async release(
     paymentInfo: PaymentInfo,
-    amount: bigint
+    amount: bigint,
   ): Promise<{ txHash: `0x${string}` }> {
     const txHash = await this.walletClient.writeContract({
       chain: this.walletClient.chain,
       account: this.walletClient.account!,
       address: this.operatorAddress,
       abi: PaymentOperatorABI,
-      functionName: 'release',
+      functionName: "release",
       args: [paymentInfo as never, amount],
     });
 
@@ -263,14 +270,14 @@ export class X402rMerchant {
    */
   async refundInEscrow(
     paymentInfo: PaymentInfo,
-    amount: bigint
+    amount: bigint,
   ): Promise<{ txHash: `0x${string}` }> {
     const txHash = await this.walletClient.writeContract({
       chain: this.walletClient.chain,
       account: this.walletClient.account!,
       address: this.operatorAddress,
       abi: PaymentOperatorABI,
-      functionName: 'refundInEscrow',
+      functionName: "refundInEscrow",
       args: [paymentInfo as never, amount],
     });
 
@@ -301,14 +308,14 @@ export class X402rMerchant {
     paymentInfo: PaymentInfo,
     amount: bigint,
     tokenCollector: `0x${string}`,
-    collectorData: `0x${string}`
+    collectorData: `0x${string}`,
   ): Promise<{ txHash: `0x${string}` }> {
     const txHash = await this.walletClient.writeContract({
       chain: this.walletClient.chain,
       account: this.walletClient.account!,
       address: this.operatorAddress,
       abi: PaymentOperatorABI,
-      functionName: 'charge',
+      functionName: "charge",
       args: [paymentInfo as never, amount, tokenCollector, collectorData],
     });
 
@@ -339,14 +346,14 @@ export class X402rMerchant {
     paymentInfo: PaymentInfo,
     amount: bigint,
     tokenCollector: `0x${string}`,
-    collectorData: `0x${string}`
+    collectorData: `0x${string}`,
   ): Promise<{ txHash: `0x${string}` }> {
     const txHash = await this.walletClient.writeContract({
       chain: this.walletClient.chain,
       account: this.walletClient.account!,
       address: this.operatorAddress,
       abi: PaymentOperatorABI,
-      functionName: 'refundPostEscrow',
+      functionName: "refundPostEscrow",
       args: [paymentInfo as never, amount, tokenCollector, collectorData],
     });
 
@@ -387,72 +394,72 @@ export class X402rMerchant {
       this.publicClient.readContract({
         address: this.operatorAddress,
         abi: PaymentOperatorABI,
-        functionName: 'ESCROW',
+        functionName: "ESCROW",
       }),
       this.publicClient.readContract({
         address: this.operatorAddress,
         abi: PaymentOperatorABI,
-        functionName: 'FEE_RECIPIENT',
+        functionName: "FEE_RECIPIENT",
       }),
       this.publicClient.readContract({
         address: this.operatorAddress,
         abi: PaymentOperatorABI,
-        functionName: 'FEE_CALCULATOR',
+        functionName: "FEE_CALCULATOR",
       }),
       this.publicClient.readContract({
         address: this.operatorAddress,
         abi: PaymentOperatorABI,
-        functionName: 'PROTOCOL_FEE_CONFIG',
+        functionName: "PROTOCOL_FEE_CONFIG",
       }),
       this.publicClient.readContract({
         address: this.operatorAddress,
         abi: PaymentOperatorABI,
-        functionName: 'AUTHORIZE_CONDITION',
+        functionName: "AUTHORIZE_CONDITION",
       }),
       this.publicClient.readContract({
         address: this.operatorAddress,
         abi: PaymentOperatorABI,
-        functionName: 'CHARGE_CONDITION',
+        functionName: "CHARGE_CONDITION",
       }),
       this.publicClient.readContract({
         address: this.operatorAddress,
         abi: PaymentOperatorABI,
-        functionName: 'RELEASE_CONDITION',
+        functionName: "RELEASE_CONDITION",
       }),
       this.publicClient.readContract({
         address: this.operatorAddress,
         abi: PaymentOperatorABI,
-        functionName: 'REFUND_IN_ESCROW_CONDITION',
+        functionName: "REFUND_IN_ESCROW_CONDITION",
       }),
       this.publicClient.readContract({
         address: this.operatorAddress,
         abi: PaymentOperatorABI,
-        functionName: 'REFUND_POST_ESCROW_CONDITION',
+        functionName: "REFUND_POST_ESCROW_CONDITION",
       }),
       this.publicClient.readContract({
         address: this.operatorAddress,
         abi: PaymentOperatorABI,
-        functionName: 'AUTHORIZE_RECORDER',
+        functionName: "AUTHORIZE_RECORDER",
       }),
       this.publicClient.readContract({
         address: this.operatorAddress,
         abi: PaymentOperatorABI,
-        functionName: 'CHARGE_RECORDER',
+        functionName: "CHARGE_RECORDER",
       }),
       this.publicClient.readContract({
         address: this.operatorAddress,
         abi: PaymentOperatorABI,
-        functionName: 'RELEASE_RECORDER',
+        functionName: "RELEASE_RECORDER",
       }),
       this.publicClient.readContract({
         address: this.operatorAddress,
         abi: PaymentOperatorABI,
-        functionName: 'REFUND_IN_ESCROW_RECORDER',
+        functionName: "REFUND_IN_ESCROW_RECORDER",
       }),
       this.publicClient.readContract({
         address: this.operatorAddress,
         abi: PaymentOperatorABI,
-        functionName: 'REFUND_POST_ESCROW_RECORDER',
+        functionName: "REFUND_POST_ESCROW_RECORDER",
       }),
     ]);
 
@@ -491,17 +498,17 @@ export class X402rMerchant {
       this.publicClient.readContract({
         address: this.operatorAddress,
         abi: PaymentOperatorABI,
-        functionName: 'FEE_CALCULATOR',
+        functionName: "FEE_CALCULATOR",
       }),
       this.publicClient.readContract({
         address: this.operatorAddress,
         abi: PaymentOperatorABI,
-        functionName: 'PROTOCOL_FEE_CONFIG',
+        functionName: "PROTOCOL_FEE_CONFIG",
       }),
       this.publicClient.readContract({
         address: this.operatorAddress,
         abi: PaymentOperatorABI,
-        functionName: 'FEE_RECIPIENT',
+        functionName: "FEE_RECIPIENT",
       }),
     ]);
 
@@ -529,7 +536,7 @@ export class X402rMerchant {
     const releaseCondition = await this.publicClient.readContract({
       address: this.operatorAddress,
       abi: PaymentOperatorABI,
-      functionName: 'RELEASE_CONDITION',
+      functionName: "RELEASE_CONDITION",
     });
 
     return releaseCondition as `0x${string}`;
@@ -553,7 +560,10 @@ export class X402rMerchant {
    * }
    * ```
    */
-  async hasRefundRequest(paymentInfo: PaymentInfo, nonce: bigint): Promise<boolean> {
+  async hasRefundRequest(
+    paymentInfo: PaymentInfo,
+    nonce: bigint,
+  ): Promise<boolean> {
     return sharedHasRefundRequest(this.getRefundCtx(), paymentInfo, nonce);
   }
 
@@ -575,8 +585,8 @@ export class X402rMerchant {
    */
   async getRefundStatus(
     paymentInfo: PaymentInfo,
-    nonce: bigint
-  ): Promise<typeof RequestStatus[keyof typeof RequestStatus]> {
+    nonce: bigint,
+  ): Promise<(typeof RequestStatus)[keyof typeof RequestStatus]> {
     return sharedGetRefundStatus(this.getRefundCtx(), paymentInfo, nonce);
   }
 
@@ -594,7 +604,10 @@ export class X402rMerchant {
    * console.log(`Requesting ${request.amount} refund, status: ${request.status}`);
    * ```
    */
-  async getRefundRequest(paymentInfo: PaymentInfo, nonce: bigint): Promise<RefundRequestData> {
+  async getRefundRequest(
+    paymentInfo: PaymentInfo,
+    nonce: bigint,
+  ): Promise<RefundRequestData> {
     return sharedGetRefundRequest(this.getRefundCtx(), paymentInfo, nonce);
   }
 
@@ -614,9 +627,13 @@ export class X402rMerchant {
    */
   async approveRefundRequest(
     paymentInfo: PaymentInfo,
-    nonce: bigint
+    nonce: bigint,
   ): Promise<{ txHash: `0x${string}` }> {
-    return sharedApproveRefundRequest(this.getRefundWriteCtx(), paymentInfo, nonce);
+    return sharedApproveRefundRequest(
+      this.getRefundWriteCtx(),
+      paymentInfo,
+      nonce,
+    );
   }
 
   /**
@@ -635,9 +652,13 @@ export class X402rMerchant {
    */
   async denyRefundRequest(
     paymentInfo: PaymentInfo,
-    nonce: bigint
+    nonce: bigint,
   ): Promise<{ txHash: `0x${string}` }> {
-    return sharedDenyRefundRequest(this.getRefundWriteCtx(), paymentInfo, nonce);
+    return sharedDenyRefundRequest(
+      this.getRefundWriteCtx(),
+      paymentInfo,
+      nonce,
+    );
   }
 
   /**
@@ -656,16 +677,16 @@ export class X402rMerchant {
    */
   async getPendingRefundRequests(
     offset: bigint,
-    count: bigint
+    count: bigint,
   ): Promise<{ keys: readonly `0x${string}`[]; total: bigint }> {
     if (!this.refundRequestAddress) {
-      throw new Error('RefundRequest address required');
+      throw new Error("RefundRequest address required");
     }
 
     const [keys, total] = (await this.publicClient.readContract({
       address: this.refundRequestAddress,
       abi: RefundRequestABI,
-      functionName: 'getReceiverRefundRequests',
+      functionName: "getReceiverRefundRequests",
       args: [this.walletClient.account!.address, offset, count],
     })) as [readonly `0x${string}`[], bigint];
 
@@ -686,13 +707,13 @@ export class X402rMerchant {
    */
   async getRefundRequestCount(): Promise<bigint> {
     if (!this.refundRequestAddress) {
-      throw new Error('RefundRequest address required');
+      throw new Error("RefundRequest address required");
     }
 
     const count = await this.publicClient.readContract({
       address: this.refundRequestAddress,
       abi: RefundRequestABI,
-      functionName: 'receiverRefundRequestCount',
+      functionName: "receiverRefundRequestCount",
       args: [this.walletClient.account!.address],
     });
 
@@ -712,7 +733,9 @@ export class X402rMerchant {
    * console.log(`Amount: ${request.amount}, Status: ${request.status}`);
    * ```
    */
-  async getRefundRequestByKey(compositeKey: `0x${string}`): Promise<RefundRequestData> {
+  async getRefundRequestByKey(
+    compositeKey: `0x${string}`,
+  ): Promise<RefundRequestData> {
     return sharedGetRefundRequestByKey(this.getRefundCtx(), compositeKey);
   }
 
@@ -733,14 +756,14 @@ export class X402rMerchant {
    */
   async unfreezePayment(
     paymentInfo: PaymentInfo,
-    freezeAddress: `0x${string}`
+    freezeAddress: `0x${string}`,
   ): Promise<{ txHash: `0x${string}` }> {
     const txHash = await this.walletClient.writeContract({
       chain: this.walletClient.chain,
       account: this.walletClient.account!,
       address: freezeAddress,
       abi: FreezeABI,
-      functionName: 'unfreeze',
+      functionName: "unfreeze",
       args: [paymentInfo as never],
     });
 
@@ -764,9 +787,13 @@ export class X402rMerchant {
    */
   async isFrozen(
     paymentInfo: PaymentInfo,
-    freezeAddress: `0x${string}`
+    freezeAddress: `0x${string}`,
   ): Promise<boolean> {
-    return sharedIsFrozen({ publicClient: this.publicClient }, paymentInfo, freezeAddress);
+    return sharedIsFrozen(
+      { publicClient: this.publicClient },
+      paymentInfo,
+      freezeAddress,
+    );
   }
 
   // ============ Subscriptions ============
@@ -788,15 +815,17 @@ export class X402rMerchant {
    * unsubscribe();
    * ```
    */
-  watchRefundRequests(callback: (event: RefundRequestEventLog) => void): { unsubscribe: () => void } {
+  watchRefundRequests(callback: (event: RefundRequestEventLog) => void): {
+    unsubscribe: () => void;
+  } {
     if (!this.refundRequestAddress) {
-      throw new Error('RefundRequest address required');
+      throw new Error("RefundRequest address required");
     }
 
     const unsubscribe = this.publicClient.watchContractEvent({
       address: this.refundRequestAddress,
       abi: RefundRequestABI,
-      eventName: 'RefundRequested',
+      eventName: "RefundRequested",
       onLogs: (logs) => {
         for (const log of logs) {
           callback(log as unknown as RefundRequestEventLog);
@@ -823,11 +852,13 @@ export class X402rMerchant {
    * unsubscribe();
    * ```
    */
-  watchReleases(callback: (event: PaymentOperatorEventLog) => void): { unsubscribe: () => void } {
+  watchReleases(callback: (event: PaymentOperatorEventLog) => void): {
+    unsubscribe: () => void;
+  } {
     const unsubscribe = this.publicClient.watchContractEvent({
       address: this.operatorAddress,
       abi: PaymentOperatorABI,
-      eventName: 'ReleaseExecuted',
+      eventName: "ReleaseExecuted",
       onLogs: (logs) => {
         for (const log of logs) {
           callback(log as unknown as PaymentOperatorEventLog);
@@ -857,8 +888,12 @@ export class X402rMerchant {
    */
   watchFreezeEvents(
     freezeAddress: `0x${string}`,
-    callback: (event: FreezeEventLog) => void
+    callback: (event: FreezeEventLog) => void,
   ): { unsubscribe: () => void } {
-    return sharedWatchFreezeEvents({ publicClient: this.publicClient }, freezeAddress, callback);
+    return sharedWatchFreezeEvents(
+      { publicClient: this.publicClient },
+      freezeAddress,
+      callback,
+    );
   }
 }

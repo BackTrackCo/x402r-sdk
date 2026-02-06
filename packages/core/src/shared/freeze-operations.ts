@@ -3,9 +3,9 @@
  * @module shared/freeze-operations
  */
 
-import type { PublicClient } from 'viem';
-import { FreezeABI } from '../abis/index.js';
-import type { PaymentInfo, FreezeEventLog } from '../types/index.js';
+import type { PublicClient } from "viem";
+import { FreezeABI } from "../abis/index.js";
+import type { PaymentInfo, FreezeEventLog } from "../types/index.js";
 
 /** Read-only context for freeze operations */
 export interface FreezeReadContext {
@@ -30,7 +30,7 @@ export async function isFrozen(
   const frozen = await ctx.publicClient.readContract({
     address: freezeAddress,
     abi: FreezeABI,
-    functionName: 'isFrozen',
+    functionName: "isFrozen",
     args: [paymentInfo as never],
   });
 
@@ -53,7 +53,7 @@ export function watchFreezeEvents(
   const unsubscribeFrozen = ctx.publicClient.watchContractEvent({
     address: freezeAddress,
     abi: FreezeABI,
-    eventName: 'PaymentFrozen',
+    eventName: "PaymentFrozen",
     onLogs: (logs) => {
       for (const log of logs) {
         callback(log as unknown as FreezeEventLog);
@@ -64,7 +64,7 @@ export function watchFreezeEvents(
   const unsubscribeUnfrozen = ctx.publicClient.watchContractEvent({
     address: freezeAddress,
     abi: FreezeABI,
-    eventName: 'PaymentUnfrozen',
+    eventName: "PaymentUnfrozen",
     onLogs: (logs) => {
       for (const log of logs) {
         callback(log as unknown as FreezeEventLog);

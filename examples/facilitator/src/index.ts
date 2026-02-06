@@ -19,13 +19,8 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { getNetworkConfig } from "@x402r/core";
 import { toFacilitatorEvmSigner } from "@x402/evm";
-import {
-  EscrowFacilitatorScheme,
-} from "@x402r/evm/escrow/facilitator";
-import type {
-  PaymentPayload,
-  PaymentRequirements,
-} from "@x402/core/types";
+import { EscrowFacilitatorScheme } from "@x402r/evm/escrow/facilitator";
+import type { PaymentPayload, PaymentRequirements } from "@x402/core/types";
 import { loadConfig, createClients } from "./config.js";
 
 // Load environment from the app directory
@@ -51,7 +46,11 @@ const facilitatorSigner = toFacilitatorEvmSigner({
       args: args.args || [],
     }),
   sendTransaction: (args) =>
-    walletClient.sendTransaction({ ...args, account, chain: walletClient.chain }),
+    walletClient.sendTransaction({
+      ...args,
+      account,
+      chain: walletClient.chain,
+    }),
   waitForTransactionReceipt: (args) =>
     publicClient.waitForTransactionReceipt(args),
   getCode: (args) => publicClient.getCode(args),

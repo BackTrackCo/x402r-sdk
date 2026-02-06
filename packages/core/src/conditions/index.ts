@@ -4,10 +4,10 @@
  */
 
 // Re-export StaticAddressConditionABI from abis for convenience
-export { StaticAddressConditionABI } from '../abis/index.js';
+export { StaticAddressConditionABI } from "../abis/index.js";
 
 // Import network config helpers
-import { getConditionSingletons as getNetworkConditionSingletons } from '../config/index.js';
+import { getConditionSingletons as getNetworkConditionSingletons } from "../config/index.js";
 
 // ============ Types ============
 
@@ -20,7 +20,7 @@ export type ConditionAddress = `0x${string}`;
  * AND condition configuration (for deploying AndCondition)
  */
 export interface AndConditionConfig {
-  type: 'and';
+  type: "and";
   conditions: (ConditionAddress | ConditionConfig)[];
 }
 
@@ -28,7 +28,7 @@ export interface AndConditionConfig {
  * OR condition configuration (for deploying OrCondition)
  */
 export interface OrConditionConfig {
-  type: 'or';
+  type: "or";
   conditions: (ConditionAddress | ConditionConfig)[];
 }
 
@@ -36,7 +36,7 @@ export interface OrConditionConfig {
  * NOT condition configuration (for deploying NotCondition)
  */
 export interface NotConditionConfig {
-  type: 'not';
+  type: "not";
   condition: ConditionAddress | ConditionConfig;
 }
 
@@ -44,7 +44,7 @@ export interface NotConditionConfig {
  * StaticAddressCondition configuration
  */
 export interface StaticAddressConditionConfig {
-  type: 'staticAddress';
+  type: "staticAddress";
   designatedAddress: `0x${string}`;
 }
 
@@ -106,9 +106,11 @@ export function createConditionHelpers(networkId: string) {
      * @param conditionList - Array of conditions to combine with AND logic
      * @returns AND condition config for deployment
      */
-    and(conditionList: (ConditionAddress | ConditionConfig)[]): AndConditionConfig {
+    and(
+      conditionList: (ConditionAddress | ConditionConfig)[],
+    ): AndConditionConfig {
       return {
-        type: 'and',
+        type: "and",
         conditions: conditionList,
       };
     },
@@ -118,9 +120,11 @@ export function createConditionHelpers(networkId: string) {
      * @param conditionList - Array of conditions to combine with OR logic
      * @returns OR condition config for deployment
      */
-    or(conditionList: (ConditionAddress | ConditionConfig)[]): OrConditionConfig {
+    or(
+      conditionList: (ConditionAddress | ConditionConfig)[],
+    ): OrConditionConfig {
       return {
-        type: 'or',
+        type: "or",
         conditions: conditionList,
       };
     },
@@ -132,7 +136,7 @@ export function createConditionHelpers(networkId: string) {
      */
     not(condition: ConditionAddress | ConditionConfig): NotConditionConfig {
       return {
-        type: 'not',
+        type: "not",
         condition,
       };
     },
@@ -142,9 +146,11 @@ export function createConditionHelpers(networkId: string) {
      * @param designatedAddress - The address that will be allowed
      * @returns StaticAddressCondition config for deployment
      */
-    staticAddress(designatedAddress: `0x${string}`): StaticAddressConditionConfig {
+    staticAddress(
+      designatedAddress: `0x${string}`,
+    ): StaticAddressConditionConfig {
       return {
-        type: 'staticAddress',
+        type: "staticAddress",
         designatedAddress,
       };
     },
@@ -157,18 +163,18 @@ export function createConditionHelpers(networkId: string) {
  * PaymentInfo struct components for condition ABIs
  */
 const paymentInfoComponents = [
-  { name: 'operator', type: 'address' },
-  { name: 'payer', type: 'address' },
-  { name: 'receiver', type: 'address' },
-  { name: 'token', type: 'address' },
-  { name: 'maxAmount', type: 'uint120' },
-  { name: 'preApprovalExpiry', type: 'uint48' },
-  { name: 'authorizationExpiry', type: 'uint48' },
-  { name: 'refundExpiry', type: 'uint48' },
-  { name: 'minFeeBps', type: 'uint16' },
-  { name: 'maxFeeBps', type: 'uint16' },
-  { name: 'feeReceiver', type: 'address' },
-  { name: 'salt', type: 'uint256' },
+  { name: "operator", type: "address" },
+  { name: "payer", type: "address" },
+  { name: "receiver", type: "address" },
+  { name: "token", type: "address" },
+  { name: "maxAmount", type: "uint120" },
+  { name: "preApprovalExpiry", type: "uint48" },
+  { name: "authorizationExpiry", type: "uint48" },
+  { name: "refundExpiry", type: "uint48" },
+  { name: "minFeeBps", type: "uint16" },
+  { name: "maxFeeBps", type: "uint16" },
+  { name: "feeReceiver", type: "address" },
+  { name: "salt", type: "uint256" },
 ] as const;
 
 /**
@@ -182,42 +188,36 @@ const paymentInfoComponents = [
  */
 export const IConditionABI = [
   {
-    type: 'function',
-    name: 'check',
+    type: "function",
+    name: "check",
     inputs: [
       {
-        name: 'paymentInfo',
-        type: 'tuple',
+        name: "paymentInfo",
+        type: "tuple",
         components: paymentInfoComponents,
       },
-      { name: 'amount', type: 'uint256' },
-      { name: 'caller', type: 'address' },
+      { name: "amount", type: "uint256" },
+      { name: "caller", type: "address" },
     ],
-    outputs: [{ name: 'allowed', type: 'bool' }],
-    stateMutability: 'view',
+    outputs: [{ name: "allowed", type: "bool" }],
+    stateMutability: "view",
   },
 ] as const;
 
 /**
  * PayerCondition ABI (stateless singleton)
  */
-export const PayerConditionABI = [
-  ...IConditionABI,
-] as const;
+export const PayerConditionABI = [...IConditionABI] as const;
 
 /**
  * ReceiverCondition ABI (stateless singleton)
  */
-export const ReceiverConditionABI = [
-  ...IConditionABI,
-] as const;
+export const ReceiverConditionABI = [...IConditionABI] as const;
 
 /**
  * AlwaysTrueCondition ABI (stateless singleton)
  */
-export const AlwaysTrueConditionABI = [
-  ...IConditionABI,
-] as const;
+export const AlwaysTrueConditionABI = [...IConditionABI] as const;
 
 /**
  * AndCondition ABI
@@ -225,34 +225,34 @@ export const AlwaysTrueConditionABI = [
 export const AndConditionABI = [
   ...IConditionABI,
   {
-    type: 'function',
-    name: 'conditions',
-    inputs: [{ name: '', type: 'uint256' }],
-    outputs: [{ name: '', type: 'address' }],
-    stateMutability: 'view',
+    type: "function",
+    name: "conditions",
+    inputs: [{ name: "", type: "uint256" }],
+    outputs: [{ name: "", type: "address" }],
+    stateMutability: "view",
   },
   {
-    type: 'function',
-    name: 'conditionCount',
+    type: "function",
+    name: "conditionCount",
     inputs: [],
-    outputs: [{ name: '', type: 'uint256' }],
-    stateMutability: 'view',
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
   },
   {
-    type: 'function',
-    name: 'MAX_CONDITIONS',
+    type: "function",
+    name: "MAX_CONDITIONS",
     inputs: [],
-    outputs: [{ name: '', type: 'uint256' }],
-    stateMutability: 'view',
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
   },
   {
-    type: 'error',
-    name: 'NoConditions',
+    type: "error",
+    name: "NoConditions",
     inputs: [],
   },
   {
-    type: 'error',
-    name: 'TooManyConditions',
+    type: "error",
+    name: "TooManyConditions",
     inputs: [],
   },
 ] as const;
@@ -263,34 +263,34 @@ export const AndConditionABI = [
 export const OrConditionABI = [
   ...IConditionABI,
   {
-    type: 'function',
-    name: 'conditions',
-    inputs: [{ name: '', type: 'uint256' }],
-    outputs: [{ name: '', type: 'address' }],
-    stateMutability: 'view',
+    type: "function",
+    name: "conditions",
+    inputs: [{ name: "", type: "uint256" }],
+    outputs: [{ name: "", type: "address" }],
+    stateMutability: "view",
   },
   {
-    type: 'function',
-    name: 'conditionCount',
+    type: "function",
+    name: "conditionCount",
     inputs: [],
-    outputs: [{ name: '', type: 'uint256' }],
-    stateMutability: 'view',
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
   },
   {
-    type: 'function',
-    name: 'MAX_CONDITIONS',
+    type: "function",
+    name: "MAX_CONDITIONS",
     inputs: [],
-    outputs: [{ name: '', type: 'uint256' }],
-    stateMutability: 'view',
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
   },
   {
-    type: 'error',
-    name: 'NoConditions',
+    type: "error",
+    name: "NoConditions",
     inputs: [],
   },
   {
-    type: 'error',
-    name: 'TooManyConditions',
+    type: "error",
+    name: "TooManyConditions",
     inputs: [],
   },
 ] as const;
@@ -301,15 +301,15 @@ export const OrConditionABI = [
 export const NotConditionABI = [
   ...IConditionABI,
   {
-    type: 'function',
-    name: 'CONDITION',
+    type: "function",
+    name: "CONDITION",
     inputs: [],
-    outputs: [{ name: '', type: 'address' }],
-    stateMutability: 'view',
+    outputs: [{ name: "", type: "address" }],
+    stateMutability: "view",
   },
   {
-    type: 'error',
-    name: 'ZeroCondition',
+    type: "error",
+    name: "ZeroCondition",
     inputs: [],
   },
 ] as const;
