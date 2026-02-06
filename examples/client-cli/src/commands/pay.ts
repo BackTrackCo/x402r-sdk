@@ -1,10 +1,12 @@
 /**
  * Pay Command
- * Fetches 402 requirements, creates payment payload, and makes payment
+ * Fetches 402 requirements, creates payment payload, and makes payment.
+ *
+ * Uses x402 v2 protocol (Payment-Signature header, amount field).
  */
 
-import { createPaymentPayload } from '@x402r/evm/escrow/client';
-import type { WalletClient } from 'viem';
+import { createPaymentPayload } from "@x402r/evm/escrow/client";
+import type { WalletClient } from "viem";
 
 export interface PayOptions {
   url: string;
@@ -45,58 +47,77 @@ export async function pay(options: PayOptions): Promise<PayResult> {
     };
   }
 
-  // Parse 402 response
-  const paymentRequired = await initialResponse.json();
-  console.log('\nReceived 402 Payment Required');
-
-  if (!paymentRequired.accepts || paymentRequired.accepts.length === 0) {
+  // Parse 402 response from payment-required header (x402 v2)
+  const paymentRequiredHeader = initialResponse.headers.get("payment-required");
+  if (!paymentRequiredHeader) {
     return {
       success: false,
-      error: 'No payment options in 402 response',
+      error: "Missing payment-required header in 402 response",
+    };
+  }
+
+  const paymentRequired: Record<string, unknown> = JSON.parse(
+    Buffer.from(paymentRequiredHeader, "base64").toString(),
+  );
+
+  console.log("\nReceived 402 Payment Required");
+
+  if (
+    !paymentRequired.accepts ||
+    !(paymentRequired.accepts as unknown[]).length
+  ) {
+    return {
+      success: false,
+      error: "No payment options in 402 response",
     };
   }
 
   // Use first payment option (escrow scheme)
-  const requirements = paymentRequired.accepts[0];
-  console.log('\nPayment Requirements:');
-  console.log('  Scheme:', requirements.scheme);
-  console.log('  Network:', requirements.network);
-  console.log('  Amount:', requirements.maxAmountRequired, 'units');
-  console.log('  Pay To:', requirements.payTo);
-  console.log('  Operator:', requirements.extra?.operatorAddress);
+  const requirements = (paymentRequired.accepts as Record<string, unknown>[])[0];
+
+  console.log("\nPayment Requirements:");
+  console.log("  Scheme:", requirements.scheme);
+  console.log("  Network:", requirements.network);
+  console.log("  Amount:", requirements.amount, "units");
+  console.log("  Pay To:", requirements.payTo);
+  console.log("  Operator:", (requirements.extra as Record<string, unknown>)?.operatorAddress);
 
   // Step 2: Create payment payload
-  console.log('\nCreating payment payload...');
-  const paymentPayload = await createPaymentPayload(requirements, walletClient);
+  console.log("\nCreating payment payload...");
+  const escrowPayload = await createPaymentPayload(requirements, walletClient);
 
-  console.log('  Payer:', paymentPayload.authorization.from);
-  console.log('  Value:', paymentPayload.authorization.value);
-  console.log('  Salt:', paymentPayload.paymentInfo.salt);
+  console.log("  Payer:", escrowPayload.authorization.from);
+  console.log("  Value:", escrowPayload.authorization.value);
+  console.log("  Salt:", escrowPayload.paymentInfo.salt);
 
-  // Encode as base64 for X-Payment header
+  // Step 3: Build payment header and make paid request (x402 v2)
   const x402Payload = {
-    x402Version: 1,
-    scheme: requirements.scheme,
-    payload: paymentPayload,
+    x402Version: 2,
+    resource: paymentRequired.resource,
+    accepted: requirements,
+    payload: escrowPayload,
   };
-  const paymentHeader = Buffer.from(JSON.stringify(x402Payload)).toString('base64');
+  const paymentHeader = Buffer.from(JSON.stringify(x402Payload)).toString(
+    "base64",
+  );
 
-  // Step 3: Make paid request
-  console.log('\nSending payment to server...');
+  console.log("\nSending payment to server...");
   const paidResponse = await fetch(url, {
     headers: {
-      'X-Payment': paymentHeader,
+      "Payment-Signature": paymentHeader,
     },
   });
 
   // Build complete paymentInfo with payer field included
   const completePaymentInfo = {
-    ...paymentPayload.paymentInfo,
-    payer: paymentPayload.authorization.from,
+    ...escrowPayload.paymentInfo,
+    payer: escrowPayload.authorization.from,
   };
 
   if (!paidResponse.ok) {
-    const error = await paidResponse.json().catch(() => ({ message: 'Unknown error' }));
+    const error = await paidResponse
+      .json()
+      .catch(() => ({ message: "Unknown error" }));
     return {
       success: false,
       error: `Payment failed: ${error.message || error.error || paidResponse.statusText}`,
@@ -105,12 +126,14 @@ export async function pay(options: PayOptions): Promise<PayResult> {
   }
 
   const response = await paidResponse.json();
-  console.log('\nPayment successful!');
+  console.log("\nPayment successful!");
+
+  const transaction = response.payment?.transaction;
 
   return {
     success: true,
     response,
     paymentInfo: completePaymentInfo,
-    transaction: response.payment?.transaction,
+    transaction,
   };
 }
