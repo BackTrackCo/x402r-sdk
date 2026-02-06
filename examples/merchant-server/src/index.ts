@@ -2,57 +2,79 @@
  * Merchant Server Example
  *
  * A simple weather API that requires x402r escrow payments.
+ * Uses x402's standard paymentMiddleware + HTTPFacilitatorClient to delegate
+ * verify/settle to an x402r facilitator service.
  *
  * Usage:
  *   1. Deploy an operator: PRIVATE_KEY=0x... pnpm tsx examples/deploy-operator/index.ts
  *   2. Copy addresses to .env
- *   3. Run: pnpm dev
- *   4. Test: curl http://localhost:3000/weather
+ *   3. Start facilitator: cd examples/facilitator && pnpm dev
+ *   4. Start merchant: cd examples/merchant-server && pnpm dev
+ *   5. Test: curl http://localhost:3000/weather
  */
 
-import { serve } from '@hono/node-server';
-import { Hono } from 'hono';
-import { cors } from 'hono/cors';
-import { config as dotenvConfig } from 'dotenv';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import { loadConfig, createClients, buildPaymentRequirements, PRICE_USDC, NETWORK_ID } from './config.js';
-import { x402Middleware, createFacilitatorSigner, EscrowFacilitatorScheme } from './middleware.js';
+import { serve } from "@hono/node-server";
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { config as dotenvConfig } from "dotenv";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
+import { paymentMiddlewareFromConfig } from "@x402/hono";
+import { HTTPFacilitatorClient } from "@x402/core/server";
+import { EscrowServerScheme } from "@x402r/evm/escrow/server";
+import { refundable } from "@x402r/helpers";
+import { X402rMerchant } from "@x402r/merchant";
+import { type PaymentInfo, getNetworkConfig } from "@x402r/core";
+import { loadConfig, createClients, NETWORK_ID } from "./config.js";
 
 // Load environment from the example directory
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-dotenvConfig({ path: join(__dirname, '..', '.env') });
+dotenvConfig({ path: join(__dirname, "..", ".env") });
 
 // Initialize configuration
 const config = loadConfig();
 const { publicClient, walletClient, account } = createClients(config);
 
-console.log('Merchant Server Configuration:');
-console.log('  Address:', account.address);
-console.log('  Operator:', config.operatorAddress);
-console.log('  Freeze:', config.freezeAddress);
-console.log('  Network:', NETWORK_ID);
-console.log('  Price:', PRICE_USDC, 'units ($0.01 USDC)');
+console.log("Merchant Server Configuration:");
+console.log("  Address:", account.address);
+console.log("  Operator:", config.operatorAddress);
+console.log("  Facilitator:", config.facilitatorUrl);
+console.log("  Network:", NETWORK_ID);
 
-// Build payment requirements
-const requirements = buildPaymentRequirements(account.address, config.operatorAddress);
-
-// Create facilitator for payment verification and settlement
-const facilitatorSigner = createFacilitatorSigner(walletClient, publicClient);
-const facilitator = new EscrowFacilitatorScheme(facilitatorSigner);
+// Create facilitator client pointing to x402r facilitator service
+const facilitator = new HTTPFacilitatorClient({
+  url: config.facilitatorUrl,
+});
 
 // Create Hono app
 const app = new Hono();
+app.use("*", cors());
 
-// Enable CORS for browser clients
-app.use('*', cors());
+// x402 payment middleware — delegates verify/settle to the facilitator
+app.use(
+  paymentMiddlewareFromConfig(
+    {
+      "GET /weather": {
+        accepts: [
+          refundable(
+            {
+              scheme: "escrow",
+              price: "$0.01",
+              network: NETWORK_ID,
+              payTo: account.address,
+            },
+            config.operatorAddress,
+          ),
+        ],
+      },
+    },
+    facilitator,
+    [{ network: NETWORK_ID, server: new EscrowServerScheme() }],
+  ),
+);
 
-// Import merchant SDK for release operations
-import { X402rMerchant } from '@x402r/merchant';
-import { type PaymentInfo, getNetworkConfig } from '@x402r/core';
-
-// Create merchant SDK instance
+// Merchant SDK for release/refund operations
 const networkConfig = getNetworkConfig(NETWORK_ID)!;
 const merchant = new X402rMerchant({
   publicClient,
@@ -64,92 +86,61 @@ const merchant = new X402rMerchant({
 });
 
 // Health check endpoint
-app.get('/', (c) => {
+app.get("/", (c) => {
   return c.json({
-    name: 'x402r Weather API',
-    version: '1.0.0',
+    name: "x402r Weather API",
+    version: "1.0.0",
     endpoints: {
-      '/': 'This endpoint (health check)',
-      '/weather': 'Get weather data (requires payment)',
-      '/info': 'Get payment info (no payment required)',
-      '/release': 'POST - Release funds from escrow',
-      '/payment-amounts': 'POST - Get capturable/refundable amounts',
+      "/": "This endpoint (health check)",
+      "/weather": "Get weather data (requires payment)",
+      "/info": "Get payment info (no payment required)",
+      "/release": "POST - Release funds from escrow",
+      "/payment-amounts": "POST - Get capturable/refundable amounts",
     },
   });
 });
 
 // Payment info endpoint (no payment required)
-app.get('/info', (c) => {
+app.get("/info", (c) => {
   return c.json({
     network: NETWORK_ID,
     operator: config.operatorAddress,
     merchant: account.address,
-    freeze: config.freezeAddress,
-    escrowPeriod: config.escrowPeriodAddress,
-    price: {
-      amount: PRICE_USDC,
-      currency: 'USDC',
-      formatted: '$0.01',
-    },
-    requirements,
+    facilitator: config.facilitatorUrl,
   });
 });
 
 // Protected weather endpoint
-app.get(
-  '/weather',
-  x402Middleware({ requirements, facilitator }),
-  (c) => {
-    // Get payment info from context
-    const x402 = c.get('x402') as {
-      payer: string;
-      transaction: string;
-      paymentPayload: unknown;
-    };
+app.get("/weather", (c) => {
+  const weather = {
+    location: "San Francisco, CA",
+    temperature: { value: 68, unit: "F" },
+    conditions: "Partly Cloudy",
+    humidity: 65,
+    wind: { speed: 12, direction: "NW", unit: "mph" },
+    forecast: [
+      { day: "Today", high: 72, low: 58, conditions: "Partly Cloudy" },
+      { day: "Tomorrow", high: 75, low: 60, conditions: "Sunny" },
+      { day: "Wednesday", high: 70, low: 55, conditions: "Cloudy" },
+    ],
+  };
 
-    // Generate mock weather data
-    const weather = {
-      location: 'San Francisco, CA',
-      temperature: {
-        value: 68,
-        unit: 'F',
-      },
-      conditions: 'Partly Cloudy',
-      humidity: 65,
-      wind: {
-        speed: 12,
-        direction: 'NW',
-        unit: 'mph',
-      },
-      forecast: [
-        { day: 'Today', high: 72, low: 58, conditions: 'Partly Cloudy' },
-        { day: 'Tomorrow', high: 75, low: 60, conditions: 'Sunny' },
-        { day: 'Wednesday', high: 70, low: 55, conditions: 'Cloudy' },
-      ],
-      // Include payment info in response
-      payment: {
-        payer: x402.payer,
-        transaction: x402.transaction,
-        amount: PRICE_USDC,
-        operator: config.operatorAddress,
-      },
-    };
-
-    return c.json(weather);
-  }
-);
+  return c.json(weather);
+});
 
 // Release endpoint - merchant releases funds from escrow
-app.post('/release', async (c) => {
+app.post("/release", async (c) => {
   try {
     const body = await c.req.json();
-    const { paymentInfo, amount } = body as { paymentInfo: PaymentInfo; amount: string };
+    const { paymentInfo, amount } = body as {
+      paymentInfo: PaymentInfo;
+      amount: string;
+    };
 
     if (!paymentInfo) {
-      return c.json({ error: 'paymentInfo is required' }, 400);
+      return c.json({ error: "paymentInfo is required" }, 400);
     }
 
-    // Convert string amounts to bigint
     const parsedPaymentInfo: PaymentInfo = {
       ...paymentInfo,
       maxAmount: BigInt(paymentInfo.maxAmount),
@@ -158,13 +149,13 @@ app.post('/release', async (c) => {
 
     const releaseAmount = amount ? BigInt(amount) : parsedPaymentInfo.maxAmount;
 
-    console.log('[release] Releasing funds...');
-    console.log('  Payer:', parsedPaymentInfo.payer);
-    console.log('  Amount:', releaseAmount.toString());
+    console.log("[release] Releasing funds...");
+    console.log("  Payer:", parsedPaymentInfo.payer);
+    console.log("  Amount:", releaseAmount.toString());
 
     const result = await merchant.release(parsedPaymentInfo, releaseAmount);
 
-    console.log('[release] Success! TX:', result.txHash);
+    console.log("[release] Success! TX:", result.txHash);
 
     return c.json({
       success: true,
@@ -172,25 +163,27 @@ app.post('/release', async (c) => {
       explorerUrl: `https://sepolia.basescan.org/tx/${result.txHash}`,
     });
   } catch (error) {
-    console.error('[release] Error:', error);
-    return c.json({
-      error: 'Release failed',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    }, 500);
+    console.error("[release] Error:", error);
+    return c.json(
+      {
+        error: "Release failed",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      500,
+    );
   }
 });
 
 // Get payment amounts endpoint
-app.post('/payment-amounts', async (c) => {
+app.post("/payment-amounts", async (c) => {
   try {
     const body = await c.req.json();
     const { paymentInfo } = body as { paymentInfo: PaymentInfo };
 
     if (!paymentInfo) {
-      return c.json({ error: 'paymentInfo is required' }, 400);
+      return c.json({ error: "paymentInfo is required" }, 400);
     }
 
-    // Convert string amounts to bigint
     const parsedPaymentInfo: PaymentInfo = {
       ...paymentInfo,
       maxAmount: BigInt(paymentInfo.maxAmount),
@@ -204,11 +197,14 @@ app.post('/payment-amounts', async (c) => {
       refundableAmount: amounts.refundableAmount.toString(),
     });
   } catch (error) {
-    console.error('[payment-amounts] Error:', error);
-    return c.json({
-      error: 'Failed to get payment amounts',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    }, 500);
+    console.error("[payment-amounts] Error:", error);
+    return c.json(
+      {
+        error: "Failed to get payment amounts",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      500,
+    );
   }
 });
 
@@ -216,16 +212,21 @@ app.post('/payment-amounts', async (c) => {
 const port = config.port;
 console.log(`\nStarting server on port ${port}...`);
 
-serve({
-  fetch: app.fetch,
-  port,
-}, () => {
-  console.log(`Server running at http://localhost:${port}`);
-  console.log('\nEndpoints:');
-  console.log(`  GET http://localhost:${port}/         - Health check`);
-  console.log(`  GET http://localhost:${port}/info     - Payment info`);
-  console.log(`  GET http://localhost:${port}/weather  - Weather data (requires payment)`);
-  console.log('\nTest payment flow:');
-  console.log(`  curl http://localhost:${port}/weather`);
-  console.log('  # Returns 402 with payment requirements');
-});
+serve(
+  {
+    fetch: app.fetch,
+    port,
+  },
+  () => {
+    console.log(`Server running at http://localhost:${port}`);
+    console.log("\nEndpoints:");
+    console.log(`  GET http://localhost:${port}/         - Health check`);
+    console.log(`  GET http://localhost:${port}/info     - Payment info`);
+    console.log(
+      `  GET http://localhost:${port}/weather  - Weather data (requires payment)`,
+    );
+    console.log("\nTest payment flow:");
+    console.log(`  curl http://localhost:${port}/weather`);
+    console.log("  # Returns 402 with payment requirements");
+  },
+);

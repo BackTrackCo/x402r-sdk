@@ -9,13 +9,13 @@ TypeScript SDK for the X402r refundable payments protocol.
 
 ## Packages
 
-| Package | Description |
-|---------|-------------|
-| `@x402r/core` | Shared types, ABIs, deployment helpers, and utilities |
-| `@x402r/client` | SDK for payers (payment queries, refund requests, freeze) |
-| `@x402r/merchant` | SDK for merchants (release, charge, refund handling) |
-| `@x402r/arbiter` | SDK for arbiters (dispute resolution, AI integration) |
-| `@x402r/helpers` | Server helpers for building payment requirements |
+| Package           | Description                                               |
+| ----------------- | --------------------------------------------------------- |
+| `@x402r/core`     | Shared types, ABIs, deployment helpers, and utilities     |
+| `@x402r/client`   | SDK for payers (payment queries, refund requests, freeze) |
+| `@x402r/merchant` | SDK for merchants (release, charge, refund handling)      |
+| `@x402r/arbiter`  | SDK for arbiters (dispute resolution, AI integration)     |
+| `@x402r/helpers`  | Server helpers for building payment requirements          |
 
 ## Development
 
@@ -58,14 +58,20 @@ The SDK includes working examples for a complete payment flow:
 # 1. Deploy an operator (one-time setup)
 PRIVATE_KEY=0x... pnpm example:deploy-operator
 
-# 2. Start the merchant server
-cd examples/merchant-server && cp .env.example .env  # Configure first
+# 2. Start the facilitator service
+cd examples/facilitator && cp .env.example .env  # Configure with PRIVATE_KEY + OPERATOR_ADDRESS
+pnpm dev
+
+# 3. Start the merchant server (in a new terminal)
+cd examples/merchant-server && cp .env.example .env  # Configure with PRIVATE_KEY, OPERATOR_ADDRESS, FACILITATOR_URL
 pnpm example:merchant-server
 
-# 3. Make a payment with the client CLI
+# 4. Make a payment with the client CLI (in a new terminal)
 cd examples/client-cli && cp .env.example .env  # Configure first
 pnpm example:client-cli pay --url http://localhost:3000/weather
 ```
+
+The flow is: Client -> Merchant Server -> Facilitator -> Blockchain. The merchant server uses x402's standard `paymentMiddleware` and delegates verify/settle to the facilitator service.
 
 See the [Examples Guide](./docs/EXAMPLES_GUIDE.md) for the complete walkthrough including freeze and refund operations.
 
@@ -73,11 +79,11 @@ See the [Examples Guide](./docs/EXAMPLES_GUIDE.md) for the complete walkthrough 
 
 Use this operator for testing:
 
-| Contract | Address |
-|----------|---------|
+| Contract        | Address                                      |
+| --------------- | -------------------------------------------- |
 | PaymentOperator | `0xbb4f390b80E4F4895B96B95AE382B65fDC45974B` |
-| Freeze | `0xD0f99B7667076f151FD8240b277f1765d147e48C` |
-| EscrowPeriod | `0xFcFb7e197823D304D53F47BE1E9761e9D102589b` |
+| Freeze          | `0xD0f99B7667076f151FD8240b277f1765d147e48C` |
+| EscrowPeriod    | `0xFcFb7e197823D304D53F47BE1E9761e9D102589b` |
 
 ## Documentation
 
@@ -87,14 +93,15 @@ Use this operator for testing:
 
 ## Network Support
 
-| Network | Chain ID | Status |
-|---------|----------|--------|
-| Base Sepolia | 84532 | ✅ Supported |
-| Base Mainnet | 8453 | 🚧 Pending |
+| Network      | Chain ID | Status       |
+| ------------ | -------- | ------------ |
+| Base Sepolia | 84532    | ✅ Supported |
+| Base Mainnet | 8453     | 🚧 Pending   |
 
 ## Known Limitations
 
 **Subgraph Not Deployed**: Query methods that require indexing will throw `NotImplementedError`:
+
 - `client.getPaymentState()`, `paymentExists()`, `isInEscrow()`, `getPaymentDetails()`, `getMyPayments()`
 - `merchant.getPaymentState()`, `getReceiverPayments()`
 - `arbiter.getPaymentState()`
