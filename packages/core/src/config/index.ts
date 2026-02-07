@@ -132,7 +132,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     },
   },
 
-  // --- Ethereum ---
+  // --- Ethereum Sepolia ---
   "eip155:11155111": {
     name: "Ethereum Sepolia",
     chainId: 11155111,
@@ -144,6 +144,8 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     arbiterRegistry: "0x0000000000000000000000000000000000000000",
     usdc: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
   },
+
+  // --- Ethereum ---
   "eip155:1": {
     name: "Ethereum Mainnet",
     chainId: 1,
@@ -157,17 +159,6 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
   },
 
   // --- Polygon ---
-  "eip155:80002": {
-    name: "Polygon Amoy",
-    chainId: 80002,
-    authCaptureEscrow: "0x0000000000000000000000000000000000000000",
-    tokenCollector: "0x0000000000000000000000000000000000000000",
-    refundRequest: "0x0000000000000000000000000000000000000000",
-    protocolFeeConfig: "0x0000000000000000000000000000000000000000",
-    usdcTvlLimit: "0x0000000000000000000000000000000000000000",
-    arbiterRegistry: "0x0000000000000000000000000000000000000000",
-    usdc: "0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582",
-  },
   "eip155:137": {
     name: "Polygon PoS",
     chainId: 137,
@@ -181,17 +172,6 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
   },
 
   // --- Arbitrum ---
-  "eip155:421614": {
-    name: "Arbitrum Sepolia",
-    chainId: 421614,
-    authCaptureEscrow: "0x0000000000000000000000000000000000000000",
-    tokenCollector: "0x0000000000000000000000000000000000000000",
-    refundRequest: "0x0000000000000000000000000000000000000000",
-    protocolFeeConfig: "0x0000000000000000000000000000000000000000",
-    usdcTvlLimit: "0x0000000000000000000000000000000000000000",
-    arbiterRegistry: "0x0000000000000000000000000000000000000000",
-    usdc: "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d",
-  },
   "eip155:42161": {
     name: "Arbitrum One",
     chainId: 42161,
@@ -205,17 +185,6 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
   },
 
   // --- Celo ---
-  "eip155:44787": {
-    name: "Celo Alfajores",
-    chainId: 44787,
-    authCaptureEscrow: "0x0000000000000000000000000000000000000000",
-    tokenCollector: "0x0000000000000000000000000000000000000000",
-    refundRequest: "0x0000000000000000000000000000000000000000",
-    protocolFeeConfig: "0x0000000000000000000000000000000000000000",
-    usdcTvlLimit: "0x0000000000000000000000000000000000000000",
-    arbiterRegistry: "0x0000000000000000000000000000000000000000",
-    usdc: "0x01C5C0122039549AD1493B8220cABEdD739BC44E",
-  },
   "eip155:42220": {
     name: "Celo",
     chainId: 42220,
@@ -229,17 +198,6 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
   },
 
   // --- Monad ---
-  "eip155:10143": {
-    name: "Monad Testnet",
-    chainId: 10143,
-    authCaptureEscrow: "0x0000000000000000000000000000000000000000",
-    tokenCollector: "0x0000000000000000000000000000000000000000",
-    refundRequest: "0x0000000000000000000000000000000000000000",
-    protocolFeeConfig: "0x0000000000000000000000000000000000000000",
-    usdcTvlLimit: "0x0000000000000000000000000000000000000000",
-    arbiterRegistry: "0x0000000000000000000000000000000000000000",
-    usdc: "0x534b2f3A21130d7a60830c2Df862319e593943A3",
-  },
   "eip155:143": {
     name: "Monad",
     chainId: 143,
@@ -253,17 +211,6 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
   },
 
   // --- Avalanche ---
-  "eip155:43113": {
-    name: "Avalanche Fuji",
-    chainId: 43113,
-    authCaptureEscrow: "0x0000000000000000000000000000000000000000",
-    tokenCollector: "0x0000000000000000000000000000000000000000",
-    refundRequest: "0x0000000000000000000000000000000000000000",
-    protocolFeeConfig: "0x0000000000000000000000000000000000000000",
-    usdcTvlLimit: "0x0000000000000000000000000000000000000000",
-    arbiterRegistry: "0x0000000000000000000000000000000000000000",
-    usdc: "0x5425890298aed601595a70AB815c96711a31Bc65",
-  },
   "eip155:43114": {
     name: "Avalanche C-Chain",
     chainId: 43114,
