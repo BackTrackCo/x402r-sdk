@@ -1,5 +1,5 @@
-import { getNetworkConfig, SupportedNetworks } from '@x402r/core/config';
-import type { PaymentOption, RefundableOptions, EscrowExtra } from './types.js';
+import { getNetworkConfig, SupportedNetworks } from "@x402r/core/config";
+import type { PaymentOption, RefundableOptions, EscrowExtra } from "./types.js";
 
 /**
  * Marks a payment option as refundable by adding escrow configuration.
@@ -57,7 +57,7 @@ export function refundable<T extends PaymentOption>(
   if (!networkConfig) {
     throw new Error(
       `Unsupported network: ${option.network}. ` +
-        `Supported: ${SupportedNetworks.join(', ')}`,
+        `Supported: ${SupportedNetworks.join(", ")}`,
     );
   }
 

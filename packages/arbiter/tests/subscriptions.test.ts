@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { X402rArbiter } from '../src/arbiter.js';
-import type { PublicClient, WalletClient } from 'viem';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { X402rArbiter } from "../src/arbiter.js";
+import type { PublicClient, WalletClient } from "viem";
 
 // Mock viem clients
 const createMockPublicClient = (): PublicClient => {
@@ -14,20 +14,22 @@ const createMockPublicClient = (): PublicClient => {
 
 const createMockWalletClient = (): WalletClient => {
   return {
-    writeContract: vi.fn().mockResolvedValue('0xtxhash'),
+    writeContract: vi.fn().mockResolvedValue("0xtxhash"),
     account: {
-      address: '0x1234567890123456789012345678901234567890',
+      address: "0x1234567890123456789012345678901234567890",
     },
     chain: { id: 84532 },
   } as unknown as WalletClient;
 };
 
-describe('X402rArbiter - Subscriptions', () => {
+describe("X402rArbiter - Subscriptions", () => {
   let publicClient: PublicClient;
   let walletClient: WalletClient;
-  const operatorAddress = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' as const;
-  const refundRequestAddress = '0xcccccccccccccccccccccccccccccccccccccccc' as const;
-  const escrowRecorderAddress = '0xdddddddddddddddddddddddddddddddddddddddd' as const;
+  const operatorAddress = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as const;
+  const refundRequestAddress =
+    "0xcccccccccccccccccccccccccccccccccccccccc" as const;
+  const escrowRecorderAddress =
+    "0xdddddddddddddddddddddddddddddddddddddddd" as const;
 
   beforeEach(() => {
     publicClient = createMockPublicClient();
@@ -35,8 +37,8 @@ describe('X402rArbiter - Subscriptions', () => {
     vi.clearAllMocks();
   });
 
-  describe('watchNewCases', () => {
-    it('should return unsubscribe function', () => {
+  describe("watchNewCases", () => {
+    it("should return unsubscribe function", () => {
       const arbiter = new X402rArbiter({
         publicClient,
         walletClient,
@@ -47,10 +49,10 @@ describe('X402rArbiter - Subscriptions', () => {
       const callback = vi.fn();
       const { unsubscribe } = arbiter.watchNewCases(callback);
 
-      expect(typeof unsubscribe).toBe('function');
+      expect(typeof unsubscribe).toBe("function");
     });
 
-    it('should watch RefundRequested events', () => {
+    it("should watch RefundRequested events", () => {
       const arbiter = new X402rArbiter({
         publicClient,
         walletClient,
@@ -64,12 +66,12 @@ describe('X402rArbiter - Subscriptions', () => {
       expect(publicClient.watchContractEvent).toHaveBeenCalledWith(
         expect.objectContaining({
           address: refundRequestAddress,
-          eventName: 'RefundRequested',
-        })
+          eventName: "RefundRequested",
+        }),
       );
     });
 
-    it('should throw if refundRequestAddress not configured', () => {
+    it("should throw if refundRequestAddress not configured", () => {
       const arbiter = new X402rArbiter({
         publicClient,
         walletClient,
@@ -78,13 +80,13 @@ describe('X402rArbiter - Subscriptions', () => {
 
       const callback = vi.fn();
       expect(() => arbiter.watchNewCases(callback)).toThrow(
-        'RefundRequest address required'
+        "RefundRequest address required",
       );
     });
   });
 
-  describe('watchDecisions', () => {
-    it('should return unsubscribe function', () => {
+  describe("watchDecisions", () => {
+    it("should return unsubscribe function", () => {
       const arbiter = new X402rArbiter({
         publicClient,
         walletClient,
@@ -95,10 +97,10 @@ describe('X402rArbiter - Subscriptions', () => {
       const callback = vi.fn();
       const { unsubscribe } = arbiter.watchDecisions(callback);
 
-      expect(typeof unsubscribe).toBe('function');
+      expect(typeof unsubscribe).toBe("function");
     });
 
-    it('should watch RefundRequestStatusUpdated events', () => {
+    it("should watch RefundRequestStatusUpdated events", () => {
       const arbiter = new X402rArbiter({
         publicClient,
         walletClient,
@@ -112,12 +114,12 @@ describe('X402rArbiter - Subscriptions', () => {
       expect(publicClient.watchContractEvent).toHaveBeenCalledWith(
         expect.objectContaining({
           address: refundRequestAddress,
-          eventName: 'RefundRequestStatusUpdated',
-        })
+          eventName: "RefundRequestStatusUpdated",
+        }),
       );
     });
 
-    it('should throw if refundRequestAddress not configured', () => {
+    it("should throw if refundRequestAddress not configured", () => {
       const arbiter = new X402rArbiter({
         publicClient,
         walletClient,
@@ -126,13 +128,13 @@ describe('X402rArbiter - Subscriptions', () => {
 
       const callback = vi.fn();
       expect(() => arbiter.watchDecisions(callback)).toThrow(
-        'RefundRequest address required'
+        "RefundRequest address required",
       );
     });
   });
 
-  describe('watchFreezeEvents', () => {
-    it('should return unsubscribe function', () => {
+  describe("watchFreezeEvents", () => {
+    it("should return unsubscribe function", () => {
       const arbiter = new X402rArbiter({
         publicClient,
         walletClient,
@@ -141,12 +143,15 @@ describe('X402rArbiter - Subscriptions', () => {
       });
 
       const callback = vi.fn();
-      const { unsubscribe } = arbiter.watchFreezeEvents(escrowRecorderAddress, callback);
+      const { unsubscribe } = arbiter.watchFreezeEvents(
+        escrowRecorderAddress,
+        callback,
+      );
 
-      expect(typeof unsubscribe).toBe('function');
+      expect(typeof unsubscribe).toBe("function");
     });
 
-    it('should watch PaymentFrozen and PaymentUnfrozen events', () => {
+    it("should watch PaymentFrozen and PaymentUnfrozen events", () => {
       const arbiter = new X402rArbiter({
         publicClient,
         walletClient,

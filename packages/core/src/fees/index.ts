@@ -3,13 +3,13 @@
  * @module fees
  */
 
-import type { PublicClient, Address } from 'viem';
-import type { PaymentInfo } from '../types/index.js';
+import type { PublicClient, Address } from "viem";
+import type { PaymentInfo } from "../types/index.js";
 import {
   PaymentOperatorABI,
   IFeeCalculatorABI,
   ProtocolFeeConfigABI,
-} from '../abis/index.js';
+} from "../abis/index.js";
 
 /**
  * Result of fee calculation
@@ -47,7 +47,7 @@ export interface FeeAddresses {
   protocolFeeRecipient: Address;
 }
 
-const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as Address;
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as Address;
 
 /**
  * Get the fee-related addresses from an operator
@@ -58,23 +58,23 @@ const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as Address;
  */
 export async function getFeeAddresses(
   publicClient: PublicClient,
-  operatorAddress: Address
+  operatorAddress: Address,
 ): Promise<FeeAddresses> {
   const [feeCalculator, protocolFeeConfig, feeRecipient] = await Promise.all([
     publicClient.readContract({
       address: operatorAddress,
       abi: PaymentOperatorABI,
-      functionName: 'FEE_CALCULATOR',
+      functionName: "FEE_CALCULATOR",
     }) as Promise<Address>,
     publicClient.readContract({
       address: operatorAddress,
       abi: PaymentOperatorABI,
-      functionName: 'PROTOCOL_FEE_CONFIG',
+      functionName: "PROTOCOL_FEE_CONFIG",
     }) as Promise<Address>,
     publicClient.readContract({
       address: operatorAddress,
       abi: PaymentOperatorABI,
-      functionName: 'FEE_RECIPIENT',
+      functionName: "FEE_RECIPIENT",
     }) as Promise<Address>,
   ]);
 
@@ -87,12 +87,12 @@ export async function getFeeAddresses(
       publicClient.readContract({
         address: protocolFeeConfig,
         abi: ProtocolFeeConfigABI,
-        functionName: 'calculator',
+        functionName: "calculator",
       }) as Promise<Address>,
       publicClient.readContract({
         address: protocolFeeConfig,
         abi: ProtocolFeeConfigABI,
-        functionName: 'protocolFeeRecipient',
+        functionName: "protocolFeeRecipient",
       }) as Promise<Address>,
     ]);
   }
@@ -121,13 +121,13 @@ export async function calculateOperatorFeeBps(
   operatorAddress: Address,
   paymentInfo: PaymentInfo,
   amount: bigint,
-  caller: Address
+  caller: Address,
 ): Promise<bigint> {
   // Get the fee calculator address
   const feeCalculator = (await publicClient.readContract({
     address: operatorAddress,
     abi: PaymentOperatorABI,
-    functionName: 'FEE_CALCULATOR',
+    functionName: "FEE_CALCULATOR",
   })) as Address;
 
   // If no fee calculator, return 0
@@ -140,7 +140,7 @@ export async function calculateOperatorFeeBps(
   const feeBps = (await publicClient.readContract({
     address: feeCalculator,
     abi: IFeeCalculatorABI,
-    functionName: 'calculateFee',
+    functionName: "calculateFee",
     args: [paymentInfo as never, amount, caller],
   })) as bigint;
 
@@ -162,13 +162,13 @@ export async function calculateProtocolFeeBps(
   operatorAddress: Address,
   paymentInfo: PaymentInfo,
   amount: bigint,
-  caller: Address
+  caller: Address,
 ): Promise<bigint> {
   // Get the protocol fee config address
   const protocolFeeConfig = (await publicClient.readContract({
     address: operatorAddress,
     abi: PaymentOperatorABI,
-    functionName: 'PROTOCOL_FEE_CONFIG',
+    functionName: "PROTOCOL_FEE_CONFIG",
   })) as Address;
 
   // If no protocol fee config, return 0
@@ -181,7 +181,7 @@ export async function calculateProtocolFeeBps(
   const feeBps = (await publicClient.readContract({
     address: protocolFeeConfig,
     abi: ProtocolFeeConfigABI,
-    functionName: 'getProtocolFeeBps',
+    functionName: "getProtocolFeeBps",
     args: [paymentInfo as never, amount, caller],
   })) as bigint;
 
@@ -216,12 +216,24 @@ export async function calculateTotalFees(
   operatorAddress: Address,
   paymentInfo: PaymentInfo,
   amount: bigint,
-  caller: Address
+  caller: Address,
 ): Promise<FeeCalculationResult> {
   // Fetch both fees in parallel
   const [protocolFeeBps, operatorFeeBps] = await Promise.all([
-    calculateProtocolFeeBps(publicClient, operatorAddress, paymentInfo, amount, caller),
-    calculateOperatorFeeBps(publicClient, operatorAddress, paymentInfo, amount, caller),
+    calculateProtocolFeeBps(
+      publicClient,
+      operatorAddress,
+      paymentInfo,
+      amount,
+      caller,
+    ),
+    calculateOperatorFeeBps(
+      publicClient,
+      operatorAddress,
+      paymentInfo,
+      amount,
+      caller,
+    ),
   ]);
 
   const totalFeeBps = protocolFeeBps + operatorFeeBps;
@@ -252,7 +264,7 @@ export async function calculateTotalFees(
  */
 export function validateFeeBounds(
   fees: FeeCalculationResult,
-  paymentInfo: PaymentInfo
+  paymentInfo: PaymentInfo,
 ): boolean {
   return (
     fees.totalFeeBps >= BigInt(paymentInfo.minFeeBps) &&
@@ -271,13 +283,13 @@ export function validateFeeBounds(
 export function formatFeeBreakdown(
   fees: FeeCalculationResult,
   decimals: number = 6,
-  symbol: string = 'USDC'
+  symbol: string = "USDC",
 ): string {
   const formatAmount = (amount: bigint): string => {
     const divisor = 10n ** BigInt(decimals);
     const whole = amount / divisor;
     const fractional = amount % divisor;
-    const fractionalStr = fractional.toString().padStart(decimals, '0');
+    const fractionalStr = fractional.toString().padStart(decimals, "0");
     return `${whole}.${fractionalStr} ${symbol}`;
   };
 
@@ -292,5 +304,5 @@ export function formatFeeBreakdown(
     `  Operator Fee: ${formatBps(fees.operatorFeeBps)} = ${formatAmount(fees.operatorFeeAmount)}`,
     `  Total Fee:    ${formatBps(fees.totalFeeBps)} = ${formatAmount(fees.totalFeeAmount)}`,
     `  Net Amount:   ${formatAmount(fees.netAmount)}`,
-  ].join('\n');
+  ].join("\n");
 }

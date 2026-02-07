@@ -3,8 +3,8 @@
  * @module ai-hooks
  */
 
-import type { PaymentInfo, PaymentState } from '@x402r/core';
-import type { X402rArbiter } from './arbiter.js';
+import type { PaymentInfo, PaymentState } from "@x402r/core";
+import type { X402rArbiter } from "./arbiter.js";
 
 /**
  * Context provided to AI evaluation hooks for making decisions
@@ -31,7 +31,7 @@ export interface CaseEvaluationContext {
  */
 export interface DecisionResult {
   /** The decision: approve or deny the refund */
-  decision: 'approve' | 'deny';
+  decision: "approve" | "deny";
   /** Optional reasoning for the decision */
   reasoning?: string;
   /** Optional specific refund amount (for partial refunds) */
@@ -43,7 +43,9 @@ export interface DecisionResult {
 /**
  * Hook function type for evaluating refund cases
  */
-export type ArbiterHook = (context: CaseEvaluationContext) => Promise<DecisionResult>;
+export type ArbiterHook = (
+  context: CaseEvaluationContext,
+) => Promise<DecisionResult>;
 
 /**
  * Configuration for the webhook handler
@@ -108,9 +110,14 @@ export interface WebhookResult extends DecisionResult {
  * ```
  */
 export function createWebhookHandler(
-  config: WebhookHandlerConfig
+  config: WebhookHandlerConfig,
 ): (context: CaseEvaluationContext) => Promise<WebhookResult> {
-  const { arbiter, evaluationHook, autoSubmitDecision = false, confidenceThreshold = 0.8 } = config;
+  const {
+    arbiter,
+    evaluationHook,
+    autoSubmitDecision = false,
+    confidenceThreshold = 0.8,
+  } = config;
 
   return async (context: CaseEvaluationContext): Promise<WebhookResult> => {
     // Evaluate the case using the provided hook
@@ -126,12 +133,18 @@ export function createWebhookHandler(
       const confidence = decision.confidence ?? 1;
       if (confidence >= confidenceThreshold) {
         try {
-          if (decision.decision === 'approve') {
-            const { txHash } = await arbiter.approveRefundRequest(context.paymentInfo, context.nonce);
+          if (decision.decision === "approve") {
+            const { txHash } = await arbiter.approveRefundRequest(
+              context.paymentInfo,
+              context.nonce,
+            );
             result.txHash = txHash;
             result.executed = true;
           } else {
-            const { txHash } = await arbiter.denyRefundRequest(context.paymentInfo, context.nonce);
+            const { txHash } = await arbiter.denyRefundRequest(
+              context.paymentInfo,
+              context.nonce,
+            );
             result.txHash = txHash;
             result.executed = true;
           }

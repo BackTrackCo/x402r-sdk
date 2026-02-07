@@ -2,7 +2,7 @@
  * Shared utilities for CLI examples
  */
 
-import type { PaymentInfo } from '@x402r/core';
+import type { PaymentInfo } from "@x402r/core";
 
 /**
  * Parse a PaymentInfo JSON string into a typed PaymentInfo object.
@@ -28,7 +28,7 @@ export function parsePaymentInfo(json: string): PaymentInfo {
       salt: BigInt(parsed.salt),
     };
   } catch {
-    console.error('Error: Invalid payment JSON');
+    console.error("Error: Invalid payment JSON");
     console.error('Expected format: {"operator":"0x...","payer":"0x...",...}');
     process.exit(1);
   }
@@ -48,5 +48,5 @@ export function formatUSDC(amount: bigint): string {
   const decimals = 6;
   const whole = amount / BigInt(10 ** decimals);
   const fractional = amount % BigInt(10 ** decimals);
-  return `${whole}.${fractional.toString().padStart(decimals, '0')} USDC`;
+  return `${whole}.${fractional.toString().padStart(decimals, "0")} USDC`;
 }

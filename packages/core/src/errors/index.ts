@@ -3,28 +3,28 @@
  * @module errors
  */
 
-import { keccak256, toHex, slice } from 'viem';
+import { keccak256, toHex, slice } from "viem";
 
 /**
  * All known contract error names in the X402r protocol
  */
 export type ContractErrorName =
   // Operator errors
-  | 'InvalidOperator'
-  | 'ConditionNotMet'
-  | 'NotReceiver'
-  | 'NotPayer'
+  | "InvalidOperator"
+  | "ConditionNotMet"
+  | "NotReceiver"
+  | "NotPayer"
   // RefundRequest errors
-  | 'RequestAlreadyExists'
-  | 'RequestDoesNotExist'
-  | 'RequestNotPending'
-  | 'InvalidStatus'
-  | 'FullyRefunded'
+  | "RequestAlreadyExists"
+  | "RequestDoesNotExist"
+  | "RequestNotPending"
+  | "InvalidStatus"
+  | "FullyRefunded"
   // EscrowPeriod errors
-  | 'EscrowPeriodExpired'
-  | 'AlreadyFrozen'
-  | 'NotFrozen'
-  | 'UnauthorizedFreeze';
+  | "EscrowPeriodExpired"
+  | "AlreadyFrozen"
+  | "NotFrozen"
+  | "UnauthorizedFreeze";
 
 /**
  * Error definition with selector and human-readable message
@@ -54,7 +54,7 @@ function computeSelector(signature: string): `0x${string}` {
 function defineError(
   name: ContractErrorName,
   signature: string,
-  message: string
+  message: string,
 ): ContractErrorDefinition {
   return {
     name,
@@ -74,64 +74,79 @@ function defineError(
  * console.log(invalidOp.message);  // 'The specified operator is invalid'
  * ```
  */
-export const CONTRACT_ERRORS: Record<ContractErrorName, ContractErrorDefinition> = {
+export const CONTRACT_ERRORS: Record<
+  ContractErrorName,
+  ContractErrorDefinition
+> = {
   // Operator errors
   InvalidOperator: defineError(
-    'InvalidOperator',
-    'InvalidOperator()',
-    'The specified operator is invalid'
+    "InvalidOperator",
+    "InvalidOperator()",
+    "The specified operator is invalid",
   ),
   ConditionNotMet: defineError(
-    'ConditionNotMet',
-    'ConditionNotMet()',
-    'The condition for this operation was not met'
+    "ConditionNotMet",
+    "ConditionNotMet()",
+    "The condition for this operation was not met",
   ),
   NotReceiver: defineError(
-    'NotReceiver',
-    'NotReceiver()',
-    'Caller is not the receiver of this payment'
+    "NotReceiver",
+    "NotReceiver()",
+    "Caller is not the receiver of this payment",
   ),
-  NotPayer: defineError('NotPayer', 'NotPayer()', 'Caller is not the payer of this payment'),
+  NotPayer: defineError(
+    "NotPayer",
+    "NotPayer()",
+    "Caller is not the payer of this payment",
+  ),
 
   // RefundRequest errors
   RequestAlreadyExists: defineError(
-    'RequestAlreadyExists',
-    'RequestAlreadyExists()',
-    'A refund request already exists for this payment'
+    "RequestAlreadyExists",
+    "RequestAlreadyExists()",
+    "A refund request already exists for this payment",
   ),
   RequestDoesNotExist: defineError(
-    'RequestDoesNotExist',
-    'RequestDoesNotExist()',
-    'No refund request exists for this payment'
+    "RequestDoesNotExist",
+    "RequestDoesNotExist()",
+    "No refund request exists for this payment",
   ),
   RequestNotPending: defineError(
-    'RequestNotPending',
-    'RequestNotPending()',
-    'The refund request is not in pending status'
+    "RequestNotPending",
+    "RequestNotPending()",
+    "The refund request is not in pending status",
   ),
   InvalidStatus: defineError(
-    'InvalidStatus',
-    'InvalidStatus()',
-    'Invalid status for this operation'
+    "InvalidStatus",
+    "InvalidStatus()",
+    "Invalid status for this operation",
   ),
   FullyRefunded: defineError(
-    'FullyRefunded',
-    'FullyRefunded()',
-    'This payment has already been fully refunded'
+    "FullyRefunded",
+    "FullyRefunded()",
+    "This payment has already been fully refunded",
   ),
 
   // EscrowPeriod errors
   EscrowPeriodExpired: defineError(
-    'EscrowPeriodExpired',
-    'EscrowPeriodExpired()',
-    'The escrow period has expired'
+    "EscrowPeriodExpired",
+    "EscrowPeriodExpired()",
+    "The escrow period has expired",
   ),
-  AlreadyFrozen: defineError('AlreadyFrozen', 'AlreadyFrozen()', 'This payment is already frozen'),
-  NotFrozen: defineError('NotFrozen', 'NotFrozen()', 'This payment is not frozen'),
+  AlreadyFrozen: defineError(
+    "AlreadyFrozen",
+    "AlreadyFrozen()",
+    "This payment is already frozen",
+  ),
+  NotFrozen: defineError(
+    "NotFrozen",
+    "NotFrozen()",
+    "This payment is not frozen",
+  ),
   UnauthorizedFreeze: defineError(
-    'UnauthorizedFreeze',
-    'UnauthorizedFreeze()',
-    'Caller is not authorized to freeze this payment'
+    "UnauthorizedFreeze",
+    "UnauthorizedFreeze()",
+    "Caller is not authorized to freeze this payment",
   ),
 };
 
@@ -155,7 +170,11 @@ export class X402rError extends Error {
   /** Optional error arguments from contract */
   args?: Record<string, unknown>;
 
-  constructor(name: ContractErrorName, message: string, args?: Record<string, unknown>) {
+  constructor(
+    name: ContractErrorName,
+    message: string,
+    args?: Record<string, unknown>,
+  ) {
     super(message);
     this.name = name;
     this.args = args;
@@ -184,7 +203,7 @@ export class NotImplementedError extends Error {
   constructor(methodName: string, message?: string) {
     const defaultMessage = `Method '${methodName}' is not yet implemented. This method requires The Graph subgraph integration for efficient querying. Track progress at: https://github.com/x402r/x402r-sdk/issues`;
     super(message ?? defaultMessage);
-    this.name = 'NotImplementedError';
+    this.name = "NotImplementedError";
     this.methodName = methodName;
     Object.setPrototypeOf(this, NotImplementedError.prototype);
   }
@@ -196,7 +215,9 @@ export class NotImplementedError extends Error {
  * @param error - The error to check
  * @returns true if the error is a NotImplementedError
  */
-export function isNotImplementedError(error: unknown): error is NotImplementedError {
+export function isNotImplementedError(
+  error: unknown,
+): error is NotImplementedError {
   return error instanceof NotImplementedError;
 }
 
@@ -249,7 +270,7 @@ export interface DecodedContractError {
  * ```
  */
 export function decodeContractError(data: string): DecodedContractError | null {
-  if (!data || data === '0x' || data.length < 10) {
+  if (!data || data === "0x" || data.length < 10) {
     return null;
   }
 

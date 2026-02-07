@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { X402rArbiter } from '../src/arbiter.js';
-import { RequestStatus } from '@x402r/core';
-import type { PublicClient, WalletClient } from 'viem';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { X402rArbiter } from "../src/arbiter.js";
+import { RequestStatus } from "@x402r/core";
+import type { PublicClient, WalletClient } from "viem";
 
 // Mock viem clients
 const createMockPublicClient = (): PublicClient => {
@@ -14,33 +14,34 @@ const createMockPublicClient = (): PublicClient => {
 
 const createMockWalletClient = (): WalletClient => {
   return {
-    writeContract: vi.fn().mockResolvedValue('0xtxhash'),
+    writeContract: vi.fn().mockResolvedValue("0xtxhash"),
     account: {
-      address: '0x1234567890123456789012345678901234567890',
+      address: "0x1234567890123456789012345678901234567890",
     },
     chain: { id: 84532 },
   } as unknown as WalletClient;
 };
 
-describe('X402rArbiter - Decision Submission', () => {
+describe("X402rArbiter - Decision Submission", () => {
   let publicClient: PublicClient;
   let walletClient: WalletClient;
-  const operatorAddress = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' as const;
-  const refundRequestAddress = '0xcccccccccccccccccccccccccccccccccccccccc' as const;
+  const operatorAddress = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as const;
+  const refundRequestAddress =
+    "0xcccccccccccccccccccccccccccccccccccccccc" as const;
 
   const samplePaymentInfo = {
     operator: operatorAddress,
-    payer: '0x2345678901234567890123456789012345678901' as const,
-    receiver: '0x3456789012345678901234567890123456789012' as const,
-    token: '0x4567890123456789012345678901234567890123' as const,
-    maxAmount: BigInt('1000000'),
+    payer: "0x2345678901234567890123456789012345678901" as const,
+    receiver: "0x3456789012345678901234567890123456789012" as const,
+    token: "0x4567890123456789012345678901234567890123" as const,
+    maxAmount: BigInt("1000000"),
     preApprovalExpiry: 0n,
     authorizationExpiry: BigInt(1735689600),
     refundExpiry: BigInt(1738368000),
     minFeeBps: 0,
     maxFeeBps: 500,
-    feeReceiver: '0x5678901234567890123456789012345678901234' as const,
-    salt: BigInt('0x123456'),
+    feeReceiver: "0x5678901234567890123456789012345678901234" as const,
+    salt: BigInt("0x123456"),
   };
 
   beforeEach(() => {
@@ -49,8 +50,8 @@ describe('X402rArbiter - Decision Submission', () => {
     vi.clearAllMocks();
   });
 
-  describe('approveRefundRequest', () => {
-    it('should submit approve transaction', async () => {
+  describe("approveRefundRequest", () => {
+    it("should submit approve transaction", async () => {
       const arbiter = new X402rArbiter({
         publicClient,
         walletClient,
@@ -59,33 +60,40 @@ describe('X402rArbiter - Decision Submission', () => {
       });
 
       const nonce = 0n;
-      const result = await arbiter.approveRefundRequest(samplePaymentInfo, nonce);
+      const result = await arbiter.approveRefundRequest(
+        samplePaymentInfo,
+        nonce,
+      );
 
       expect(walletClient.writeContract).toHaveBeenCalledWith(
         expect.objectContaining({
           address: refundRequestAddress,
-          functionName: 'updateStatus',
-          args: expect.arrayContaining([expect.anything(), nonce, RequestStatus.Approved]),
-        })
+          functionName: "updateStatus",
+          args: expect.arrayContaining([
+            expect.anything(),
+            nonce,
+            RequestStatus.Approved,
+          ]),
+        }),
       );
-      expect(result.txHash).toBe('0xtxhash');
+      expect(result.txHash).toBe("0xtxhash");
     });
 
-    it('should throw if refundRequestAddress not configured', async () => {
+    it("should throw if refundRequestAddress not configured", async () => {
       const arbiter = new X402rArbiter({
         publicClient,
         walletClient,
         operatorAddress,
       });
 
-      await expect(arbiter.approveRefundRequest(samplePaymentInfo, 0n)).rejects.toThrow(
-        'RefundRequest address required'
-      );
+      await expect(
+        arbiter.approveRefundRequest(samplePaymentInfo, 0n),
+      ).rejects.toThrow("RefundRequest address required");
     });
   });
 
-  describe('denyRefundRequest', () => {
-    it('should submit deny transaction', async () => {
+  describe("denyRefundRequest", () => {
+    it("should submit deny transaction", async () => {
       const arbiter = new X402rArbiter({
         publicClient,
         walletClient,
@@ -99,28 +107,32 @@ describe('X402rArbiter - Decision Submission', () => {
       expect(walletClient.writeContract).toHaveBeenCalledWith(
         expect.objectContaining({
           address: refundRequestAddress,
-          functionName: 'updateStatus',
-          args: expect.arrayContaining([expect.anything(), nonce, RequestStatus.Denied]),
-        })
+          functionName: "updateStatus",
+          args: expect.arrayContaining([
+            expect.anything(),
+            nonce,
+            RequestStatus.Denied,
+          ]),
+        }),
       );
-      expect(result.txHash).toBe('0xtxhash');
+      expect(result.txHash).toBe("0xtxhash");
     });
 
-    it('should throw if refundRequestAddress not configured', async () => {
+    it("should throw if refundRequestAddress not configured", async () => {
       const arbiter = new X402rArbiter({
         publicClient,
         walletClient,
         operatorAddress,
       });
 
-      await expect(arbiter.denyRefundRequest(samplePaymentInfo, 0n)).rejects.toThrow(
-        'RefundRequest address required'
-      );
+      await expect(
+        arbiter.denyRefundRequest(samplePaymentInfo, 0n),
+      ).rejects.toThrow("RefundRequest address required");
     });
   });
 
-  describe('executeRefundInEscrow', () => {
-    it('should submit refund transaction to operator', async () => {
+  describe("executeRefundInEscrow", () => {
+    it("should submit refund transaction to operator", async () => {
       const arbiter = new X402rArbiter({
         publicClient,
         walletClient,
@@ -128,20 +140,23 @@ describe('X402rArbiter - Decision Submission', () => {
         refundRequestAddress,
       });
 
-      const amount = BigInt('500000');
-      const result = await arbiter.executeRefundInEscrow(samplePaymentInfo, amount);
+      const amount = BigInt("500000");
+      const result = await arbiter.executeRefundInEscrow(
+        samplePaymentInfo,
+        amount,
+      );
 
       expect(walletClient.writeContract).toHaveBeenCalledWith(
         expect.objectContaining({
           address: operatorAddress,
-          functionName: 'refundInEscrow',
+          functionName: "refundInEscrow",
           args: [expect.anything(), amount],
-        })
+        }),
       );
-      expect(result.txHash).toBe('0xtxhash');
+      expect(result.txHash).toBe("0xtxhash");
     });
 
-    it('should use maxAmount when no amount specified', async () => {
+    it("should use maxAmount when no amount specified", async () => {
       const arbiter = new X402rArbiter({
         publicClient,
         walletClient,
@@ -154,11 +169,11 @@ describe('X402rArbiter - Decision Submission', () => {
       expect(walletClient.writeContract).toHaveBeenCalledWith(
         expect.objectContaining({
           address: operatorAddress,
-          functionName: 'refundInEscrow',
+          functionName: "refundInEscrow",
           args: [expect.anything(), samplePaymentInfo.maxAmount],
-        })
+        }),
       );
-      expect(result.txHash).toBe('0xtxhash');
+      expect(result.txHash).toBe("0xtxhash");
     });
   });
 });

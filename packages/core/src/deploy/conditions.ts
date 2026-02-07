@@ -3,15 +3,15 @@
  * @module deploy/conditions
  */
 
-import type { WalletClient, PublicClient, Address } from 'viem';
-import type { ConditionConfig, ConditionAddress } from '../conditions/index.js';
+import type { WalletClient, PublicClient, Address } from "viem";
+import type { ConditionConfig, ConditionAddress } from "../conditions/index.js";
 import {
   deployAndCondition,
   deployOrCondition,
   deployNotCondition,
   deployStaticAddressCondition,
   type DeploymentResult,
-} from './factories.js';
+} from "./factories.js";
 
 /**
  * Result from resolving a condition config
@@ -26,8 +26,10 @@ export interface ResolveConditionResult {
 /**
  * Check if a value is a condition address (not a config object)
  */
-function isConditionAddress(value: ConditionAddress | ConditionConfig): value is ConditionAddress {
-  return typeof value === 'string';
+function isConditionAddress(
+  value: ConditionAddress | ConditionConfig,
+): value is ConditionAddress {
+  return typeof value === "string";
 }
 
 /**
@@ -82,7 +84,7 @@ export async function resolveConditionConfig(
   walletClient: WalletClient,
   publicClient: PublicClient,
   networkId: string,
-  config: ConditionAddress | ConditionConfig
+  config: ConditionAddress | ConditionConfig,
 ): Promise<ResolveConditionResult> {
   const deployments: DeploymentResult[] = [];
 
@@ -93,7 +95,7 @@ export async function resolveConditionConfig(
 
   // Handle each config type
   switch (config.type) {
-    case 'and': {
+    case "and": {
       // Recursively resolve all child conditions
       const resolvedAddresses: Address[] = [];
       for (const childConfig of config.conditions) {
@@ -101,7 +103,7 @@ export async function resolveConditionConfig(
           walletClient,
           publicClient,
           networkId,
-          childConfig
+          childConfig,
         );
         resolvedAddresses.push(childResult.address);
         deployments.push(...childResult.deployments);
@@ -112,14 +114,14 @@ export async function resolveConditionConfig(
         walletClient,
         publicClient,
         networkId,
-        resolvedAddresses
+        resolvedAddresses,
       );
       deployments.push(result);
 
       return { address: result.address, deployments };
     }
 
-    case 'or': {
+    case "or": {
       // Recursively resolve all child conditions
       const resolvedAddresses: Address[] = [];
       for (const childConfig of config.conditions) {
@@ -127,7 +129,7 @@ export async function resolveConditionConfig(
           walletClient,
           publicClient,
           networkId,
-          childConfig
+          childConfig,
         );
         resolvedAddresses.push(childResult.address);
         deployments.push(...childResult.deployments);
@@ -138,20 +140,20 @@ export async function resolveConditionConfig(
         walletClient,
         publicClient,
         networkId,
-        resolvedAddresses
+        resolvedAddresses,
       );
       deployments.push(result);
 
       return { address: result.address, deployments };
     }
 
-    case 'not': {
+    case "not": {
       // Recursively resolve the wrapped condition
       const childResult = await resolveConditionConfig(
         walletClient,
         publicClient,
         networkId,
-        config.condition
+        config.condition,
       );
       deployments.push(...childResult.deployments);
 
@@ -160,20 +162,20 @@ export async function resolveConditionConfig(
         walletClient,
         publicClient,
         networkId,
-        childResult.address
+        childResult.address,
       );
       deployments.push(result);
 
       return { address: result.address, deployments };
     }
 
-    case 'staticAddress': {
+    case "staticAddress": {
       // Deploy a StaticAddressCondition
       const result = await deployStaticAddressCondition(
         walletClient,
         publicClient,
         networkId,
-        config.designatedAddress
+        config.designatedAddress,
       );
       deployments.push(result);
 
@@ -183,7 +185,9 @@ export async function resolveConditionConfig(
     default: {
       // TypeScript exhaustiveness check
       const _exhaustive: never = config;
-      throw new Error(`Unknown condition config type: ${(_exhaustive as ConditionConfig).type}`);
+      throw new Error(
+        `Unknown condition config type: ${(_exhaustive as ConditionConfig).type}`,
+      );
     }
   }
 }
@@ -202,7 +206,7 @@ export async function resolveConditionConfig(
 export async function previewConditionAddress(
   publicClient: PublicClient,
   networkId: string,
-  config: ConditionAddress | ConditionConfig
+  config: ConditionAddress | ConditionConfig,
 ): Promise<Address> {
   // Import compute functions
   const {
@@ -210,7 +214,7 @@ export async function previewConditionAddress(
     computeOrConditionAddress,
     computeNotConditionAddress,
     computeStaticAddressConditionAddress,
-  } = await import('./factories.js');
+  } = await import("./factories.js");
 
   // If it's already an address, return as-is
   if (isConditionAddress(config)) {
@@ -219,36 +223,62 @@ export async function previewConditionAddress(
 
   // Handle each config type
   switch (config.type) {
-    case 'and': {
+    case "and": {
       const resolvedAddresses: Address[] = [];
       for (const childConfig of config.conditions) {
-        const childAddress = await previewConditionAddress(publicClient, networkId, childConfig);
+        const childAddress = await previewConditionAddress(
+          publicClient,
+          networkId,
+          childConfig,
+        );
         resolvedAddresses.push(childAddress);
       }
-      return computeAndConditionAddress(publicClient, networkId, resolvedAddresses);
+      return computeAndConditionAddress(
+        publicClient,
+        networkId,
+        resolvedAddresses,
+      );
     }
 
-    case 'or': {
+    case "or": {
       const resolvedAddresses: Address[] = [];
       for (const childConfig of config.conditions) {
-        const childAddress = await previewConditionAddress(publicClient, networkId, childConfig);
+        const childAddress = await previewConditionAddress(
+          publicClient,
+          networkId,
+          childConfig,
+        );
         resolvedAddresses.push(childAddress);
       }
-      return computeOrConditionAddress(publicClient, networkId, resolvedAddresses);
+      return computeOrConditionAddress(
+        publicClient,
+        networkId,
+        resolvedAddresses,
+      );
     }
 
-    case 'not': {
-      const childAddress = await previewConditionAddress(publicClient, networkId, config.condition);
+    case "not": {
+      const childAddress = await previewConditionAddress(
+        publicClient,
+        networkId,
+        config.condition,
+      );
       return computeNotConditionAddress(publicClient, networkId, childAddress);
     }
 
-    case 'staticAddress': {
-      return computeStaticAddressConditionAddress(publicClient, networkId, config.designatedAddress);
+    case "staticAddress": {
+      return computeStaticAddressConditionAddress(
+        publicClient,
+        networkId,
+        config.designatedAddress,
+      );
     }
 
     default: {
       const _exhaustive: never = config;
-      throw new Error(`Unknown condition config type: ${(_exhaustive as ConditionConfig).type}`);
+      throw new Error(
+        `Unknown condition config type: ${(_exhaustive as ConditionConfig).type}`,
+      );
     }
   }
 }

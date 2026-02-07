@@ -3,8 +3,8 @@
  * @module utils
  */
 
-import { keccak256, encodeAbiParameters, toHex } from 'viem';
-import type { PaymentInfo } from '../types/index.js';
+import { keccak256, encodeAbiParameters, toHex } from "viem";
+import type { PaymentInfo } from "../types/index.js";
 
 /**
  * EIP-712 typehash for PaymentInfo struct
@@ -13,36 +13,36 @@ import type { PaymentInfo } from '../types/index.js';
  */
 export const PAYMENT_INFO_TYPEHASH = keccak256(
   toHex(
-    'PaymentInfo(address operator,address payer,address receiver,address token,uint120 maxAmount,uint48 preApprovalExpiry,uint48 authorizationExpiry,uint48 refundExpiry,uint16 minFeeBps,uint16 maxFeeBps,address feeReceiver,uint256 salt)'
-  )
+    "PaymentInfo(address operator,address payer,address receiver,address token,uint120 maxAmount,uint48 preApprovalExpiry,uint48 authorizationExpiry,uint48 refundExpiry,uint16 minFeeBps,uint16 maxFeeBps,address feeReceiver,uint256 salt)",
+  ),
 );
 
 /**
  * ABI parameter types for PaymentInfo struct encoding
  */
 const paymentInfoAbiParams: readonly { name: string; type: string }[] = [
-  { name: 'typehash', type: 'bytes32' },
-  { name: 'operator', type: 'address' },
-  { name: 'payer', type: 'address' },
-  { name: 'receiver', type: 'address' },
-  { name: 'token', type: 'address' },
-  { name: 'maxAmount', type: 'uint120' },
-  { name: 'preApprovalExpiry', type: 'uint48' },
-  { name: 'authorizationExpiry', type: 'uint48' },
-  { name: 'refundExpiry', type: 'uint48' },
-  { name: 'minFeeBps', type: 'uint16' },
-  { name: 'maxFeeBps', type: 'uint16' },
-  { name: 'feeReceiver', type: 'address' },
-  { name: 'salt', type: 'uint256' },
+  { name: "typehash", type: "bytes32" },
+  { name: "operator", type: "address" },
+  { name: "payer", type: "address" },
+  { name: "receiver", type: "address" },
+  { name: "token", type: "address" },
+  { name: "maxAmount", type: "uint120" },
+  { name: "preApprovalExpiry", type: "uint48" },
+  { name: "authorizationExpiry", type: "uint48" },
+  { name: "refundExpiry", type: "uint48" },
+  { name: "minFeeBps", type: "uint16" },
+  { name: "maxFeeBps", type: "uint16" },
+  { name: "feeReceiver", type: "address" },
+  { name: "salt", type: "uint256" },
 ];
 
 /**
  * ABI parameter types for final hash encoding (chainId, escrow, paymentInfoHash)
  */
 const finalHashAbiParams: readonly { name: string; type: string }[] = [
-  { name: 'chainId', type: 'uint256' },
-  { name: 'escrow', type: 'address' },
-  { name: 'paymentInfoHash', type: 'bytes32' },
+  { name: "chainId", type: "uint256" },
+  { name: "escrow", type: "address" },
+  { name: "paymentInfoHash", type: "bytes32" },
 ];
 
 /**
@@ -75,7 +75,7 @@ const finalHashAbiParams: readonly { name: string; type: string }[] = [
 export function computePaymentInfoHash(
   paymentInfo: PaymentInfo,
   escrowAddress: `0x${string}`,
-  chainId: number
+  chainId: number,
 ): `0x${string}` {
   // Step 1: Encode and hash the PaymentInfo struct with typehash
   const encodedPaymentInfo = encodeAbiParameters(paymentInfoAbiParams, [

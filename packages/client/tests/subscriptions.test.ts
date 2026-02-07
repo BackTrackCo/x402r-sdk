@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { X402rClient } from '../src/client.js';
-import type { PublicClient, WalletClient } from 'viem';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { X402rClient } from "../src/client.js";
+import type { PublicClient, WalletClient } from "viem";
 
 // Mock viem clients
 const createMockPublicClient = (): PublicClient => {
@@ -14,21 +14,24 @@ const createMockPublicClient = (): PublicClient => {
 
 const createMockWalletClient = (): WalletClient => {
   return {
-    writeContract: vi.fn().mockResolvedValue('0xtxhash'),
+    writeContract: vi.fn().mockResolvedValue("0xtxhash"),
     account: {
-      address: '0x1234567890123456789012345678901234567890',
+      address: "0x1234567890123456789012345678901234567890",
     },
   } as unknown as WalletClient;
 };
 
-describe('X402rClient - Subscriptions', () => {
+describe("X402rClient - Subscriptions", () => {
   let publicClient: PublicClient;
   let walletClient: WalletClient;
-  const operatorAddress = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' as const;
-  const refundRequestAddress = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb' as const;
-  const escrowRecorderAddress = '0xcccccccccccccccccccccccccccccccccccccccc' as const;
+  const operatorAddress = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as const;
+  const refundRequestAddress =
+    "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" as const;
+  const escrowRecorderAddress =
+    "0xcccccccccccccccccccccccccccccccccccccccc" as const;
 
-  const paymentInfoHash = '0x1234567890123456789012345678901234567890123456789012345678901234' as const;
+  const paymentInfoHash =
+    "0x1234567890123456789012345678901234567890123456789012345678901234" as const;
 
   beforeEach(() => {
     publicClient = createMockPublicClient();
@@ -36,20 +39,23 @@ describe('X402rClient - Subscriptions', () => {
     vi.clearAllMocks();
   });
 
-  describe('watchPaymentState', () => {
-    it('should return unsubscribe function', () => {
+  describe("watchPaymentState", () => {
+    it("should return unsubscribe function", () => {
       const client = new X402rClient({
         publicClient,
         operatorAddress,
       });
 
       const callback = vi.fn();
-      const { unsubscribe } = client.watchPaymentState(paymentInfoHash, callback);
+      const { unsubscribe } = client.watchPaymentState(
+        paymentInfoHash,
+        callback,
+      );
 
-      expect(typeof unsubscribe).toBe('function');
+      expect(typeof unsubscribe).toBe("function");
     });
 
-    it('should watch ReleaseExecuted, RefundInEscrowExecuted, and RefundPostEscrowExecuted events', () => {
+    it("should watch ReleaseExecuted, RefundInEscrowExecuted, and RefundPostEscrowExecuted events", () => {
       const client = new X402rClient({
         publicClient,
         operatorAddress,
@@ -62,11 +68,11 @@ describe('X402rClient - Subscriptions', () => {
       expect(publicClient.watchContractEvent).toHaveBeenCalledTimes(3);
     });
 
-    it('should unsubscribe from all watchers', () => {
+    it("should unsubscribe from all watchers", () => {
       const unsubscribeMock = vi.fn();
-      (publicClient.watchContractEvent as ReturnType<typeof vi.fn>).mockReturnValue(
-        unsubscribeMock
-      );
+      (
+        publicClient.watchContractEvent as ReturnType<typeof vi.fn>
+      ).mockReturnValue(unsubscribeMock);
 
       const client = new X402rClient({
         publicClient,
@@ -74,7 +80,10 @@ describe('X402rClient - Subscriptions', () => {
       });
 
       const callback = vi.fn();
-      const { unsubscribe } = client.watchPaymentState(paymentInfoHash, callback);
+      const { unsubscribe } = client.watchPaymentState(
+        paymentInfoHash,
+        callback,
+      );
       unsubscribe();
 
       // Should have been called 3 times (once per event watcher)
@@ -82,8 +91,8 @@ describe('X402rClient - Subscriptions', () => {
     });
   });
 
-  describe('watchRefundRequests', () => {
-    it('should return unsubscribe function', () => {
+  describe("watchRefundRequests", () => {
+    it("should return unsubscribe function", () => {
       const client = new X402rClient({
         publicClient,
         operatorAddress,
@@ -93,10 +102,10 @@ describe('X402rClient - Subscriptions', () => {
       const callback = vi.fn();
       const { unsubscribe } = client.watchRefundRequests(callback);
 
-      expect(typeof unsubscribe).toBe('function');
+      expect(typeof unsubscribe).toBe("function");
     });
 
-    it('should throw if refundRequestAddress not configured', () => {
+    it("should throw if refundRequestAddress not configured", () => {
       const client = new X402rClient({
         publicClient,
         operatorAddress,
@@ -104,11 +113,11 @@ describe('X402rClient - Subscriptions', () => {
 
       const callback = vi.fn();
       expect(() => client.watchRefundRequests(callback)).toThrow(
-        'RefundRequest address required'
+        "RefundRequest address required",
       );
     });
 
-    it('should watch RefundRequested, RefundRequestStatusUpdated, and RefundRequestCancelled events', () => {
+    it("should watch RefundRequested, RefundRequestStatusUpdated, and RefundRequestCancelled events", () => {
       const client = new X402rClient({
         publicClient,
         operatorAddress,
@@ -123,18 +132,20 @@ describe('X402rClient - Subscriptions', () => {
     });
   });
 
-  describe('watchMyPayments', () => {
-    it('should require walletClient', () => {
+  describe("watchMyPayments", () => {
+    it("should require walletClient", () => {
       const client = new X402rClient({
         publicClient,
         operatorAddress,
       });
 
       const callback = vi.fn();
-      expect(() => client.watchMyPayments(callback)).toThrow('WalletClient required');
+      expect(() => client.watchMyPayments(callback)).toThrow(
+        "WalletClient required",
+      );
     });
 
-    it('should return unsubscribe function', () => {
+    it("should return unsubscribe function", () => {
       const client = new X402rClient({
         publicClient,
         walletClient,
@@ -144,10 +155,10 @@ describe('X402rClient - Subscriptions', () => {
       const callback = vi.fn();
       const { unsubscribe } = client.watchMyPayments(callback);
 
-      expect(typeof unsubscribe).toBe('function');
+      expect(typeof unsubscribe).toBe("function");
     });
 
-    it('should watch AuthorizationCreated events filtered by payer', () => {
+    it("should watch AuthorizationCreated events filtered by payer", () => {
       const client = new X402rClient({
         publicClient,
         walletClient,
@@ -160,29 +171,32 @@ describe('X402rClient - Subscriptions', () => {
       expect(publicClient.watchContractEvent).toHaveBeenCalledWith(
         expect.objectContaining({
           address: operatorAddress,
-          eventName: 'AuthorizationCreated',
+          eventName: "AuthorizationCreated",
           args: {
             payer: walletClient.account!.address,
           },
-        })
+        }),
       );
     });
   });
 
-  describe('watchFreezeEvents', () => {
-    it('should return unsubscribe function', () => {
+  describe("watchFreezeEvents", () => {
+    it("should return unsubscribe function", () => {
       const client = new X402rClient({
         publicClient,
         operatorAddress,
       });
 
       const callback = vi.fn();
-      const { unsubscribe } = client.watchFreezeEvents(escrowRecorderAddress, callback);
+      const { unsubscribe } = client.watchFreezeEvents(
+        escrowRecorderAddress,
+        callback,
+      );
 
-      expect(typeof unsubscribe).toBe('function');
+      expect(typeof unsubscribe).toBe("function");
     });
 
-    it('should watch PaymentFrozen and PaymentUnfrozen events', () => {
+    it("should watch PaymentFrozen and PaymentUnfrozen events", () => {
       const client = new X402rClient({
         publicClient,
         operatorAddress,
@@ -195,11 +209,11 @@ describe('X402rClient - Subscriptions', () => {
       expect(publicClient.watchContractEvent).toHaveBeenCalledTimes(2);
     });
 
-    it('should unsubscribe from all watchers', () => {
+    it("should unsubscribe from all watchers", () => {
       const unsubscribeMock = vi.fn();
-      (publicClient.watchContractEvent as ReturnType<typeof vi.fn>).mockReturnValue(
-        unsubscribeMock
-      );
+      (
+        publicClient.watchContractEvent as ReturnType<typeof vi.fn>
+      ).mockReturnValue(unsubscribeMock);
 
       const client = new X402rClient({
         publicClient,
@@ -207,7 +221,10 @@ describe('X402rClient - Subscriptions', () => {
       });
 
       const callback = vi.fn();
-      const { unsubscribe } = client.watchFreezeEvents(escrowRecorderAddress, callback);
+      const { unsubscribe } = client.watchFreezeEvents(
+        escrowRecorderAddress,
+        callback,
+      );
       unsubscribe();
 
       // Should have been called twice (once per event watcher)

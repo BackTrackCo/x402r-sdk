@@ -7,4 +7,4 @@
  * @packageDocumentation
  */
 
-export { X402rMerchant, type X402rMerchantConfig } from './merchant.js';
+export { X402rMerchant, type X402rMerchantConfig } from "./merchant.js";

@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { X402rMerchant } from '../src/merchant.js';
-import type { PublicClient, WalletClient } from 'viem';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { X402rMerchant } from "../src/merchant.js";
+import type { PublicClient, WalletClient } from "viem";
 
 // Mock viem clients
 const createMockPublicClient = (): PublicClient => {
@@ -14,33 +14,34 @@ const createMockPublicClient = (): PublicClient => {
 
 const createMockWalletClient = (): WalletClient => {
   return {
-    writeContract: vi.fn().mockResolvedValue('0xtxhash'),
+    writeContract: vi.fn().mockResolvedValue("0xtxhash"),
     account: {
-      address: '0x1234567890123456789012345678901234567890',
+      address: "0x1234567890123456789012345678901234567890",
     },
     chain: { id: 84532 },
   } as unknown as WalletClient;
 };
 
-describe('X402rMerchant - Escrow Management', () => {
+describe("X402rMerchant - Escrow Management", () => {
   let publicClient: PublicClient;
   let walletClient: WalletClient;
-  const operatorAddress = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' as const;
-  const escrowRecorderAddress = '0xdddddddddddddddddddddddddddddddddddddddd' as const;
+  const operatorAddress = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as const;
+  const escrowRecorderAddress =
+    "0xdddddddddddddddddddddddddddddddddddddddd" as const;
 
   const samplePaymentInfo = {
     operator: operatorAddress,
-    payer: '0x2345678901234567890123456789012345678901' as const,
-    receiver: '0x3456789012345678901234567890123456789012' as const,
-    token: '0x4567890123456789012345678901234567890123' as const,
-    maxAmount: BigInt('1000000'),
+    payer: "0x2345678901234567890123456789012345678901" as const,
+    receiver: "0x3456789012345678901234567890123456789012" as const,
+    token: "0x4567890123456789012345678901234567890123" as const,
+    maxAmount: BigInt("1000000"),
     preApprovalExpiry: 0n,
     authorizationExpiry: BigInt(1735689600),
     refundExpiry: BigInt(1738368000),
     minFeeBps: 0,
     maxFeeBps: 500,
-    feeReceiver: '0x5678901234567890123456789012345678901234' as const,
-    salt: BigInt('0x123456'),
+    feeReceiver: "0x5678901234567890123456789012345678901234" as const,
+    salt: BigInt("0x123456"),
   };
 
   beforeEach(() => {
@@ -49,61 +50,76 @@ describe('X402rMerchant - Escrow Management', () => {
     vi.clearAllMocks();
   });
 
-  describe('unfreezePayment', () => {
-    it('should submit unfreeze transaction', async () => {
+  describe("unfreezePayment", () => {
+    it("should submit unfreeze transaction", async () => {
       const merchant = new X402rMerchant({
         publicClient,
         walletClient,
         operatorAddress,
       });
 
-      const result = await merchant.unfreezePayment(samplePaymentInfo, escrowRecorderAddress);
+      const result = await merchant.unfreezePayment(
+        samplePaymentInfo,
+        escrowRecorderAddress,
+      );
 
       expect(walletClient.writeContract).toHaveBeenCalledWith(
         expect.objectContaining({
           address: escrowRecorderAddress,
-          functionName: 'unfreeze',
-        })
+          functionName: "unfreeze",
+        }),
       );
-      expect(result.txHash).toBe('0xtxhash');
+      expect(result.txHash).toBe("0xtxhash");
     });
   });
 
-  describe('isFrozen', () => {
-    it('should return true when payment is frozen', async () => {
+  describe("isFrozen", () => {
+    it("should return true when payment is frozen", async () => {
       const merchant = new X402rMerchant({
         publicClient,
         walletClient,
         operatorAddress,
       });
 
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(true);
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(
+        true,
+      );
 
-      const frozen = await merchant.isFrozen(samplePaymentInfo, escrowRecorderAddress);
+      const frozen = await merchant.isFrozen(
+        samplePaymentInfo,
+        escrowRecorderAddress,
+      );
       expect(frozen).toBe(true);
     });
 
-    it('should return false when payment is not frozen', async () => {
+    it("should return false when payment is not frozen", async () => {
       const merchant = new X402rMerchant({
         publicClient,
         walletClient,
         operatorAddress,
       });
 
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(false);
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(
+        false,
+      );
 
-      const frozen = await merchant.isFrozen(samplePaymentInfo, escrowRecorderAddress);
+      const frozen = await merchant.isFrozen(
+        samplePaymentInfo,
+        escrowRecorderAddress,
+      );
       expect(frozen).toBe(false);
     });
   });
 });
 
-describe('X402rMerchant - Subscriptions', () => {
+describe("X402rMerchant - Subscriptions", () => {
   let publicClient: PublicClient;
   let walletClient: WalletClient;
-  const operatorAddress = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' as const;
-  const refundRequestAddress = '0xcccccccccccccccccccccccccccccccccccccccc' as const;
-  const escrowRecorderAddress = '0xdddddddddddddddddddddddddddddddddddddddd' as const;
+  const operatorAddress = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as const;
+  const refundRequestAddress =
+    "0xcccccccccccccccccccccccccccccccccccccccc" as const;
+  const escrowRecorderAddress =
+    "0xdddddddddddddddddddddddddddddddddddddddd" as const;
 
   beforeEach(() => {
     publicClient = createMockPublicClient();
@@ -111,8 +127,8 @@ describe('X402rMerchant - Subscriptions', () => {
     vi.clearAllMocks();
   });
 
-  describe('watchRefundRequests', () => {
-    it('should return unsubscribe function', () => {
+  describe("watchRefundRequests", () => {
+    it("should return unsubscribe function", () => {
       const merchant = new X402rMerchant({
         publicClient,
         walletClient,
@@ -123,10 +139,10 @@ describe('X402rMerchant - Subscriptions', () => {
       const callback = vi.fn();
       const { unsubscribe } = merchant.watchRefundRequests(callback);
 
-      expect(typeof unsubscribe).toBe('function');
+      expect(typeof unsubscribe).toBe("function");
     });
 
-    it('should throw if refundRequestAddress not configured', () => {
+    it("should throw if refundRequestAddress not configured", () => {
       const merchant = new X402rMerchant({
         publicClient,
         walletClient,
@@ -135,13 +151,13 @@ describe('X402rMerchant - Subscriptions', () => {
 
       const callback = vi.fn();
       expect(() => merchant.watchRefundRequests(callback)).toThrow(
-        'RefundRequest address required'
+        "RefundRequest address required",
       );
     });
   });
 
-  describe('watchReleases', () => {
-    it('should return unsubscribe function', () => {
+  describe("watchReleases", () => {
+    it("should return unsubscribe function", () => {
       const merchant = new X402rMerchant({
         publicClient,
         walletClient,
@@ -151,10 +167,10 @@ describe('X402rMerchant - Subscriptions', () => {
       const callback = vi.fn();
       const { unsubscribe } = merchant.watchReleases(callback);
 
-      expect(typeof unsubscribe).toBe('function');
+      expect(typeof unsubscribe).toBe("function");
     });
 
-    it('should watch ReleaseExecuted events', () => {
+    it("should watch ReleaseExecuted events", () => {
       const merchant = new X402rMerchant({
         publicClient,
         walletClient,
@@ -167,14 +183,14 @@ describe('X402rMerchant - Subscriptions', () => {
       expect(publicClient.watchContractEvent).toHaveBeenCalledWith(
         expect.objectContaining({
           address: operatorAddress,
-          eventName: 'ReleaseExecuted',
-        })
+          eventName: "ReleaseExecuted",
+        }),
       );
     });
   });
 
-  describe('watchFreezeEvents', () => {
-    it('should return unsubscribe function', () => {
+  describe("watchFreezeEvents", () => {
+    it("should return unsubscribe function", () => {
       const merchant = new X402rMerchant({
         publicClient,
         walletClient,
@@ -182,12 +198,15 @@ describe('X402rMerchant - Subscriptions', () => {
       });
 
       const callback = vi.fn();
-      const { unsubscribe } = merchant.watchFreezeEvents(escrowRecorderAddress, callback);
+      const { unsubscribe } = merchant.watchFreezeEvents(
+        escrowRecorderAddress,
+        callback,
+      );
 
-      expect(typeof unsubscribe).toBe('function');
+      expect(typeof unsubscribe).toBe("function");
     });
 
-    it('should watch PaymentFrozen and PaymentUnfrozen events', () => {
+    it("should watch PaymentFrozen and PaymentUnfrozen events", () => {
       const merchant = new X402rMerchant({
         publicClient,
         walletClient,
