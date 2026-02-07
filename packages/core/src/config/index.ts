@@ -161,7 +161,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     },
   },
 
-  // --- Ethereum Mainnet (partial: factories pending, needs more ETH) ---
+  // --- Ethereum Mainnet ---
   "eip155:1": {
     name: "Ethereum Mainnet",
     chainId: 1,
@@ -172,10 +172,21 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     usdcTvlLimit: "0x2714EA3e839Ac50F52B2e2a5788F614cACeE5316",
     arbiterRegistry: "0x46C44071BDf9753482400B76d88A5850318b776F",
     usdc: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    factories: {
+      paymentOperator: "0xed02d3E5167BCc9582D851885A89b050AB816a56",
+      escrowPeriod: "0xAfdEEa8f37AC2cfaE6732c31FEde0A014BfD693a",
+      freeze: "0xe968AA7530b9C3336FED14FD5D5D4dD3Cf82655D",
+      staticFeeCalculator: "0xc5a96DaBd3F0E485CEEA7Bf912fC5834A6DE2267",
+      staticAddressCondition: "0x6a7E26c3A78a7B1eFF9Dd28d51B2a15df3208B84",
+      andCondition: "0x19a798c7F66E6401f6004b732dA604196952e843",
+      orCondition: "0x32471d31910A009273a812dE0894D9F0AdeF4834",
+      notCondition: "0xe2659dc0d716B1226DF6a09A5f47862cd1ff6733",
+      recorderCombinator: "0x536439b00002CB3c0141391A92aFBB3e1E3f8604",
+    },
     conditions: {
       payer: "0x26A3d27139b442Be5ECc10c8608c494627B660BF",
-      receiver: "0x0000000000000000000000000000000000000000",
-      alwaysTrue: "0x0000000000000000000000000000000000000000",
+      receiver: "0x89257cA1114139C3332bb73655BC2e4C924aC678",
+      alwaysTrue: "0x0DdF51E62DDD41B5f67BEaF2DCE9F2E99E2C5aF5",
     },
   },
 
