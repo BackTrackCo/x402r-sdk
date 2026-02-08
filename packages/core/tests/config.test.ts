@@ -55,6 +55,27 @@ describe("isSupportedNetwork", () => {
   });
 });
 
+describe("receiverRefundCollector", () => {
+  it("should have receiverRefundCollector on all networks", () => {
+    for (const [networkId, config] of Object.entries(NETWORK_CONFIG)) {
+      expect(
+        config.receiverRefundCollector,
+        `${networkId} missing receiverRefundCollector`,
+      ).toMatch(/^0x[a-fA-F0-9]{40}$/);
+    }
+  });
+
+  it("should have valid receiverRefundCollector address for Base Sepolia", () => {
+    const config = NETWORK_CONFIG["eip155:84532"];
+    expect(config.receiverRefundCollector).toBe("0x36a03071bA0D3F09a50381fCA6C9906B69Ba8c0E");
+  });
+
+  it("should have valid receiverRefundCollector address for Base Mainnet", () => {
+    const config = NETWORK_CONFIG["eip155:8453"];
+    expect(config.receiverRefundCollector).toBe("0x4bDb9ccC91CA63cfedb6CB0dbf21BC6dD562bb04");
+  });
+});
+
 describe("SupportedNetworks", () => {
   it("should include Base Sepolia", () => {
     expect(SupportedNetworks).toContain("eip155:84532");

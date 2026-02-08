@@ -61,6 +61,8 @@ export interface NetworkConfig {
   usdcTvlLimit: `0x${string}`;
   /** ArbiterRegistry contract address */
   arbiterRegistry: `0x${string}`;
+  /** ReceiverRefundCollector contract address (for post-escrow refunds from receiver wallet) */
+  receiverRefundCollector: `0x${string}`;
   /** USDC token address */
   usdc: `0x${string}`;
   /** RefundRequestEvidence contract address (optional - may not be deployed on all networks) */
@@ -90,6 +92,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     protocolFeeConfig: "0x8F96C493bAC365E41f0315cf45830069EBbDCaCe",
     usdcTvlLimit: "0x5425f265811dBE7cCa8002585D19Ba1241B42793",
     arbiterRegistry: "0x762d562a5ff10EcbFD2Bc4fea663433b84226F35",
+    receiverRefundCollector: "0x36a03071bA0D3F09a50381fCA6C9906B69Ba8c0E",
     usdc: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
     refundRequestEvidence: "0x917317BBBBe1b9b53BD0ceD4C7b7386Dbd1727ea",
     factories: {
@@ -118,6 +121,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     protocolFeeConfig: "0x59314674BAbb1a24Eb2704468a9cCdD50668a1C6",
     usdcTvlLimit: "0xC80cd08d609673061597DE7fe54Af3978f10A825",
     arbiterRegistry: "0xB68C023365EB08021E12f7f7f11a03282443863A",
+    receiverRefundCollector: "0x4bDb9ccC91CA63cfedb6CB0dbf21BC6dD562bb04",
     usdc: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
     refundRequestEvidence: "0x2176D0edfeC9e2B8d3FDbB37f09535BEe4BAFB34",
     factories: {
@@ -148,6 +152,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     protocolFeeConfig: "0xD979dBfBdA5f4b16AAF60Eaab32A44f352076838",
     usdcTvlLimit: "0x9B16ff5bcF5C0B2c31Cd17032a306E91CA67F546",
     arbiterRegistry: "0xE78648e7af7B1BaDE717FF6E410B922F92adE80f",
+    receiverRefundCollector: "0x19a798c7F66E6401f6004b732dA604196952e843",
     usdc: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
     refundRequestEvidence: "0xd709e87DF198eF3C15C5eaE81E3EbD8Fd7AC908a",
     factories: {
@@ -178,6 +183,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     protocolFeeConfig: "0xb33D6502EdBbC47201cd1E53C49d703EC0a660b8",
     usdcTvlLimit: "0x785cC83DEa3d46D5509f3bf7496EAb26D42EE610",
     arbiterRegistry: "0x3D0837fF8Ea36F417261577b9BA568400A840260",
+    receiverRefundCollector: "0xb9488351E48b23D798f24e8174514F28B741Eb4f",
     usdc: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
     refundRequestEvidence: "0x12EDefd4549c53497689067f165c0f101796Eb6D",
     factories: {
@@ -208,6 +214,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     protocolFeeConfig: "0xE78648e7af7B1BaDE717FF6E410B922F92adE80f",
     usdcTvlLimit: "0xdc0D800007ceAcfF1299b926CE22b4D4EDce6ce7",
     arbiterRegistry: "0xc9BbA6A2CF9838e7Dd8c19BC8B3BAC620B9D8178",
+    receiverRefundCollector: "0x9B16ff5bcF5C0B2c31Cd17032a306E91CA67F546",
     usdc: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
     refundRequestEvidence: "0xe4f1840171E31DaD221C6b25FED91bcB1A431A8C",
     factories: {
@@ -238,6 +245,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     protocolFeeConfig: "0xD979dBfBdA5f4b16AAF60Eaab32A44f352076838",
     usdcTvlLimit: "0x9B16ff5bcF5C0B2c31Cd17032a306E91CA67F546",
     arbiterRegistry: "0xE78648e7af7B1BaDE717FF6E410B922F92adE80f",
+    receiverRefundCollector: "0x19a798c7F66E6401f6004b732dA604196952e843",
     usdc: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
     refundRequestEvidence: "0xd709e87DF198eF3C15C5eaE81E3EbD8Fd7AC908a",
     factories: {
@@ -268,6 +276,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     protocolFeeConfig: "0xD979dBfBdA5f4b16AAF60Eaab32A44f352076838",
     usdcTvlLimit: "0x9B16ff5bcF5C0B2c31Cd17032a306E91CA67F546",
     arbiterRegistry: "0xE78648e7af7B1BaDE717FF6E410B922F92adE80f",
+    receiverRefundCollector: "0x19a798c7F66E6401f6004b732dA604196952e843",
     usdc: "0xcebA9300f2b948710d2653dD7B07f33A8B32118C",
     refundRequestEvidence: "0xd709e87DF198eF3C15C5eaE81E3EbD8Fd7AC908a",
     factories: {
@@ -298,6 +307,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     protocolFeeConfig: "0xD979dBfBdA5f4b16AAF60Eaab32A44f352076838",
     usdcTvlLimit: "0xA50F51254E8B08899EdB76Bd24b4DC6A61ba7dE7",
     arbiterRegistry: "0xE78648e7af7B1BaDE717FF6E410B922F92adE80f",
+    receiverRefundCollector: "0x0000000000000000000000000000000000000000",
     usdc: "0x754704Bc059F8C67012fEd69BC8A327a5aafb603",
     refundRequestEvidence: "0x19a798c7F66E6401f6004b732dA604196952e843",
     factories: {
@@ -328,6 +338,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     protocolFeeConfig: "0xD979dBfBdA5f4b16AAF60Eaab32A44f352076838",
     usdcTvlLimit: "0x9B16ff5bcF5C0B2c31Cd17032a306E91CA67F546",
     arbiterRegistry: "0xE78648e7af7B1BaDE717FF6E410B922F92adE80f",
+    receiverRefundCollector: "0x19a798c7F66E6401f6004b732dA604196952e843",
     usdc: "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85",
     refundRequestEvidence: "0xd709e87DF198eF3C15C5eaE81E3EbD8Fd7AC908a",
     factories: {
@@ -358,6 +369,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     protocolFeeConfig: "0xD979dBfBdA5f4b16AAF60Eaab32A44f352076838",
     usdcTvlLimit: "0x9B16ff5bcF5C0B2c31Cd17032a306E91CA67F546",
     arbiterRegistry: "0xE78648e7af7B1BaDE717FF6E410B922F92adE80f",
+    receiverRefundCollector: "0x19a798c7F66E6401f6004b732dA604196952e843",
     usdc: "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
     refundRequestEvidence: "0xd709e87DF198eF3C15C5eaE81E3EbD8Fd7AC908a",
     factories: {
