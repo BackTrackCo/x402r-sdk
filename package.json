@@ -50,10 +50,7 @@
     "vitest": "^2.1.0"
   },
   "pnpm": {
-    "overrides": {
-      "@x402/core": "file:../x402/typescript/packages/core",
-      "@x402/extensions": "file:../x402/typescript/packages/extensions"
-    }
+    "overrides": {}
   },
   "packageManager": "pnpm@9.15.0",
   "engines": {

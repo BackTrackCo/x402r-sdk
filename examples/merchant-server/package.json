@@ -13,8 +13,8 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.13.0",
-    "@x402/core": "file:../../../x402/typescript/packages/core",
-    "@x402/hono": "file:../../../x402/typescript/packages/http/hono",
+    "@x402/core": "^2.3.0",
+    "@x402/hono": "^2.3.0",
     "@x402r/evm": "file:../../../x402r-scheme/packages/evm",
     "@x402r/helpers": "workspace:*",
     "dotenv": "^16.4.0",
