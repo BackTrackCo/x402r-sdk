@@ -1,9 +1,6 @@
-import { createPublicClient, createWalletClient, http } from "viem";
-import { baseSepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 
 export const NETWORK_ID = "eip155:84532" as const; // Base Sepolia
-export const RPC_URL = "https://sepolia.base.org";
 
 export interface ServerConfig {
   privateKey: `0x${string}`;
@@ -39,24 +36,11 @@ export function loadConfig(): ServerConfig {
 }
 
 /**
- * Creates viem clients for blockchain interaction.
+ * Creates an account from the PRIVATE_KEY environment variable.
  *
- * @param config - the server configuration
- * @returns - public client, wallet client, and account
+ * @returns - the viem account
  */
-export function createClients(config: ServerConfig) {
-  const account = privateKeyToAccount(config.privateKey);
-
-  const publicClient = createPublicClient({
-    chain: baseSepolia,
-    transport: http(RPC_URL),
-  });
-
-  const walletClient = createWalletClient({
-    account,
-    chain: baseSepolia,
-    transport: http(RPC_URL),
-  });
-
-  return { publicClient, walletClient, account };
+export function createAccount() {
+  const privateKey = process.env.PRIVATE_KEY as `0x${string}`;
+  return privateKeyToAccount(privateKey);
 }
