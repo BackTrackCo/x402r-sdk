@@ -43,7 +43,7 @@ export interface DeploymentResult {
  * Sleep for a specified number of milliseconds
  */
 function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /**
@@ -139,11 +139,7 @@ export async function deployStaticFeeCalculator(
   const factoryAddress = getFactoryAddress(networkId, "staticFeeCalculator");
 
   // Check if already deployed
-  const existing = await getDeployedStaticFeeCalculator(
-    publicClient,
-    networkId,
-    feeBps,
-  );
+  const existing = await getDeployedStaticFeeCalculator(publicClient, networkId, feeBps);
   if (existing !== ZERO_ADDRESS) {
     return { address: existing, isNewDeployment: false };
   }
@@ -163,15 +159,13 @@ export async function deployStaticFeeCalculator(
   });
 
   if (receipt.status !== "success") {
-    throw new Error(
-      `StaticFeeCalculator deployment failed. TX: ${txHash}. Args: feeBps=${feeBps}`,
-    );
+    throw new Error(`StaticFeeCalculator deployment failed. TX: ${txHash}. Args: feeBps=${feeBps}`);
   }
 
   // Query deployed address with retry (handles RPC caching delays)
   const address = await retryWithDelay(
     () => getDeployedStaticFeeCalculator(publicClient, networkId, feeBps),
-    (addr) => addr !== ZERO_ADDRESS,
+    addr => addr !== ZERO_ADDRESS,
     { description: "StaticFeeCalculator getDeployed" },
   );
 
@@ -231,11 +225,7 @@ export async function deployEscrowPeriod(
   const fullConfig = createEscrowPeriodConfig(config);
 
   // Check if already deployed
-  const existing = await getDeployedEscrowPeriod(
-    publicClient,
-    networkId,
-    config,
-  );
+  const existing = await getDeployedEscrowPeriod(publicClient, networkId, config);
   if (existing !== ZERO_ADDRESS) {
     return { address: existing, isNewDeployment: false };
   }
@@ -264,7 +254,7 @@ export async function deployEscrowPeriod(
   // Query deployed address with retry (handles RPC caching delays)
   const address = await retryWithDelay(
     () => getDeployedEscrowPeriod(publicClient, networkId, config),
-    (addr) => addr !== ZERO_ADDRESS,
+    addr => addr !== ZERO_ADDRESS,
     { description: "EscrowPeriod getDeployed" },
   );
 
@@ -371,7 +361,7 @@ export async function deployFreeze(
   // Query deployed address with retry (handles RPC caching delays)
   const address = await retryWithDelay(
     () => getDeployedFreeze(publicClient, networkId, config),
-    (addr) => addr !== ZERO_ADDRESS,
+    addr => addr !== ZERO_ADDRESS,
     { description: "Freeze getDeployed" },
   );
 
@@ -459,13 +449,8 @@ export async function deployStaticAddressCondition(
 
   // Query deployed address with retry (handles RPC caching delays)
   const address = await retryWithDelay(
-    () =>
-      getDeployedStaticAddressCondition(
-        publicClient,
-        networkId,
-        designatedAddress,
-      ),
-    (addr) => addr !== ZERO_ADDRESS,
+    () => getDeployedStaticAddressCondition(publicClient, networkId, designatedAddress),
+    addr => addr !== ZERO_ADDRESS,
     { description: "StaticAddressCondition getDeployed" },
   );
 
@@ -522,11 +507,7 @@ export async function deployAndCondition(
   const factoryAddress = getFactoryAddress(networkId, "andCondition");
 
   // Check if already deployed
-  const existing = await getDeployedAndCondition(
-    publicClient,
-    networkId,
-    conditions,
-  );
+  const existing = await getDeployedAndCondition(publicClient, networkId, conditions);
   if (existing !== ZERO_ADDRESS) {
     return { address: existing, isNewDeployment: false };
   }
@@ -554,7 +535,7 @@ export async function deployAndCondition(
   // Query deployed address with retry (handles RPC caching delays)
   const address = await retryWithDelay(
     () => getDeployedAndCondition(publicClient, networkId, conditions),
-    (addr) => addr !== ZERO_ADDRESS,
+    addr => addr !== ZERO_ADDRESS,
     { description: "AndCondition getDeployed" },
   );
 
@@ -609,11 +590,7 @@ export async function deployOrCondition(
   const factoryAddress = getFactoryAddress(networkId, "orCondition");
 
   // Check if already deployed
-  const existing = await getDeployedOrCondition(
-    publicClient,
-    networkId,
-    conditions,
-  );
+  const existing = await getDeployedOrCondition(publicClient, networkId, conditions);
   if (existing !== ZERO_ADDRESS) {
     return { address: existing, isNewDeployment: false };
   }
@@ -641,7 +618,7 @@ export async function deployOrCondition(
   // Query deployed address with retry (handles RPC caching delays)
   const address = await retryWithDelay(
     () => getDeployedOrCondition(publicClient, networkId, conditions),
-    (addr) => addr !== ZERO_ADDRESS,
+    addr => addr !== ZERO_ADDRESS,
     { description: "OrCondition getDeployed" },
   );
 
@@ -696,11 +673,7 @@ export async function deployNotCondition(
   const factoryAddress = getFactoryAddress(networkId, "notCondition");
 
   // Check if already deployed
-  const existing = await getDeployedNotCondition(
-    publicClient,
-    networkId,
-    condition,
-  );
+  const existing = await getDeployedNotCondition(publicClient, networkId, condition);
   if (existing !== ZERO_ADDRESS) {
     return { address: existing, isNewDeployment: false };
   }
@@ -720,15 +693,13 @@ export async function deployNotCondition(
   });
 
   if (receipt.status !== "success") {
-    throw new Error(
-      `NotCondition deployment failed. TX: ${txHash}. Args: condition=${condition}`,
-    );
+    throw new Error(`NotCondition deployment failed. TX: ${txHash}. Args: condition=${condition}`);
   }
 
   // Query deployed address with retry (handles RPC caching delays)
   const address = await retryWithDelay(
     () => getDeployedNotCondition(publicClient, networkId, condition),
-    (addr) => addr !== ZERO_ADDRESS,
+    addr => addr !== ZERO_ADDRESS,
     { description: "NotCondition getDeployed" },
   );
 
@@ -785,11 +756,7 @@ export async function deployRecorderCombinator(
   const factoryAddress = getFactoryAddress(networkId, "recorderCombinator");
 
   // Check if already deployed
-  const existing = await getDeployedRecorderCombinator(
-    publicClient,
-    networkId,
-    recorders,
-  );
+  const existing = await getDeployedRecorderCombinator(publicClient, networkId, recorders);
   if (existing !== ZERO_ADDRESS) {
     return { address: existing, isNewDeployment: false };
   }
@@ -817,7 +784,7 @@ export async function deployRecorderCombinator(
   // Query deployed address with retry (handles RPC caching delays)
   const address = await retryWithDelay(
     () => getDeployedRecorderCombinator(publicClient, networkId, recorders),
-    (addr) => addr !== ZERO_ADDRESS,
+    addr => addr !== ZERO_ADDRESS,
     { description: "RecorderCombinator getDeployed" },
   );
 
@@ -900,7 +867,7 @@ export async function deployOperator(
   // Query deployed address with retry (handles RPC caching delays)
   const address = await retryWithDelay(
     () => getDeployedOperator(publicClient, networkId, config),
-    (addr) => addr !== ZERO_ADDRESS,
+    addr => addr !== ZERO_ADDRESS,
     { description: "PaymentOperator getDeployed" },
   );
 

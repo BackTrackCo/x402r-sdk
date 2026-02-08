@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { refundable } from "../src/index.js";
+import { NETWORK_CONFIG } from "@x402r/core/config";
 
 describe("refundable", () => {
   const baseOption = {
@@ -10,20 +11,15 @@ describe("refundable", () => {
   };
 
   it("populates extra with network config addresses", () => {
+    const config = NETWORK_CONFIG["eip155:84532"];
     const result = refundable(
       baseOption,
       "0xABCDEF1234567890123456789012345678901234" as `0x${string}`,
     );
 
-    expect(result.extra.escrowAddress).toBe(
-      "0xb9488351E48b23D798f24e8174514F28B741Eb4f",
-    );
-    expect(result.extra.operatorAddress).toBe(
-      "0xABCDEF1234567890123456789012345678901234",
-    );
-    expect(result.extra.tokenCollector).toBe(
-      "0xC80cd08d609673061597DE7fe54Af3978f10A825",
-    );
+    expect(result.extra.escrowAddress).toBe(config.authCaptureEscrow);
+    expect(result.extra.operatorAddress).toBe("0xABCDEF1234567890123456789012345678901234");
+    expect(result.extra.tokenCollector).toBe(config.tokenCollector);
   });
 
   it("preserves existing option properties", () => {
@@ -43,29 +39,20 @@ describe("refundable", () => {
       baseOption,
       "0xABCDEF1234567890123456789012345678901234" as `0x${string}`,
       {
-        escrowAddress:
-          "0xCustomEscrow12345678901234567890123456" as `0x${string}`,
-        tokenCollector:
-          "0xCustomCollector234567890123456789012" as `0x${string}`,
+        escrowAddress: "0xCustomEscrow12345678901234567890123456" as `0x${string}`,
+        tokenCollector: "0xCustomCollector234567890123456789012" as `0x${string}`,
       },
     );
 
-    expect(result.extra.escrowAddress).toBe(
-      "0xCustomEscrow12345678901234567890123456",
-    );
-    expect(result.extra.tokenCollector).toBe(
-      "0xCustomCollector234567890123456789012",
-    );
+    expect(result.extra.escrowAddress).toBe("0xCustomEscrow12345678901234567890123456");
+    expect(result.extra.tokenCollector).toBe("0xCustomCollector234567890123456789012");
   });
 
   it("throws for unsupported network", () => {
-    const badOption = { ...baseOption, network: "eip155:99999" };
+    const badOption = { ...baseOption, network: "not-a-network" };
 
     expect(() =>
-      refundable(
-        badOption,
-        "0xABCDEF1234567890123456789012345678901234" as `0x${string}`,
-      ),
+      refundable(badOption, "0xABCDEF1234567890123456789012345678901234" as `0x${string}`),
     ).toThrow("Unsupported network");
   });
 

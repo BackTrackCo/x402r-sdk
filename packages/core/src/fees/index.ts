@@ -5,11 +5,8 @@
 
 import type { PublicClient, Address } from "viem";
 import type { PaymentInfo } from "../types/index.js";
-import {
-  PaymentOperatorABI,
-  IFeeCalculatorABI,
-  ProtocolFeeConfigABI,
-} from "../abis/index.js";
+import { PaymentOperatorABI, IFeeCalculatorABI, ProtocolFeeConfigABI } from "../abis/index.js";
+import { toAbiPaymentInfo } from "../utils/index.js";
 
 /**
  * Result of fee calculation
@@ -135,13 +132,11 @@ export async function calculateOperatorFeeBps(
     return 0n;
   }
 
-  // Call the fee calculator
-  // Cast paymentInfo to satisfy viem's strict typing from ABI inference
   const feeBps = (await publicClient.readContract({
     address: feeCalculator,
     abi: IFeeCalculatorABI,
     functionName: "calculateFee",
-    args: [paymentInfo as never, amount, caller],
+    args: [toAbiPaymentInfo(paymentInfo), amount, caller],
   })) as bigint;
 
   return feeBps;
@@ -176,13 +171,11 @@ export async function calculateProtocolFeeBps(
     return 0n;
   }
 
-  // Call the protocol fee config (it handles the cap internally)
-  // Cast paymentInfo to satisfy viem's strict typing from ABI inference
   const feeBps = (await publicClient.readContract({
     address: protocolFeeConfig,
     abi: ProtocolFeeConfigABI,
     functionName: "getProtocolFeeBps",
-    args: [paymentInfo as never, amount, caller],
+    args: [toAbiPaymentInfo(paymentInfo), amount, caller],
   })) as bigint;
 
   return feeBps;
@@ -220,20 +213,8 @@ export async function calculateTotalFees(
 ): Promise<FeeCalculationResult> {
   // Fetch both fees in parallel
   const [protocolFeeBps, operatorFeeBps] = await Promise.all([
-    calculateProtocolFeeBps(
-      publicClient,
-      operatorAddress,
-      paymentInfo,
-      amount,
-      caller,
-    ),
-    calculateOperatorFeeBps(
-      publicClient,
-      operatorAddress,
-      paymentInfo,
-      amount,
-      caller,
-    ),
+    calculateProtocolFeeBps(publicClient, operatorAddress, paymentInfo, amount, caller),
+    calculateOperatorFeeBps(publicClient, operatorAddress, paymentInfo, amount, caller),
   ]);
 
   const totalFeeBps = protocolFeeBps + operatorFeeBps;
@@ -262,10 +243,7 @@ export async function calculateTotalFees(
  * @param paymentInfo - Payment info with minFeeBps and maxFeeBps
  * @returns true if fees are within bounds
  */
-export function validateFeeBounds(
-  fees: FeeCalculationResult,
-  paymentInfo: PaymentInfo,
-): boolean {
+export function validateFeeBounds(fees: FeeCalculationResult, paymentInfo: PaymentInfo): boolean {
   return (
     fees.totalFeeBps >= BigInt(paymentInfo.minFeeBps) &&
     fees.totalFeeBps <= BigInt(paymentInfo.maxFeeBps)

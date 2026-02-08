@@ -46,6 +46,19 @@ const finalHashAbiParams: readonly { name: string; type: string }[] = [
 ];
 
 /**
+ * Convert a PaymentInfo object to ABI-compatible tuple format for viem contract calls.
+ *
+ * viem's strict ABI typing cannot infer our PaymentInfo interface as the expected
+ * tuple type (the interface uses `bigint` and `number` which don't match viem's
+ * inferred `uint120`/`uint48`/`uint16` types). This helper centralizes the cast
+ * so callers don't need `as never` at every call site.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function toAbiPaymentInfo(paymentInfo: PaymentInfo): any {
+  return paymentInfo;
+}
+
+/**
  * Compute the payment info hash as used by the escrow contract
  *
  * The hash is computed in two steps:

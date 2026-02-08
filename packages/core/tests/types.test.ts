@@ -18,9 +18,7 @@ describe("PaymentState enum", () => {
   });
 
   it("should have 5 states total", () => {
-    const states = Object.values(PaymentState).filter(
-      (v) => typeof v === "number",
-    );
+    const states = Object.values(PaymentState).filter(v => typeof v === "number");
     expect(states).toHaveLength(5);
   });
 });
@@ -34,9 +32,7 @@ describe("RequestStatus enum", () => {
   });
 
   it("should have 4 statuses total", () => {
-    const statuses = Object.values(RequestStatus).filter(
-      (v) => typeof v === "number",
-    );
+    const statuses = Object.values(RequestStatus).filter(v => typeof v === "number");
     expect(statuses).toHaveLength(4);
   });
 });
@@ -67,8 +63,7 @@ describe("PaymentInfo type", () => {
 describe("RefundRequestData type", () => {
   it("should accept valid RefundRequestData", () => {
     const refundRequest: RefundRequestData = {
-      paymentInfoHash:
-        "0x1234567890123456789012345678901234567890123456789012345678901234",
+      paymentInfoHash: "0x1234567890123456789012345678901234567890123456789012345678901234",
       status: RequestStatus.Pending,
     };
 
@@ -79,21 +74,15 @@ describe("RefundRequestData type", () => {
 
 describe("isValidAddress", () => {
   it("should return true for valid addresses", () => {
-    expect(isValidAddress("0x1234567890123456789012345678901234567890")).toBe(
-      true,
-    );
-    expect(isValidAddress("0xabCDef1234567890123456789012345678901234")).toBe(
-      true,
-    );
+    expect(isValidAddress("0x1234567890123456789012345678901234567890")).toBe(true);
+    expect(isValidAddress("0xabCDef1234567890123456789012345678901234")).toBe(true);
   });
 
   it("should return false for invalid addresses", () => {
     expect(isValidAddress("0x123")).toBe(false);
     expect(isValidAddress("not an address")).toBe(false);
     expect(isValidAddress("")).toBe(false);
-    expect(isValidAddress("1234567890123456789012345678901234567890")).toBe(
-      false,
-    );
+    expect(isValidAddress("1234567890123456789012345678901234567890")).toBe(false);
   });
 });
 

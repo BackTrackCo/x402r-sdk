@@ -9,12 +9,7 @@
  *   PRIVATE_KEY=0x... pnpm tsx examples/deploy-operator/deploy-short-escrow.ts
  */
 
-import {
-  createWalletClient,
-  createPublicClient,
-  http,
-  formatEther,
-} from "viem";
+import { createWalletClient, createPublicClient, http, formatEther } from "viem";
 import { baseSepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import {
@@ -72,20 +67,12 @@ async function main() {
   console.log("Fee recipient:", options.feeRecipient);
   console.log("Arbiter:", options.arbiter);
   console.log("Escrow period:", Number(options.escrowPeriodSeconds), "seconds");
-  console.log(
-    "Freeze duration:",
-    Number(options.freezeDurationSeconds),
-    "seconds",
-  );
+  console.log("Freeze duration:", Number(options.freezeDurationSeconds), "seconds");
   console.log("Operator fee:", Number(options.operatorFeeBps) / 100, "%");
 
   // Preview addresses before deployment
   console.log("\n--- Preview Addresses ---");
-  const preview = await previewMarketplaceOperator(
-    publicClient,
-    NETWORK_ID,
-    options,
-  );
+  const preview = await previewMarketplaceOperator(publicClient, NETWORK_ID, options);
   console.log("Operator:", preview.operatorAddress);
   console.log("EscrowPeriod:", preview.escrowPeriodAddress);
   console.log("Freeze:", preview.freezeAddress);
@@ -97,12 +84,7 @@ async function main() {
   console.log("\n--- Deploying ---");
   const startTime = Date.now();
 
-  const result = await deployMarketplaceOperator(
-    walletClient,
-    publicClient,
-    NETWORK_ID,
-    options,
-  );
+  const result = await deployMarketplaceOperator(walletClient, publicClient, NETWORK_ID, options);
 
   const elapsed = (Date.now() - startTime) / 1000;
   console.log(`Deployment completed in ${elapsed.toFixed(1)}s`);
@@ -137,7 +119,7 @@ async function main() {
   console.log(`FREEZE_ADDRESS=${result.freezeAddress}`);
 }
 
-main().catch((error) => {
+main().catch(error => {
   console.error("Deployment failed:", error);
   process.exit(1);
 });

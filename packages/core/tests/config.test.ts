@@ -62,7 +62,7 @@ describe("SupportedNetworks", () => {
 
   it("should be an array of strings", () => {
     expect(Array.isArray(SupportedNetworks)).toBe(true);
-    SupportedNetworks.forEach((network) => {
+    SupportedNetworks.forEach(network => {
       expect(typeof network).toBe("string");
     });
   });

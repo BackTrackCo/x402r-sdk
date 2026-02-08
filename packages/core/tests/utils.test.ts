@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  computePaymentInfoHash,
-  PAYMENT_INFO_TYPEHASH,
-} from "../src/utils/index.js";
+import { computePaymentInfoHash, PAYMENT_INFO_TYPEHASH } from "../src/utils/index.js";
 import type { PaymentInfo } from "../src/types/index.js";
 
 describe("PAYMENT_INFO_TYPEHASH", () => {
@@ -38,72 +35,39 @@ describe("computePaymentInfoHash", () => {
   const chainId = 84532; // Base Sepolia
 
   it("should return a bytes32 hash", () => {
-    const hash = computePaymentInfoHash(
-      samplePaymentInfo,
-      escrowAddress,
-      chainId,
-    );
+    const hash = computePaymentInfoHash(samplePaymentInfo, escrowAddress, chainId);
     expect(hash).toMatch(/^0x[a-fA-F0-9]{64}$/);
   });
 
   it("should be deterministic", () => {
-    const hash1 = computePaymentInfoHash(
-      samplePaymentInfo,
-      escrowAddress,
-      chainId,
-    );
-    const hash2 = computePaymentInfoHash(
-      samplePaymentInfo,
-      escrowAddress,
-      chainId,
-    );
+    const hash1 = computePaymentInfoHash(samplePaymentInfo, escrowAddress, chainId);
+    const hash2 = computePaymentInfoHash(samplePaymentInfo, escrowAddress, chainId);
     expect(hash1).toBe(hash2);
   });
 
   it("should produce different hashes for different payment info", () => {
-    const hash1 = computePaymentInfoHash(
-      samplePaymentInfo,
-      escrowAddress,
-      chainId,
-    );
+    const hash1 = computePaymentInfoHash(samplePaymentInfo, escrowAddress, chainId);
 
     const differentPaymentInfo = {
       ...samplePaymentInfo,
       maxAmount: BigInt("2000000"),
     };
-    const hash2 = computePaymentInfoHash(
-      differentPaymentInfo,
-      escrowAddress,
-      chainId,
-    );
+    const hash2 = computePaymentInfoHash(differentPaymentInfo, escrowAddress, chainId);
 
     expect(hash1).not.toBe(hash2);
   });
 
   it("should produce different hashes for different escrow addresses", () => {
-    const hash1 = computePaymentInfoHash(
-      samplePaymentInfo,
-      escrowAddress,
-      chainId,
-    );
+    const hash1 = computePaymentInfoHash(samplePaymentInfo, escrowAddress, chainId);
 
-    const differentEscrow =
-      "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as const;
-    const hash2 = computePaymentInfoHash(
-      samplePaymentInfo,
-      differentEscrow,
-      chainId,
-    );
+    const differentEscrow = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as const;
+    const hash2 = computePaymentInfoHash(samplePaymentInfo, differentEscrow, chainId);
 
     expect(hash1).not.toBe(hash2);
   });
 
   it("should produce different hashes for different chain IDs", () => {
-    const hash1 = computePaymentInfoHash(
-      samplePaymentInfo,
-      escrowAddress,
-      chainId,
-    );
+    const hash1 = computePaymentInfoHash(samplePaymentInfo, escrowAddress, chainId);
     const hash2 = computePaymentInfoHash(samplePaymentInfo, escrowAddress, 1); // mainnet
 
     expect(hash1).not.toBe(hash2);
@@ -125,11 +89,7 @@ describe("computePaymentInfoHash", () => {
       salt: BigInt(0),
     };
 
-    const hash = computePaymentInfoHash(
-      zeroPaymentInfo,
-      escrowAddress,
-      chainId,
-    );
+    const hash = computePaymentInfoHash(zeroPaymentInfo, escrowAddress, chainId);
     expect(hash).toMatch(/^0x[a-fA-F0-9]{64}$/);
   });
 
@@ -137,16 +97,10 @@ describe("computePaymentInfoHash", () => {
     const largePaymentInfo: PaymentInfo = {
       ...samplePaymentInfo,
       maxAmount: BigInt("1329227995784915872903807060280344575"), // uint120 max (2^120 - 1)
-      salt: BigInt(
-        "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-      ), // uint256 max
+      salt: BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"), // uint256 max
     };
 
-    const hash = computePaymentInfoHash(
-      largePaymentInfo,
-      escrowAddress,
-      chainId,
-    );
+    const hash = computePaymentInfoHash(largePaymentInfo, escrowAddress, chainId);
     expect(hash).toMatch(/^0x[a-fA-F0-9]{64}$/);
   });
 });

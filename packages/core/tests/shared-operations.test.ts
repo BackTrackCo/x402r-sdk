@@ -25,15 +25,12 @@ const createMockPublicClient = () => {
 const createMockWalletClient = (withAccount = true) => {
   return {
     writeContract: vi.fn().mockResolvedValue("0xtxhash"),
-    account: withAccount
-      ? { address: "0x1234567890123456789012345678901234567890" }
-      : undefined,
+    account: withAccount ? { address: "0x1234567890123456789012345678901234567890" } : undefined,
     chain: { id: 84532 },
   } as unknown as WalletClient;
 };
 
-const refundRequestAddress =
-  "0xcccccccccccccccccccccccccccccccccccccccc" as const;
+const refundRequestAddress = "0xcccccccccccccccccccccccccccccccccccccccc" as const;
 const freezeAddress = "0xdddddddddddddddddddddddddddddddddddddd" as const;
 
 const samplePaymentInfo = {
@@ -63,9 +60,7 @@ describe("Shared Refund Operations", () => {
 
   describe("hasRefundRequest", () => {
     it("should return true when request exists", async () => {
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(
-        true,
-      );
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(true);
       const result = await hasRefundRequest(ctx, samplePaymentInfo, 0n);
       expect(result).toBe(true);
       expect(publicClient.readContract).toHaveBeenCalledWith(
@@ -77,9 +72,7 @@ describe("Shared Refund Operations", () => {
     });
 
     it("should return false when request does not exist", async () => {
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(
-        false,
-      );
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(false);
       const result = await hasRefundRequest(ctx, samplePaymentInfo, 0n);
       expect(result).toBe(false);
     });
@@ -93,9 +86,7 @@ describe("Shared Refund Operations", () => {
         amount: BigInt("500000"),
         status: RequestStatus.Pending,
       };
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockData,
-      );
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
       const result = await getRefundRequest(ctx, samplePaymentInfo, 0n);
       expect(result.amount).toBe(BigInt("500000"));
     });
@@ -121,9 +112,7 @@ describe("Shared Refund Operations", () => {
         amount: BigInt("750000"),
         status: RequestStatus.Denied,
       };
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockData,
-      );
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(mockData);
       const result = await getRefundRequestByKey(ctx, compositeKey);
       expect(result.amount).toBe(BigInt("750000"));
       expect(result.status).toBe(RequestStatus.Denied);
@@ -145,11 +134,7 @@ describe("Shared Refund Write Operations", () => {
 
   describe("approveRefundRequest", () => {
     it("should submit approve transaction", async () => {
-      const result = await approveRefundRequest(
-        writeCtx,
-        samplePaymentInfo,
-        0n,
-      );
+      const result = await approveRefundRequest(writeCtx, samplePaymentInfo, 0n);
       expect(result.txHash).toBe("0xtxhash");
       expect(walletClient.writeContract).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -165,9 +150,9 @@ describe("Shared Refund Write Operations", () => {
         walletClient: noAccountClient,
         refundRequestAddress,
       };
-      await expect(
-        approveRefundRequest(ctx, samplePaymentInfo, 0n),
-      ).rejects.toThrow("WalletClient must have an account");
+      await expect(approveRefundRequest(ctx, samplePaymentInfo, 0n)).rejects.toThrow(
+        "WalletClient must have an account",
+      );
     });
   });
 
@@ -184,9 +169,9 @@ describe("Shared Refund Write Operations", () => {
         walletClient: noAccountClient,
         refundRequestAddress,
       };
-      await expect(
-        denyRefundRequest(ctx, samplePaymentInfo, 0n),
-      ).rejects.toThrow("WalletClient must have an account");
+      await expect(denyRefundRequest(ctx, samplePaymentInfo, 0n)).rejects.toThrow(
+        "WalletClient must have an account",
+      );
     });
   });
 });
@@ -203,17 +188,13 @@ describe("Shared Freeze Operations", () => {
 
   describe("isFrozen", () => {
     it("should return true when frozen", async () => {
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(
-        true,
-      );
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(true);
       const result = await isFrozen(ctx, samplePaymentInfo, freezeAddress);
       expect(result).toBe(true);
     });
 
     it("should return false when not frozen", async () => {
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(
-        false,
-      );
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(false);
       const result = await isFrozen(ctx, samplePaymentInfo, freezeAddress);
       expect(result).toBe(false);
     });

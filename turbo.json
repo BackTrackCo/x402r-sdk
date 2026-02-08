@@ -27,6 +27,13 @@
     "lint:fix": {
       "outputs": []
     },
+    "lint:check": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
+    "format:check": {
+      "outputs": []
+    },
     "clean": {
       "cache": false
     }

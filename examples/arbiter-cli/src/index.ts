@@ -24,11 +24,7 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { X402rArbiter } from "@x402r/arbiter";
 import { getNetworkConfig, RequestStatus, type PaymentInfo } from "@x402r/core";
-import {
-  parsePaymentInfo,
-  shortAddress,
-  formatUSDC,
-} from "../../shared/utils.js";
+import { parsePaymentInfo, shortAddress, formatUSDC } from "../../shared/utils.js";
 
 // Load environment from the example directory
 const __filename = fileURLToPath(import.meta.url);
@@ -69,9 +65,7 @@ function createArbiter() {
     transport: http(RPC_URL),
   });
 
-  const arbiterRegistryAddress = process.env.ARBITER_REGISTRY_ADDRESS as
-    | `0x${string}`
-    | undefined;
+  const arbiterRegistryAddress = process.env.ARBITER_REGISTRY_ADDRESS as `0x${string}` | undefined;
 
   const arbiter = new X402rArbiter({
     publicClient,
@@ -83,8 +77,7 @@ function createArbiter() {
     chainId: 84532,
   });
 
-  const receiverAddress =
-    (process.env.RECEIVER_ADDRESS as `0x${string}`) || account.address;
+  const receiverAddress = (process.env.RECEIVER_ADDRESS as `0x${string}`) || account.address;
   const freezeAddress = process.env.FREEZE_ADDRESS as `0x${string}` | undefined;
 
   return {
@@ -102,23 +95,15 @@ function createArbiter() {
 // Create CLI
 const program = new Command();
 
-program
-  .name("x402r-arbiter")
-  .description("CLI tool for x402r arbiter operations")
-  .version("0.0.1");
+program.name("x402r-arbiter").description("CLI tool for x402r arbiter operations").version("0.0.1");
 
 // Info command
 program
   .command("info")
   .description("Show arbiter configuration info")
   .action(() => {
-    const {
-      account,
-      operatorAddress,
-      networkConfig,
-      receiverAddress,
-      freezeAddress,
-    } = createArbiter();
+    const { account, operatorAddress, networkConfig, receiverAddress, freezeAddress } =
+      createArbiter();
 
     console.log("\n=== Arbiter Info ===");
     console.log("  Address:", account.address);
@@ -144,7 +129,7 @@ program
   .description("List pending refund requests")
   .option("-o, --offset <offset>", "Starting offset", "0")
   .option("-c, --count <count>", "Number of requests to fetch", "10")
-  .action(async (options) => {
+  .action(async options => {
     const { arbiter, receiverAddress } = createArbiter();
     const offset = BigInt(options.offset);
     const count = BigInt(options.count);
@@ -171,8 +156,7 @@ program
         const key = keys[i];
         try {
           const request = await arbiter.getRefundRequestByKey(key);
-          const statusName =
-            STATUS_NAMES[request.status] || String(request.status);
+          const statusName = STATUS_NAMES[request.status] || String(request.status);
           const isPending = request.status === RequestStatus.Pending;
 
           console.log(`${Number(offset) + i + 1}. ${key}`);
@@ -186,10 +170,7 @@ program
         }
       }
     } catch (error) {
-      console.error(
-        "\nFailed to fetch requests:",
-        error instanceof Error ? error.message : error,
-      );
+      console.error("\nFailed to fetch requests:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });
@@ -216,21 +197,14 @@ program
       console.log("  Nonce:", request.nonce.toString());
 
       if (request.status === RequestStatus.Pending) {
-        console.log(
-          "\n💡 This request is pending. You can approve or deny it:",
-        );
+        console.log("\n💡 This request is pending. You can approve or deny it:");
         console.log(`   pnpm start approve ${key}`);
         console.log(`   pnpm start deny ${key}`);
       } else if (request.status === RequestStatus.Approved) {
-        console.log(
-          "\n💡 This request is approved. It can be executed by the payer.",
-        );
+        console.log("\n💡 This request is approved. It can be executed by the payer.");
       }
     } catch (error) {
-      console.error(
-        "\nFailed to fetch request:",
-        error instanceof Error ? error.message : error,
-      );
+      console.error("\nFailed to fetch request:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });
@@ -259,10 +233,7 @@ program
       console.log("  Transaction:", result.txHash);
       console.log(`\nhttps://sepolia.basescan.org/tx/${result.txHash}`);
     } catch (error) {
-      console.error(
-        "\n❌ Approval failed:",
-        error instanceof Error ? error.message : error,
-      );
+      console.error("\n❌ Approval failed:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });
@@ -291,10 +262,7 @@ program
       console.log("  Transaction:", result.txHash);
       console.log(`\nhttps://sepolia.basescan.org/tx/${result.txHash}`);
     } catch (error) {
-      console.error(
-        "\n❌ Denial failed:",
-        error instanceof Error ? error.message : error,
-      );
+      console.error("\n❌ Denial failed:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });
@@ -305,7 +273,7 @@ program
   .description("Execute a refund for an approved request")
   .requiredOption("-p, --payment-json <json>", "Payment info JSON")
   .option("-a, --amount <amount>", "Amount to refund (defaults to maxAmount)")
-  .action(async (options) => {
+  .action(async options => {
     const { arbiter } = createArbiter();
     const paymentInfo = parsePaymentInfo(options.paymentJson);
     const amount = options.amount ? BigInt(options.amount) : undefined;
@@ -320,10 +288,7 @@ program
       console.log("  Transaction:", result.txHash);
       console.log(`\nhttps://sepolia.basescan.org/tx/${result.txHash}`);
     } catch (error) {
-      console.error(
-        "\n❌ Execution failed:",
-        error instanceof Error ? error.message : error,
-      );
+      console.error("\n❌ Execution failed:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });
@@ -334,7 +299,7 @@ program
   .description("Check the status of a refund request")
   .requiredOption("-p, --payment-json <json>", "Payment info JSON")
   .option("-n, --nonce <nonce>", "Nonce (record index)", "0")
-  .action(async (options) => {
+  .action(async options => {
     const { arbiter } = createArbiter();
     const paymentInfo = parsePaymentInfo(options.paymentJson);
     const nonce = BigInt(options.nonce);
@@ -353,10 +318,7 @@ program
       const request = await arbiter.getRefundRequest(paymentInfo, nonce);
       console.log("  Amount requested:", formatUSDC(request.amount));
     } catch (error) {
-      console.error(
-        "\nFailed to get status:",
-        error instanceof Error ? error.message : error,
-      );
+      console.error("\nFailed to get status:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });
@@ -370,16 +332,13 @@ program
     "-f, --freeze-address <address>",
     "Freeze contract address (uses FREEZE_ADDRESS env if not provided)",
   )
-  .action(async (options) => {
+  .action(async options => {
     const { arbiter, freezeAddress: envFreezeAddress } = createArbiter();
     const paymentInfo = parsePaymentInfo(options.paymentJson);
-    const freezeAddress =
-      (options.freezeAddress as `0x${string}`) || envFreezeAddress;
+    const freezeAddress = (options.freezeAddress as `0x${string}`) || envFreezeAddress;
 
     if (!freezeAddress) {
-      console.error(
-        "Error: Freeze address required (--freeze-address or FREEZE_ADDRESS env)",
-      );
+      console.error("Error: Freeze address required (--freeze-address or FREEZE_ADDRESS env)");
       process.exit(1);
     }
 
@@ -406,36 +365,28 @@ program
     console.log("  Receiver:", receiverAddress);
     console.log("  Press Ctrl+C to stop\n");
 
-    const { unsubscribe: unsubscribeCases } = arbiter.watchNewCases((event) => {
+    const { unsubscribe: unsubscribeCases } = arbiter.watchNewCases(event => {
       const log = event as {
         args?: { payer?: string; receiver?: string; amount?: bigint };
       };
       const timestamp = new Date().toLocaleTimeString();
       console.log(`[${timestamp}] 🆕 New refund request`);
       if (log.args) {
-        if (log.args.payer)
-          console.log(`    Payer: ${shortAddress(log.args.payer)}`);
-        if (log.args.receiver)
-          console.log(`    Receiver: ${shortAddress(log.args.receiver)}`);
-        if (log.args.amount)
-          console.log(`    Amount: ${formatUSDC(log.args.amount)}`);
+        if (log.args.payer) console.log(`    Payer: ${shortAddress(log.args.payer)}`);
+        if (log.args.receiver) console.log(`    Receiver: ${shortAddress(log.args.receiver)}`);
+        if (log.args.amount) console.log(`    Amount: ${formatUSDC(log.args.amount)}`);
       }
       console.log("");
     });
 
-    const { unsubscribe: unsubscribeDecisions } = arbiter.watchDecisions(
-      (event) => {
-        const log = event as { args?: { status?: number } };
-        const timestamp = new Date().toLocaleTimeString();
-        const status = log.args?.status;
-        const statusName =
-          status !== undefined
-            ? STATUS_NAMES[status] || String(status)
-            : "Unknown";
-        console.log(`[${timestamp}] 📋 Status updated: ${statusName}`);
-        console.log("");
-      },
-    );
+    const { unsubscribe: unsubscribeDecisions } = arbiter.watchDecisions(event => {
+      const log = event as { args?: { status?: number } };
+      const timestamp = new Date().toLocaleTimeString();
+      const status = log.args?.status;
+      const statusName = status !== undefined ? STATUS_NAMES[status] || String(status) : "Unknown";
+      console.log(`[${timestamp}] 📋 Status updated: ${statusName}`);
+      console.log("");
+    });
 
     // Handle graceful shutdown
     const cleanup = () => {
@@ -460,10 +411,7 @@ program
       const count = await arbiter.getRefundRequestCount(receiverAddress);
       console.log(`\nTotal refund requests: ${count}`);
     } catch (error) {
-      console.error(
-        "\nFailed to get count:",
-        error instanceof Error ? error.message : error,
-      );
+      console.error("\nFailed to get count:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });
@@ -475,7 +423,7 @@ program
   .command("register")
   .description("Register as an arbiter in the ArbiterRegistry")
   .requiredOption("-u, --uri <uri>", "URI for arbiter metadata/API endpoint")
-  .action(async (options) => {
+  .action(async options => {
     const { arbiter } = createArbiter();
 
     console.log("\nRegistering as arbiter...");
@@ -487,10 +435,7 @@ program
       console.log("  Transaction:", result.txHash);
       console.log(`\nhttps://sepolia.basescan.org/tx/${result.txHash}`);
     } catch (error) {
-      console.error(
-        "\n❌ Registration failed:",
-        error instanceof Error ? error.message : error,
-      );
+      console.error("\n❌ Registration failed:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });
@@ -500,7 +445,7 @@ program
   .command("update-uri")
   .description("Update your arbiter URI")
   .requiredOption("-u, --uri <uri>", "New URI")
-  .action(async (options) => {
+  .action(async options => {
     const { arbiter } = createArbiter();
 
     console.log("\nUpdating arbiter URI...");
@@ -512,10 +457,7 @@ program
       console.log("  Transaction:", result.txHash);
       console.log(`\nhttps://sepolia.basescan.org/tx/${result.txHash}`);
     } catch (error) {
-      console.error(
-        "\n❌ Update failed:",
-        error instanceof Error ? error.message : error,
-      );
+      console.error("\n❌ Update failed:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });
@@ -535,10 +477,7 @@ program
       console.log("  Transaction:", result.txHash);
       console.log(`\nhttps://sepolia.basescan.org/tx/${result.txHash}`);
     } catch (error) {
-      console.error(
-        "\n❌ Deregistration failed:",
-        error instanceof Error ? error.message : error,
-      );
+      console.error("\n❌ Deregistration failed:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });
@@ -549,16 +488,13 @@ program
   .description("List registered arbiters")
   .option("-o, --offset <offset>", "Starting offset", "0")
   .option("-c, --count <count>", "Number of arbiters to fetch", "10")
-  .action(async (options) => {
+  .action(async options => {
     const { arbiter } = createArbiter();
     const offset = BigInt(options.offset);
     const count = BigInt(options.count);
 
     try {
-      const { arbiters, uris, total } = await arbiter.listArbiters(
-        offset,
-        count,
-      );
+      const { arbiters, uris, total } = await arbiter.listArbiters(offset, count);
       console.log(`\nFound ${total} registered arbiters`);
 
       if (arbiters.length === 0) {
@@ -573,10 +509,7 @@ program
         console.log("");
       }
     } catch (error) {
-      console.error(
-        "\nFailed to list arbiters:",
-        error instanceof Error ? error.message : error,
-      );
+      console.error("\nFailed to list arbiters:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });
@@ -586,7 +519,7 @@ program
   .command("registry-check")
   .description("Check if an address is a registered arbiter")
   .requiredOption("-a, --address <address>", "Address to check")
-  .action(async (options) => {
+  .action(async options => {
     const { arbiter } = createArbiter();
     const address = options.address as `0x${string}`;
 
@@ -600,10 +533,7 @@ program
         console.log(`\n❌ ${address} is NOT a registered arbiter`);
       }
     } catch (error) {
-      console.error(
-        "\nFailed to check:",
-        error instanceof Error ? error.message : error,
-      );
+      console.error("\nFailed to check:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });

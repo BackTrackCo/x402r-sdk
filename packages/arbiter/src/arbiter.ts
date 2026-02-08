@@ -10,6 +10,7 @@ import {
   ArbiterRegistryABI,
   RequestStatus,
   NotImplementedError,
+  toAbiPaymentInfo,
   hasRefundRequest as sharedHasRefundRequest,
   getRefundRequest as sharedGetRefundRequest,
   getRefundStatus as sharedGetRefundStatus,
@@ -25,6 +26,13 @@ import {
   type FreezeEventLog,
   type RefundRequestEventLog,
 } from "@x402r/core";
+
+/**
+ * Result of a batch operation item
+ */
+export type BatchResult =
+  | { success: true; txHash: `0x${string}` }
+  | { success: false; error: string };
 
 /**
  * Configuration for X402rArbiter
@@ -147,117 +155,38 @@ export class X402rArbiter {
 
   /**
    * Get the current state of a payment
-   *
-   * @param _paymentInfo - The payment information struct
-   * @returns The payment state (NonExistent, InEscrow, Released, Settled, Expired)
    * @throws NotImplementedError - This method requires subgraph integration
-   *
-   * @example
-   * ```typescript
-   * const state = await arbiter.getPaymentState(paymentInfo);
-   * if (state === PaymentState.InEscrow) {
-   *   console.log('Payment is in escrow, can be refunded');
-   * }
-   * ```
    */
   async getPaymentState(_paymentInfo: PaymentInfo): Promise<PaymentState> {
     throw new NotImplementedError("getPaymentState");
   }
 
-  /**
-   * Check if a refund request exists for a payment
-   *
-   * @param paymentInfo - The payment information struct
-   * @param nonce - The record index (from PaymentIndexRecorder) identifying which charge
-   * @returns True if a refund request exists
-   * @throws Error if refundRequestAddress is not configured
-   *
-   * @example
-   * ```typescript
-   * const hasRequest = await arbiter.hasRefundRequest(paymentInfo, 0n);
-   * if (hasRequest) {
-   *   console.log('Refund request exists');
-   * }
-   * ```
-   */
-  async hasRefundRequest(
-    paymentInfo: PaymentInfo,
-    nonce: bigint,
-  ): Promise<boolean> {
+  /** Check if a refund request exists for a payment */
+  async hasRefundRequest(paymentInfo: PaymentInfo, nonce: bigint): Promise<boolean> {
     return sharedHasRefundRequest(this.getRefundCtx(), paymentInfo, nonce);
   }
 
-  /**
-   * Get the full refund request data
-   *
-   * @param paymentInfo - The payment information struct
-   * @param nonce - The record index (from PaymentIndexRecorder) identifying which charge
-   * @returns The full refund request data including amount and status
-   * @throws Error if refundRequestAddress is not configured
-   *
-   * @example
-   * ```typescript
-   * const request = await arbiter.getRefundRequest(paymentInfo, 0n);
-   * console.log(`Requesting ${request.amount} refund, status: ${request.status}`);
-   * ```
-   */
-  async getRefundRequest(
-    paymentInfo: PaymentInfo,
-    nonce: bigint,
-  ): Promise<RefundRequestData> {
+  /** Get the full refund request data */
+  async getRefundRequest(paymentInfo: PaymentInfo, nonce: bigint): Promise<RefundRequestData> {
     return sharedGetRefundRequest(this.getRefundCtx(), paymentInfo, nonce);
   }
 
   // ============ Decision Submission ============
 
-  /**
-   * Approve a refund request as the arbiter
-   *
-   * @param paymentInfo - The payment information struct
-   * @param nonce - The record index (from PaymentIndexRecorder) identifying which charge
-   * @returns Transaction hash
-   * @throws Error if refundRequestAddress is not configured
-   *
-   * @example
-   * ```typescript
-   * const { txHash } = await arbiter.approveRefundRequest(paymentInfo, 0n);
-   * console.log(`Refund approved: ${txHash}`);
-   * ```
-   */
+  /** Approve a refund request as the arbiter */
   async approveRefundRequest(
     paymentInfo: PaymentInfo,
     nonce: bigint,
   ): Promise<{ txHash: `0x${string}` }> {
-    return sharedApproveRefundRequest(
-      this.getRefundWriteCtx(),
-      paymentInfo,
-      nonce,
-    );
+    return sharedApproveRefundRequest(this.getRefundWriteCtx(), paymentInfo, nonce);
   }
 
-  /**
-   * Deny a refund request as the arbiter
-   *
-   * @param paymentInfo - The payment information struct
-   * @param nonce - The record index (from PaymentIndexRecorder) identifying which charge
-   * @returns Transaction hash
-   * @throws Error if refundRequestAddress is not configured
-   *
-   * @example
-   * ```typescript
-   * const { txHash } = await arbiter.denyRefundRequest(paymentInfo, 0n);
-   * console.log(`Refund denied: ${txHash}`);
-   * ```
-   */
+  /** Deny a refund request as the arbiter */
   async denyRefundRequest(
     paymentInfo: PaymentInfo,
     nonce: bigint,
   ): Promise<{ txHash: `0x${string}` }> {
-    return sharedDenyRefundRequest(
-      this.getRefundWriteCtx(),
-      paymentInfo,
-      nonce,
-    );
+    return sharedDenyRefundRequest(this.getRefundWriteCtx(), paymentInfo, nonce);
   }
 
   /**
@@ -291,7 +220,7 @@ export class X402rArbiter {
       address: this.operatorAddress,
       abi: PaymentOperatorABI,
       functionName: "refundInEscrow",
-      args: [paymentInfo as never, refundAmount],
+      args: [toAbiPaymentInfo(paymentInfo), refundAmount],
     });
 
     return { txHash: txHash as `0x${string}` };
@@ -303,40 +232,31 @@ export class X402rArbiter {
    * Approve multiple refund requests in batch
    *
    * @remarks
-   * Items are processed sequentially (not atomically) to ensure correct nonce ordering.
-   * If one item fails, previously approved items will NOT be rolled back.
+   * Items are processed sequentially. If one item fails, remaining items continue.
+   * Check the `success` field on each result to identify failures.
    *
    * @param items - Array of objects containing paymentInfo and nonce
-   * @returns Array of transaction results
-   * @throws Error if refundRequestAddress is not configured
-   *
-   * @example
-   * ```typescript
-   * const results = await arbiter.batchApprove([
-   *   { paymentInfo: paymentInfo1, nonce: 0n },
-   *   { paymentInfo: paymentInfo2, nonce: 0n },
-   * ]);
-   * for (const { txHash } of results) {
-   *   console.log(`Approved: ${txHash}`);
-   * }
-   * ```
+   * @returns Array of results with success status, txHash (on success), and error (on failure)
    */
   async batchApprove(
     items: Array<{ paymentInfo: PaymentInfo; nonce: bigint }>,
-  ): Promise<{ txHash: `0x${string}` }[]> {
+  ): Promise<BatchResult[]> {
     if (!this.refundRequestAddress) {
       throw new Error("RefundRequest address required");
     }
 
-    if (items.length === 0) {
-      return [];
-    }
-
-    const results: { txHash: `0x${string}` }[] = [];
+    const results: BatchResult[] = [];
 
     for (const { paymentInfo, nonce } of items) {
-      const result = await this.approveRefundRequest(paymentInfo, nonce);
-      results.push(result);
+      try {
+        const { txHash } = await this.approveRefundRequest(paymentInfo, nonce);
+        results.push({ success: true, txHash });
+      } catch (err) {
+        results.push({
+          success: false,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
     }
 
     return results;
@@ -346,40 +266,31 @@ export class X402rArbiter {
    * Deny multiple refund requests in batch
    *
    * @remarks
-   * Items are processed sequentially (not atomically) to ensure correct nonce ordering.
-   * If one item fails, previously denied items will NOT be rolled back.
+   * Items are processed sequentially. If one item fails, remaining items continue.
+   * Check the `success` field on each result to identify failures.
    *
    * @param items - Array of objects containing paymentInfo and nonce
-   * @returns Array of transaction results
-   * @throws Error if refundRequestAddress is not configured
-   *
-   * @example
-   * ```typescript
-   * const results = await arbiter.batchDeny([
-   *   { paymentInfo: paymentInfo1, nonce: 0n },
-   *   { paymentInfo: paymentInfo2, nonce: 0n },
-   * ]);
-   * for (const { txHash } of results) {
-   *   console.log(`Denied: ${txHash}`);
-   * }
-   * ```
+   * @returns Array of results with success status, txHash (on success), and error (on failure)
    */
   async batchDeny(
     items: Array<{ paymentInfo: PaymentInfo; nonce: bigint }>,
-  ): Promise<{ txHash: `0x${string}` }[]> {
+  ): Promise<BatchResult[]> {
     if (!this.refundRequestAddress) {
       throw new Error("RefundRequest address required");
     }
 
-    if (items.length === 0) {
-      return [];
-    }
-
-    const results: { txHash: `0x${string}` }[] = [];
+    const results: BatchResult[] = [];
 
     for (const { paymentInfo, nonce } of items) {
-      const result = await this.denyRefundRequest(paymentInfo, nonce);
-      results.push(result);
+      try {
+        const { txHash } = await this.denyRefundRequest(paymentInfo, nonce);
+        results.push({ success: true, txHash });
+      } catch (err) {
+        results.push({
+          success: false,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
     }
 
     return results;
@@ -423,22 +334,7 @@ export class X402rArbiter {
     return { keys, total };
   }
 
-  /**
-   * Get the status of a refund request
-   *
-   * @param paymentInfo - The payment information struct
-   * @param nonce - The record index (from PaymentIndexRecorder) identifying which charge
-   * @returns The refund request status (Pending, Approved, Denied, Cancelled)
-   * @throws Error if refundRequestAddress is not configured
-   *
-   * @example
-   * ```typescript
-   * const status = await arbiter.getRefundStatus(paymentInfo, 0n);
-   * if (status === RequestStatus.Pending) {
-   *   console.log('Case needs review');
-   * }
-   * ```
-   */
+  /** Get the status of a refund request */
   async getRefundStatus(
     paymentInfo: PaymentInfo,
     nonce: bigint,
@@ -459,9 +355,7 @@ export class X402rArbiter {
    * console.log(`Total refund requests: ${count}`);
    * ```
    */
-  async getRefundRequestCount(
-    receiverAddress?: `0x${string}`,
-  ): Promise<bigint> {
+  async getRefundRequestCount(receiverAddress?: `0x${string}`): Promise<bigint> {
     if (!this.refundRequestAddress) {
       throw new Error("RefundRequest address required");
     }
@@ -478,50 +372,16 @@ export class X402rArbiter {
     return count as bigint;
   }
 
-  /**
-   * Get refund request data by composite key
-   *
-   * @param compositeKey - The keccak256(paymentInfoHash, nonce) key
-   * @returns The refund request data
-   * @throws Error if refundRequestAddress is not configured
-   *
-   * @example
-   * ```typescript
-   * const request = await arbiter.getRefundRequestByKey(compositeKey);
-   * console.log(`Amount: ${request.amount}, Status: ${request.status}`);
-   * ```
-   */
-  async getRefundRequestByKey(
-    compositeKey: `0x${string}`,
-  ): Promise<RefundRequestData> {
+  /** Get refund request data by composite key */
+  async getRefundRequestByKey(compositeKey: `0x${string}`): Promise<RefundRequestData> {
     return sharedGetRefundRequestByKey(this.getRefundCtx(), compositeKey);
   }
 
   // ============ Freeze Operations ============
 
-  /**
-   * Check if a payment is currently frozen
-   *
-   * @param paymentInfo - The payment information struct
-   * @param freezeAddress - The Freeze contract address
-   * @returns True if payment is frozen
-   *
-   * @example
-   * ```typescript
-   * if (await arbiter.isFrozen(paymentInfo, freezeAddress)) {
-   *   console.log('Payment is frozen');
-   * }
-   * ```
-   */
-  async isFrozen(
-    paymentInfo: PaymentInfo,
-    freezeAddress: `0x${string}`,
-  ): Promise<boolean> {
-    return sharedIsFrozen(
-      { publicClient: this.publicClient },
-      paymentInfo,
-      freezeAddress,
-    );
+  /** Check if a payment is currently frozen */
+  async isFrozen(paymentInfo: PaymentInfo, freezeAddress: `0x${string}`): Promise<boolean> {
+    return sharedIsFrozen({ publicClient: this.publicClient }, paymentInfo, freezeAddress);
   }
 
   // ============ Subscriptions ============
@@ -554,7 +414,7 @@ export class X402rArbiter {
       address: this.refundRequestAddress,
       abi: RefundRequestABI,
       eventName: "RefundRequested",
-      onLogs: (logs) => {
+      onLogs: logs => {
         for (const log of logs) {
           callback(log as unknown as RefundRequestEventLog);
         }
@@ -592,7 +452,7 @@ export class X402rArbiter {
       address: this.refundRequestAddress,
       abi: RefundRequestABI,
       eventName: "RefundRequestStatusUpdated",
-      onLogs: (logs) => {
+      onLogs: logs => {
         for (const log of logs) {
           callback(log as unknown as RefundRequestEventLog);
         }
@@ -623,11 +483,7 @@ export class X402rArbiter {
     freezeAddress: `0x${string}`,
     callback: (event: FreezeEventLog) => void,
   ): { unsubscribe: () => void } {
-    return sharedWatchFreezeEvents(
-      { publicClient: this.publicClient },
-      freezeAddress,
-      callback,
-    );
+    return sharedWatchFreezeEvents({ publicClient: this.publicClient }, freezeAddress, callback);
   }
 
   // ============ Registry Operations ============

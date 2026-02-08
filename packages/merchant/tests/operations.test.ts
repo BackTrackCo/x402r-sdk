@@ -101,9 +101,7 @@ describe("X402rMerchant - Payment Operations", () => {
         operatorAddress,
       });
 
-      await expect(merchant.getReceiverPayments()).rejects.toThrow(
-        NotImplementedError,
-      );
+      await expect(merchant.getReceiverPayments()).rejects.toThrow(NotImplementedError);
     });
   });
 
@@ -117,9 +115,7 @@ describe("X402rMerchant - Payment Operations", () => {
       });
 
       const mockState = [true, BigInt("750000"), BigInt("250000")] as const;
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockState,
-      );
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(mockState);
 
       const amounts = await merchant.getPaymentAmounts(samplePaymentInfo);
       expect(amounts.capturableAmount).toBe(BigInt("750000"));
@@ -133,9 +129,9 @@ describe("X402rMerchant - Payment Operations", () => {
         operatorAddress,
       });
 
-      await expect(
-        merchant.getPaymentAmounts(samplePaymentInfo),
-      ).rejects.toThrow("Escrow address required");
+      await expect(merchant.getPaymentAmounts(samplePaymentInfo)).rejects.toThrow(
+        "Escrow address required",
+      );
     });
   });
 });

@@ -114,9 +114,7 @@ export const PaymentOperatorABI = [
     name: "getPaymentState",
     type: "function",
     stateMutability: "view",
-    inputs: [
-      { name: "paymentInfo", type: "tuple", components: paymentInfoComponents },
-    ],
+    inputs: [{ name: "paymentInfo", type: "tuple", components: paymentInfoComponents }],
     outputs: [{ name: "state", type: "uint8" }],
   },
   {
@@ -607,18 +605,14 @@ export const EscrowPeriodABI = [
     name: "getAuthorizationTime",
     type: "function",
     stateMutability: "view",
-    inputs: [
-      { name: "paymentInfo", type: "tuple", components: paymentInfoComponents },
-    ],
+    inputs: [{ name: "paymentInfo", type: "tuple", components: paymentInfoComponents }],
     outputs: [{ name: "", type: "uint256" }],
   },
   {
     name: "isDuringEscrowPeriod",
     type: "function",
     stateMutability: "view",
-    inputs: [
-      { name: "paymentInfo", type: "tuple", components: paymentInfoComponents },
-    ],
+    inputs: [{ name: "paymentInfo", type: "tuple", components: paymentInfoComponents }],
     outputs: [{ name: "", type: "bool" }],
   },
   // Immutables
@@ -681,9 +675,7 @@ export const AuthCaptureEscrowABI = [
     name: "getHash",
     type: "function",
     stateMutability: "pure",
-    inputs: [
-      { name: "paymentInfo", type: "tuple", components: paymentInfoComponents },
-    ],
+    inputs: [{ name: "paymentInfo", type: "tuple", components: paymentInfoComponents }],
     outputs: [{ name: "", type: "bytes32" }],
   },
   {
@@ -757,27 +749,21 @@ export const FreezeABI = [
     name: "freeze",
     type: "function",
     stateMutability: "nonpayable",
-    inputs: [
-      { name: "paymentInfo", type: "tuple", components: paymentInfoComponents },
-    ],
+    inputs: [{ name: "paymentInfo", type: "tuple", components: paymentInfoComponents }],
     outputs: [],
   },
   {
     name: "unfreeze",
     type: "function",
     stateMutability: "nonpayable",
-    inputs: [
-      { name: "paymentInfo", type: "tuple", components: paymentInfoComponents },
-    ],
+    inputs: [{ name: "paymentInfo", type: "tuple", components: paymentInfoComponents }],
     outputs: [],
   },
   {
     name: "isFrozen",
     type: "function",
     stateMutability: "view",
-    inputs: [
-      { name: "paymentInfo", type: "tuple", components: paymentInfoComponents },
-    ],
+    inputs: [{ name: "paymentInfo", type: "tuple", components: paymentInfoComponents }],
     outputs: [{ name: "", type: "bool" }],
   },
   // Immutables

@@ -43,9 +43,7 @@ export interface DecisionResult {
 /**
  * Hook function type for evaluating refund cases
  */
-export type ArbiterHook = (
-  context: CaseEvaluationContext,
-) => Promise<DecisionResult>;
+export type ArbiterHook = (context: CaseEvaluationContext) => Promise<DecisionResult>;
 
 /**
  * Configuration for the webhook handler
@@ -112,12 +110,7 @@ export interface WebhookResult extends DecisionResult {
 export function createWebhookHandler(
   config: WebhookHandlerConfig,
 ): (context: CaseEvaluationContext) => Promise<WebhookResult> {
-  const {
-    arbiter,
-    evaluationHook,
-    autoSubmitDecision = false,
-    confidenceThreshold = 0.8,
-  } = config;
+  const { arbiter, evaluationHook, autoSubmitDecision = false, confidenceThreshold = 0.8 } = config;
 
   return async (context: CaseEvaluationContext): Promise<WebhookResult> => {
     // Evaluate the case using the provided hook
@@ -141,10 +134,7 @@ export function createWebhookHandler(
             result.txHash = txHash;
             result.executed = true;
           } else {
-            const { txHash } = await arbiter.denyRefundRequest(
-              context.paymentInfo,
-              context.nonce,
-            );
+            const { txHash } = await arbiter.denyRefundRequest(context.paymentInfo, context.nonce);
             result.txHash = txHash;
             result.executed = true;
           }

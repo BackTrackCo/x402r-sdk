@@ -56,8 +56,7 @@ export function refundable<T extends PaymentOption>(
 
   if (!networkConfig) {
     throw new Error(
-      `Unsupported network: ${option.network}. ` +
-        `Supported: ${SupportedNetworks.join(", ")}`,
+      `Unsupported network: ${option.network}. ` + `Supported: ${SupportedNetworks.join(", ")}`,
     );
   }
 

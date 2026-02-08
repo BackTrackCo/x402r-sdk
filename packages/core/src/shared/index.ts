@@ -14,8 +14,4 @@ export {
   type RefundWriteContext,
 } from "./refund-operations.js";
 
-export {
-  isFrozen,
-  watchFreezeEvents,
-  type FreezeReadContext,
-} from "./freeze-operations.js";
+export { isFrozen, watchFreezeEvents, type FreezeReadContext } from "./freeze-operations.js";

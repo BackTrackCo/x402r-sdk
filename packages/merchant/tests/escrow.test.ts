@@ -26,8 +26,7 @@ describe("X402rMerchant - Escrow Management", () => {
   let publicClient: PublicClient;
   let walletClient: WalletClient;
   const operatorAddress = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as const;
-  const escrowRecorderAddress =
-    "0xdddddddddddddddddddddddddddddddddddddddd" as const;
+  const escrowRecorderAddress = "0xdddddddddddddddddddddddddddddddddddddddd" as const;
 
   const samplePaymentInfo = {
     operator: operatorAddress,
@@ -58,10 +57,7 @@ describe("X402rMerchant - Escrow Management", () => {
         operatorAddress,
       });
 
-      const result = await merchant.unfreezePayment(
-        samplePaymentInfo,
-        escrowRecorderAddress,
-      );
+      const result = await merchant.unfreezePayment(samplePaymentInfo, escrowRecorderAddress);
 
       expect(walletClient.writeContract).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -81,14 +77,9 @@ describe("X402rMerchant - Escrow Management", () => {
         operatorAddress,
       });
 
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(
-        true,
-      );
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(true);
 
-      const frozen = await merchant.isFrozen(
-        samplePaymentInfo,
-        escrowRecorderAddress,
-      );
+      const frozen = await merchant.isFrozen(samplePaymentInfo, escrowRecorderAddress);
       expect(frozen).toBe(true);
     });
 
@@ -99,14 +90,9 @@ describe("X402rMerchant - Escrow Management", () => {
         operatorAddress,
       });
 
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(
-        false,
-      );
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(false);
 
-      const frozen = await merchant.isFrozen(
-        samplePaymentInfo,
-        escrowRecorderAddress,
-      );
+      const frozen = await merchant.isFrozen(samplePaymentInfo, escrowRecorderAddress);
       expect(frozen).toBe(false);
     });
   });
@@ -116,10 +102,8 @@ describe("X402rMerchant - Subscriptions", () => {
   let publicClient: PublicClient;
   let walletClient: WalletClient;
   const operatorAddress = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as const;
-  const refundRequestAddress =
-    "0xcccccccccccccccccccccccccccccccccccccccc" as const;
-  const escrowRecorderAddress =
-    "0xdddddddddddddddddddddddddddddddddddddddd" as const;
+  const refundRequestAddress = "0xcccccccccccccccccccccccccccccccccccccccc" as const;
+  const escrowRecorderAddress = "0xdddddddddddddddddddddddddddddddddddddddd" as const;
 
   beforeEach(() => {
     publicClient = createMockPublicClient();
@@ -198,10 +182,7 @@ describe("X402rMerchant - Subscriptions", () => {
       });
 
       const callback = vi.fn();
-      const { unsubscribe } = merchant.watchFreezeEvents(
-        escrowRecorderAddress,
-        callback,
-      );
+      const { unsubscribe } = merchant.watchFreezeEvents(escrowRecorderAddress, callback);
 
       expect(typeof unsubscribe).toBe("function");
     });

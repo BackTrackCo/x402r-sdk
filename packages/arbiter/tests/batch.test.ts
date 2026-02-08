@@ -25,8 +25,7 @@ describe("X402rArbiter - Batch Operations", () => {
   let publicClient: PublicClient;
   let walletClient: WalletClient;
   const operatorAddress = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as const;
-  const refundRequestAddress =
-    "0xcccccccccccccccccccccccccccccccccccccccc" as const;
+  const refundRequestAddress = "0xcccccccccccccccccccccccccccccccccccccccc" as const;
 
   const createPaymentInfo = (salt: bigint) => ({
     operator: operatorAddress,
@@ -69,8 +68,42 @@ describe("X402rArbiter - Batch Operations", () => {
       expect(results).toHaveLength(3);
       expect(walletClient.writeContract).toHaveBeenCalledTimes(3);
       for (const result of results) {
-        expect(result.txHash).toBe("0xtxhash");
+        expect(result.success).toBe(true);
+        if (result.success) {
+          expect(result.txHash).toBe("0xtxhash");
+        }
       }
+    });
+
+    it("should handle partial failures", async () => {
+      const mockWriteContract = walletClient.writeContract as ReturnType<typeof vi.fn>;
+      mockWriteContract
+        .mockResolvedValueOnce("0xtxhash1")
+        .mockRejectedValueOnce(new Error("tx reverted"))
+        .mockResolvedValueOnce("0xtxhash3");
+
+      const arbiter = new X402rArbiter({
+        publicClient,
+        walletClient,
+        operatorAddress,
+        refundRequestAddress,
+      });
+
+      const paymentInfos = [
+        createPaymentInfo(BigInt("0x111")),
+        createPaymentInfo(BigInt("0x222")),
+        createPaymentInfo(BigInt("0x333")),
+      ];
+
+      const results = await arbiter.batchApprove(paymentInfos);
+
+      expect(results).toHaveLength(3);
+      expect(results[0].success).toBe(true);
+      expect(results[1].success).toBe(false);
+      if (!results[1].success) {
+        expect(results[1].error).toBe("tx reverted");
+      }
+      expect(results[2].success).toBe(true);
     });
 
     it("should return empty array for empty input", async () => {
@@ -111,17 +144,17 @@ describe("X402rArbiter - Batch Operations", () => {
         refundRequestAddress,
       });
 
-      const paymentInfos = [
-        createPaymentInfo(BigInt("0x111")),
-        createPaymentInfo(BigInt("0x222")),
-      ];
+      const paymentInfos = [createPaymentInfo(BigInt("0x111")), createPaymentInfo(BigInt("0x222"))];
 
       const results = await arbiter.batchDeny(paymentInfos);
 
       expect(results).toHaveLength(2);
       expect(walletClient.writeContract).toHaveBeenCalledTimes(2);
       for (const result of results) {
-        expect(result.txHash).toBe("0xtxhash");
+        expect(result.success).toBe(true);
+        if (result.success) {
+          expect(result.txHash).toBe("0xtxhash");
+        }
       }
     });
 

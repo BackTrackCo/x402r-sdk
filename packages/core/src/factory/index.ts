@@ -6,8 +6,7 @@
 /**
  * Zero address constant
  */
-export const ZERO_ADDRESS =
-  "0x0000000000000000000000000000000000000000" as const;
+export const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as const;
 
 // ============ Config Types ============
 
@@ -148,9 +147,7 @@ export interface EscrowPeriodConfigInput {
  * });
  * ```
  */
-export function createEscrowPeriodConfig(
-  input: EscrowPeriodConfigInput,
-): EscrowPeriodConfig {
+export function createEscrowPeriodConfig(input: EscrowPeriodConfigInput): EscrowPeriodConfig {
   return {
     escrowPeriod: input.escrowPeriod,
     authorizedCodehash: input.authorizedCodehash ?? ZERO_BYTES32,

@@ -230,10 +230,7 @@ export interface FreezeEventLog {
  * Typed event log for RefundRequested, RefundRequestStatusUpdated, and RefundRequestCancelled events
  */
 export interface RefundRequestEventLog {
-  eventName:
-    | "RefundRequested"
-    | "RefundRequestStatusUpdated"
-    | "RefundRequestCancelled";
+  eventName: "RefundRequested" | "RefundRequestStatusUpdated" | "RefundRequestCancelled";
   args: {
     paymentInfoHash?: `0x${string}`;
     payer?: `0x${string}`;

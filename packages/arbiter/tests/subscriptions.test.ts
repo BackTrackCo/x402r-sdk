@@ -26,10 +26,8 @@ describe("X402rArbiter - Subscriptions", () => {
   let publicClient: PublicClient;
   let walletClient: WalletClient;
   const operatorAddress = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as const;
-  const refundRequestAddress =
-    "0xcccccccccccccccccccccccccccccccccccccccc" as const;
-  const escrowRecorderAddress =
-    "0xdddddddddddddddddddddddddddddddddddddddd" as const;
+  const refundRequestAddress = "0xcccccccccccccccccccccccccccccccccccccccc" as const;
+  const escrowRecorderAddress = "0xdddddddddddddddddddddddddddddddddddddddd" as const;
 
   beforeEach(() => {
     publicClient = createMockPublicClient();
@@ -79,9 +77,7 @@ describe("X402rArbiter - Subscriptions", () => {
       });
 
       const callback = vi.fn();
-      expect(() => arbiter.watchNewCases(callback)).toThrow(
-        "RefundRequest address required",
-      );
+      expect(() => arbiter.watchNewCases(callback)).toThrow("RefundRequest address required");
     });
   });
 
@@ -127,9 +123,7 @@ describe("X402rArbiter - Subscriptions", () => {
       });
 
       const callback = vi.fn();
-      expect(() => arbiter.watchDecisions(callback)).toThrow(
-        "RefundRequest address required",
-      );
+      expect(() => arbiter.watchDecisions(callback)).toThrow("RefundRequest address required");
     });
   });
 
@@ -143,10 +137,7 @@ describe("X402rArbiter - Subscriptions", () => {
       });
 
       const callback = vi.fn();
-      const { unsubscribe } = arbiter.watchFreezeEvents(
-        escrowRecorderAddress,
-        callback,
-      );
+      const { unsubscribe } = arbiter.watchFreezeEvents(escrowRecorderAddress, callback);
 
       expect(typeof unsubscribe).toBe("function");
     });

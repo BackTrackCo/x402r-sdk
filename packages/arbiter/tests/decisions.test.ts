@@ -26,8 +26,7 @@ describe("X402rArbiter - Decision Submission", () => {
   let publicClient: PublicClient;
   let walletClient: WalletClient;
   const operatorAddress = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as const;
-  const refundRequestAddress =
-    "0xcccccccccccccccccccccccccccccccccccccccc" as const;
+  const refundRequestAddress = "0xcccccccccccccccccccccccccccccccccccccccc" as const;
 
   const samplePaymentInfo = {
     operator: operatorAddress,
@@ -60,20 +59,13 @@ describe("X402rArbiter - Decision Submission", () => {
       });
 
       const nonce = 0n;
-      const result = await arbiter.approveRefundRequest(
-        samplePaymentInfo,
-        nonce,
-      );
+      const result = await arbiter.approveRefundRequest(samplePaymentInfo, nonce);
 
       expect(walletClient.writeContract).toHaveBeenCalledWith(
         expect.objectContaining({
           address: refundRequestAddress,
           functionName: "updateStatus",
-          args: expect.arrayContaining([
-            expect.anything(),
-            nonce,
-            RequestStatus.Approved,
-          ]),
+          args: expect.arrayContaining([expect.anything(), nonce, RequestStatus.Approved]),
         }),
       );
       expect(result.txHash).toBe("0xtxhash");
@@ -86,9 +78,9 @@ describe("X402rArbiter - Decision Submission", () => {
         operatorAddress,
       });
 
-      await expect(
-        arbiter.approveRefundRequest(samplePaymentInfo, 0n),
-      ).rejects.toThrow("RefundRequest address required");
+      await expect(arbiter.approveRefundRequest(samplePaymentInfo, 0n)).rejects.toThrow(
+        "RefundRequest address required",
+      );
     });
   });
 
@@ -108,11 +100,7 @@ describe("X402rArbiter - Decision Submission", () => {
         expect.objectContaining({
           address: refundRequestAddress,
           functionName: "updateStatus",
-          args: expect.arrayContaining([
-            expect.anything(),
-            nonce,
-            RequestStatus.Denied,
-          ]),
+          args: expect.arrayContaining([expect.anything(), nonce, RequestStatus.Denied]),
         }),
       );
       expect(result.txHash).toBe("0xtxhash");
@@ -125,9 +113,9 @@ describe("X402rArbiter - Decision Submission", () => {
         operatorAddress,
       });
 
-      await expect(
-        arbiter.denyRefundRequest(samplePaymentInfo, 0n),
-      ).rejects.toThrow("RefundRequest address required");
+      await expect(arbiter.denyRefundRequest(samplePaymentInfo, 0n)).rejects.toThrow(
+        "RefundRequest address required",
+      );
     });
   });
 
@@ -141,10 +129,7 @@ describe("X402rArbiter - Decision Submission", () => {
       });
 
       const amount = BigInt("500000");
-      const result = await arbiter.executeRefundInEscrow(
-        samplePaymentInfo,
-        amount,
-      );
+      const result = await arbiter.executeRefundInEscrow(samplePaymentInfo, amount);
 
       expect(walletClient.writeContract).toHaveBeenCalledWith(
         expect.objectContaining({

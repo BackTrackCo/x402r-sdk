@@ -31,8 +31,7 @@ describe("AI Integration", () => {
   let publicClient: PublicClient;
   let walletClient: WalletClient;
   const operatorAddress = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as const;
-  const refundRequestAddress =
-    "0xcccccccccccccccccccccccccccccccccccccccc" as const;
+  const refundRequestAddress = "0xcccccccccccccccccccccccccccccccccccccccc" as const;
 
   const samplePaymentInfo = {
     operator: operatorAddress,
@@ -61,8 +60,7 @@ describe("AI Integration", () => {
         paymentInfo: samplePaymentInfo,
         paymentState: PaymentState.InEscrow,
         refundStatus: RequestStatus.Pending,
-        paymentInfoHash:
-          "0x1234567890123456789012345678901234567890123456789012345678901234",
+        paymentInfoHash: "0x1234567890123456789012345678901234567890123456789012345678901234",
       };
 
       expect(context.paymentInfo).toBe(samplePaymentInfo);
@@ -128,8 +126,7 @@ describe("AI Integration", () => {
         paymentInfo: samplePaymentInfo,
         paymentState: PaymentState.InEscrow,
         refundStatus: RequestStatus.Pending,
-        paymentInfoHash:
-          "0x1234567890123456789012345678901234567890123456789012345678901234",
+        paymentInfoHash: "0x1234567890123456789012345678901234567890123456789012345678901234",
       };
 
       const result = await handler(context);
@@ -161,8 +158,7 @@ describe("AI Integration", () => {
         paymentInfo: samplePaymentInfo,
         paymentState: PaymentState.InEscrow,
         refundStatus: RequestStatus.Pending,
-        paymentInfoHash:
-          "0x1234567890123456789012345678901234567890123456789012345678901234",
+        paymentInfoHash: "0x1234567890123456789012345678901234567890123456789012345678901234",
       };
 
       await handler(context);
@@ -193,8 +189,7 @@ describe("AI Integration", () => {
         paymentInfo: samplePaymentInfo,
         paymentState: PaymentState.InEscrow,
         refundStatus: RequestStatus.Pending,
-        paymentInfoHash:
-          "0x1234567890123456789012345678901234567890123456789012345678901234",
+        paymentInfoHash: "0x1234567890123456789012345678901234567890123456789012345678901234",
       };
 
       await handler(context);

@@ -5,11 +5,8 @@
 
 import type { PublicClient, WalletClient } from "viem";
 import { RefundRequestABI } from "../abis/index.js";
-import {
-  RequestStatus,
-  type PaymentInfo,
-  type RefundRequestData,
-} from "../types/index.js";
+import { RequestStatus, type PaymentInfo, type RefundRequestData } from "../types/index.js";
+import { toAbiPaymentInfo } from "../utils/index.js";
 
 /** Read-only context for refund operations */
 export interface RefundReadContext {
@@ -27,9 +24,7 @@ export interface RefundWriteContext extends RefundReadContext {
  * Throws a descriptive error if the account is missing, which can happen when
  * a WalletClient is created without passing an account (e.g., for browser wallet integration).
  */
-function requireAccount(
-  walletClient: WalletClient,
-): asserts walletClient is WalletClient & {
+function requireAccount(walletClient: WalletClient): asserts walletClient is WalletClient & {
   account: NonNullable<WalletClient["account"]>;
 } {
   if (!walletClient.account) {
@@ -53,13 +48,11 @@ export async function hasRefundRequest(
   paymentInfo: PaymentInfo,
   nonce: bigint,
 ): Promise<boolean> {
-  // Cast paymentInfo as never because viem's strict ABI typing cannot infer
-  // the complex PaymentInfo struct tuple type from our interface definition.
   const exists = await ctx.publicClient.readContract({
     address: ctx.refundRequestAddress,
     abi: RefundRequestABI,
     functionName: "hasRefundRequest",
-    args: [paymentInfo as never, nonce],
+    args: [toAbiPaymentInfo(paymentInfo), nonce],
   });
 
   return exists as boolean;
@@ -82,7 +75,7 @@ export async function getRefundRequest(
     address: ctx.refundRequestAddress,
     abi: RefundRequestABI,
     functionName: "getRefundRequest",
-    args: [paymentInfo as never, nonce],
+    args: [toAbiPaymentInfo(paymentInfo), nonce],
   });
 
   // The contract returns a tuple that matches RefundRequestData fields.
@@ -107,7 +100,7 @@ export async function getRefundStatus(
     address: ctx.refundRequestAddress,
     abi: RefundRequestABI,
     functionName: "getRefundRequestStatus",
-    args: [paymentInfo as never, nonce],
+    args: [toAbiPaymentInfo(paymentInfo), nonce],
   });
 
   return status as RequestStatus;
@@ -155,7 +148,7 @@ export async function approveRefundRequest(
     address: ctx.refundRequestAddress,
     abi: RefundRequestABI,
     functionName: "updateStatus",
-    args: [paymentInfo as never, nonce, RequestStatus.Approved],
+    args: [toAbiPaymentInfo(paymentInfo), nonce, RequestStatus.Approved],
   });
 
   return { txHash: txHash as `0x${string}` };
@@ -182,7 +175,7 @@ export async function denyRefundRequest(
     address: ctx.refundRequestAddress,
     abi: RefundRequestABI,
     functionName: "updateStatus",
-    args: [paymentInfo as never, nonce, RequestStatus.Denied],
+    args: [toAbiPaymentInfo(paymentInfo), nonce, RequestStatus.Denied],
   });
 
   return { txHash: txHash as `0x${string}` };
