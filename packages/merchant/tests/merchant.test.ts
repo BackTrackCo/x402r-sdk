@@ -125,9 +125,7 @@ describe("X402rMerchant", () => {
         salt: BigInt("0x123456"),
       };
 
-      await expect(merchant.getPaymentState(paymentInfo)).rejects.toThrow(
-        NotImplementedError,
-      );
+      await expect(merchant.getPaymentState(paymentInfo)).rejects.toThrow(NotImplementedError);
     });
   });
 });

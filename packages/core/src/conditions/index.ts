@@ -106,9 +106,7 @@ export function createConditionHelpers(networkId: string) {
      * @param conditionList - Array of conditions to combine with AND logic
      * @returns AND condition config for deployment
      */
-    and(
-      conditionList: (ConditionAddress | ConditionConfig)[],
-    ): AndConditionConfig {
+    and(conditionList: (ConditionAddress | ConditionConfig)[]): AndConditionConfig {
       return {
         type: "and",
         conditions: conditionList,
@@ -120,9 +118,7 @@ export function createConditionHelpers(networkId: string) {
      * @param conditionList - Array of conditions to combine with OR logic
      * @returns OR condition config for deployment
      */
-    or(
-      conditionList: (ConditionAddress | ConditionConfig)[],
-    ): OrConditionConfig {
+    or(conditionList: (ConditionAddress | ConditionConfig)[]): OrConditionConfig {
       return {
         type: "or",
         conditions: conditionList,
@@ -146,9 +142,7 @@ export function createConditionHelpers(networkId: string) {
      * @param designatedAddress - The address that will be allowed
      * @returns StaticAddressCondition config for deployment
      */
-    staticAddress(
-      designatedAddress: `0x${string}`,
-    ): StaticAddressConditionConfig {
+    staticAddress(designatedAddress: `0x${string}`): StaticAddressConditionConfig {
       return {
         type: "staticAddress",
         designatedAddress,

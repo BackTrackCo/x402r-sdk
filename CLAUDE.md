@@ -60,7 +60,7 @@ See `x402r-notes/sdk/` for implementation plans and design decision records:
 
 - `SDK_IMPLEMENTATION_PLAN.md` — Overall SDK roadmap and phases
 - `DESIGN_DECISIONS.md` — Key architectural decisions
-- `CODE_REVIEW_FINDINGS.md` — Audit findings and fixes
+- `PHASE_1_2_HACKS_AND_ASSUMPTIONS.md` — Known hacks, assumptions & technical debt
 
 ## Coding Conventions
 

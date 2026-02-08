@@ -440,9 +440,7 @@ export function getFactoryAddress(
   const address = factories[factory];
   if (!isDeployedAddress(address)) {
     const config = getNetworkConfig(networkId);
-    throw new Error(
-      `${factory} factory is not deployed on ${config?.name ?? networkId}`,
-    );
+    throw new Error(`${factory} factory is not deployed on ${config?.name ?? networkId}`);
   }
   return address;
 }
@@ -460,9 +458,7 @@ export function getFactoryAddress(
  * console.log(conditions.payer);
  * ```
  */
-export function getConditionSingletons(
-  networkId: string,
-): ConditionSingletonAddresses {
+export function getConditionSingletons(networkId: string): ConditionSingletonAddresses {
   const config = getNetworkConfig(networkId);
   if (!config) {
     throw new Error(`Network ${networkId} is not supported`);
@@ -472,11 +468,7 @@ export function getConditionSingletons(
   }
   // Validate that addresses are actually deployed
   const { payer, receiver, alwaysTrue } = config.conditions;
-  if (
-    !isDeployedAddress(payer) ||
-    !isDeployedAddress(receiver) ||
-    !isDeployedAddress(alwaysTrue)
-  ) {
+  if (!isDeployedAddress(payer) || !isDeployedAddress(receiver) || !isDeployedAddress(alwaysTrue)) {
     throw new Error(
       `Condition singletons are not fully deployed on ${config.name}. ` +
         `This is a protocol-level deployment - contact the x402r team.`,
@@ -506,9 +498,5 @@ export function hasConditionSingletons(networkId: string): boolean {
   const config = getNetworkConfig(networkId);
   if (!config?.conditions) return false;
   const { payer, receiver, alwaysTrue } = config.conditions;
-  return (
-    isDeployedAddress(payer) &&
-    isDeployedAddress(receiver) &&
-    isDeployedAddress(alwaysTrue)
-  );
+  return isDeployedAddress(payer) && isDeployedAddress(receiver) && isDeployedAddress(alwaysTrue);
 }

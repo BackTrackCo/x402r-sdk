@@ -26,8 +26,7 @@ describe("X402rMerchant - Refund Handling", () => {
   let publicClient: PublicClient;
   let walletClient: WalletClient;
   const operatorAddress = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as const;
-  const refundRequestAddress =
-    "0xcccccccccccccccccccccccccccccccccccccccc" as const;
+  const refundRequestAddress = "0xcccccccccccccccccccccccccccccccccccccccc" as const;
 
   const samplePaymentInfo = {
     operator: operatorAddress,
@@ -59,9 +58,7 @@ describe("X402rMerchant - Refund Handling", () => {
         refundRequestAddress,
       });
 
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(
-        true,
-      );
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(true);
 
       const exists = await merchant.hasRefundRequest(samplePaymentInfo, 0n);
       expect(exists).toBe(true);
@@ -74,9 +71,9 @@ describe("X402rMerchant - Refund Handling", () => {
         operatorAddress,
       });
 
-      await expect(
-        merchant.hasRefundRequest(samplePaymentInfo, 0n),
-      ).rejects.toThrow("RefundRequest address required");
+      await expect(merchant.hasRefundRequest(samplePaymentInfo, 0n)).rejects.toThrow(
+        "RefundRequest address required",
+      );
     });
   });
 
@@ -125,9 +122,9 @@ describe("X402rMerchant - Refund Handling", () => {
         operatorAddress,
       });
 
-      await expect(
-        merchant.approveRefundRequest(samplePaymentInfo, 0n),
-      ).rejects.toThrow("RefundRequest address required");
+      await expect(merchant.approveRefundRequest(samplePaymentInfo, 0n)).rejects.toThrow(
+        "RefundRequest address required",
+      );
     });
   });
 
@@ -166,9 +163,7 @@ describe("X402rMerchant - Refund Handling", () => {
         "0xabcdef1234567890123456789012345678901234567890123456789012345678",
       ] as const;
 
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(
-        [mockKeys, 2n],
-      );
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue([mockKeys, 2n]);
 
       const result = await merchant.getPendingRefundRequests(0n, 10n);
       expect(result.keys).toHaveLength(2);

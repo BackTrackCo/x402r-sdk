@@ -74,10 +74,7 @@ function defineError(
  * console.log(invalidOp.message);  // 'The specified operator is invalid'
  * ```
  */
-export const CONTRACT_ERRORS: Record<
-  ContractErrorName,
-  ContractErrorDefinition
-> = {
+export const CONTRACT_ERRORS: Record<ContractErrorName, ContractErrorDefinition> = {
   // Operator errors
   InvalidOperator: defineError(
     "InvalidOperator",
@@ -94,11 +91,7 @@ export const CONTRACT_ERRORS: Record<
     "NotReceiver()",
     "Caller is not the receiver of this payment",
   ),
-  NotPayer: defineError(
-    "NotPayer",
-    "NotPayer()",
-    "Caller is not the payer of this payment",
-  ),
+  NotPayer: defineError("NotPayer", "NotPayer()", "Caller is not the payer of this payment"),
 
   // RefundRequest errors
   RequestAlreadyExists: defineError(
@@ -133,16 +126,8 @@ export const CONTRACT_ERRORS: Record<
     "EscrowPeriodExpired()",
     "The escrow period has expired",
   ),
-  AlreadyFrozen: defineError(
-    "AlreadyFrozen",
-    "AlreadyFrozen()",
-    "This payment is already frozen",
-  ),
-  NotFrozen: defineError(
-    "NotFrozen",
-    "NotFrozen()",
-    "This payment is not frozen",
-  ),
+  AlreadyFrozen: defineError("AlreadyFrozen", "AlreadyFrozen()", "This payment is already frozen"),
+  NotFrozen: defineError("NotFrozen", "NotFrozen()", "This payment is not frozen"),
   UnauthorizedFreeze: defineError(
     "UnauthorizedFreeze",
     "UnauthorizedFreeze()",
@@ -170,11 +155,7 @@ export class X402rError extends Error {
   /** Optional error arguments from contract */
   args?: Record<string, unknown>;
 
-  constructor(
-    name: ContractErrorName,
-    message: string,
-    args?: Record<string, unknown>,
-  ) {
+  constructor(name: ContractErrorName, message: string, args?: Record<string, unknown>) {
     super(message);
     this.name = name;
     this.args = args;
@@ -215,9 +196,7 @@ export class NotImplementedError extends Error {
  * @param error - The error to check
  * @returns true if the error is a NotImplementedError
  */
-export function isNotImplementedError(
-  error: unknown,
-): error is NotImplementedError {
+export function isNotImplementedError(error: unknown): error is NotImplementedError {
   return error instanceof NotImplementedError;
 }
 

@@ -32,9 +32,7 @@ describe("CONTRACT_ERRORS", () => {
 
   it("should have error signatures", () => {
     // Error signatures are the first 4 bytes of keccak256(error signature)
-    expect(CONTRACT_ERRORS.InvalidOperator.selector).toMatch(
-      /^0x[a-fA-F0-9]{8}$/,
-    );
+    expect(CONTRACT_ERRORS.InvalidOperator.selector).toMatch(/^0x[a-fA-F0-9]{8}$/);
   });
 });
 
@@ -133,7 +131,7 @@ describe("ContractErrorName type", () => {
     ];
 
     // Verify each error name is valid
-    errorNames.forEach((name) => {
+    errorNames.forEach(name => {
       expect(CONTRACT_ERRORS[name]).toBeDefined();
     });
   });

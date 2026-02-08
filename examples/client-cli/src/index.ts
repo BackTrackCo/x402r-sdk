@@ -27,11 +27,7 @@ import {
 } from "@x402r/core";
 import { pay } from "./commands/pay.js";
 import { freeze, unfreeze, checkFrozen } from "./commands/freeze.js";
-import {
-  requestRefund,
-  cancelRefund,
-  getRefundStatus,
-} from "./commands/refund.js";
+import { requestRefund, cancelRefund, getRefundStatus } from "./commands/refund.js";
 
 function parsePaymentInfo(json: string): PaymentInfo {
   try {
@@ -92,17 +88,14 @@ function createClients() {
 // Create CLI
 const program = new Command();
 
-program
-  .name("x402r-client")
-  .description("CLI tool for x402r payments")
-  .version("0.0.1");
+program.name("x402r-client").description("CLI tool for x402r payments").version("0.0.1");
 
 // Pay command
 program
   .command("pay")
   .description("Make a payment to a URL that returns 402")
   .requiredOption("-u, --url <url>", "URL to pay for")
-  .action(async (options) => {
+  .action(async options => {
     const { walletClient } = createClients();
 
     const result = await pay({
@@ -142,7 +135,7 @@ program
   .requiredOption("-p, --payment-json <json>", "Payment info JSON")
   .requiredOption("-f, --freeze-address <address>", "Freeze contract address")
   .requiredOption("-o, --operator-address <address>", "Operator address")
-  .action(async (options) => {
+  .action(async options => {
     const { publicClient, walletClient } = createClients();
     const paymentInfo = parsePaymentInfo(options.paymentJson);
 
@@ -171,7 +164,7 @@ program
   .requiredOption("-p, --payment-json <json>", "Payment info JSON")
   .requiredOption("-f, --freeze-address <address>", "Freeze contract address")
   .requiredOption("-o, --operator-address <address>", "Operator address")
-  .action(async (options) => {
+  .action(async options => {
     const { publicClient, walletClient } = createClients();
     const paymentInfo = parsePaymentInfo(options.paymentJson);
 
@@ -200,7 +193,7 @@ program
   .requiredOption("-p, --payment-json <json>", "Payment info JSON")
   .requiredOption("-f, --freeze-address <address>", "Freeze contract address")
   .requiredOption("-o, --operator-address <address>", "Operator address")
-  .action(async (options) => {
+  .action(async options => {
     const { publicClient } = createClients();
     const paymentInfo = parsePaymentInfo(options.paymentJson);
 
@@ -222,7 +215,7 @@ program
   .requiredOption("-a, --amount <amount>", "Amount to refund (in token units)")
   .requiredOption("-o, --operator-address <address>", "Operator address")
   .option("-n, --nonce <nonce>", "Nonce (record index)", "0")
-  .action(async (options) => {
+  .action(async options => {
     const { publicClient, walletClient } = createClients();
     const paymentInfo = parsePaymentInfo(options.paymentJson);
     const networkConfig = getNetworkConfig(NETWORK_ID)!;
@@ -257,7 +250,7 @@ program
   .requiredOption("-p, --payment-json <json>", "Payment info JSON")
   .requiredOption("-o, --operator-address <address>", "Operator address")
   .option("-n, --nonce <nonce>", "Nonce (record index)", "0")
-  .action(async (options) => {
+  .action(async options => {
     const { publicClient, walletClient } = createClients();
     const paymentInfo = parsePaymentInfo(options.paymentJson);
     const networkConfig = getNetworkConfig(NETWORK_ID)!;
@@ -288,7 +281,7 @@ program
   .requiredOption("-p, --payment-json <json>", "Payment info JSON")
   .requiredOption("-o, --operator-address <address>", "Operator address")
   .option("-n, --nonce <nonce>", "Nonce (record index)", "0")
-  .action(async (options) => {
+  .action(async options => {
     const { publicClient } = createClients();
     const paymentInfo = parsePaymentInfo(options.paymentJson);
     const networkConfig = getNetworkConfig(NETWORK_ID)!;
@@ -334,15 +327,9 @@ program
   .command("preview-fee")
   .description("Preview fees for a payment before authorizing")
   .requiredOption("-o, --operator-address <address>", "Operator address")
-  .requiredOption(
-    "-a, --amount <amount>",
-    "Amount to calculate fees for (in token units)",
-  )
-  .option(
-    "-p, --payment-json <json>",
-    "Payment info JSON (optional, for bounds validation)",
-  )
-  .action(async (options) => {
+  .requiredOption("-a, --amount <amount>", "Amount to calculate fees for (in token units)")
+  .option("-p, --payment-json <json>", "Payment info JSON (optional, for bounds validation)")
+  .action(async options => {
     const { publicClient, account } = createClients();
     const operatorAddress = options.operatorAddress as `0x${string}`;
     const amount = BigInt(options.amount);
@@ -389,16 +376,11 @@ program
           `\nFee Bounds: ${isValid ? "VALID" : "INVALID"} (min: ${paymentInfo.minFeeBps} bps, max: ${paymentInfo.maxFeeBps} bps)`,
         );
         if (!isValid) {
-          console.log(
-            "WARNING: Fees are outside the acceptable bounds for this payment!",
-          );
+          console.log("WARNING: Fees are outside the acceptable bounds for this payment!");
         }
       }
     } catch (error) {
-      console.error(
-        "\nFailed to preview fees:",
-        error instanceof Error ? error.message : error,
-      );
+      console.error("\nFailed to preview fees:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });

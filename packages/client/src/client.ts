@@ -10,6 +10,7 @@ import {
   EscrowPeriodABI,
   FreezeABI,
   NotImplementedError,
+  toAbiPaymentInfo,
   hasRefundRequest as sharedHasRefundRequest,
   getRefundRequest as sharedGetRefundRequest,
   getRefundStatus as sharedGetRefundStatus,
@@ -128,18 +129,7 @@ export class X402rClient {
 
   /**
    * Get the current state of a payment
-   *
-   * @param _paymentInfo - The payment information struct
-   * @returns The payment state (NonExistent, InEscrow, Released, Settled, Expired)
    * @throws NotImplementedError - This method requires subgraph integration
-   *
-   * @example
-   * ```typescript
-   * const state = await client.getPaymentState(paymentInfo);
-   * if (state === PaymentState.InEscrow) {
-   *   console.log('Payment is in escrow');
-   * }
-   * ```
    */
   async getPaymentState(_paymentInfo: PaymentInfo): Promise<PaymentState> {
     throw new NotImplementedError("getPaymentState");
@@ -147,15 +137,7 @@ export class X402rClient {
 
   /**
    * Check if a payment exists (has been authorized)
-   *
-   * @param _paymentInfoHash - The hash of the PaymentInfo
-   * @returns True if payment exists
    * @throws NotImplementedError - This method requires subgraph integration
-   *
-   * @example
-   * ```typescript
-   * const exists = await client.paymentExists(paymentInfoHash);
-   * ```
    */
   async paymentExists(_paymentInfoHash: `0x${string}`): Promise<boolean> {
     throw new NotImplementedError("paymentExists");
@@ -163,17 +145,7 @@ export class X402rClient {
 
   /**
    * Check if a payment is currently in escrow
-   *
-   * @param _paymentInfoHash - The hash of the PaymentInfo
-   * @returns True if payment is in escrow (has capturable amount)
    * @throws NotImplementedError - This method requires subgraph integration
-   *
-   * @example
-   * ```typescript
-   * if (await client.isInEscrow(paymentInfoHash)) {
-   *   console.log('Can still be refunded');
-   * }
-   * ```
    */
   async isInEscrow(_paymentInfoHash: `0x${string}`): Promise<boolean> {
     throw new NotImplementedError("isInEscrow");
@@ -181,37 +153,15 @@ export class X402rClient {
 
   /**
    * Get stored PaymentInfo for a given hash
-   *
-   * @param _paymentInfoHash - The hash of the PaymentInfo
-   * @returns The stored PaymentInfo struct
    * @throws NotImplementedError - This method requires subgraph integration
-   *
-   * @example
-   * ```typescript
-   * const details = await client.getPaymentDetails(paymentInfoHash);
-   * console.log(`Receiver: ${details.receiver}`);
-   * ```
    */
-  async getPaymentDetails(
-    _paymentInfoHash: `0x${string}`,
-  ): Promise<PaymentInfo> {
+  async getPaymentDetails(_paymentInfoHash: `0x${string}`): Promise<PaymentInfo> {
     throw new NotImplementedError("getPaymentDetails");
   }
 
   /**
    * Get all payment hashes where the current wallet is the payer
-   *
-   * @returns Object with hashes array
    * @throws NotImplementedError - This method requires subgraph integration
-   *
-   * @example
-   * ```typescript
-   * const { hashes } = await client.getMyPayments();
-   * for (const hash of hashes) {
-   *   const details = await client.getPaymentDetails(hash);
-   *   console.log(`Payment to ${details.receiver}`);
-   * }
-   * ```
    */
   async getMyPayments(): Promise<{ hashes: readonly `0x${string}`[] }> {
     throw new NotImplementedError("getMyPayments");
@@ -219,70 +169,18 @@ export class X402rClient {
 
   // ============ Refund Operations ============
 
-  /**
-   * Check if a refund request exists for a payment
-   *
-   * @param paymentInfo - The payment information struct
-   * @param nonce - The record index (from PaymentIndexRecorder) identifying which charge
-   * @returns True if a refund request exists
-   * @throws Error if refundRequestAddress is not configured
-   *
-   * @example
-   * ```typescript
-   * const hasRequest = await client.hasRefundRequest(paymentInfo, 0n);
-   * if (hasRequest) {
-   *   console.log('Refund request exists');
-   * }
-   * ```
-   */
-  async hasRefundRequest(
-    paymentInfo: PaymentInfo,
-    nonce: bigint,
-  ): Promise<boolean> {
+  /** Check if a refund request exists for a payment */
+  async hasRefundRequest(paymentInfo: PaymentInfo, nonce: bigint): Promise<boolean> {
     return sharedHasRefundRequest(this.getRefundCtx(), paymentInfo, nonce);
   }
 
-  /**
-   * Get the status of a refund request
-   *
-   * @param paymentInfo - The payment information struct
-   * @param nonce - The record index (from PaymentIndexRecorder) identifying which charge
-   * @returns The refund request status (Pending, Approved, Denied, Cancelled)
-   * @throws Error if refundRequestAddress is not configured
-   *
-   * @example
-   * ```typescript
-   * const status = await client.getRefundStatus(paymentInfo, 0n);
-   * if (status === RequestStatus.Pending) {
-   *   console.log('Refund request is pending');
-   * }
-   * ```
-   */
-  async getRefundStatus(
-    paymentInfo: PaymentInfo,
-    nonce: bigint,
-  ): Promise<RequestStatus> {
+  /** Get the status of a refund request */
+  async getRefundStatus(paymentInfo: PaymentInfo, nonce: bigint): Promise<RequestStatus> {
     return sharedGetRefundStatus(this.getRefundCtx(), paymentInfo, nonce);
   }
 
-  /**
-   * Get the full refund request data
-   *
-   * @param paymentInfo - The payment information struct
-   * @param nonce - The record index (from PaymentIndexRecorder) identifying which charge
-   * @returns The full refund request data including amount and status
-   * @throws Error if refundRequestAddress is not configured
-   *
-   * @example
-   * ```typescript
-   * const request = await client.getRefundRequest(paymentInfo, 0n);
-   * console.log(`Requesting ${request.amount} refund, status: ${request.status}`);
-   * ```
-   */
-  async getRefundRequest(
-    paymentInfo: PaymentInfo,
-    nonce: bigint,
-  ): Promise<RefundRequestData> {
+  /** Get the full refund request data */
+  async getRefundRequest(paymentInfo: PaymentInfo, nonce: bigint): Promise<RefundRequestData> {
     return sharedGetRefundRequest(this.getRefundCtx(), paymentInfo, nonce);
   }
 
@@ -319,7 +217,7 @@ export class X402rClient {
       address: this.refundRequestAddress,
       abi: RefundRequestABI,
       functionName: "requestRefund",
-      args: [paymentInfo as never, amount, nonce],
+      args: [toAbiPaymentInfo(paymentInfo), amount, nonce],
     });
 
     return { txHash: txHash as `0x${string}` };
@@ -356,7 +254,7 @@ export class X402rClient {
       address: this.refundRequestAddress,
       abi: RefundRequestABI,
       functionName: "cancelRefundRequest",
-      args: [paymentInfo as never, nonce],
+      args: [toAbiPaymentInfo(paymentInfo), nonce],
     });
 
     return { txHash: txHash as `0x${string}` };
@@ -435,22 +333,8 @@ export class X402rClient {
     return count as bigint;
   }
 
-  /**
-   * Get refund request data by composite key
-   *
-   * @param compositeKey - The keccak256(paymentInfoHash, nonce) key
-   * @returns The refund request data
-   * @throws Error if refundRequestAddress is not configured
-   *
-   * @example
-   * ```typescript
-   * const request = await client.getRefundRequestByKey(compositeKey);
-   * console.log(`Amount: ${request.amount}, Status: ${request.status}`);
-   * ```
-   */
-  async getRefundRequestByKey(
-    compositeKey: `0x${string}`,
-  ): Promise<RefundRequestData> {
+  /** Get refund request data by composite key */
+  async getRefundRequestByKey(compositeKey: `0x${string}`): Promise<RefundRequestData> {
     return sharedGetRefundRequestByKey(this.getRefundCtx(), compositeKey);
   }
 
@@ -482,7 +366,7 @@ export class X402rClient {
       address: freezeAddress,
       abi: FreezeABI,
       functionName: "freeze",
-      args: [paymentInfo as never],
+      args: [toAbiPaymentInfo(paymentInfo)],
     });
 
     return { txHash: txHash as `0x${string}` };
@@ -514,35 +398,15 @@ export class X402rClient {
       address: freezeAddress,
       abi: FreezeABI,
       functionName: "unfreeze",
-      args: [paymentInfo as never],
+      args: [toAbiPaymentInfo(paymentInfo)],
     });
 
     return { txHash: txHash as `0x${string}` };
   }
 
-  /**
-   * Check if a payment is currently frozen
-   *
-   * @param paymentInfo - The payment information struct
-   * @param freezeAddress - The Freeze contract address
-   * @returns True if payment is frozen
-   *
-   * @example
-   * ```typescript
-   * if (await client.isFrozen(paymentInfo, freezeAddress)) {
-   *   console.log('Payment is frozen');
-   * }
-   * ```
-   */
-  async isFrozen(
-    paymentInfo: PaymentInfo,
-    freezeAddress: `0x${string}`,
-  ): Promise<boolean> {
-    return sharedIsFrozen(
-      { publicClient: this.publicClient },
-      paymentInfo,
-      freezeAddress,
-    );
+  /** Check if a payment is currently frozen */
+  async isFrozen(paymentInfo: PaymentInfo, freezeAddress: `0x${string}`): Promise<boolean> {
+    return sharedIsFrozen({ publicClient: this.publicClient }, paymentInfo, freezeAddress);
   }
 
   // ============ Escrow Period Operations ============
@@ -568,7 +432,7 @@ export class X402rClient {
       address: escrowPeriodAddress,
       abi: EscrowPeriodABI,
       functionName: "getAuthorizationTime",
-      args: [paymentInfo as never],
+      args: [toAbiPaymentInfo(paymentInfo)],
     });
 
     return authTime as bigint;
@@ -597,7 +461,7 @@ export class X402rClient {
       address: escrowPeriodAddress,
       abi: EscrowPeriodABI,
       functionName: "isDuringEscrowPeriod",
-      args: [paymentInfo as never],
+      args: [toAbiPaymentInfo(paymentInfo)],
     });
 
     return inEscrow as boolean;
@@ -631,7 +495,7 @@ export class X402rClient {
       address: this.operatorAddress,
       abi: PaymentOperatorABI,
       eventName: "ReleaseExecuted",
-      onLogs: (logs) => {
+      onLogs: logs => {
         for (const log of logs) {
           callback(log as unknown as PaymentOperatorEventLog);
         }
@@ -644,7 +508,7 @@ export class X402rClient {
       address: this.operatorAddress,
       abi: PaymentOperatorABI,
       eventName: "RefundInEscrowExecuted",
-      onLogs: (logs) => {
+      onLogs: logs => {
         for (const log of logs) {
           callback(log as unknown as PaymentOperatorEventLog);
         }
@@ -657,7 +521,7 @@ export class X402rClient {
       address: this.operatorAddress,
       abi: PaymentOperatorABI,
       eventName: "RefundPostEscrowExecuted",
-      onLogs: (logs) => {
+      onLogs: logs => {
         for (const log of logs) {
           callback(log as unknown as PaymentOperatorEventLog);
         }
@@ -703,7 +567,7 @@ export class X402rClient {
       address: this.refundRequestAddress,
       abi: RefundRequestABI,
       eventName: "RefundRequested",
-      onLogs: (logs) => {
+      onLogs: logs => {
         for (const log of logs) {
           callback(log as unknown as RefundRequestEventLog);
         }
@@ -716,7 +580,7 @@ export class X402rClient {
       address: this.refundRequestAddress,
       abi: RefundRequestABI,
       eventName: "RefundRequestStatusUpdated",
-      onLogs: (logs) => {
+      onLogs: logs => {
         for (const log of logs) {
           callback(log as unknown as RefundRequestEventLog);
         }
@@ -729,7 +593,7 @@ export class X402rClient {
       address: this.refundRequestAddress,
       abi: RefundRequestABI,
       eventName: "RefundRequestCancelled",
-      onLogs: (logs) => {
+      onLogs: logs => {
         for (const log of logs) {
           callback(log as unknown as RefundRequestEventLog);
         }
@@ -777,7 +641,7 @@ export class X402rClient {
       args: {
         payer: payerAddress,
       },
-      onLogs: (logs) => {
+      onLogs: logs => {
         for (const log of logs) {
           callback(log as unknown as PaymentOperatorEventLog);
         }
@@ -806,10 +670,6 @@ export class X402rClient {
     freezeAddress: `0x${string}`,
     callback: (event: FreezeEventLog) => void,
   ): { unsubscribe: () => void } {
-    return sharedWatchFreezeEvents(
-      { publicClient: this.publicClient },
-      freezeAddress,
-      callback,
-    );
+    return sharedWatchFreezeEvents({ publicClient: this.publicClient }, freezeAddress, callback);
   }
 }

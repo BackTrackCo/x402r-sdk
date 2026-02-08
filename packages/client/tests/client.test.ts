@@ -140,9 +140,7 @@ describe("X402rClient", () => {
         salt: BigInt("0x123456"),
       };
 
-      await expect(client.getPaymentState(paymentInfo)).rejects.toThrow(
-        NotImplementedError,
-      );
+      await expect(client.getPaymentState(paymentInfo)).rejects.toThrow(NotImplementedError);
     });
   });
 
@@ -156,9 +154,7 @@ describe("X402rClient", () => {
       const paymentInfoHash =
         "0x1234567890123456789012345678901234567890123456789012345678901234" as const;
 
-      await expect(client.paymentExists(paymentInfoHash)).rejects.toThrow(
-        NotImplementedError,
-      );
+      await expect(client.paymentExists(paymentInfoHash)).rejects.toThrow(NotImplementedError);
     });
   });
 
@@ -172,9 +168,7 @@ describe("X402rClient", () => {
       const paymentInfoHash =
         "0x1234567890123456789012345678901234567890123456789012345678901234" as const;
 
-      await expect(client.isInEscrow(paymentInfoHash)).rejects.toThrow(
-        NotImplementedError,
-      );
+      await expect(client.isInEscrow(paymentInfoHash)).rejects.toThrow(NotImplementedError);
     });
   });
 
@@ -188,9 +182,7 @@ describe("X402rClient", () => {
       const paymentInfoHash =
         "0x1234567890123456789012345678901234567890123456789012345678901234" as const;
 
-      await expect(client.getPaymentDetails(paymentInfoHash)).rejects.toThrow(
-        NotImplementedError,
-      );
+      await expect(client.getPaymentDetails(paymentInfoHash)).rejects.toThrow(NotImplementedError);
     });
   });
 

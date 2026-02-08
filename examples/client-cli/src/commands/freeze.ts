@@ -25,13 +25,7 @@ export interface FreezeResult {
  * Freeze a payment
  */
 export async function freeze(options: FreezeOptions): Promise<FreezeResult> {
-  const {
-    paymentInfo,
-    freezeAddress,
-    operatorAddress,
-    publicClient,
-    walletClient,
-  } = options;
+  const { paymentInfo, freezeAddress, operatorAddress, publicClient, walletClient } = options;
 
   console.log("\nFreezing payment...");
   console.log("  Operator:", operatorAddress);
@@ -79,13 +73,7 @@ export async function freeze(options: FreezeOptions): Promise<FreezeResult> {
  * Unfreeze a payment
  */
 export async function unfreeze(options: FreezeOptions): Promise<FreezeResult> {
-  const {
-    paymentInfo,
-    freezeAddress,
-    operatorAddress,
-    publicClient,
-    walletClient,
-  } = options;
+  const { paymentInfo, freezeAddress, operatorAddress, publicClient, walletClient } = options;
 
   console.log("\nUnfreezing payment...");
   console.log("  Operator:", operatorAddress);
@@ -130,9 +118,7 @@ export async function unfreeze(options: FreezeOptions): Promise<FreezeResult> {
 /**
  * Check if a payment is frozen
  */
-export async function checkFrozen(
-  options: Omit<FreezeOptions, "walletClient">,
-): Promise<boolean> {
+export async function checkFrozen(options: Omit<FreezeOptions, "walletClient">): Promise<boolean> {
   const { paymentInfo, freezeAddress, operatorAddress, publicClient } = options;
 
   const client = new X402rClient({

@@ -104,11 +104,9 @@ export async function previewMarketplaceOperator(
   const singletons = getConditionSingletons(networkId);
 
   // 1. Compute EscrowPeriod address
-  const escrowPeriodAddress = await computeEscrowPeriodAddress(
-    publicClient,
-    networkId,
-    { escrowPeriod: options.escrowPeriodSeconds },
-  );
+  const escrowPeriodAddress = await computeEscrowPeriodAddress(publicClient, networkId, {
+    escrowPeriod: options.escrowPeriodSeconds,
+  });
 
   // 2. Compute Freeze address (payer can freeze, receiver can unfreeze)
   const freezeAddress = await computeFreezeAddress(publicClient, networkId, {
@@ -126,11 +124,10 @@ export async function previewMarketplaceOperator(
   );
 
   // 4. Compute refundInEscrow condition: OR(Receiver, Arbiter)
-  const refundInEscrowCondition = await computeOrConditionAddress(
-    publicClient,
-    networkId,
-    [singletons.receiver, arbiterConditionAddress],
-  );
+  const refundInEscrowCondition = await computeOrConditionAddress(publicClient, networkId, [
+    singletons.receiver,
+    arbiterConditionAddress,
+  ]);
 
   // 5. Compute fee calculator if needed
   let feeCalculatorAddress: Address | null = null;
@@ -153,11 +150,7 @@ export async function previewMarketplaceOperator(
     refundPostEscrowCondition: singletons.receiver, // Only receiver after escrow
   });
 
-  const operatorAddress = await computeOperatorAddress(
-    publicClient,
-    networkId,
-    operatorConfig,
-  );
+  const operatorAddress = await computeOperatorAddress(publicClient, networkId, operatorConfig);
 
   return {
     operatorAddress,
@@ -232,26 +225,18 @@ export async function deployMarketplaceOperator(
   };
 
   // 1. Deploy EscrowPeriod
-  const escrowPeriodResult = await deployEscrowPeriod(
-    walletClient,
-    publicClient,
-    networkId,
-    { escrowPeriod: options.escrowPeriodSeconds },
-  );
+  const escrowPeriodResult = await deployEscrowPeriod(walletClient, publicClient, networkId, {
+    escrowPeriod: options.escrowPeriodSeconds,
+  });
   trackDeployment(escrowPeriodResult);
 
   // 2. Deploy Freeze (payer can freeze, receiver can unfreeze)
-  const freezeResult = await deployFreeze(
-    walletClient,
-    publicClient,
-    networkId,
-    {
-      freezeCondition: singletons.payer,
-      unfreezeCondition: singletons.receiver,
-      freezeDuration: options.freezeDurationSeconds ?? 0n,
-      escrowPeriodContract: escrowPeriodResult.address,
-    },
-  );
+  const freezeResult = await deployFreeze(walletClient, publicClient, networkId, {
+    freezeCondition: singletons.payer,
+    unfreezeCondition: singletons.receiver,
+    freezeDuration: options.freezeDurationSeconds ?? 0n,
+    escrowPeriodContract: escrowPeriodResult.address,
+  });
   trackDeployment(freezeResult);
 
   // 3. Deploy arbiter condition
@@ -264,12 +249,10 @@ export async function deployMarketplaceOperator(
   trackDeployment(arbiterConditionResult);
 
   // 4. Deploy refundInEscrow condition: OR(Receiver, Arbiter)
-  const refundInEscrowResult = await deployOrCondition(
-    walletClient,
-    publicClient,
-    networkId,
-    [singletons.receiver, arbiterConditionResult.address],
-  );
+  const refundInEscrowResult = await deployOrCondition(walletClient, publicClient, networkId, [
+    singletons.receiver,
+    arbiterConditionResult.address,
+  ]);
   trackDeployment(refundInEscrowResult);
 
   // 5. Deploy fee calculator if needed

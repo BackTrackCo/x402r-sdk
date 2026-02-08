@@ -26,9 +26,7 @@ export interface ResolveConditionResult {
 /**
  * Check if a value is a condition address (not a config object)
  */
-function isConditionAddress(
-  value: ConditionAddress | ConditionConfig,
-): value is ConditionAddress {
+function isConditionAddress(value: ConditionAddress | ConditionConfig): value is ConditionAddress {
   return typeof value === "string";
 }
 
@@ -185,9 +183,7 @@ export async function resolveConditionConfig(
     default: {
       // TypeScript exhaustiveness check
       const _exhaustive: never = config;
-      throw new Error(
-        `Unknown condition config type: ${(_exhaustive as ConditionConfig).type}`,
-      );
+      throw new Error(`Unknown condition config type: ${(_exhaustive as ConditionConfig).type}`);
     }
   }
 }
@@ -226,43 +222,23 @@ export async function previewConditionAddress(
     case "and": {
       const resolvedAddresses: Address[] = [];
       for (const childConfig of config.conditions) {
-        const childAddress = await previewConditionAddress(
-          publicClient,
-          networkId,
-          childConfig,
-        );
+        const childAddress = await previewConditionAddress(publicClient, networkId, childConfig);
         resolvedAddresses.push(childAddress);
       }
-      return computeAndConditionAddress(
-        publicClient,
-        networkId,
-        resolvedAddresses,
-      );
+      return computeAndConditionAddress(publicClient, networkId, resolvedAddresses);
     }
 
     case "or": {
       const resolvedAddresses: Address[] = [];
       for (const childConfig of config.conditions) {
-        const childAddress = await previewConditionAddress(
-          publicClient,
-          networkId,
-          childConfig,
-        );
+        const childAddress = await previewConditionAddress(publicClient, networkId, childConfig);
         resolvedAddresses.push(childAddress);
       }
-      return computeOrConditionAddress(
-        publicClient,
-        networkId,
-        resolvedAddresses,
-      );
+      return computeOrConditionAddress(publicClient, networkId, resolvedAddresses);
     }
 
     case "not": {
-      const childAddress = await previewConditionAddress(
-        publicClient,
-        networkId,
-        config.condition,
-      );
+      const childAddress = await previewConditionAddress(publicClient, networkId, config.condition);
       return computeNotConditionAddress(publicClient, networkId, childAddress);
     }
 
@@ -276,9 +252,7 @@ export async function previewConditionAddress(
 
     default: {
       const _exhaustive: never = config;
-      throw new Error(
-        `Unknown condition config type: ${(_exhaustive as ConditionConfig).type}`,
-      );
+      throw new Error(`Unknown condition config type: ${(_exhaustive as ConditionConfig).type}`);
     }
   }
 }

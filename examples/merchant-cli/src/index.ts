@@ -118,12 +118,10 @@ program
   .description("Release funds from escrow to the merchant")
   .requiredOption("-p, --payment-json <json>", "Payment info JSON")
   .option("-a, --amount <amount>", "Amount to release (defaults to maxAmount)")
-  .action(async (options) => {
+  .action(async options => {
     const { merchant } = createMerchant();
     const paymentInfo = parsePaymentInfo(options.paymentJson);
-    const amount = options.amount
-      ? BigInt(options.amount)
-      : paymentInfo.maxAmount;
+    const amount = options.amount ? BigInt(options.amount) : paymentInfo.maxAmount;
 
     console.log("\nReleasing funds from escrow...");
     console.log("  Payer:", paymentInfo.payer);
@@ -136,10 +134,7 @@ program
       console.log("  Transaction:", result.txHash);
       console.log(`\nhttps://sepolia.basescan.org/tx/${result.txHash}`);
     } catch (error) {
-      console.error(
-        "\nRelease failed:",
-        error instanceof Error ? error.message : error,
-      );
+      console.error("\nRelease failed:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });
@@ -149,7 +144,7 @@ program
   .command("payment-amounts")
   .description("Get capturable and refundable amounts for a payment")
   .requiredOption("-p, --payment-json <json>", "Payment info JSON")
-  .action(async (options) => {
+  .action(async options => {
     const { merchant } = createMerchant();
     const paymentInfo = parsePaymentInfo(options.paymentJson);
 
@@ -158,21 +153,14 @@ program
     try {
       const amounts = await merchant.getPaymentAmounts(paymentInfo);
       console.log("\n=== Payment Amounts ===");
-      console.log(
-        "  Capturable:",
-        amounts.capturableAmount.toString(),
-        "(can be released)",
-      );
+      console.log("  Capturable:", amounts.capturableAmount.toString(), "(can be released)");
       console.log(
         "  Refundable:",
         amounts.refundableAmount.toString(),
         "(post-escrow refund window)",
       );
     } catch (error) {
-      console.error(
-        "\nFailed to get amounts:",
-        error instanceof Error ? error.message : error,
-      );
+      console.error("\nFailed to get amounts:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });
@@ -183,7 +171,7 @@ program
   .description("Refund funds that are still in escrow back to the payer")
   .requiredOption("-p, --payment-json <json>", "Payment info JSON")
   .requiredOption("-a, --amount <amount>", "Amount to refund")
-  .action(async (options) => {
+  .action(async options => {
     const { merchant } = createMerchant();
     const paymentInfo = parsePaymentInfo(options.paymentJson);
     const amount = BigInt(options.amount);
@@ -198,10 +186,7 @@ program
       console.log("  Transaction:", result.txHash);
       console.log(`\nhttps://sepolia.basescan.org/tx/${result.txHash}`);
     } catch (error) {
-      console.error(
-        "\nRefund failed:",
-        error instanceof Error ? error.message : error,
-      );
+      console.error("\nRefund failed:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });
@@ -212,7 +197,7 @@ program
   .description("Approve a pending refund request")
   .requiredOption("-p, --payment-json <json>", "Payment info JSON")
   .option("-n, --nonce <nonce>", "Nonce (record index)", "0")
-  .action(async (options) => {
+  .action(async options => {
     const { merchant } = createMerchant();
     const paymentInfo = parsePaymentInfo(options.paymentJson);
     const nonce = BigInt(options.nonce);
@@ -227,10 +212,7 @@ program
       console.log("  Transaction:", result.txHash);
       console.log(`\nhttps://sepolia.basescan.org/tx/${result.txHash}`);
     } catch (error) {
-      console.error(
-        "\nApproval failed:",
-        error instanceof Error ? error.message : error,
-      );
+      console.error("\nApproval failed:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });
@@ -241,7 +223,7 @@ program
   .description("Deny a pending refund request")
   .requiredOption("-p, --payment-json <json>", "Payment info JSON")
   .option("-n, --nonce <nonce>", "Nonce (record index)", "0")
-  .action(async (options) => {
+  .action(async options => {
     const { merchant } = createMerchant();
     const paymentInfo = parsePaymentInfo(options.paymentJson);
     const nonce = BigInt(options.nonce);
@@ -256,10 +238,7 @@ program
       console.log("  Transaction:", result.txHash);
       console.log(`\nhttps://sepolia.basescan.org/tx/${result.txHash}`);
     } catch (error) {
-      console.error(
-        "\nDenial failed:",
-        error instanceof Error ? error.message : error,
-      );
+      console.error("\nDenial failed:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });
@@ -270,7 +249,7 @@ program
   .description("Check the status of a refund request")
   .requiredOption("-p, --payment-json <json>", "Payment info JSON")
   .option("-n, --nonce <nonce>", "Nonce (record index)", "0")
-  .action(async (options) => {
+  .action(async options => {
     const { merchant } = createMerchant();
     const paymentInfo = parsePaymentInfo(options.paymentJson);
     const nonce = BigInt(options.nonce);
@@ -289,10 +268,7 @@ program
       const request = await merchant.getRefundRequest(paymentInfo, nonce);
       console.log("  Amount requested:", request.amount.toString());
     } catch (error) {
-      console.error(
-        "\nFailed to get status:",
-        error instanceof Error ? error.message : error,
-      );
+      console.error("\nFailed to get status:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });
@@ -303,7 +279,7 @@ program
   .description("List pending refund requests for this merchant")
   .option("-o, --offset <offset>", "Starting offset", "0")
   .option("-c, --count <count>", "Number of requests to fetch", "10")
-  .action(async (options) => {
+  .action(async options => {
     const { merchant } = createMerchant();
     const offset = BigInt(options.offset);
     const count = BigInt(options.count);
@@ -311,10 +287,7 @@ program
     console.log("\nFetching pending refund requests...");
 
     try {
-      const { keys, total } = await merchant.getPendingRefundRequests(
-        offset,
-        count,
-      );
+      const { keys, total } = await merchant.getPendingRefundRequests(offset, count);
       console.log(`\nFound ${total} total refund requests`);
 
       if (keys.length === 0) {
@@ -329,15 +302,10 @@ program
         const statusNames = ["Pending", "Approved", "Denied", "Cancelled"];
         console.log(`\n${Number(offset) + i + 1}. Key: ${key.slice(0, 18)}...`);
         console.log(`   Amount: ${request.amount.toString()}`);
-        console.log(
-          `   Status: ${statusNames[request.status] || request.status}`,
-        );
+        console.log(`   Status: ${statusNames[request.status] || request.status}`);
       }
     } catch (error) {
-      console.error(
-        "\nFailed to fetch requests:",
-        error instanceof Error ? error.message : error,
-      );
+      console.error("\nFailed to fetch requests:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });
@@ -348,7 +316,7 @@ program
   .description("Unfreeze a frozen payment")
   .requiredOption("-p, --payment-json <json>", "Payment info JSON")
   .requiredOption("-f, --freeze-address <address>", "Freeze contract address")
-  .action(async (options) => {
+  .action(async options => {
     const { merchant } = createMerchant();
     const paymentInfo = parsePaymentInfo(options.paymentJson);
     const freezeAddress = options.freezeAddress as `0x${string}`;
@@ -363,10 +331,7 @@ program
       console.log("  Transaction:", result.txHash);
       console.log(`\nhttps://sepolia.basescan.org/tx/${result.txHash}`);
     } catch (error) {
-      console.error(
-        "\nUnfreeze failed:",
-        error instanceof Error ? error.message : error,
-      );
+      console.error("\nUnfreeze failed:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });
@@ -377,7 +342,7 @@ program
   .description("Check if a payment is frozen")
   .requiredOption("-p, --payment-json <json>", "Payment info JSON")
   .requiredOption("-f, --freeze-address <address>", "Freeze contract address")
-  .action(async (options) => {
+  .action(async options => {
     const { merchant } = createMerchant();
     const paymentInfo = parsePaymentInfo(options.paymentJson);
     const freezeAddress = options.freezeAddress as `0x${string}`;
@@ -386,10 +351,7 @@ program
       const isFrozen = await merchant.isFrozen(paymentInfo, freezeAddress);
       console.log(`\nPayment is ${isFrozen ? "FROZEN" : "NOT FROZEN"}`);
     } catch (error) {
-      console.error(
-        "\nFailed to check status:",
-        error instanceof Error ? error.message : error,
-      );
+      console.error("\nFailed to check status:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });
@@ -423,10 +385,7 @@ program
       console.log("  Refund In Escrow:", config.refundInEscrowRecorder);
       console.log("  Refund Post Escrow:", config.refundPostEscrowRecorder);
     } catch (error) {
-      console.error(
-        "\nFailed to get config:",
-        error instanceof Error ? error.message : error,
-      );
+      console.error("\nFailed to get config:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });
@@ -435,19 +394,10 @@ program
 program
   .command("calculate-fee")
   .description("Calculate fees for a payment amount")
-  .requiredOption(
-    "-a, --amount <amount>",
-    "Amount to calculate fees for (in token units)",
-  )
-  .option(
-    "-p, --payment-json <json>",
-    "Payment info JSON (optional, for bounds validation)",
-  )
-  .option(
-    "-c, --caller <address>",
-    "Caller address (defaults to merchant address)",
-  )
-  .action(async (options) => {
+  .requiredOption("-a, --amount <amount>", "Amount to calculate fees for (in token units)")
+  .option("-p, --payment-json <json>", "Payment info JSON (optional, for bounds validation)")
+  .option("-c, --caller <address>", "Caller address (defaults to merchant address)")
+  .action(async options => {
     const { publicClient, account, operatorAddress } = createMerchant();
     const amount = BigInt(options.amount);
     const caller = (options.caller as `0x${string}`) || account.address;
@@ -494,10 +444,7 @@ program
         );
       }
     } catch (error) {
-      console.error(
-        "\nFailed to calculate fees:",
-        error instanceof Error ? error.message : error,
-      );
+      console.error("\nFailed to calculate fees:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });

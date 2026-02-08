@@ -18,7 +18,9 @@
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",
     "clean": "turbo run clean && rm -rf node_modules",
-    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "format": "prettier --write \"**/*.{ts,tsx}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx}\"",
+    "lint:check": "turbo run lint:check",
     "docs:generate": "typedoc",
     "docs:watch": "typedoc --watch",
     "example:deploy-operator": "tsx examples/deploy-operator/index.ts",
@@ -48,10 +50,7 @@
     "vitest": "^2.1.0"
   },
   "pnpm": {
-    "overrides": {
-      "@x402/core": "file:../x402/typescript/packages/core",
-      "@x402/extensions": "file:../x402/typescript/packages/extensions"
-    }
+    "overrides": {}
   },
   "packageManager": "pnpm@9.15.0",
   "engines": {

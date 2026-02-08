@@ -25,8 +25,7 @@ describe("X402rArbiter - Registry Operations", () => {
   let publicClient: PublicClient;
   let walletClient: WalletClient;
   const operatorAddress = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as const;
-  const arbiterRegistryAddress =
-    "0xdddddddddddddddddddddddddddddddddddddddd" as const;
+  const arbiterRegistryAddress = "0xdddddddddddddddddddddddddddddddddddddddd" as const;
 
   beforeEach(() => {
     publicClient = createMockPublicClient();
@@ -63,9 +62,9 @@ describe("X402rArbiter - Registry Operations", () => {
         operatorAddress,
       });
 
-      await expect(
-        arbiter.registerArbiter("https://example.com"),
-      ).rejects.toThrow("ArbiterRegistry address required");
+      await expect(arbiter.registerArbiter("https://example.com")).rejects.toThrow(
+        "ArbiterRegistry address required",
+      );
     });
   });
 
@@ -98,9 +97,9 @@ describe("X402rArbiter - Registry Operations", () => {
         operatorAddress,
       });
 
-      await expect(
-        arbiter.updateArbiterUri("https://example.com"),
-      ).rejects.toThrow("ArbiterRegistry address required");
+      await expect(arbiter.updateArbiterUri("https://example.com")).rejects.toThrow(
+        "ArbiterRegistry address required",
+      );
     });
   });
 
@@ -132,9 +131,7 @@ describe("X402rArbiter - Registry Operations", () => {
         operatorAddress,
       });
 
-      await expect(arbiter.deregisterArbiter()).rejects.toThrow(
-        "ArbiterRegistry address required",
-      );
+      await expect(arbiter.deregisterArbiter()).rejects.toThrow("ArbiterRegistry address required");
     });
   });
 
@@ -148,12 +145,9 @@ describe("X402rArbiter - Registry Operations", () => {
       });
 
       const mockUri = "https://arbiter.example.com/api";
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockUri,
-      );
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(mockUri);
 
-      const arbiterAddress =
-        "0x1111111111111111111111111111111111111111" as const;
+      const arbiterAddress = "0x1111111111111111111111111111111111111111" as const;
       const uri = await arbiter.getArbiterUri(arbiterAddress);
 
       expect(publicClient.readContract).toHaveBeenCalledWith(
@@ -173,8 +167,7 @@ describe("X402rArbiter - Registry Operations", () => {
         operatorAddress,
       });
 
-      const arbiterAddress =
-        "0x1111111111111111111111111111111111111111" as const;
+      const arbiterAddress = "0x1111111111111111111111111111111111111111" as const;
       await expect(arbiter.getArbiterUri(arbiterAddress)).rejects.toThrow(
         "ArbiterRegistry address required",
       );
@@ -190,12 +183,9 @@ describe("X402rArbiter - Registry Operations", () => {
         arbiterRegistryAddress,
       });
 
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(
-        true,
-      );
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(true);
 
-      const arbiterAddress =
-        "0x1111111111111111111111111111111111111111" as const;
+      const arbiterAddress = "0x1111111111111111111111111111111111111111" as const;
       const isRegistered = await arbiter.isArbiterRegistered(arbiterAddress);
 
       expect(publicClient.readContract).toHaveBeenCalledWith(
@@ -216,12 +206,9 @@ describe("X402rArbiter - Registry Operations", () => {
         arbiterRegistryAddress,
       });
 
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(
-        false,
-      );
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(false);
 
-      const arbiterAddress =
-        "0x2222222222222222222222222222222222222222" as const;
+      const arbiterAddress = "0x2222222222222222222222222222222222222222" as const;
       const isRegistered = await arbiter.isArbiterRegistered(arbiterAddress);
 
       expect(isRegistered).toBe(false);
@@ -234,8 +221,7 @@ describe("X402rArbiter - Registry Operations", () => {
         operatorAddress,
       });
 
-      const arbiterAddress =
-        "0x1111111111111111111111111111111111111111" as const;
+      const arbiterAddress = "0x1111111111111111111111111111111111111111" as const;
       await expect(arbiter.isArbiterRegistered(arbiterAddress)).rejects.toThrow(
         "ArbiterRegistry address required",
       );
@@ -251,9 +237,7 @@ describe("X402rArbiter - Registry Operations", () => {
         arbiterRegistryAddress,
       });
 
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(
-        5n,
-      );
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(5n);
 
       const count = await arbiter.getArbiterCount();
 
@@ -274,9 +258,7 @@ describe("X402rArbiter - Registry Operations", () => {
         operatorAddress,
       });
 
-      await expect(arbiter.getArbiterCount()).rejects.toThrow(
-        "ArbiterRegistry address required",
-      );
+      await expect(arbiter.getArbiterCount()).rejects.toThrow("ArbiterRegistry address required");
     });
   });
 
@@ -293,15 +275,14 @@ describe("X402rArbiter - Registry Operations", () => {
         "0x1111111111111111111111111111111111111111",
         "0x2222222222222222222222222222222222222222",
       ] as const;
-      const mockUris = [
-        "https://arbiter1.example.com",
-        "https://arbiter2.example.com",
-      ] as const;
+      const mockUris = ["https://arbiter1.example.com", "https://arbiter2.example.com"] as const;
       const mockTotal = 5n;
 
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(
-        [mockArbiters, mockUris, mockTotal],
-      );
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue([
+        mockArbiters,
+        mockUris,
+        mockTotal,
+      ]);
 
       const result = await arbiter.listArbiters(0n, 2n);
 

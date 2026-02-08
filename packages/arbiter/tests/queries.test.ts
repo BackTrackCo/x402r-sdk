@@ -26,8 +26,7 @@ describe("X402rArbiter - Case Queries", () => {
   let publicClient: PublicClient;
   let walletClient: WalletClient;
   const operatorAddress = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as const;
-  const refundRequestAddress =
-    "0xcccccccccccccccccccccccccccccccccccccccc" as const;
+  const refundRequestAddress = "0xcccccccccccccccccccccccccccccccccccccccc" as const;
 
   const samplePaymentInfo = {
     operator: operatorAddress,
@@ -64,9 +63,7 @@ describe("X402rArbiter - Case Queries", () => {
         "0xabcdef1234567890123456789012345678901234567890123456789012345678",
       ] as const;
 
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(
-        [mockKeys, 2n],
-      );
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue([mockKeys, 2n]);
 
       const result = await arbiter.getPendingRefundRequests(0n, 10n);
       expect(result.keys).toHaveLength(2);
@@ -110,9 +107,9 @@ describe("X402rArbiter - Case Queries", () => {
         operatorAddress,
       });
 
-      await expect(
-        arbiter.getRefundStatus(samplePaymentInfo, 0n),
-      ).rejects.toThrow("RefundRequest address required");
+      await expect(arbiter.getRefundStatus(samplePaymentInfo, 0n)).rejects.toThrow(
+        "RefundRequest address required",
+      );
     });
   });
 
@@ -125,9 +122,7 @@ describe("X402rArbiter - Case Queries", () => {
         refundRequestAddress,
       });
 
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(
-        5n,
-      );
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(5n);
 
       const count = await arbiter.getRefundRequestCount();
       expect(count).toBe(5n);
@@ -162,9 +157,7 @@ describe("X402rArbiter - Case Queries", () => {
         receiver: "0xabcdef1234567890123456789012345678901234",
       };
 
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(
-        mockRequest,
-      );
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequest);
 
       const compositeKey =
         "0x1111111111111111111111111111111111111111111111111111111111111111" as const;

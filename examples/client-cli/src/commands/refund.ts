@@ -29,9 +29,7 @@ export interface RefundResult {
 /**
  * Request a refund for a payment
  */
-export async function requestRefund(
-  options: RefundOptions,
-): Promise<RefundResult> {
+export async function requestRefund(options: RefundOptions): Promise<RefundResult> {
   const {
     paymentInfo,
     amount,
@@ -91,17 +89,9 @@ export async function requestRefund(
 /**
  * Cancel a pending refund request
  */
-export async function cancelRefund(
-  options: Omit<RefundOptions, "amount">,
-): Promise<RefundResult> {
-  const {
-    paymentInfo,
-    nonce,
-    operatorAddress,
-    refundRequestAddress,
-    publicClient,
-    walletClient,
-  } = options;
+export async function cancelRefund(options: Omit<RefundOptions, "amount">): Promise<RefundResult> {
+  const { paymentInfo, nonce, operatorAddress, refundRequestAddress, publicClient, walletClient } =
+    options;
 
   console.log("\nCancelling refund request...");
 
@@ -148,13 +138,7 @@ export async function cancelRefund(
 export async function getRefundStatus(
   options: Omit<RefundOptions, "amount" | "walletClient">,
 ): Promise<RequestStatus | null> {
-  const {
-    paymentInfo,
-    nonce,
-    operatorAddress,
-    refundRequestAddress,
-    publicClient,
-  } = options;
+  const { paymentInfo, nonce, operatorAddress, refundRequestAddress, publicClient } = options;
 
   const client = new X402rClient({
     publicClient,

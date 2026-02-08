@@ -35,34 +35,30 @@ const { publicClient, walletClient, account } = createClients(config);
 // Create facilitator signer using x402's toFacilitatorEvmSigner
 const facilitatorSigner = toFacilitatorEvmSigner({
   address: account.address,
-  readContract: (args) =>
-    publicClient.readContract({ ...args, args: args.args || [] }),
-  verifyTypedData: (args) => publicClient.verifyTypedData(args as never),
-  writeContract: (args) =>
+  readContract: args => publicClient.readContract({ ...args, args: args.args || [] }),
+  verifyTypedData: args => publicClient.verifyTypedData(args as never),
+  writeContract: args =>
     walletClient.writeContract({
       ...args,
       account,
       chain: walletClient.chain,
       args: args.args || [],
     }),
-  sendTransaction: (args) =>
+  sendTransaction: args =>
     walletClient.sendTransaction({
       ...args,
       account,
       chain: walletClient.chain,
     }),
-  waitForTransactionReceipt: (args) =>
-    publicClient.waitForTransactionReceipt(args),
-  getCode: (args) => publicClient.getCode(args),
+  waitForTransactionReceipt: args => publicClient.waitForTransactionReceipt(args),
+  getCode: args => publicClient.getCode(args),
 });
 const escrowScheme = new EscrowFacilitatorScheme(facilitatorSigner);
 
 // Get network config for contract addresses
 const networkConfig = getNetworkConfig(config.network);
 if (!networkConfig) {
-  console.error(
-    `Error: Network ${config.network} is not configured in @x402r/core`,
-  );
+  console.error(`Error: Network ${config.network} is not configured in @x402r/core`);
   process.exit(1);
 }
 
@@ -83,7 +79,7 @@ app.use("*", cors());
  * The `extra` field flows through to merchant payment requirements via
  * EscrowServerScheme.enhancePaymentRequirements().
  */
-app.get("/supported", (c) => {
+app.get("/supported", c => {
   return c.json({
     kinds: [
       {
@@ -113,7 +109,7 @@ app.get("/supported", (c) => {
  *
  * Body: { x402Version, paymentPayload, paymentRequirements }
  */
-app.post("/verify", async (c) => {
+app.post("/verify", async c => {
   try {
     const body = await c.req.json();
     const { paymentPayload, paymentRequirements } = body;
@@ -130,8 +126,7 @@ app.post("/verify", async (c) => {
 
     const escrowPayload: PaymentPayload = {
       x402Version: paymentPayload.x402Version ?? 2,
-      scheme:
-        paymentPayload.accepted?.scheme ?? paymentPayload.scheme ?? "escrow",
+      scheme: paymentPayload.accepted?.scheme ?? paymentPayload.scheme ?? "escrow",
       ...paymentPayload,
     };
 
@@ -146,8 +141,7 @@ app.post("/verify", async (c) => {
     return c.json(
       {
         isValid: false,
-        invalidReason:
-          error instanceof Error ? error.message : "Verification failed",
+        invalidReason: error instanceof Error ? error.message : "Verification failed",
       },
       500,
     );
@@ -159,7 +153,7 @@ app.post("/verify", async (c) => {
  *
  * Body: { x402Version, paymentPayload, paymentRequirements }
  */
-app.post("/settle", async (c) => {
+app.post("/settle", async c => {
   try {
     const body = await c.req.json();
     const { paymentPayload, paymentRequirements } = body;
@@ -178,8 +172,7 @@ app.post("/settle", async (c) => {
 
     const escrowPayload: PaymentPayload = {
       x402Version: paymentPayload.x402Version ?? 2,
-      scheme:
-        paymentPayload.accepted?.scheme ?? paymentPayload.scheme ?? "escrow",
+      scheme: paymentPayload.accepted?.scheme ?? paymentPayload.scheme ?? "escrow",
       ...paymentPayload,
     };
 
@@ -194,8 +187,7 @@ app.post("/settle", async (c) => {
     return c.json(
       {
         success: false,
-        errorReason:
-          error instanceof Error ? error.message : "Settlement failed",
+        errorReason: error instanceof Error ? error.message : "Settlement failed",
         transaction: "",
         network: config.network,
       },
@@ -205,7 +197,7 @@ app.post("/settle", async (c) => {
 });
 
 // Health check
-app.get("/", (c) => {
+app.get("/", c => {
   return c.json({
     name: "x402r Facilitator",
     version: "0.0.1",
@@ -233,9 +225,7 @@ serve(
   () => {
     console.log(`Facilitator running at http://localhost:${port}`);
     console.log("\nEndpoints:");
-    console.log(
-      `  GET  http://localhost:${port}/supported  - Supported schemes`,
-    );
+    console.log(`  GET  http://localhost:${port}/supported  - Supported schemes`);
     console.log(`  POST http://localhost:${port}/verify     - Verify payment`);
     console.log(`  POST http://localhost:${port}/settle     - Settle payment`);
   },

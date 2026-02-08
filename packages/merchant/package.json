@@ -27,6 +27,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
+    "lint:check": "eslint src/",
+    "format:check": "prettier --check \"src/**/*.ts\"",
     "clean": "rm -rf dist coverage"
   },
   "dependencies": {

@@ -6,6 +6,7 @@
 import type { PublicClient } from "viem";
 import { FreezeABI } from "../abis/index.js";
 import type { PaymentInfo, FreezeEventLog } from "../types/index.js";
+import { toAbiPaymentInfo } from "../utils/index.js";
 
 /** Read-only context for freeze operations */
 export interface FreezeReadContext {
@@ -25,13 +26,11 @@ export async function isFrozen(
   paymentInfo: PaymentInfo,
   freezeAddress: `0x${string}`,
 ): Promise<boolean> {
-  // Cast paymentInfo as never because viem's strict ABI typing cannot infer
-  // the complex PaymentInfo struct tuple type from our interface definition.
   const frozen = await ctx.publicClient.readContract({
     address: freezeAddress,
     abi: FreezeABI,
     functionName: "isFrozen",
-    args: [paymentInfo as never],
+    args: [toAbiPaymentInfo(paymentInfo)],
   });
 
   return frozen as boolean;
@@ -54,7 +53,7 @@ export function watchFreezeEvents(
     address: freezeAddress,
     abi: FreezeABI,
     eventName: "PaymentFrozen",
-    onLogs: (logs) => {
+    onLogs: logs => {
       for (const log of logs) {
         callback(log as unknown as FreezeEventLog);
       }
@@ -65,7 +64,7 @@ export function watchFreezeEvents(
     address: freezeAddress,
     abi: FreezeABI,
     eventName: "PaymentUnfrozen",
-    onLogs: (logs) => {
+    onLogs: logs => {
       for (const log of logs) {
         callback(log as unknown as FreezeEventLog);
       }

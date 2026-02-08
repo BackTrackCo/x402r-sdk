@@ -26,8 +26,7 @@ describe("X402rArbiter", () => {
   let publicClient: PublicClient;
   let walletClient: WalletClient;
   const operatorAddress = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as const;
-  const refundRequestAddress =
-    "0xcccccccccccccccccccccccccccccccccccccccc" as const;
+  const refundRequestAddress = "0xcccccccccccccccccccccccccccccccccccccccc" as const;
 
   beforeEach(() => {
     publicClient = createMockPublicClient();
@@ -96,9 +95,7 @@ describe("X402rArbiter", () => {
         salt: BigInt("0x123456"),
       };
 
-      await expect(arbiter.getPaymentState(samplePaymentInfo)).rejects.toThrow(
-        NotImplementedError,
-      );
+      await expect(arbiter.getPaymentState(samplePaymentInfo)).rejects.toThrow(NotImplementedError);
     });
   });
 
@@ -126,9 +123,7 @@ describe("X402rArbiter", () => {
         salt: BigInt("0x123456"),
       };
 
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(
-        true,
-      );
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(true);
 
       const exists = await arbiter.hasRefundRequest(samplePaymentInfo, 0n);
       expect(exists).toBe(true);
@@ -156,9 +151,9 @@ describe("X402rArbiter", () => {
         salt: BigInt("0x123456"),
       };
 
-      await expect(
-        arbiter.hasRefundRequest(samplePaymentInfo, 0n),
-      ).rejects.toThrow("RefundRequest address required");
+      await expect(arbiter.hasRefundRequest(samplePaymentInfo, 0n)).rejects.toThrow(
+        "RefundRequest address required",
+      );
     });
   });
 });

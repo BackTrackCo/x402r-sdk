@@ -62,10 +62,7 @@ export async function pay(options: PayOptions): Promise<PayResult> {
 
   console.log("\nReceived 402 Payment Required");
 
-  if (
-    !paymentRequired.accepts ||
-    !(paymentRequired.accepts as unknown[]).length
-  ) {
+  if (!paymentRequired.accepts || !(paymentRequired.accepts as unknown[]).length) {
     return {
       success: false,
       error: "No payment options in 402 response",
@@ -73,19 +70,14 @@ export async function pay(options: PayOptions): Promise<PayResult> {
   }
 
   // Use first payment option (escrow scheme)
-  const requirements = (
-    paymentRequired.accepts as Record<string, unknown>[]
-  )[0];
+  const requirements = (paymentRequired.accepts as Record<string, unknown>[])[0];
 
   console.log("\nPayment Requirements:");
   console.log("  Scheme:", requirements.scheme);
   console.log("  Network:", requirements.network);
   console.log("  Amount:", requirements.amount, "units");
   console.log("  Pay To:", requirements.payTo);
-  console.log(
-    "  Operator:",
-    (requirements.extra as Record<string, unknown>)?.operatorAddress,
-  );
+  console.log("  Operator:", (requirements.extra as Record<string, unknown>)?.operatorAddress);
 
   // Step 2: Create payment payload
   console.log("\nCreating payment payload...");
@@ -102,9 +94,7 @@ export async function pay(options: PayOptions): Promise<PayResult> {
     accepted: requirements,
     payload: escrowPayload,
   };
-  const paymentHeader = Buffer.from(JSON.stringify(x402Payload)).toString(
-    "base64",
-  );
+  const paymentHeader = Buffer.from(JSON.stringify(x402Payload)).toString("base64");
 
   console.log("\nSending payment to server...");
   const paidResponse = await fetch(url, {
@@ -120,9 +110,7 @@ export async function pay(options: PayOptions): Promise<PayResult> {
   };
 
   if (!paidResponse.ok) {
-    const error = await paidResponse
-      .json()
-      .catch(() => ({ message: "Unknown error" }));
+    const error = await paidResponse.json().catch(() => ({ message: "Unknown error" }));
     return {
       success: false,
       error: `Payment failed: ${error.message || error.error || paidResponse.statusText}`,

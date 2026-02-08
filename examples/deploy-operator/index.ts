@@ -12,12 +12,7 @@
  *   PRIVATE_KEY=0x... pnpm example:deploy-operator
  */
 
-import {
-  createWalletClient,
-  createPublicClient,
-  http,
-  formatEther,
-} from "viem";
+import { createWalletClient, createPublicClient, http, formatEther } from "viem";
 import { baseSepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import {
@@ -34,9 +29,7 @@ async function main() {
   const privateKey = process.env.PRIVATE_KEY as `0x${string}`;
   if (!privateKey) {
     console.error("Error: PRIVATE_KEY environment variable is required");
-    console.error(
-      "Usage: PRIVATE_KEY=0x... pnpm tsx examples/deploy-operator/index.ts",
-    );
+    console.error("Usage: PRIVATE_KEY=0x... pnpm tsx examples/deploy-operator/index.ts");
     process.exit(1);
   }
 
@@ -79,25 +72,13 @@ async function main() {
   console.log("\n--- Configuration ---");
   console.log("Fee recipient:", options.feeRecipient);
   console.log("Arbiter:", options.arbiter);
-  console.log(
-    "Escrow period:",
-    Number(options.escrowPeriodSeconds) / 86400,
-    "days",
-  );
-  console.log(
-    "Freeze duration:",
-    Number(options.freezeDurationSeconds) / 86400,
-    "days",
-  );
+  console.log("Escrow period:", Number(options.escrowPeriodSeconds) / 86400, "days");
+  console.log("Freeze duration:", Number(options.freezeDurationSeconds) / 86400, "days");
   console.log("Operator fee:", Number(options.operatorFeeBps) / 100, "%");
 
   // Preview addresses before deployment
   console.log("\n--- Preview Addresses ---");
-  const preview = await previewMarketplaceOperator(
-    publicClient,
-    NETWORK_ID,
-    options,
-  );
+  const preview = await previewMarketplaceOperator(publicClient, NETWORK_ID, options);
   console.log("Operator:", preview.operatorAddress);
   console.log("EscrowPeriod:", preview.escrowPeriodAddress);
   console.log("Freeze:", preview.freezeAddress);
@@ -109,12 +90,7 @@ async function main() {
   console.log("\n--- Deploying ---");
   const startTime = Date.now();
 
-  const result = await deployMarketplaceOperator(
-    walletClient,
-    publicClient,
-    NETWORK_ID,
-    options,
-  );
+  const result = await deployMarketplaceOperator(walletClient, publicClient, NETWORK_ID, options);
 
   const elapsed = (Date.now() - startTime) / 1000;
   console.log(`Deployment completed in ${elapsed.toFixed(1)}s`);
@@ -145,16 +121,14 @@ async function main() {
   console.log("\n--- Next Steps ---");
   console.log("1. Use this operator address in your payment payload:");
   console.log(`   operator: "${result.operatorAddress}"`);
-  console.log(
-    "\n2. Configure your merchant to accept payments via this operator",
-  );
+  console.log("\n2. Configure your merchant to accept payments via this operator");
   console.log("\n3. Test the payment flow:");
   console.log("   - Authorize payment → funds enter escrow");
   console.log("   - Wait for escrow period OR request refund");
   console.log("   - Release funds OR process refund");
 }
 
-main().catch((error) => {
+main().catch(error => {
   console.error("Deployment failed:", error);
   process.exit(1);
 });

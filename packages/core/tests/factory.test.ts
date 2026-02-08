@@ -21,9 +21,7 @@ describe("PaymentOperatorConfig", () => {
       feeRecipient: "0x1234567890123456789012345678901234567890",
     });
 
-    expect(config.feeRecipient).toBe(
-      "0x1234567890123456789012345678901234567890",
-    );
+    expect(config.feeRecipient).toBe("0x1234567890123456789012345678901234567890");
     expect(config.feeCalculator).toBe(ZERO_ADDRESS);
     expect(config.authorizeCondition).toBe(ZERO_ADDRESS);
     expect(config.authorizeRecorder).toBe(ZERO_ADDRESS);
@@ -43,21 +41,11 @@ describe("PaymentOperatorConfig", () => {
       refundInEscrowRecorder: "0xffffffffffffffffffffffffffffffffffffffff",
     });
 
-    expect(config.feeRecipient).toBe(
-      "0x1234567890123456789012345678901234567890",
-    );
-    expect(config.feeCalculator).toBe(
-      "0x1111111111111111111111111111111111111111",
-    );
-    expect(config.authorizeCondition).toBe(
-      "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    );
-    expect(config.releaseCondition).toBe(
-      "0xcccccccccccccccccccccccccccccccccccccccc",
-    );
-    expect(config.refundInEscrowCondition).toBe(
-      "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-    );
+    expect(config.feeRecipient).toBe("0x1234567890123456789012345678901234567890");
+    expect(config.feeCalculator).toBe("0x1111111111111111111111111111111111111111");
+    expect(config.authorizeCondition).toBe("0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+    expect(config.releaseCondition).toBe("0xcccccccccccccccccccccccccccccccccccccccc");
+    expect(config.refundInEscrowCondition).toBe("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
   });
 
   it("should have correct type structure with 12 fields", () => {
@@ -91,8 +79,7 @@ describe("EscrowPeriodConfig", () => {
   });
 
   it("should create config with custom authorizedCodehash", () => {
-    const customCodehash =
-      "0x1234567890123456789012345678901234567890123456789012345678901234";
+    const customCodehash = "0x1234567890123456789012345678901234567890123456789012345678901234";
     const config = createEscrowPeriodConfig({
       escrowPeriod: 604800n, // 7 days
       authorizedCodehash: customCodehash,
@@ -120,12 +107,8 @@ describe("FreezeConfig", () => {
       unfreezeCondition: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
     });
 
-    expect(config.freezeCondition).toBe(
-      "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    );
-    expect(config.unfreezeCondition).toBe(
-      "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-    );
+    expect(config.freezeCondition).toBe("0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+    expect(config.unfreezeCondition).toBe("0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
     expect(config.freezeDuration).toBe(0n); // permanent
     expect(config.escrowPeriodContract).toBe(ZERO_ADDRESS);
   });
@@ -139,9 +122,7 @@ describe("FreezeConfig", () => {
     });
 
     expect(config.freezeDuration).toBe(259200n);
-    expect(config.escrowPeriodContract).toBe(
-      "0xcccccccccccccccccccccccccccccccccccccccc",
-    );
+    expect(config.escrowPeriodContract).toBe("0xcccccccccccccccccccccccccccccccccccccccc");
   });
 
   it("should have correct type structure with 4 fields", () => {
@@ -169,21 +150,21 @@ describe("Factory ABIs", () => {
 
     it("should have computeAddress function", () => {
       const computeAddress = PaymentOperatorFactoryABI.find(
-        (item) => item.type === "function" && item.name === "computeAddress",
+        item => item.type === "function" && item.name === "computeAddress",
       );
       expect(computeAddress).toBeDefined();
     });
 
     it("should have deployOperator function", () => {
       const deployOperator = PaymentOperatorFactoryABI.find(
-        (item) => item.type === "function" && item.name === "deployOperator",
+        item => item.type === "function" && item.name === "deployOperator",
       );
       expect(deployOperator).toBeDefined();
     });
 
     it("should have getOperator function", () => {
       const getOperator = PaymentOperatorFactoryABI.find(
-        (item) => item.type === "function" && item.name === "getOperator",
+        item => item.type === "function" && item.name === "getOperator",
       );
       expect(getOperator).toBeDefined();
     });
@@ -197,26 +178,26 @@ describe("Factory ABIs", () => {
 
     it("should have deploy function", () => {
       const deploy = EscrowPeriodFactoryABI.find(
-        (item) => item.type === "function" && item.name === "deploy",
+        item => item.type === "function" && item.name === "deploy",
       );
       expect(deploy).toBeDefined();
     });
 
     it("should have computeAddress function (not computeAddresses)", () => {
       const computeAddress = EscrowPeriodFactoryABI.find(
-        (item) => item.type === "function" && item.name === "computeAddress",
+        item => item.type === "function" && item.name === "computeAddress",
       );
       expect(computeAddress).toBeDefined();
 
       const computeAddresses = EscrowPeriodFactoryABI.find(
-        (item) => item.type === "function" && item.name === "computeAddresses",
+        item => item.type === "function" && item.name === "computeAddresses",
       );
       expect(computeAddresses).toBeUndefined(); // Should NOT exist
     });
 
     it("should have getDeployed function", () => {
       const getDeployed = EscrowPeriodFactoryABI.find(
-        (item) => item.type === "function" && item.name === "getDeployed",
+        item => item.type === "function" && item.name === "getDeployed",
       );
       expect(getDeployed).toBeDefined();
     });
@@ -230,7 +211,7 @@ describe("Factory ABIs", () => {
 
     it("should have deploy function with 4 params", () => {
       const deploy = FreezeFactoryABI.find(
-        (item) => item.type === "function" && item.name === "deploy",
+        item => item.type === "function" && item.name === "deploy",
       );
       expect(deploy).toBeDefined();
       if (deploy && "inputs" in deploy) {
@@ -244,7 +225,7 @@ describe("Factory ABIs", () => {
 
     it("should have computeAddress function with 4 params", () => {
       const computeAddress = FreezeFactoryABI.find(
-        (item) => item.type === "function" && item.name === "computeAddress",
+        item => item.type === "function" && item.name === "computeAddress",
       );
       expect(computeAddress).toBeDefined();
       if (computeAddress && "inputs" in computeAddress) {
@@ -261,14 +242,14 @@ describe("Factory ABIs", () => {
 
     it("should have deploy function", () => {
       const deploy = StaticFeeCalculatorFactoryABI.find(
-        (item) => item.type === "function" && item.name === "deploy",
+        item => item.type === "function" && item.name === "deploy",
       );
       expect(deploy).toBeDefined();
     });
 
     it("should have computeAddress function", () => {
       const computeAddress = StaticFeeCalculatorFactoryABI.find(
-        (item) => item.type === "function" && item.name === "computeAddress",
+        item => item.type === "function" && item.name === "computeAddress",
       );
       expect(computeAddress).toBeDefined();
     });
@@ -282,14 +263,14 @@ describe("Factory ABIs", () => {
 
     it("should have deploy function", () => {
       const deploy = StaticAddressConditionFactoryABI.find(
-        (item) => item.type === "function" && item.name === "deploy",
+        item => item.type === "function" && item.name === "deploy",
       );
       expect(deploy).toBeDefined();
     });
 
     it("should have computeAddress function", () => {
       const computeAddress = StaticAddressConditionFactoryABI.find(
-        (item) => item.type === "function" && item.name === "computeAddress",
+        item => item.type === "function" && item.name === "computeAddress",
       );
       expect(computeAddress).toBeDefined();
     });
@@ -302,8 +283,6 @@ describe("Constants", () => {
   });
 
   it("ZERO_BYTES32 should be a valid zero bytes32", () => {
-    expect(ZERO_BYTES32).toBe(
-      "0x0000000000000000000000000000000000000000000000000000000000000000",
-    );
+    expect(ZERO_BYTES32).toBe("0x0000000000000000000000000000000000000000000000000000000000000000");
   });
 });

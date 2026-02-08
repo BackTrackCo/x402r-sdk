@@ -24,8 +24,7 @@ describe("X402rClient - Escrow Operations", () => {
   let publicClient: PublicClient;
   let walletClient: WalletClient;
   const operatorAddress = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as const;
-  const escrowRecorderAddress =
-    "0xcccccccccccccccccccccccccccccccccccccccc" as const;
+  const escrowRecorderAddress = "0xcccccccccccccccccccccccccccccccccccccccc" as const;
 
   const samplePaymentInfo = {
     operator: operatorAddress,
@@ -55,9 +54,9 @@ describe("X402rClient - Escrow Operations", () => {
         operatorAddress,
       });
 
-      await expect(
-        client.freezePayment(samplePaymentInfo, escrowRecorderAddress),
-      ).rejects.toThrow("WalletClient required");
+      await expect(client.freezePayment(samplePaymentInfo, escrowRecorderAddress)).rejects.toThrow(
+        "WalletClient required",
+      );
     });
 
     it("should submit freeze transaction", async () => {
@@ -67,10 +66,7 @@ describe("X402rClient - Escrow Operations", () => {
         operatorAddress,
       });
 
-      const result = await client.freezePayment(
-        samplePaymentInfo,
-        escrowRecorderAddress,
-      );
+      const result = await client.freezePayment(samplePaymentInfo, escrowRecorderAddress);
 
       expect(walletClient.writeContract).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -101,10 +97,7 @@ describe("X402rClient - Escrow Operations", () => {
         operatorAddress,
       });
 
-      const result = await client.unfreezePayment(
-        samplePaymentInfo,
-        escrowRecorderAddress,
-      );
+      const result = await client.unfreezePayment(samplePaymentInfo, escrowRecorderAddress);
 
       expect(walletClient.writeContract).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -123,14 +116,9 @@ describe("X402rClient - Escrow Operations", () => {
         operatorAddress,
       });
 
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(
-        true,
-      );
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(true);
 
-      const frozen = await client.isFrozen(
-        samplePaymentInfo,
-        escrowRecorderAddress,
-      );
+      const frozen = await client.isFrozen(samplePaymentInfo, escrowRecorderAddress);
       expect(frozen).toBe(true);
     });
 
@@ -140,14 +128,9 @@ describe("X402rClient - Escrow Operations", () => {
         operatorAddress,
       });
 
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(
-        false,
-      );
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(false);
 
-      const frozen = await client.isFrozen(
-        samplePaymentInfo,
-        escrowRecorderAddress,
-      );
+      const frozen = await client.isFrozen(samplePaymentInfo, escrowRecorderAddress);
       expect(frozen).toBe(false);
     });
   });
@@ -160,14 +143,9 @@ describe("X402rClient - Escrow Operations", () => {
       });
 
       const timestamp = BigInt(1735689600);
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(
-        timestamp,
-      );
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(timestamp);
 
-      const authTime = await client.getAuthorizationTime(
-        samplePaymentInfo,
-        escrowRecorderAddress,
-      );
+      const authTime = await client.getAuthorizationTime(samplePaymentInfo, escrowRecorderAddress);
       expect(authTime).toBe(timestamp);
     });
 
@@ -177,14 +155,9 @@ describe("X402rClient - Escrow Operations", () => {
         operatorAddress,
       });
 
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(
-        BigInt(0),
-      );
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(BigInt(0));
 
-      const authTime = await client.getAuthorizationTime(
-        samplePaymentInfo,
-        escrowRecorderAddress,
-      );
+      const authTime = await client.getAuthorizationTime(samplePaymentInfo, escrowRecorderAddress);
       expect(authTime).toBe(BigInt(0));
     });
   });
@@ -196,14 +169,9 @@ describe("X402rClient - Escrow Operations", () => {
         operatorAddress,
       });
 
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(
-        true,
-      );
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(true);
 
-      const result = await client.isDuringEscrowPeriod(
-        samplePaymentInfo,
-        escrowRecorderAddress,
-      );
+      const result = await client.isDuringEscrowPeriod(samplePaymentInfo, escrowRecorderAddress);
       expect(result).toBe(true);
     });
 
@@ -213,14 +181,9 @@ describe("X402rClient - Escrow Operations", () => {
         operatorAddress,
       });
 
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(
-        false,
-      );
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(false);
 
-      const result = await client.isDuringEscrowPeriod(
-        samplePaymentInfo,
-        escrowRecorderAddress,
-      );
+      const result = await client.isDuringEscrowPeriod(samplePaymentInfo, escrowRecorderAddress);
       expect(result).toBe(false);
     });
   });
