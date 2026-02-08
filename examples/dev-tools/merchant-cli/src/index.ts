@@ -26,7 +26,7 @@ import {
   validateFeeBounds,
   type PaymentInfo,
 } from "@x402r/core";
-import { parsePaymentInfo } from "../../shared/utils.js";
+import { parsePaymentInfo } from "../shared/utils.js";
 
 // Load environment from the example directory
 const __filename = fileURLToPath(import.meta.url);

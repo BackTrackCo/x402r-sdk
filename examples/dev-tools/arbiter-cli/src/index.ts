@@ -24,7 +24,7 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { X402rArbiter } from "@x402r/arbiter";
 import { getNetworkConfig, RequestStatus, type PaymentInfo } from "@x402r/core";
-import { parsePaymentInfo, shortAddress, formatUSDC } from "../../shared/utils.js";
+import { parsePaymentInfo, shortAddress, formatUSDC } from "../shared/utils.js";
 
 // Load environment from the example directory
 const __filename = fileURLToPath(import.meta.url);
