@@ -6,6 +6,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Clone x402r-scheme (sibling dependency)
+        run: git clone --depth 1 https://github.com/BackTrackCo/x402r-scheme.git ../x402r-scheme
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -23,6 +25,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Clone x402r-scheme (sibling dependency)
+        run: git clone --depth 1 https://github.com/BackTrackCo/x402r-scheme.git ../x402r-scheme
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -40,6 +44,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Clone x402r-scheme (sibling dependency)
+        run: git clone --depth 1 https://github.com/BackTrackCo/x402r-scheme.git ../x402r-scheme
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -62,6 +68,8 @@ jobs:
         node-version: ["20", "22"]
     steps:
       - uses: actions/checkout@v4
+      - name: Clone x402r-scheme (sibling dependency)
+        run: git clone --depth 1 https://github.com/BackTrackCo/x402r-scheme.git ../x402r-scheme
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
