@@ -3,6 +3,7 @@
  * These fields populate PaymentRequirements.extra
  */
 export interface EscrowExtra {
+  [key: string]: unknown;
   escrowAddress: `0x${string}`;
   operatorAddress: `0x${string}`;
   tokenCollector: `0x${string}`;

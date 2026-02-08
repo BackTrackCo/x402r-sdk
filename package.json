@@ -22,7 +22,9 @@
     "docs:generate": "typedoc",
     "docs:watch": "typedoc --watch",
     "example:deploy-operator": "tsx examples/deploy-operator/index.ts",
+    "example:facilitator": "tsx examples/facilitator/src/index.ts",
     "example:merchant-server": "tsx examples/merchant-server/src/index.ts",
+    "example:express-merchant-server": "tsx examples/express-merchant-server/src/index.ts",
     "example:client-cli": "tsx examples/client-cli/src/index.ts",
     "example:merchant-cli": "tsx examples/merchant-cli/src/index.ts",
     "example:arbiter-cli": "tsx examples/arbiter-cli/src/index.ts"
