@@ -27,11 +27,16 @@ import { registerEscrowScheme } from "@x402r/evm/escrow/facilitator";
 import { getNetworkConfig } from "@x402r/core";
 import dotenv from "dotenv";
 import express from "express";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
 import { createWalletClient, http, publicActions } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia, base } from "viem/chains";
 
-dotenv.config();
+// Load .env from this example's directory (works when run from repo root via tsx)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+dotenv.config({ path: join(__dirname, ".env") });
 
 // Configuration
 const PORT = process.env.PORT || "4022";
