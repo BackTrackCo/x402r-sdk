@@ -31,7 +31,7 @@ export function loadConfig(): ServerConfig {
     privateKey,
     operatorAddress,
     facilitatorUrl: process.env.FACILITATOR_URL || "http://localhost:4022",
-    port: parseInt(process.env.PORT || "3000", 10),
+    port: parseInt(process.env.PORT || "3001", 10),
   };
 }
 

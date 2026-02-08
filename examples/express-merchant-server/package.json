@@ -1,5 +1,5 @@
 {
-  "name": "@x402r/hono-server-example",
+  "name": "@x402r/express-server-example",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -12,16 +12,16 @@
     "lint:check": "eslint . --ext .ts"
   },
   "dependencies": {
-    "@hono/node-server": "^1.13.0",
     "@x402/core": "file:../../../x402/typescript/packages/core",
-    "@x402/hono": "file:../../../x402/typescript/packages/http/hono",
+    "@x402/express": "file:../../../x402/typescript/packages/http/express",
     "@x402r/evm": "file:../../../x402r-scheme/packages/evm",
     "@x402r/helpers": "workspace:*",
     "dotenv": "^16.4.0",
-    "hono": "^4.6.0",
+    "express": "^4.21.0",
     "viem": "^2.21.0"
   },
   "devDependencies": {
+    "@types/express": "^4.17.21",
     "@types/node": "^20.11.0",
     "@typescript-eslint/eslint-plugin": "^8.29.1",
     "@typescript-eslint/parser": "^8.29.1",
