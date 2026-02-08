@@ -227,11 +227,32 @@ importers:
         version: 2.45.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
     devDependencies:
       '@types/express':
-        specifier: ^4.17.0
+        specifier: ^4.17.21
         version: 4.17.25
       '@types/node':
         specifier: ^20.11.0
         version: 20.19.30
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^8.29.1
+        version: 8.53.1(@typescript-eslint/parser@8.53.1(eslint@9.39.2)(typescript@5.9.3))(eslint@9.39.2)(typescript@5.9.3)
+      '@typescript-eslint/parser':
+        specifier: ^8.29.1
+        version: 8.53.1(eslint@9.39.2)(typescript@5.9.3)
+      eslint:
+        specifier: ^9.24.0
+        version: 9.39.2
+      eslint-plugin-import:
+        specifier: ^2.31.0
+        version: 2.32.0(@typescript-eslint/parser@8.53.1(eslint@9.39.2)(typescript@5.9.3))(eslint@9.39.2)
+      eslint-plugin-jsdoc:
+        specifier: ^50.6.9
+        version: 50.8.0(eslint@9.39.2)
+      eslint-plugin-prettier:
+        specifier: ^5.2.6
+        version: 5.5.5(eslint@9.39.2)(prettier@3.5.2)
+      prettier:
+        specifier: 3.5.2
+        version: 3.5.2
       tsx:
         specifier: ^4.7.0
         version: 4.21.0
