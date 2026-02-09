@@ -18,7 +18,7 @@
  *   5. Test: curl http://localhost:4021/weather
  */
 
-import { config } from "dotenv";
+import dotenv from "dotenv";
 import { paymentMiddleware, x402ResourceServer } from "@x402/hono";
 import { EscrowServerScheme } from "@x402r/evm/escrow/server";
 import { refundable } from "@x402r/helpers";
@@ -26,7 +26,12 @@ import { HTTPFacilitatorClient } from "@x402/core/server";
 import { privateKeyToAccount } from "viem/accounts";
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
-config();
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+dotenv.config({ path: join(__dirname, ".env") });
 
 const privateKey = process.env.PRIVATE_KEY as `0x${string}`;
 const operatorAddress = process.env.OPERATOR_ADDRESS as `0x${string}`;
