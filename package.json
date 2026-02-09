@@ -25,8 +25,8 @@
     "docs:watch": "typedoc --watch",
     "example:deploy-operator": "tsx examples/deploy-operator/index.ts",
     "example:facilitator": "tsx examples/facilitator/basic/index.ts",
-    "example:merchant-server": "tsx examples/merchant-server/src/index.ts",
-    "example:express-merchant-server": "tsx examples/express-merchant-server/src/index.ts",
+    "example:server:express": "tsx examples/servers/express/index.ts",
+    "example:server:hono": "tsx examples/servers/hono/index.ts",
     "example:client-cli": "tsx examples/dev-tools/client-cli/src/index.ts",
     "example:merchant-cli": "tsx examples/dev-tools/merchant-cli/src/index.ts",
     "example:arbiter-cli": "tsx examples/dev-tools/arbiter-cli/src/index.ts"
