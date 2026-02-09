@@ -1,18 +1,14 @@
 /**
  * x402r Facilitator — Basic Example
  *
- * Forked from x402/examples/typescript/facilitator/basic/index.ts
- * with the following x402 → x402r changes:
- *   - registerExactEvmScheme → registerEscrowScheme
- *   - EVM_PRIVATE_KEY → PRIVATE_KEY + OPERATOR_ADDRESS env vars
- *   - SVM support removed (EVM-only)
- *   - Escrow config (operatorAddress, escrowAddress, tokenCollector) passed to scheme
+ * The facilitator is operator-agnostic: it only needs a signer and network(s).
+ * Operator/escrow/tokenCollector config is provided per-request by the merchant
+ * via `refundable()` and arrives in `requirements.extra`.
  *
  * Usage:
- *   1. Deploy an operator: PRIVATE_KEY=0x... pnpm example:deploy-operator
- *   2. Copy .env-local to .env and fill in your values
- *   3. Run: pnpm example:facilitator
- *   4. Test: curl http://localhost:4022/supported
+ *   1. Set PRIVATE_KEY in .env
+ *   2. Run: pnpm example:facilitator
+ *   3. Test: curl http://localhost:4022/supported
  */
 
 import { x402Facilitator } from "@x402/core/facilitator";
@@ -24,7 +20,6 @@ import type {
 } from "@x402/core/types";
 import { toFacilitatorEvmSigner } from "@x402/evm";
 import { registerEscrowScheme } from "@x402r/evm/escrow/facilitator";
-import { getNetworkConfig } from "@x402r/core";
 import dotenv from "dotenv";
 import express from "express";
 import { fileURLToPath } from "url";
@@ -48,24 +43,9 @@ if (!process.env.PRIVATE_KEY) {
   process.exit(1);
 }
 
-if (!process.env.OPERATOR_ADDRESS) {
-  console.error("OPERATOR_ADDRESS environment variable is required");
-  process.exit(1);
-}
-
-const operatorAddress = process.env.OPERATOR_ADDRESS as `0x${string}`;
-
-// Look up escrow contract addresses from network config
-const networkConfig = getNetworkConfig(NETWORK);
-if (!networkConfig) {
-  console.error(`Network ${NETWORK} is not configured in @x402r/core`);
-  process.exit(1);
-}
-
 // Initialize the EVM account from private key
 const account = privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`);
 console.info(`Facilitator account: ${account.address}`);
-console.info(`Operator: ${operatorAddress}`);
 console.info(`Network: ${NETWORK}`);
 
 // Create a Viem client with both wallet and public capabilities
@@ -118,15 +98,11 @@ const evmSigner = toFacilitatorEvmSigner({
 // Initialize the x402 Facilitator with escrow scheme
 const facilitator = new x402Facilitator();
 
-// Register escrow scheme — this is the key x402 → x402r change.
-// x402 uses: registerExactEvmScheme(facilitator, { signer, networks })
-// x402r adds: operatorAddress, escrowAddress, tokenCollector for getExtra() metadata
+// Register escrow scheme — operator-agnostic, just needs signer + networks.
+// Operator config is provided per-request by the merchant via refundable().
 registerEscrowScheme(facilitator, {
   signer: evmSigner,
   networks: NETWORK,
-  operatorAddress,
-  escrowAddress: networkConfig.authCaptureEscrow,
-  tokenCollector: networkConfig.tokenCollector,
 });
 
 // Initialize Express app
@@ -192,9 +168,6 @@ app.post("/settle", async (req, res) => {
 /**
  * GET /supported
  * Get supported payment kinds and extensions
- *
- * With the getExtra() fix, this now returns escrow metadata
- * (operatorAddress, escrowAddress, tokenCollector) automatically.
  */
 app.get("/supported", async (_req, res) => {
   try {
@@ -213,7 +186,6 @@ app.get("/", (_req, res) => {
   res.json({
     name: "x402r Facilitator",
     network: NETWORK,
-    operator: operatorAddress,
     facilitator: account.address,
   });
 });
