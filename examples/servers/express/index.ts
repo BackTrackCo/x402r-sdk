@@ -1,45 +1,19 @@
-/**
- * x402r Merchant Server — Express Example
- *
- * Forked from x402/examples/typescript/servers/express/index.ts
- * with the following x402 → x402r changes:
- *   - ExactEvmScheme → EscrowServerScheme from @x402r/evm
- *   - SVM support removed (EVM-only)
- *   - Route config wrapped with refundable() from @x402r/helpers
- *   - scheme: "exact" → scheme: "escrow"
- *   - EVM_ADDRESS → PRIVATE_KEY + OPERATOR_ADDRESS env vars
- *   - Price: $0.001 → $0.01
- *
- * Usage:
- *   1. Deploy an operator: PRIVATE_KEY=0x... pnpm example:deploy-operator
- *   2. Copy .env-local to .env and fill in your values
- *   3. Start a facilitator: pnpm example:facilitator
- *   4. Run: pnpm example:server:express
- *   5. Test: curl http://localhost:4021/weather
- */
-
-import dotenv from "dotenv";
+import { config } from "dotenv";
 import express from "express";
 import { paymentMiddleware, x402ResourceServer } from "@x402/express";
 import { EscrowServerScheme } from "@x402r/evm/escrow/server";
 import { refundable } from "@x402r/helpers";
 import { HTTPFacilitatorClient } from "@x402/core/server";
-import { privateKeyToAccount } from "viem/accounts";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
+config({ path: join(dirname(fileURLToPath(import.meta.url)), ".env") });
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-dotenv.config({ path: join(__dirname, ".env") });
-
-const privateKey = process.env.PRIVATE_KEY as `0x${string}`;
+const address = process.env.ADDRESS as `0x${string}`;
 const operatorAddress = process.env.OPERATOR_ADDRESS as `0x${string}`;
-if (!privateKey || !operatorAddress) {
-  console.error("Missing required environment variables: PRIVATE_KEY, OPERATOR_ADDRESS");
+if (!address || !operatorAddress) {
+  console.error("Missing required environment variables: ADDRESS, OPERATOR_ADDRESS");
   process.exit(1);
 }
-
-const account = privateKeyToAccount(privateKey);
 
 const facilitatorUrl = process.env.FACILITATOR_URL;
 if (!facilitatorUrl) {
@@ -47,8 +21,6 @@ if (!facilitatorUrl) {
   process.exit(1);
 }
 const facilitatorClient = new HTTPFacilitatorClient({ url: facilitatorUrl });
-
-const NETWORK_ID = "eip155:84532";
 
 const app = express();
 
@@ -61,8 +33,8 @@ app.use(
             {
               scheme: "escrow",
               price: "$0.01",
-              network: NETWORK_ID,
-              payTo: account.address,
+              network: "eip155:84532",
+              payTo: address,
             },
             operatorAddress,
           ),
@@ -72,7 +44,7 @@ app.use(
       },
     },
     new x402ResourceServer(facilitatorClient).register(
-      NETWORK_ID,
+      "eip155:84532",
       new EscrowServerScheme() as never,
     ),
   ),

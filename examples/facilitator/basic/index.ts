@@ -9,11 +9,13 @@ import { toFacilitatorEvmSigner } from "@x402/evm";
 import { registerEscrowScheme } from "@x402r/evm/escrow/facilitator";
 import dotenv from "dotenv";
 import express from "express";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
 import { createWalletClient, http, publicActions } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
 
-dotenv.config();
+dotenv.config({ path: join(dirname(fileURLToPath(import.meta.url)), ".env") });
 
 // Configuration
 const PORT = process.env.PORT || "4022";
