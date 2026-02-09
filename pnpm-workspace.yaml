@@ -1,3 +1,7 @@
 packages:
   - "packages/*"
   - "examples/*"
+  - "examples/servers/*"
+  - "examples/clients/*"
+  - "examples/facilitator/*"
+  - "examples/dev-tools/*"

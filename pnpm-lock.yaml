@@ -57,14 +57,14 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@20.19.30)
 
-  examples/arbiter-cli:
+  examples/dev-tools/arbiter-cli:
     dependencies:
       '@x402r/arbiter':
         specifier: workspace:*
-        version: link:../../packages/arbiter
+        version: link:../../../packages/arbiter
       '@x402r/core':
         specifier: workspace:*
-        version: link:../../packages/core
+        version: link:../../../packages/core
       commander:
         specifier: ^12.1.0
         version: 12.1.0
@@ -85,17 +85,45 @@ importers:
         specifier: ^5.7.0
         version: 5.9.3
 
-  examples/client-cli:
+  examples/dev-tools/client-cli:
     dependencies:
       '@x402r/client':
         specifier: workspace:*
-        version: link:../../packages/client
+        version: link:../../../packages/client
       '@x402r/core':
         specifier: workspace:*
-        version: link:../../packages/core
+        version: link:../../../packages/core
       '@x402r/evm':
-        specifier: file:../../../x402r-scheme/packages/evm
+        specifier: file:../../../../x402r-scheme/packages/evm
         version: file:../x402r-scheme/packages/evm(@x402/core@2.3.0)(@x402/evm@2.3.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10))(viem@2.45.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))
+      commander:
+        specifier: ^12.1.0
+        version: 12.1.0
+      dotenv:
+        specifier: ^16.4.0
+        version: 16.6.1
+      viem:
+        specifier: ^2.21.0
+        version: 2.45.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+    devDependencies:
+      '@types/node':
+        specifier: ^20.11.0
+        version: 20.19.30
+      tsx:
+        specifier: ^4.7.0
+        version: 4.21.0
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
+  examples/dev-tools/merchant-cli:
+    dependencies:
+      '@x402r/core':
+        specifier: workspace:*
+        version: link:../../../packages/core
+      '@x402r/merchant':
+        specifier: workspace:*
+        version: link:../../../packages/merchant
       commander:
         specifier: ^12.1.0
         version: 12.1.0
@@ -174,11 +202,8 @@ importers:
         specifier: ^5.7.0
         version: 5.9.3
 
-  examples/facilitator:
+  examples/facilitator/basic:
     dependencies:
-      '@hono/node-server':
-        specifier: ^1.13.0
-        version: 1.19.9(hono@4.11.7)
       '@x402/core':
         specifier: ^2.3.0
         version: 2.3.0
@@ -187,51 +212,47 @@ importers:
         version: 2.3.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)
       '@x402r/core':
         specifier: workspace:*
-        version: link:../../packages/core
+        version: link:../../../packages/core
       '@x402r/evm':
-        specifier: file:../../../x402r-scheme/packages/evm
+        specifier: file:../../../../x402r-scheme/packages/evm
         version: file:../x402r-scheme/packages/evm(@x402/core@2.3.0)(@x402/evm@2.3.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10))(viem@2.45.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))
       dotenv:
         specifier: ^16.4.0
         version: 16.6.1
-      hono:
-        specifier: ^4.6.0
-        version: 4.11.7
+      express:
+        specifier: ^4.21.0
+        version: 4.22.1
       viem:
         specifier: ^2.21.0
         version: 2.45.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
     devDependencies:
+      '@types/express':
+        specifier: ^4.17.21
+        version: 4.17.25
       '@types/node':
         specifier: ^20.11.0
         version: 20.19.30
-      tsx:
-        specifier: ^4.7.0
-        version: 4.21.0
-      typescript:
-        specifier: ^5.7.0
-        version: 5.9.3
-
-  examples/merchant-cli:
-    dependencies:
-      '@x402r/core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@x402r/merchant':
-        specifier: workspace:*
-        version: link:../../packages/merchant
-      commander:
-        specifier: ^12.1.0
-        version: 12.1.0
-      dotenv:
-        specifier: ^16.4.0
-        version: 16.6.1
-      viem:
-        specifier: ^2.21.0
-        version: 2.45.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
-    devDependencies:
-      '@types/node':
-        specifier: ^20.11.0
-        version: 20.19.30
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^8.29.1
+        version: 8.53.1(@typescript-eslint/parser@8.53.1(eslint@9.39.2)(typescript@5.9.3))(eslint@9.39.2)(typescript@5.9.3)
+      '@typescript-eslint/parser':
+        specifier: ^8.29.1
+        version: 8.53.1(eslint@9.39.2)(typescript@5.9.3)
+      eslint:
+        specifier: ^9.24.0
+        version: 9.39.2
+      eslint-plugin-import:
+        specifier: ^2.31.0
+        version: 2.32.0(@typescript-eslint/parser@8.53.1(eslint@9.39.2)(typescript@5.9.3))(eslint@9.39.2)
+      eslint-plugin-jsdoc:
+        specifier: ^50.6.9
+        version: 50.8.0(eslint@9.39.2)
+      eslint-plugin-prettier:
+        specifier: ^5.2.6
+        version: 5.5.5(eslint@9.39.2)(prettier@3.5.2)
+      prettier:
+        specifier: 3.5.2
+        version: 3.5.2
       tsx:
         specifier: ^4.7.0
         version: 4.21.0
