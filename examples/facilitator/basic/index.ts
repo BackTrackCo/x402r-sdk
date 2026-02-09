@@ -1,18 +1,5 @@
-/**
- * x402r Facilitator — Basic Example
- *
- * The facilitator is operator-agnostic: it only needs a signer and network(s).
- * Operator/escrow/tokenCollector config is provided per-request by the merchant
- * via `refundable()` and arrives in `requirements.extra`.
- *
- * Usage:
- *   1. Set PRIVATE_KEY in .env
- *   2. Run: pnpm example:facilitator
- *   3. Test: curl http://localhost:4022/supported
- */
-
 import { x402Facilitator } from "@x402/core/facilitator";
-import type {
+import {
   PaymentPayload,
   PaymentRequirements,
   SettleResponse,
@@ -22,20 +9,14 @@ import { toFacilitatorEvmSigner } from "@x402/evm";
 import { registerEscrowScheme } from "@x402r/evm/escrow/facilitator";
 import dotenv from "dotenv";
 import express from "express";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
 import { createWalletClient, http, publicActions } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { baseSepolia, base } from "viem/chains";
+import { baseSepolia } from "viem/chains";
 
-// Load .env from this example's directory (works when run from repo root via tsx)
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-dotenv.config({ path: join(__dirname, ".env") });
+dotenv.config();
 
 // Configuration
 const PORT = process.env.PORT || "4022";
-const NETWORK = process.env.NETWORK || "eip155:84532";
 
 // Validate required environment variables
 if (!process.env.PRIVATE_KEY) {
@@ -46,17 +27,14 @@ if (!process.env.PRIVATE_KEY) {
 // Initialize the EVM account from private key
 const account = privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`);
 console.info(`Facilitator account: ${account.address}`);
-console.info(`Network: ${NETWORK}`);
 
 // Create a Viem client with both wallet and public capabilities
-const chain = NETWORK === "eip155:8453" ? base : baseSepolia;
 const viemClient = createWalletClient({
   account,
-  chain,
+  chain: baseSepolia,
   transport: http(),
 }).extend(publicActions);
 
-// Create facilitator signer using x402's toFacilitatorEvmSigner
 const evmSigner = toFacilitatorEvmSigner({
   getCode: (args: { address: `0x${string}` }) => viemClient.getCode(args),
   address: account.address,
@@ -95,14 +73,11 @@ const evmSigner = toFacilitatorEvmSigner({
     viemClient.waitForTransactionReceipt(args),
 });
 
-// Initialize the x402 Facilitator with escrow scheme
 const facilitator = new x402Facilitator();
 
-// Register escrow scheme — operator-agnostic, just needs signer + networks.
-// Operator config is provided per-request by the merchant via refundable().
 registerEscrowScheme(facilitator, {
   signer: evmSigner,
-  networks: NETWORK,
+  networks: "eip155:84532", // Base Sepolia
 });
 
 // Initialize Express app
@@ -169,7 +144,7 @@ app.post("/settle", async (req, res) => {
  * GET /supported
  * Get supported payment kinds and extensions
  */
-app.get("/supported", async (_req, res) => {
+app.get("/supported", async (req, res) => {
   try {
     const response = facilitator.getSupported();
     res.json(response);
@@ -181,19 +156,7 @@ app.get("/supported", async (_req, res) => {
   }
 });
 
-// Health check
-app.get("/", (_req, res) => {
-  res.json({
-    name: "x402r Facilitator",
-    network: NETWORK,
-    facilitator: account.address,
-  });
-});
-
 // Start the server
 app.listen(parseInt(PORT), () => {
   console.log(`Facilitator listening on http://localhost:${PORT}`);
-  console.log(`  GET  http://localhost:${PORT}/supported`);
-  console.log(`  POST http://localhost:${PORT}/verify`);
-  console.log(`  POST http://localhost:${PORT}/settle`);
 });
