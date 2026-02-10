@@ -4,7 +4,7 @@
   "private": true,
   "description": "TypeScript SDK for the X402r refundable payments protocol (under development)",
   "author": "x402r.org",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/BackTrackCo/x402r-sdk.git"

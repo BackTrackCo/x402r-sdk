@@ -110,4 +110,4 @@ All write operations (refunds, releases, charges) work directly on-chain.
 
 ## License
 
-MIT
+Apache-2.0

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Server-side helpers for x402r refundable payments",
   "author": "x402r.org",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
