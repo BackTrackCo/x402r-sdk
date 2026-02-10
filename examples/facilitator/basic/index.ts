@@ -1,22 +1,5 @@
-/**
- * x402r Facilitator — Basic Example
- *
- * Forked from x402/examples/typescript/facilitator/basic/index.ts
- * with the following x402 → x402r changes:
- *   - registerExactEvmScheme → registerEscrowScheme
- *   - EVM_PRIVATE_KEY → PRIVATE_KEY + OPERATOR_ADDRESS env vars
- *   - SVM support removed (EVM-only)
- *   - Escrow config (operatorAddress, escrowAddress, tokenCollector) passed to scheme
- *
- * Usage:
- *   1. Deploy an operator: PRIVATE_KEY=0x... pnpm example:deploy-operator
- *   2. Copy .env-local to .env and fill in your values
- *   3. Run: pnpm example:facilitator
- *   4. Test: curl http://localhost:4022/supported
- */
-
 import { x402Facilitator } from "@x402/core/facilitator";
-import type {
+import {
   PaymentPayload,
   PaymentRequirements,
   SettleResponse,
@@ -24,23 +7,18 @@ import type {
 } from "@x402/core/types";
 import { toFacilitatorEvmSigner } from "@x402/evm";
 import { registerEscrowScheme } from "@x402r/evm/escrow/facilitator";
-import { getNetworkConfig } from "@x402r/core";
 import dotenv from "dotenv";
 import express from "express";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { createWalletClient, http, publicActions } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { baseSepolia, base } from "viem/chains";
+import { baseSepolia } from "viem/chains";
 
-// Load .env from this example's directory (works when run from repo root via tsx)
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-dotenv.config({ path: join(__dirname, ".env") });
+dotenv.config({ path: join(dirname(fileURLToPath(import.meta.url)), ".env") });
 
 // Configuration
 const PORT = process.env.PORT || "4022";
-const NETWORK = process.env.NETWORK || "eip155:84532";
 
 // Validate required environment variables
 if (!process.env.PRIVATE_KEY) {
@@ -48,35 +26,17 @@ if (!process.env.PRIVATE_KEY) {
   process.exit(1);
 }
 
-if (!process.env.OPERATOR_ADDRESS) {
-  console.error("OPERATOR_ADDRESS environment variable is required");
-  process.exit(1);
-}
-
-const operatorAddress = process.env.OPERATOR_ADDRESS as `0x${string}`;
-
-// Look up escrow contract addresses from network config
-const networkConfig = getNetworkConfig(NETWORK);
-if (!networkConfig) {
-  console.error(`Network ${NETWORK} is not configured in @x402r/core`);
-  process.exit(1);
-}
-
 // Initialize the EVM account from private key
 const account = privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`);
 console.info(`Facilitator account: ${account.address}`);
-console.info(`Operator: ${operatorAddress}`);
-console.info(`Network: ${NETWORK}`);
 
 // Create a Viem client with both wallet and public capabilities
-const chain = NETWORK === "eip155:8453" ? base : baseSepolia;
 const viemClient = createWalletClient({
   account,
-  chain,
+  chain: baseSepolia,
   transport: http(),
 }).extend(publicActions);
 
-// Create facilitator signer using x402's toFacilitatorEvmSigner
 const evmSigner = toFacilitatorEvmSigner({
   getCode: (args: { address: `0x${string}` }) => viemClient.getCode(args),
   address: account.address,
@@ -115,18 +75,11 @@ const evmSigner = toFacilitatorEvmSigner({
     viemClient.waitForTransactionReceipt(args),
 });
 
-// Initialize the x402 Facilitator with escrow scheme
 const facilitator = new x402Facilitator();
 
-// Register escrow scheme — this is the key x402 → x402r change.
-// x402 uses: registerExactEvmScheme(facilitator, { signer, networks })
-// x402r adds: operatorAddress, escrowAddress, tokenCollector for getExtra() metadata
 registerEscrowScheme(facilitator, {
   signer: evmSigner,
-  networks: NETWORK,
-  operatorAddress,
-  escrowAddress: networkConfig.authCaptureEscrow,
-  tokenCollector: networkConfig.tokenCollector,
+  networks: "eip155:84532", // Base Sepolia
 });
 
 // Initialize Express app
@@ -192,11 +145,8 @@ app.post("/settle", async (req, res) => {
 /**
  * GET /supported
  * Get supported payment kinds and extensions
- *
- * With the getExtra() fix, this now returns escrow metadata
- * (operatorAddress, escrowAddress, tokenCollector) automatically.
  */
-app.get("/supported", async (_req, res) => {
+app.get("/supported", async (req, res) => {
   try {
     const response = facilitator.getSupported();
     res.json(response);
@@ -208,20 +158,7 @@ app.get("/supported", async (_req, res) => {
   }
 });
 
-// Health check
-app.get("/", (_req, res) => {
-  res.json({
-    name: "x402r Facilitator",
-    network: NETWORK,
-    operator: operatorAddress,
-    facilitator: account.address,
-  });
-});
-
 // Start the server
 app.listen(parseInt(PORT), () => {
   console.log(`Facilitator listening on http://localhost:${PORT}`);
-  console.log(`  GET  http://localhost:${PORT}/supported`);
-  console.log(`  POST http://localhost:${PORT}/verify`);
-  console.log(`  POST http://localhost:${PORT}/settle`);
 });
