@@ -306,6 +306,35 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     },
   },
 
+  // --- Optimism ---
+  "eip155:10": {
+    name: "Optimism",
+    chainId: 10,
+    authCaptureEscrow: "0x320a3c35F131E5D2Fb36af56345726B298936037",
+    tokenCollector: "0x230fd3A171750FA45db2976121376b7F47Cba308",
+    refundRequest: "0xc1256Bb30bd0cdDa07D8C8Cf67a59105f2EA1b98",
+    protocolFeeConfig: "0xD979dBfBdA5f4b16AAF60Eaab32A44f352076838",
+    usdcTvlLimit: "0xb33D6502EdBbC47201cd1E53C49d703EC0a660b8",
+    arbiterRegistry: "0xE78648e7af7B1BaDE717FF6E410B922F92adE80f",
+    usdc: "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85",
+    factories: {
+      paymentOperator: "0x32d6AC59BCe8DFB3026F10BcaDB8D00AB218f5b6",
+      escrowPeriod: "0x2714EA3e839Ac50F52B2e2a5788F614cACeE5316",
+      freeze: "0x26A3d27139b442Be5ECc10c8608c494627B660BF",
+      staticFeeCalculator: "0x89257cA1114139C3332bb73655BC2e4C924aC678",
+      staticAddressCondition: "0x0DdF51E62DDD41B5f67BEaF2DCE9F2E99E2C5aF5",
+      andCondition: "0xAfdEEa8f37AC2cfaE6732c31FEde0A014BfD693a",
+      orCondition: "0xe968AA7530b9C3336FED14FD5D5D4dD3Cf82655D",
+      notCondition: "0xc5a96DaBd3F0E485CEEA7Bf912fC5834A6DE2267",
+      recorderCombinator: "0x6a7E26c3A78a7B1eFF9Dd28d51B2a15df3208B84",
+    },
+    conditions: {
+      payer: "0xed02d3E5167BCc9582D851885A89b050AB816a56",
+      receiver: "0xc9BbA6A2CF9838e7Dd8c19BC8B3BAC620B9D8178",
+      alwaysTrue: "0x46C44071BDf9753482400B76d88A5850318b776F",
+    },
+  },
+
   // --- Avalanche ---
   "eip155:43114": {
     name: "Avalanche C-Chain",
