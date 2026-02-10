@@ -1,0 +1,52 @@
+diff --git a/dist/cjs/mechanisms-CP6q1k8-.d.ts b/dist/cjs/mechanisms-CP6q1k8-.d.ts
+index 464908e51b49ced5a72f4ba1dc6ad37f8e40df7c..a5e07537311a18716932c0ea6e85fe3d59c7d8ad 100644
+--- a/dist/cjs/mechanisms-CP6q1k8-.d.ts
++++ b/dist/cjs/mechanisms-CP6q1k8-.d.ts
+@@ -366,6 +366,7 @@ declare class x402ResourceServer {
+         price: Price | ((context: TContext) => Price | Promise<Price>);
+         network: Network;
+         maxTimeoutSeconds?: number;
++        extra?: Record<string, unknown>;
+     }>, context: TContext): Promise<PaymentRequirements[]>;
+     /**
+      * Create a payment required response
+diff --git a/dist/cjs/server/index.js b/dist/cjs/server/index.js
+index 4d683bfd5bdbd0739fb4098bce9b083914b5c977..9233c199f9c34203dd12ea0de4e48dbbf4d98e9c 100644
+--- a/dist/cjs/server/index.js
++++ b/dist/cjs/server/index.js
+@@ -583,7 +583,8 @@ var x402ResourceServer = class {
+         payTo: resolvedPayTo,
+         price: resolvedPrice,
+         network: option.network,
+-        maxTimeoutSeconds: option.maxTimeoutSeconds
++        maxTimeoutSeconds: option.maxTimeoutSeconds,
++        extra: option.extra
+       };
+       const requirements = await this.buildPaymentRequirements(resourceConfig);
+       allRequirements.push(...requirements);
+diff --git a/dist/esm/mechanisms-CP6q1k8-.d.mts b/dist/esm/mechanisms-CP6q1k8-.d.mts
+index 464908e51b49ced5a72f4ba1dc6ad37f8e40df7c..a5e07537311a18716932c0ea6e85fe3d59c7d8ad 100644
+--- a/dist/esm/mechanisms-CP6q1k8-.d.mts
++++ b/dist/esm/mechanisms-CP6q1k8-.d.mts
+@@ -366,6 +366,7 @@ declare class x402ResourceServer {
+         price: Price | ((context: TContext) => Price | Promise<Price>);
+         network: Network;
+         maxTimeoutSeconds?: number;
++        extra?: Record<string, unknown>;
+     }>, context: TContext): Promise<PaymentRequirements[]>;
+     /**
+      * Create a payment required response
+diff --git a/dist/esm/server/index.mjs b/dist/esm/server/index.mjs
+index a0e82eee61d4e1ab8ce27263831decf9bcd688c3..a9c971907c82bf1c99a013cd62f3f3aa04aa5af4 100644
+--- a/dist/esm/server/index.mjs
++++ b/dist/esm/server/index.mjs
+@@ -331,7 +331,8 @@ var x402ResourceServer = class {
+         payTo: resolvedPayTo,
+         price: resolvedPrice,
+         network: option.network,
+-        maxTimeoutSeconds: option.maxTimeoutSeconds
++        maxTimeoutSeconds: option.maxTimeoutSeconds,
++        extra: option.extra
+       };
+       const requirements = await this.buildPaymentRequirements(resourceConfig);
+       allRequirements.push(...requirements);

@@ -50,7 +50,10 @@
     "vitest": "^2.1.0"
   },
   "pnpm": {
-    "overrides": {}
+    "overrides": {},
+    "patchedDependencies": {
+      "@x402/core@2.3.0": "patches/@x402__core@2.3.0.patch"
+    }
   },
   "packageManager": "pnpm@9.15.0",
   "engines": {
