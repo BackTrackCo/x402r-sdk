@@ -10,13 +10,25 @@ Deploy a complete marketplace payment operator with escrow, freeze, and arbiter 
 
 ## Usage
 
-```bash
-PRIVATE_KEY=0x... pnpm start
-```
+1. Copy the `.env.example` and fill in your private key:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your PRIVATE_KEY
+   ```
 
-Or using tsx directly from the SDK root:
+2. Run the deployment:
+   ```bash
+   pnpm start
+   ```
+
+Or pass env vars inline from the SDK root:
 ```bash
 PRIVATE_KEY=0x... pnpm tsx examples/deploy-operator/index.ts
+```
+
+With custom configuration:
+```bash
+PRIVATE_KEY=0x... ARBITER=0xArbiterAddr ESCROW_PERIOD=86400 FEE_BPS=50 pnpm tsx examples/deploy-operator/index.ts
 ```
 
 ## What Gets Deployed
@@ -41,17 +53,18 @@ The deployment script composes conditions for refund authorization:
 
 This means disputes can be resolved by the arbiter while escrow is active, but once the escrow period passes, only the merchant retains refund authority.
 
-## Default Configuration
+## Environment Variables
 
-```typescript
-{
-  feeRecipient: <your address>,     // Receives operator fees
-  arbiter: <your address>,          // Self as arbiter (for testing)
-  escrowPeriodSeconds: 604800n,     // 7 days
-  freezeDurationSeconds: 259200n,   // 3 days max freeze
-  operatorFeeBps: 100n,             // 1% operator fee
-}
-```
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `PRIVATE_KEY` | Yes | — | Deployer wallet private key |
+| `ARBITER` | No | deployer address | Arbiter address for dispute resolution |
+| `FEE_RECIPIENT` | No | deployer address | Address that receives operator fees |
+| `ESCROW_PERIOD` | No | `604800` (7 days) | Escrow period in seconds |
+| `FREEZE_DURATION` | No | `259200` (3 days) | Freeze duration in seconds |
+| `FEE_BPS` | No | `100` (1%) | Operator fee in basis points |
+| `NETWORK_ID` | No | `eip155:84532` | Chain identifier |
+| `RPC_URL` | No | `https://sepolia.base.org` | RPC endpoint |
 
 ## Output
 
@@ -117,17 +130,19 @@ After deployment:
 
 ## Customization
 
-To customize the operator, edit `index.ts`:
+Set env vars to customize the operator — no need to edit the script:
 
-```typescript
-const options = {
-  feeRecipient: '0x...custom_address...',
-  arbiter: '0x...arbiter_address...',
-  escrowPeriodSeconds: 86400n,      // 1 day
-  freezeDurationSeconds: 0n,         // No freeze limit
-  operatorFeeBps: 50n,               // 0.5% fee
-};
+```bash
+# 1-day escrow, no freeze limit, 0.5% fee, custom arbiter
+PRIVATE_KEY=0x... \
+  ARBITER=0xArbiterAddr \
+  ESCROW_PERIOD=86400 \
+  FREEZE_DURATION=0 \
+  FEE_BPS=50 \
+  pnpm start
 ```
+
+See `.env.example` for all available options.
 
 ## Deterministic Addresses
 
