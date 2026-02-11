@@ -90,7 +90,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     factories: {
       paymentOperator: "0x97d53e63A9CB97556c00BeFd325AF810c9b267B2",
       escrowPeriod: "0x34A5AAF8C19e04d0193466bdF80D155EC934c980",
-      freeze: "0xE6Eef1Ca0b53ff16fC36c5Ff33ac658e52b3b712",
+      freeze: "0x45B0d8ca06e0367ef99E3535d32abb0074e06bD3",
       staticFeeCalculator: "0xD9989E2F2Ac0494119bd1C0f3CABC47D26758659",
       staticAddressCondition: "0xA7C944301a4CdB3f9d6776eB742E0fe24368AF90",
       andCondition: "0x46F5aF23960F4300e7Fb1ded3742cA5509F6F596",
@@ -117,7 +117,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     factories: {
       paymentOperator: "0x3D0837fF8Ea36F417261577b9BA568400A840260",
       escrowPeriod: "0x12EDefd4549c53497689067f165c0f101796Eb6D",
-      freeze: "0x785cC83DEa3d46D5509f3bf7496EAb26D42EE610",
+      freeze: "0x64b5071C7e1eDA582849DF392a1EBdf78690a90C",
       staticFeeCalculator: "0x9D4146EF898c8E60B3e865AE254ef438E7cEd2A0",
       staticAddressCondition: "0x206D4DbB6E7b876e4B5EFAAD2a04e7d7813FB6ba",
       andCondition: "0x5b3e33791C1764cF7e2573Bf8116F1D361FD97Cd",
@@ -146,7 +146,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     factories: {
       paymentOperator: "0x32d6AC59BCe8DFB3026F10BcaDB8D00AB218f5b6",
       escrowPeriod: "0x2714EA3e839Ac50F52B2e2a5788F614cACeE5316",
-      freeze: "0x26A3d27139b442Be5ECc10c8608c494627B660BF",
+      freeze: "0xA50F51254E8B08899EdB76Bd24b4DC6A61ba7dE7",
       staticFeeCalculator: "0x89257cA1114139C3332bb73655BC2e4C924aC678",
       staticAddressCondition: "0x0DdF51E62DDD41B5f67BEaF2DCE9F2E99E2C5aF5",
       andCondition: "0xAfdEEa8f37AC2cfaE6732c31FEde0A014BfD693a",
@@ -167,15 +167,15 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     chainId: 1,
     authCaptureEscrow: "0xc1256Bb30bd0cdDa07D8C8Cf67a59105f2EA1b98",
     tokenCollector: "0xE78648e7af7B1BaDE717FF6E410B922F92adE80f",
-    refundRequest: "0xc9BbA6A2CF9838e7Dd8c19BC8B3BAC620B9D8178",
+    refundRequest: "0x59314674BAbb1a24Eb2704468a9cCdD50668a1C6",
     protocolFeeConfig: "0xb33D6502EdBbC47201cd1E53C49d703EC0a660b8",
-    usdcTvlLimit: "0x2714EA3e839Ac50F52B2e2a5788F614cACeE5316",
-    arbiterRegistry: "0x46C44071BDf9753482400B76d88A5850318b776F",
+    usdcTvlLimit: "0x35fb2EFEfAc3Ee9f6E52A9AAE5C9655bC08dEc00",
+    arbiterRegistry: "0x3D0837fF8Ea36F417261577b9BA568400A840260",
     usdc: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
     factories: {
-      paymentOperator: "0xed02d3E5167BCc9582D851885A89b050AB816a56",
-      escrowPeriod: "0xAfdEEa8f37AC2cfaE6732c31FEde0A014BfD693a",
-      freeze: "0xe968AA7530b9C3336FED14FD5D5D4dD3Cf82655D",
+      paymentOperator: "0x48ADf6E37F9b31dC2AAD0462C5862B5422C736B8",
+      escrowPeriod: "0x6926c05193c714ED4bA3867Ee93d6816Fdc14128",
+      freeze: "0xBAF68176FF94CAdD403EF7FbB776bbca548AC09D",
       staticFeeCalculator: "0xc5a96DaBd3F0E485CEEA7Bf912fC5834A6DE2267",
       staticAddressCondition: "0x6a7E26c3A78a7B1eFF9Dd28d51B2a15df3208B84",
       andCondition: "0x19a798c7F66E6401f6004b732dA604196952e843",
@@ -184,9 +184,9 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
       recorderCombinator: "0x536439b00002CB3c0141391A92aFBB3e1E3f8604",
     },
     conditions: {
-      payer: "0x26A3d27139b442Be5ECc10c8608c494627B660BF",
-      receiver: "0x89257cA1114139C3332bb73655BC2e4C924aC678",
-      alwaysTrue: "0x0DdF51E62DDD41B5f67BEaF2DCE9F2E99E2C5aF5",
+      payer: "0xB68C023365EB08021E12f7f7f11a03282443863A",
+      receiver: "0x67B63Af4bcdCD3E4263d9995aB04563fbC229944",
+      alwaysTrue: "0x7254b68D1AaAbd118C8A8b15756b4654c10a16d2",
     },
   },
 
@@ -204,7 +204,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     factories: {
       paymentOperator: "0xb33D6502EdBbC47201cd1E53C49d703EC0a660b8",
       escrowPeriod: "0x0DdF51E62DDD41B5f67BEaF2DCE9F2E99E2C5aF5",
-      freeze: "0xAfdEEa8f37AC2cfaE6732c31FEde0A014BfD693a",
+      freeze: "0xCAEd9474c06bf9139AC36C874dED838e1Bcb9310",
       staticFeeCalculator: "0xe968AA7530b9C3336FED14FD5D5D4dD3Cf82655D",
       staticAddressCondition: "0xc5a96DaBd3F0E485CEEA7Bf912fC5834A6DE2267",
       andCondition: "0x6a7E26c3A78a7B1eFF9Dd28d51B2a15df3208B84",
@@ -233,7 +233,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     factories: {
       paymentOperator: "0x32d6AC59BCe8DFB3026F10BcaDB8D00AB218f5b6",
       escrowPeriod: "0x2714EA3e839Ac50F52B2e2a5788F614cACeE5316",
-      freeze: "0x26A3d27139b442Be5ECc10c8608c494627B660BF",
+      freeze: "0xA50F51254E8B08899EdB76Bd24b4DC6A61ba7dE7",
       staticFeeCalculator: "0x89257cA1114139C3332bb73655BC2e4C924aC678",
       staticAddressCondition: "0x0DdF51E62DDD41B5f67BEaF2DCE9F2E99E2C5aF5",
       andCondition: "0xAfdEEa8f37AC2cfaE6732c31FEde0A014BfD693a",
@@ -262,7 +262,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     factories: {
       paymentOperator: "0x32d6AC59BCe8DFB3026F10BcaDB8D00AB218f5b6",
       escrowPeriod: "0x2714EA3e839Ac50F52B2e2a5788F614cACeE5316",
-      freeze: "0x26A3d27139b442Be5ECc10c8608c494627B660BF",
+      freeze: "0xA50F51254E8B08899EdB76Bd24b4DC6A61ba7dE7",
       staticFeeCalculator: "0x89257cA1114139C3332bb73655BC2e4C924aC678",
       staticAddressCondition: "0x0DdF51E62DDD41B5f67BEaF2DCE9F2E99E2C5aF5",
       andCondition: "0xAfdEEa8f37AC2cfaE6732c31FEde0A014BfD693a",
@@ -320,7 +320,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     factories: {
       paymentOperator: "0x32d6AC59BCe8DFB3026F10BcaDB8D00AB218f5b6",
       escrowPeriod: "0x2714EA3e839Ac50F52B2e2a5788F614cACeE5316",
-      freeze: "0x26A3d27139b442Be5ECc10c8608c494627B660BF",
+      freeze: "0xA50F51254E8B08899EdB76Bd24b4DC6A61ba7dE7",
       staticFeeCalculator: "0x89257cA1114139C3332bb73655BC2e4C924aC678",
       staticAddressCondition: "0x0DdF51E62DDD41B5f67BEaF2DCE9F2E99E2C5aF5",
       andCondition: "0xAfdEEa8f37AC2cfaE6732c31FEde0A014BfD693a",
@@ -349,7 +349,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     factories: {
       paymentOperator: "0x32d6AC59BCe8DFB3026F10BcaDB8D00AB218f5b6",
       escrowPeriod: "0x2714EA3e839Ac50F52B2e2a5788F614cACeE5316",
-      freeze: "0x26A3d27139b442Be5ECc10c8608c494627B660BF",
+      freeze: "0xA50F51254E8B08899EdB76Bd24b4DC6A61ba7dE7",
       staticFeeCalculator: "0x89257cA1114139C3332bb73655BC2e4C924aC678",
       staticAddressCondition: "0x0DdF51E62DDD41B5f67BEaF2DCE9F2E99E2C5aF5",
       andCondition: "0xAfdEEa8f37AC2cfaE6732c31FEde0A014BfD693a",
