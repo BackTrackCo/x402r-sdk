@@ -10,9 +10,19 @@
  *
  * Usage:
  *   PRIVATE_KEY=0x... pnpm example:deploy-operator
+ *
+ * Environment variables:
+ *   PRIVATE_KEY      (required) Deployer wallet private key
+ *   ARBITER          Arbiter address for disputes (default: deployer)
+ *   FEE_RECIPIENT    Address that receives fees (default: deployer)
+ *   ESCROW_PERIOD    Escrow period in seconds (default: 604800 = 7 days)
+ *   FREEZE_DURATION  Freeze duration in seconds (default: 259200 = 3 days)
+ *   FEE_BPS          Operator fee in basis points (default: 100 = 1%)
+ *   NETWORK_ID       Chain identifier (default: eip155:84532)
+ *   RPC_URL          RPC endpoint (default: https://sepolia.base.org)
  */
 
-import { createWalletClient, createPublicClient, http, formatEther } from "viem";
+import { createWalletClient, createPublicClient, http, formatEther, type Address } from "viem";
 import { baseSepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import {
@@ -20,9 +30,9 @@ import {
   previewMarketplaceOperator,
 } from "../../packages/core/dist/index.js";
 
-// Network configuration
-const NETWORK_ID = "eip155:84532"; // Base Sepolia
-const RPC_URL = "https://sepolia.base.org";
+// Network configuration (overridable via env vars)
+const NETWORK_ID = process.env.NETWORK_ID ?? "eip155:84532";
+const RPC_URL = process.env.RPC_URL ?? "https://sepolia.base.org";
 
 async function main() {
   // Get private key from environment
@@ -60,13 +70,13 @@ async function main() {
     process.exit(1);
   }
 
-  // Configuration for the marketplace operator
+  // Configuration — reads from env vars, falls back to sensible defaults
   const options = {
-    feeRecipient: account.address, // Receive operator fees
-    arbiter: account.address, // Self as arbiter for testing
-    escrowPeriodSeconds: 604800n, // 7 days
-    freezeDurationSeconds: 259200n, // 3 days max freeze
-    operatorFeeBps: 100n, // 1% operator fee
+    feeRecipient: (process.env.FEE_RECIPIENT ?? account.address) as Address,
+    arbiter: (process.env.ARBITER ?? account.address) as Address,
+    escrowPeriodSeconds: BigInt(process.env.ESCROW_PERIOD ?? "604800"), // 7 days
+    freezeDurationSeconds: BigInt(process.env.FREEZE_DURATION ?? "259200"), // 3 days
+    operatorFeeBps: BigInt(process.env.FEE_BPS ?? "100"), // 1%
   };
 
   console.log("\n--- Configuration ---");
