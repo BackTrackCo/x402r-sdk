@@ -297,6 +297,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     usdcTvlLimit: "0xb33D6502EdBbC47201cd1E53C49d703EC0a660b8",
     arbiterRegistry: "0xE78648e7af7B1BaDE717FF6E410B922F92adE80f",
     usdc: "0x754704Bc059F8C67012fEd69BC8A327a5aafb603",
+    refundRequestEvidence: "0x19a798c7F66E6401f6004b732dA604196952e843",
     factories: {
       paymentOperator: "0x32d6AC59BCe8DFB3026F10BcaDB8D00AB218f5b6",
       escrowPeriod: "0x2714EA3e839Ac50F52B2e2a5788F614cACeE5316",
