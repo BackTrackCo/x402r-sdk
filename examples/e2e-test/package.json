@@ -1,0 +1,7 @@
+{
+  "name": "e2e-test",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "End-to-end integration test for x402r payment lifecycle on Base Sepolia"
+}
