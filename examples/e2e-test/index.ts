@@ -27,7 +27,6 @@ import {
   keccak256,
   type Address,
   type PublicClient,
-  type WalletClient,
   erc20Abi,
 } from "viem";
 import { baseSepolia } from "viem/chains";
@@ -141,12 +140,6 @@ async function main() {
 
   const payerWallet = createWalletClient({
     account: payerAccount,
-    chain: baseSepolia,
-    transport: http(RPC_URL),
-  });
-
-  const merchantWallet = createWalletClient({
-    account: merchantAccount,
     chain: baseSepolia,
     transport: http(RPC_URL),
   });
