@@ -7,7 +7,9 @@ End-to-end test that exercises the full x402r refundable payment lifecycle again
 ```
 Setup (3 accounts) → Deploy Operator → Construct PaymentInfo →
 Authorize Payment (ERC-3009) → Request Refund → Freeze Payment →
-Arbiter Approve Refund → Execute Refund
+Payer Submits Evidence → Merchant Submits Counter-Evidence →
+Arbiter Reads All Evidence → Arbiter Approves Refund →
+Execute Refund → Final Verification
 ```
 
 ## Prerequisites
@@ -47,12 +49,18 @@ Merchant and arbiter accounts are funded with a small amount of ETH from the pay
 
 | Step | SDK Package | Methods |
 |------|------------|---------|
-| Deploy operator | `@x402r/core` | `deployMarketplaceOperator` |
-| Authorize payment | `@x402r/core` | `toAbiPaymentInfo`, `PaymentOperatorABI` |
-| Request refund | `@x402r/client` | `X402rClient.requestRefund()` |
-| Freeze payment | `@x402r/client` | `X402rClient.freezePayment()`, `isFrozen()` |
-| Approve refund | `@x402r/arbiter` | `X402rArbiter.approveRefundRequest()` |
-| Execute refund | `@x402r/arbiter` | `X402rArbiter.executeRefundInEscrow()` |
+| 1. Setup accounts | — | Generate payer, merchant, arbiter wallets |
+| 2. Deploy operator | `@x402r/core` | `deployMarketplaceOperator` |
+| 3. Construct PaymentInfo | `@x402r/core` | `toAbiPaymentInfo`, `PaymentOperatorABI` |
+| 4. Authorize payment | `@x402r/core` | ERC-3009 `ReceiveWithAuthorization` |
+| 5. Request refund | `@x402r/client` | `X402rClient.requestRefund()` |
+| 6. Freeze payment | `@x402r/client` | `X402rClient.freezePayment()`, `isFrozen()` |
+| 7. Payer submits evidence | `@x402r/client` | `X402rClient.submitEvidence()`, `getEvidenceCount()` |
+| 8. Merchant submits counter-evidence | `@x402r/merchant` | `X402rMerchant.submitEvidence()` |
+| 9. Arbiter reads all evidence | `@x402r/arbiter` | `X402rArbiter.getAllEvidence()` |
+| 10. Approve refund | `@x402r/arbiter` | `X402rArbiter.approveRefundRequest()` |
+| 11. Execute refund | `@x402r/arbiter` | `X402rArbiter.executeRefundInEscrow()` |
+| 12. Final verification | all | Evidence persists, escrow emptied, USDC returned |
 
 ## Key Implementation Details
 

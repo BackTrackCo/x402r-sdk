@@ -26,7 +26,7 @@ import {
   validateFeeBounds,
   type PaymentInfo,
 } from "@x402r/core";
-import { parsePaymentInfo } from "../../shared/utils.js";
+import { parsePaymentInfo, formatEvidenceList } from "../../shared/utils.js";
 import { showEvidence, submitMerchantEvidence } from "./commands/evidence.js";
 
 // Load environment from the example directory
@@ -208,6 +208,20 @@ program
     console.log("  Payer:", paymentInfo.payer);
     console.log("  Nonce:", nonce.toString());
 
+    // Show evidence summary before decision
+    try {
+      const evidenceCount = await merchant.getEvidenceCount(paymentInfo, nonce);
+      if (evidenceCount > 0n) {
+        const entries = await merchant.getAllEvidence(paymentInfo, nonce);
+        console.log(`\n=== Evidence (${evidenceCount} entries) ===`);
+        console.log(formatEvidenceList(entries));
+      } else {
+        console.log("\n  No evidence submitted");
+      }
+    } catch {
+      // Evidence contract may not be configured — proceed without
+    }
+
     try {
       const result = await merchant.approveRefundRequest(paymentInfo, nonce);
       console.log("\nRefund request approved!");
@@ -233,6 +247,20 @@ program
     console.log("\nDenying refund request...");
     console.log("  Payer:", paymentInfo.payer);
     console.log("  Nonce:", nonce.toString());
+
+    // Show evidence summary before decision
+    try {
+      const evidenceCount = await merchant.getEvidenceCount(paymentInfo, nonce);
+      if (evidenceCount > 0n) {
+        const entries = await merchant.getAllEvidence(paymentInfo, nonce);
+        console.log(`\n=== Evidence (${evidenceCount} entries) ===`);
+        console.log(formatEvidenceList(entries));
+      } else {
+        console.log("\n  No evidence submitted");
+      }
+    } catch {
+      // Evidence contract may not be configured — proceed without
+    }
 
     try {
       const result = await merchant.denyRefundRequest(paymentInfo, nonce);
