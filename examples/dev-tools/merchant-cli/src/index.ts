@@ -27,6 +27,7 @@ import {
   type PaymentInfo,
 } from "@x402r/core";
 import { parsePaymentInfo } from "../../shared/utils.js";
+import { showEvidence, submitMerchantEvidence } from "./commands/evidence.js";
 
 // Load environment from the example directory
 const __filename = fileURLToPath(import.meta.url);
@@ -70,6 +71,7 @@ function createMerchant() {
     operatorAddress,
     escrowAddress: networkConfig.authCaptureEscrow,
     refundRequestAddress: networkConfig.refundRequest,
+    refundRequestEvidenceAddress: networkConfig.refundRequestEvidence,
     chainId: 84532,
   });
 
@@ -352,6 +354,48 @@ program
       console.log(`\nPayment is ${isFrozen ? "FROZEN" : "NOT FROZEN"}`);
     } catch (error) {
       console.error("\nFailed to check status:", error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
+
+// ============ Evidence Commands ============
+
+// Show evidence command
+program
+  .command("show-evidence")
+  .description("Show all evidence for a dispute")
+  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .option("-n, --nonce <nonce>", "Nonce (record index)", "0")
+  .action(async options => {
+    const { merchant } = createMerchant();
+    const paymentInfo = parsePaymentInfo(options.paymentJson);
+    const nonce = BigInt(options.nonce);
+
+    try {
+      await showEvidence(merchant, paymentInfo, nonce);
+    } catch (error) {
+      console.error("\nFailed to show evidence:", error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
+
+// Submit evidence command
+program
+  .command("submit-evidence")
+  .description("Submit evidence as merchant (receiver role)")
+  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .requiredOption("-c, --cid <cid>", "IPFS CID of the evidence")
+  .option("-n, --nonce <nonce>", "Nonce (record index)", "0")
+  .action(async options => {
+    const { merchant } = createMerchant();
+    const paymentInfo = parsePaymentInfo(options.paymentJson);
+    const nonce = BigInt(options.nonce);
+
+    try {
+      const result = await submitMerchantEvidence(merchant, paymentInfo, nonce, options.cid);
+      console.log(`\nhttps://sepolia.basescan.org/tx/${result.txHash}`);
+    } catch (error) {
+      console.error("\nSubmit evidence failed:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });

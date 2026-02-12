@@ -31,5 +31,8 @@ export * from "./utils/index.js";
 // Fee calculation utilities
 export * from "./fees/index.js";
 
-// Shared operations (refund, freeze)
+// Shared operations (refund, freeze, evidence)
 export * from "./shared/index.js";
+
+// IPFS utilities
+export * from "./ipfs/index.js";

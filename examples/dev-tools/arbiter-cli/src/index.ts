@@ -24,7 +24,13 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { X402rArbiter } from "@x402r/arbiter";
 import { getNetworkConfig, RequestStatus, type PaymentInfo } from "@x402r/core";
-import { parsePaymentInfo, shortAddress, formatUSDC } from "../../shared/utils.js";
+import {
+  parsePaymentInfo,
+  shortAddress,
+  formatUSDC,
+  formatEvidenceList,
+} from "../../shared/utils.js";
+import { showEvidence, submitArbiterEvidence } from "./commands/evidence.js";
 
 // Load environment from the example directory
 const __filename = fileURLToPath(import.meta.url);
@@ -73,6 +79,7 @@ function createArbiter() {
     operatorAddress,
     escrowAddress: networkConfig.authCaptureEscrow,
     refundRequestAddress: networkConfig.refundRequest,
+    refundRequestEvidenceAddress: networkConfig.refundRequestEvidence,
     arbiterRegistryAddress,
     chainId: 84532,
   });
@@ -196,6 +203,15 @@ program
       console.log("  Payment Hash:", request.paymentInfoHash);
       console.log("  Nonce:", request.nonce.toString());
 
+      // Show evidence count if evidence contract is configured
+      try {
+        // We need paymentInfo to query evidence — this is a limitation
+        // when only the key is provided. Show a hint instead.
+        console.log("\n  💡 Use 'show-evidence' with --payment-json to view dispute evidence");
+      } catch {
+        // Ignore
+      }
+
       if (request.status === RequestStatus.Pending) {
         console.log("\n💡 This request is pending. You can approve or deny it:");
         console.log(`   pnpm start approve ${key}`);
@@ -227,6 +243,20 @@ program
     console.log("  Payer:", paymentInfo.payer);
     console.log("  Nonce:", nonce.toString());
 
+    // Show evidence summary before decision
+    try {
+      const evidenceCount = await arbiter.getEvidenceCount(paymentInfo, nonce);
+      if (evidenceCount > 0n) {
+        const entries = await arbiter.getAllEvidence(paymentInfo, nonce);
+        console.log(`\n=== Evidence (${evidenceCount} entries) ===`);
+        console.log(formatEvidenceList(entries));
+      } else {
+        console.log("\n  No evidence submitted");
+      }
+    } catch {
+      // Evidence contract may not be configured — proceed without
+    }
+
     try {
       const result = await arbiter.approveRefundRequest(paymentInfo, nonce);
       console.log("\n✅ Refund request approved!");
@@ -255,6 +285,20 @@ program
     console.log("  Key:", key);
     console.log("  Payer:", paymentInfo.payer);
     console.log("  Nonce:", nonce.toString());
+
+    // Show evidence summary before decision
+    try {
+      const evidenceCount = await arbiter.getEvidenceCount(paymentInfo, nonce);
+      if (evidenceCount > 0n) {
+        const entries = await arbiter.getAllEvidence(paymentInfo, nonce);
+        console.log(`\n=== Evidence (${evidenceCount} entries) ===`);
+        console.log(formatEvidenceList(entries));
+      } else {
+        console.log("\n  No evidence submitted");
+      }
+    } catch {
+      // Evidence contract may not be configured — proceed without
+    }
 
     try {
       const result = await arbiter.denyRefundRequest(paymentInfo, nonce);
@@ -412,6 +456,48 @@ program
       console.log(`\nTotal refund requests: ${count}`);
     } catch (error) {
       console.error("\nFailed to get count:", error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
+
+// ============ Evidence Commands ============
+
+// Show evidence command
+program
+  .command("show-evidence")
+  .description("Show all evidence for a dispute case")
+  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .option("-n, --nonce <nonce>", "Nonce (record index)", "0")
+  .action(async options => {
+    const { arbiter } = createArbiter();
+    const paymentInfo = parsePaymentInfo(options.paymentJson);
+    const nonce = BigInt(options.nonce);
+
+    try {
+      await showEvidence(arbiter, paymentInfo, nonce);
+    } catch (error) {
+      console.error("\nFailed to show evidence:", error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
+
+// Submit evidence command
+program
+  .command("submit-evidence")
+  .description("Submit evidence as arbiter")
+  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .requiredOption("-c, --cid <cid>", "IPFS CID of the evidence")
+  .option("-n, --nonce <nonce>", "Nonce (record index)", "0")
+  .action(async options => {
+    const { arbiter } = createArbiter();
+    const paymentInfo = parsePaymentInfo(options.paymentJson);
+    const nonce = BigInt(options.nonce);
+
+    try {
+      const result = await submitArbiterEvidence(arbiter, paymentInfo, nonce, options.cid);
+      console.log(`\nhttps://sepolia.basescan.org/tx/${result.txHash}`);
+    } catch (error) {
+      console.error("\nSubmit evidence failed:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });

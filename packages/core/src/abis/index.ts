@@ -1045,6 +1045,131 @@ export const ArbiterRegistryABI = [
   },
 ] as const;
 
+/**
+ * DisputeEvidence ABI - Contract for submitting and querying dispute evidence
+ *
+ * Evidence is submitted as IPFS CIDs tied to a payment+nonce. Only payer, receiver,
+ * or arbiter (as determined by the operator's refund condition) can submit evidence.
+ * A pending refund request must exist before evidence can be submitted.
+ */
+export const DisputeEvidenceABI = [
+  // ============ Write Functions ============
+  {
+    name: "submitEvidence",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "paymentInfo", type: "tuple", components: paymentInfoComponents },
+      { name: "nonce", type: "uint256" },
+      { name: "cid", type: "string" },
+    ],
+    outputs: [],
+  },
+  // ============ View Functions ============
+  {
+    name: "getEvidence",
+    type: "function",
+    stateMutability: "view",
+    inputs: [
+      { name: "paymentInfo", type: "tuple", components: paymentInfoComponents },
+      { name: "nonce", type: "uint256" },
+      { name: "index", type: "uint256" },
+    ],
+    outputs: [
+      { name: "submitter", type: "address" },
+      { name: "role", type: "uint8" },
+      { name: "timestamp", type: "uint48" },
+      { name: "cid", type: "string" },
+    ],
+  },
+  {
+    name: "getEvidenceCount",
+    type: "function",
+    stateMutability: "view",
+    inputs: [
+      { name: "paymentInfo", type: "tuple", components: paymentInfoComponents },
+      { name: "nonce", type: "uint256" },
+    ],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    name: "getEvidenceBatch",
+    type: "function",
+    stateMutability: "view",
+    inputs: [
+      { name: "paymentInfo", type: "tuple", components: paymentInfoComponents },
+      { name: "nonce", type: "uint256" },
+      { name: "offset", type: "uint256" },
+      { name: "count", type: "uint256" },
+    ],
+    outputs: [
+      {
+        name: "entries",
+        type: "tuple[]",
+        components: [
+          { name: "submitter", type: "address" },
+          { name: "role", type: "uint8" },
+          { name: "timestamp", type: "uint48" },
+          { name: "cid", type: "string" },
+        ],
+      },
+      { name: "total", type: "uint256" },
+    ],
+  },
+  // ============ Immutables ============
+  {
+    name: "REFUND_REQUEST",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "address" }],
+  },
+  // ============ Events ============
+  {
+    name: "EvidenceSubmitted",
+    type: "event",
+    inputs: [
+      {
+        name: "paymentInfo",
+        type: "tuple",
+        components: paymentInfoComponents,
+        indexed: false,
+      },
+      { name: "nonce", type: "uint256", indexed: true },
+      { name: "submitter", type: "address", indexed: true },
+      { name: "role", type: "uint8", indexed: false },
+      { name: "cid", type: "string", indexed: false },
+      { name: "index", type: "uint256", indexed: false },
+    ],
+  },
+  // ============ Errors ============
+  {
+    name: "EmptyCid",
+    type: "error",
+    inputs: [],
+  },
+  {
+    name: "RefundRequestRequired",
+    type: "error",
+    inputs: [],
+  },
+  {
+    name: "NotPayerReceiverOrArbiter",
+    type: "error",
+    inputs: [],
+  },
+  {
+    name: "InvalidOperator",
+    type: "error",
+    inputs: [],
+  },
+  {
+    name: "IndexOutOfBounds",
+    type: "error",
+    inputs: [],
+  },
+] as const;
+
 // Export types for ABI consumers
 export type PaymentOperatorABIType = typeof PaymentOperatorABI;
 export type RefundRequestABIType = typeof RefundRequestABI;
@@ -1056,3 +1181,4 @@ export type StaticAddressConditionABIType = typeof StaticAddressConditionABI;
 export type FreezeABIType = typeof FreezeABI;
 export type ProtocolFeeConfigABIType = typeof ProtocolFeeConfigABI;
 export type ArbiterRegistryABIType = typeof ArbiterRegistryABI;
+export type DisputeEvidenceABIType = typeof DisputeEvidenceABI;
