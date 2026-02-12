@@ -61,6 +61,8 @@ export interface NetworkConfig {
   arbiterRegistry: `0x${string}`;
   /** USDC token address */
   usdc: `0x${string}`;
+  /** RefundRequestEvidence contract address (optional - may not be deployed on all networks) */
+  refundRequestEvidence?: `0x${string}`;
   /** Factory addresses (optional - may not be deployed on all networks) */
   factories?: FactoryAddresses;
   /** Condition singleton addresses (optional - may not be deployed on all networks) */
@@ -87,6 +89,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     usdcTvlLimit: "0xc07b00609f0be9C120B502FA84AFE9db346CB2da",
     arbiterRegistry: "0x762d562a5ff10EcbFD2Bc4fea663433b84226F35",
     usdc: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+    refundRequestEvidence: "0x917317BBBBe1b9b53BD0ceD4C7b7386Dbd1727ea",
     factories: {
       paymentOperator: "0x97d53e63A9CB97556c00BeFd325AF810c9b267B2",
       escrowPeriod: "0x34A5AAF8C19e04d0193466bdF80D155EC934c980",
@@ -114,6 +117,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     usdcTvlLimit: "0x67B63Af4bcdCD3E4263d9995aB04563fbC229944",
     arbiterRegistry: "0xB68C023365EB08021E12f7f7f11a03282443863A",
     usdc: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    refundRequestEvidence: "0x2176D0edfeC9e2B8d3FDbB37f09535BEe4BAFB34",
     factories: {
       paymentOperator: "0x3D0837fF8Ea36F417261577b9BA568400A840260",
       escrowPeriod: "0x12EDefd4549c53497689067f165c0f101796Eb6D",
@@ -143,6 +147,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     usdcTvlLimit: "0xb33D6502EdBbC47201cd1E53C49d703EC0a660b8",
     arbiterRegistry: "0xE78648e7af7B1BaDE717FF6E410B922F92adE80f",
     usdc: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+    refundRequestEvidence: "0xd709e87DF198eF3C15C5eaE81E3EbD8Fd7AC908a",
     factories: {
       paymentOperator: "0x32d6AC59BCe8DFB3026F10BcaDB8D00AB218f5b6",
       escrowPeriod: "0x2714EA3e839Ac50F52B2e2a5788F614cACeE5316",
@@ -172,6 +177,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     usdcTvlLimit: "0x35fb2EFEfAc3Ee9f6E52A9AAE5C9655bC08dEc00",
     arbiterRegistry: "0x3D0837fF8Ea36F417261577b9BA568400A840260",
     usdc: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    refundRequestEvidence: "0x12EDefd4549c53497689067f165c0f101796Eb6D",
     factories: {
       paymentOperator: "0x48ADf6E37F9b31dC2AAD0462C5862B5422C736B8",
       escrowPeriod: "0x6926c05193c714ED4bA3867Ee93d6816Fdc14128",
@@ -201,6 +207,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     usdcTvlLimit: "0x46C44071BDf9753482400B76d88A5850318b776F",
     arbiterRegistry: "0xc9BbA6A2CF9838e7Dd8c19BC8B3BAC620B9D8178",
     usdc: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+    refundRequestEvidence: "0xe4f1840171E31DaD221C6b25FED91bcB1A431A8C",
     factories: {
       paymentOperator: "0xb33D6502EdBbC47201cd1E53C49d703EC0a660b8",
       escrowPeriod: "0x0DdF51E62DDD41B5f67BEaF2DCE9F2E99E2C5aF5",
@@ -230,6 +237,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     usdcTvlLimit: "0xb33D6502EdBbC47201cd1E53C49d703EC0a660b8",
     arbiterRegistry: "0xE78648e7af7B1BaDE717FF6E410B922F92adE80f",
     usdc: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    refundRequestEvidence: "0xd709e87DF198eF3C15C5eaE81E3EbD8Fd7AC908a",
     factories: {
       paymentOperator: "0x32d6AC59BCe8DFB3026F10BcaDB8D00AB218f5b6",
       escrowPeriod: "0x2714EA3e839Ac50F52B2e2a5788F614cACeE5316",
@@ -259,6 +267,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     usdcTvlLimit: "0xb33D6502EdBbC47201cd1E53C49d703EC0a660b8",
     arbiterRegistry: "0xE78648e7af7B1BaDE717FF6E410B922F92adE80f",
     usdc: "0xcebA9300f2b948710d2653dD7B07f33A8B32118C",
+    refundRequestEvidence: "0xd709e87DF198eF3C15C5eaE81E3EbD8Fd7AC908a",
     factories: {
       paymentOperator: "0x32d6AC59BCe8DFB3026F10BcaDB8D00AB218f5b6",
       escrowPeriod: "0x2714EA3e839Ac50F52B2e2a5788F614cACeE5316",
@@ -288,6 +297,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     usdcTvlLimit: "0xb33D6502EdBbC47201cd1E53C49d703EC0a660b8",
     arbiterRegistry: "0xE78648e7af7B1BaDE717FF6E410B922F92adE80f",
     usdc: "0x754704Bc059F8C67012fEd69BC8A327a5aafb603",
+    refundRequestEvidence: "0x19a798c7F66E6401f6004b732dA604196952e843",
     factories: {
       paymentOperator: "0x32d6AC59BCe8DFB3026F10BcaDB8D00AB218f5b6",
       escrowPeriod: "0x2714EA3e839Ac50F52B2e2a5788F614cACeE5316",
@@ -317,6 +327,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     usdcTvlLimit: "0xb33D6502EdBbC47201cd1E53C49d703EC0a660b8",
     arbiterRegistry: "0xE78648e7af7B1BaDE717FF6E410B922F92adE80f",
     usdc: "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85",
+    refundRequestEvidence: "0xd709e87DF198eF3C15C5eaE81E3EbD8Fd7AC908a",
     factories: {
       paymentOperator: "0x32d6AC59BCe8DFB3026F10BcaDB8D00AB218f5b6",
       escrowPeriod: "0x2714EA3e839Ac50F52B2e2a5788F614cACeE5316",
@@ -346,6 +357,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     usdcTvlLimit: "0xb33D6502EdBbC47201cd1E53C49d703EC0a660b8",
     arbiterRegistry: "0xE78648e7af7B1BaDE717FF6E410B922F92adE80f",
     usdc: "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+    refundRequestEvidence: "0xd709e87DF198eF3C15C5eaE81E3EbD8Fd7AC908a",
     factories: {
       paymentOperator: "0x32d6AC59BCe8DFB3026F10BcaDB8D00AB218f5b6",
       escrowPeriod: "0x2714EA3e839Ac50F52B2e2a5788F614cACeE5316",
