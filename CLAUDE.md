@@ -7,11 +7,12 @@ Production TypeScript SDK for the x402r refundable payments protocol.
 ```bash
 pnpm install
 pnpm build              # Build all packages (Turborepo)
-pnpm test               # Run all tests (271+ vitest tests across 5 packages)
+pnpm test               # Run all tests (311 vitest tests across 26 files, 5 packages)
 pnpm test:coverage      # Run with coverage
 pnpm typecheck          # Type check all packages
 pnpm lint               # Lint code
 pnpm docs:generate      # Generate TypeDoc API reference → docs-generated/
+pnpm example:e2e-test   # E2E integration test on Base Sepolia (needs PRIVATE_KEY)
 ```
 
 ## Package Structure
@@ -54,13 +55,31 @@ pnpm --filter @x402r/arbiter test
 pnpm --filter @x402r/helpers test
 ```
 
+## Examples
+
+| Example | Script | Description |
+|---------|--------|-------------|
+| `deploy-operator` | `pnpm example:deploy-operator` | Deploy a marketplace operator |
+| `e2e-test` | `PRIVATE_KEY=0x... pnpm example:e2e-test` | Full payment lifecycle on Base Sepolia |
+| `client-cli` | `pnpm example:client-cli` | Client SDK usage patterns |
+| `arbiter-cli` | `pnpm example:arbiter-cli` | Arbiter SDK usage patterns |
+
+## E2E Test Key Learnings
+
+Important patterns discovered during E2E testing on Base Sepolia:
+
+- **ERC-3009 (not ERC-20 approve)**: The escrow authorize flow uses `ReceiveWithAuthorization` signatures. The `collectorData` param must contain the raw ERC-3009 signature, not an ERC-20 approval.
+- **feeReceiver = operator address**: `PaymentInfo.feeReceiver` must be the deployed operator contract address. The contract enforces this via `validFees` modifier — fails with `InvalidFeeReceiver()`.
+- **preApprovalExpiry = ERC-3009 validBefore**: This field doubles as the `validBefore` timestamp for ERC-3009 signing. Setting it to `0n` causes immediate signature expiry.
+- **RPC state propagation**: Base Sepolia public RPCs may return stale state right after tx confirmation. Add a small delay (~2s) when reading state after writes.
+
 ## Design Decisions
 
 See `x402r-notes/sdk/` for implementation plans and design decision records:
 
 - `SDK_IMPLEMENTATION_PLAN.md` — Overall SDK roadmap and phases
 - `DESIGN_DECISIONS.md` — Key architectural decisions
-- `PHASE_1_2_HACKS_AND_ASSUMPTIONS.md` — Known hacks, assumptions & technical debt
+- `SDK_TECHNICAL_DEBT.md` — Known issues, technical debt & TODO items
 
 ## Coding Conventions
 
