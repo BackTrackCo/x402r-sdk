@@ -1046,13 +1046,13 @@ export const ArbiterRegistryABI = [
 ] as const;
 
 /**
- * DisputeEvidence ABI - Contract for submitting and querying dispute evidence
+ * RefundRequestEvidence ABI - Contract for submitting and querying dispute evidence
  *
  * Evidence is submitted as IPFS CIDs tied to a payment+nonce. Only payer, receiver,
  * or arbiter (as determined by the operator's refund condition) can submit evidence.
  * A pending refund request must exist before evidence can be submitted.
  */
-export const DisputeEvidenceABI = [
+export const RefundRequestEvidenceABI = [
   // ============ Write Functions ============
   {
     name: "submitEvidence",
@@ -1181,4 +1181,4 @@ export type StaticAddressConditionABIType = typeof StaticAddressConditionABI;
 export type FreezeABIType = typeof FreezeABI;
 export type ProtocolFeeConfigABIType = typeof ProtocolFeeConfigABI;
 export type ArbiterRegistryABIType = typeof ArbiterRegistryABI;
-export type DisputeEvidenceABIType = typeof DisputeEvidenceABI;
+export type RefundRequestEvidenceABIType = typeof RefundRequestEvidenceABI;

@@ -58,7 +58,7 @@ export interface X402rArbiterConfig {
   refundRequestAddress?: `0x${string}`;
   /** Optional ArbiterRegistry contract address */
   arbiterRegistryAddress?: `0x${string}`;
-  /** Optional DisputeEvidence contract address */
+  /** Optional RefundRequestEvidence contract address */
   refundRequestEvidenceAddress?: `0x${string}`;
   /** Chain ID for hash computation (default: 84532 for Base Sepolia) */
   chainId?: number;
@@ -118,7 +118,7 @@ export class X402rArbiter {
   readonly refundRequestAddress?: `0x${string}`;
   /** ArbiterRegistry contract address */
   readonly arbiterRegistryAddress?: `0x${string}`;
-  /** DisputeEvidence contract address */
+  /** RefundRequestEvidence contract address */
   readonly refundRequestEvidenceAddress?: `0x${string}`;
   /** Chain ID */
   readonly chainId: number;
@@ -710,7 +710,7 @@ export class X402rArbiter {
   /** Get the evidence read context, throwing if refundRequestEvidenceAddress is not configured */
   private getEvidenceCtx() {
     if (!this.refundRequestEvidenceAddress) {
-      throw new Error("DisputeEvidence address required");
+      throw new Error("RefundRequestEvidence address required");
     }
     return {
       publicClient: this.publicClient,
@@ -721,7 +721,7 @@ export class X402rArbiter {
   /** Get the evidence write context, throwing if refundRequestEvidenceAddress is not configured */
   private getEvidenceWriteCtx() {
     if (!this.refundRequestEvidenceAddress) {
-      throw new Error("DisputeEvidence address required");
+      throw new Error("RefundRequestEvidence address required");
     }
     return {
       publicClient: this.publicClient,

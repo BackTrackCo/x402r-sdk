@@ -48,7 +48,7 @@ export interface X402rClientConfig {
   escrowAddress?: `0x${string}`;
   /** Optional RefundRequest contract address (defaults from network config) */
   refundRequestAddress?: `0x${string}`;
-  /** Optional DisputeEvidence contract address */
+  /** Optional RefundRequestEvidence contract address */
   refundRequestEvidenceAddress?: `0x${string}`;
   /** Chain ID for hash computation (default: 84532 for Base Sepolia) */
   chainId?: number;
@@ -93,7 +93,7 @@ export class X402rClient {
   readonly escrowAddress?: `0x${string}`;
   /** RefundRequest contract address */
   readonly refundRequestAddress?: `0x${string}`;
-  /** DisputeEvidence contract address */
+  /** RefundRequestEvidence contract address */
   readonly refundRequestEvidenceAddress?: `0x${string}`;
   /** Chain ID */
   readonly chainId: number;
@@ -691,7 +691,7 @@ export class X402rClient {
   /** Get the evidence read context, throwing if refundRequestEvidenceAddress is not configured */
   private getEvidenceCtx() {
     if (!this.refundRequestEvidenceAddress) {
-      throw new Error("DisputeEvidence address required");
+      throw new Error("RefundRequestEvidence address required");
     }
     return {
       publicClient: this.publicClient,
@@ -702,7 +702,7 @@ export class X402rClient {
   /** Get the evidence write context, throwing if refundRequestEvidenceAddress is not configured */
   private getEvidenceWriteCtx() {
     if (!this.refundRequestEvidenceAddress) {
-      throw new Error("DisputeEvidence address required");
+      throw new Error("RefundRequestEvidence address required");
     }
     if (!this.walletClient) {
       throw new Error("WalletClient required");

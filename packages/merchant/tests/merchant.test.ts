@@ -168,7 +168,7 @@ describe("X402rMerchant", () => {
       });
 
       await expect(merchant.getEvidenceCount(samplePaymentInfo, 0n)).rejects.toThrow(
-        "DisputeEvidence address required",
+        "RefundRequestEvidence address required",
       );
     });
 

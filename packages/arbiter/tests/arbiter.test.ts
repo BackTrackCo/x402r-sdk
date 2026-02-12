@@ -196,7 +196,7 @@ describe("X402rArbiter", () => {
       });
 
       await expect(arbiter.getEvidenceCount(samplePaymentInfo, 0n)).rejects.toThrow(
-        "DisputeEvidence address required",
+        "RefundRequestEvidence address required",
       );
     });
 

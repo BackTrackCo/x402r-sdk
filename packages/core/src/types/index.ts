@@ -258,7 +258,7 @@ export enum SubmitterRole {
 }
 
 /**
- * Evidence entry submitted to the DisputeEvidence contract
+ * Evidence entry submitted to the RefundRequestEvidence contract
  */
 export interface Evidence {
   /** Address that submitted this evidence */
@@ -272,7 +272,7 @@ export interface Evidence {
 }
 
 /**
- * Typed event log for EvidenceSubmitted events from the DisputeEvidence contract
+ * Typed event log for EvidenceSubmitted events from the RefundRequestEvidence contract
  */
 export interface EvidenceEventLog {
   eventName: "EvidenceSubmitted";

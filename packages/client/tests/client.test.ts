@@ -239,7 +239,7 @@ describe("X402rClient", () => {
       });
 
       await expect(client.getEvidenceCount(samplePaymentInfo, 0n)).rejects.toThrow(
-        "DisputeEvidence address required",
+        "RefundRequestEvidence address required",
       );
     });
 
