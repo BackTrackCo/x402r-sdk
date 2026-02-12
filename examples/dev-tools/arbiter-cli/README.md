@@ -5,10 +5,12 @@ A command-line tool for arbiter operations in the x402r refundable payments prot
 ## Features
 
 - List pending refund requests
-- Approve or deny refund requests
+- Approve or deny refund requests (with evidence summary)
 - Execute approved refunds
 - Watch for new refund requests in real-time
 - Check payment freeze status
+- View and submit dispute evidence
+- Manage arbiter registry (register, deregister, update URI)
 
 ## Setup
 
@@ -89,6 +91,41 @@ pnpm start is-frozen --payment-json '{"operator":"0x...",...}'
 ### Get request count
 ```bash
 pnpm start count
+```
+
+### Show evidence for a dispute
+```bash
+pnpm start show-evidence --payment-json '{"operator":"0x...",...}'
+```
+
+### Submit evidence as arbiter
+```bash
+pnpm start submit-evidence --payment-json '{"operator":"0x...",...}' --cid QmYourIpfsCid
+```
+
+### Register as arbiter
+```bash
+pnpm start register --uri https://arbiter.example.com
+```
+
+### Update arbiter URI
+```bash
+pnpm start update-uri --uri https://new-arbiter.example.com
+```
+
+### Deregister as arbiter
+```bash
+pnpm start deregister
+```
+
+### List registered arbiters
+```bash
+pnpm start registry-list --offset 0 --count 10
+```
+
+### Check arbiter registration
+```bash
+pnpm start registry-check --address 0x...
 ```
 
 ## Payment Info JSON Format

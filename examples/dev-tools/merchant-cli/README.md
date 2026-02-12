@@ -94,6 +94,19 @@ pnpm start unfreeze \
   --freeze-address 0xD0f99B7667076f151FD8240b277f1765d147e48C
 ```
 
+### Show Evidence for a Dispute
+```bash
+pnpm start show-evidence \
+  --payment-json '{"operator":"0x...","payer":"0x...",...}'
+```
+
+### Submit Evidence as Merchant
+```bash
+pnpm start submit-evidence \
+  --payment-json '{"operator":"0x...","payer":"0x...",...}' \
+  --cid QmYourIpfsCid
+```
+
 ### Calculate Fees
 Calculate the fee breakdown for a payment amount:
 ```bash
@@ -184,3 +197,5 @@ pnpm start deny-refund --payment-json '...'
 | Payment amounts | - | `payment-amounts` |
 | Operator config | - | `operator-config` |
 | Calculate fees | `preview-fee` | `calculate-fee` |
+| Submit evidence | `submit-evidence` | `submit-evidence` |
+| View evidence | `list-evidence` | `show-evidence` |

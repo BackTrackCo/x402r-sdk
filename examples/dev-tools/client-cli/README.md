@@ -121,6 +121,23 @@ pnpm start preview-fee \
 | Freeze | `0xD0f99B7667076f151FD8240b277f1765d147e48C` |
 | EscrowPeriod | `0xFcFb7e197823D304D53F47BE1E9761e9D102589b` |
 
+### Submit Evidence
+Submit evidence for a dispute (as payer):
+```bash
+pnpm start submit-evidence \
+  --payment-json '{"operator":"0x...","payer":"0x...",...}' \
+  --cid QmYourIpfsCid \
+  --operator-address 0xbb4f390b80E4F4895B96B95AE382B65fDC45974B
+```
+
+### List Evidence
+List all evidence submitted for a dispute:
+```bash
+pnpm start list-evidence \
+  --payment-json '{"operator":"0x...","payer":"0x...",...}' \
+  --operator-address 0xbb4f390b80E4F4895B96B95AE382B65fDC45974B
+```
+
 ## Example Workflow
 
 ```bash
@@ -139,4 +156,10 @@ pnpm start refund --payment-json '...' --amount 5000 --operator-address 0x...
 
 # 5. Check refund status
 pnpm start refund-status --payment-json '...' --operator-address 0x...
+
+# 6. Submit evidence for dispute
+pnpm start submit-evidence --payment-json '...' --cid QmEvidence... --operator-address 0x...
+
+# 7. View all evidence
+pnpm start list-evidence --payment-json '...' --operator-address 0x...
 ```
