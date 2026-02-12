@@ -5,7 +5,7 @@
 
 import type { X402rArbiter } from "@x402r/arbiter";
 import type { PaymentInfo } from "@x402r/core";
-import { formatEvidence, formatEvidenceList } from "../../../shared/utils.js";
+import { formatEvidenceList } from "../../../shared/utils.js";
 
 /**
  * Show all evidence for a payment+nonce
