@@ -156,4 +156,110 @@ describe("X402rArbiter", () => {
       );
     });
   });
+
+  // ============ Evidence Operations ============
+
+  describe("evidence operations", () => {
+    const evidenceAddress = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" as const;
+
+    const samplePaymentInfo = {
+      operator: operatorAddress,
+      payer: "0x2345678901234567890123456789012345678901" as const,
+      receiver: "0x3456789012345678901234567890123456789012" as const,
+      token: "0x4567890123456789012345678901234567890123" as const,
+      maxAmount: BigInt("1000000"),
+      preApprovalExpiry: 0n,
+      authorizationExpiry: BigInt(1735689600),
+      refundExpiry: BigInt(1738368000),
+      minFeeBps: 0,
+      maxFeeBps: 500,
+      feeReceiver: "0x5678901234567890123456789012345678901234" as const,
+      salt: BigInt("0x123456"),
+    };
+
+    it("should accept refundRequestEvidenceAddress in constructor", () => {
+      const arbiter = new X402rArbiter({
+        publicClient,
+        walletClient,
+        operatorAddress,
+        refundRequestEvidenceAddress: evidenceAddress,
+      });
+
+      expect(arbiter.refundRequestEvidenceAddress).toBe(evidenceAddress);
+    });
+
+    it("should throw if evidence address not configured", async () => {
+      const arbiter = new X402rArbiter({
+        publicClient,
+        walletClient,
+        operatorAddress,
+      });
+
+      await expect(arbiter.getEvidenceCount(samplePaymentInfo, 0n)).rejects.toThrow(
+        "RefundRequestEvidence address required",
+      );
+    });
+
+    it("should delegate submitEvidence to shared ops", async () => {
+      (walletClient.writeContract as ReturnType<typeof vi.fn>).mockResolvedValue("0xtxhash");
+
+      const arbiter = new X402rArbiter({
+        publicClient,
+        walletClient,
+        operatorAddress,
+        refundRequestEvidenceAddress: evidenceAddress,
+      });
+
+      const result = await arbiter.submitEvidence(samplePaymentInfo, 0n, "QmTestCid");
+      expect(result.txHash).toBe("0xtxhash");
+    });
+
+    it("should delegate getEvidenceCount to shared ops", async () => {
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(2n);
+
+      const arbiter = new X402rArbiter({
+        publicClient,
+        walletClient,
+        operatorAddress,
+        refundRequestEvidenceAddress: evidenceAddress,
+      });
+
+      const count = await arbiter.getEvidenceCount(samplePaymentInfo, 0n);
+      expect(count).toBe(2n);
+    });
+
+    it("should delegate getAllEvidence to shared ops", async () => {
+      const readContractMock = publicClient.readContract as ReturnType<typeof vi.fn>;
+      readContractMock.mockResolvedValueOnce(2n);
+      readContractMock.mockResolvedValueOnce([
+        [
+          {
+            submitter: "0x2345678901234567890123456789012345678901",
+            role: 0,
+            timestamp: BigInt(1700000000),
+            cid: "QmPayerEvidence",
+          },
+          {
+            submitter: "0x3456789012345678901234567890123456789012",
+            role: 1,
+            timestamp: BigInt(1700000100),
+            cid: "QmReceiverEvidence",
+          },
+        ],
+        2n,
+      ]);
+
+      const arbiter = new X402rArbiter({
+        publicClient,
+        walletClient,
+        operatorAddress,
+        refundRequestEvidenceAddress: evidenceAddress,
+      });
+
+      const entries = await arbiter.getAllEvidence(samplePaymentInfo, 0n);
+      expect(entries).toHaveLength(2);
+      expect(entries[0].cid).toBe("QmPayerEvidence");
+      expect(entries[1].cid).toBe("QmReceiverEvidence");
+    });
+  });
 });

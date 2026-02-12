@@ -3,7 +3,8 @@
  * @module ai-hooks
  */
 
-import type { PaymentInfo, PaymentState } from "@x402r/core";
+import type { PaymentInfo, PaymentState, Evidence, IpfsConfig } from "@x402r/core";
+import { getAllEvidence, fetchFromIpfs } from "@x402r/core";
 import type { X402rArbiter } from "./arbiter.js";
 
 /**
@@ -22,8 +23,10 @@ export interface CaseEvaluationContext {
   paymentInfoHash: `0x${string}`;
   /** Amount being requested for refund */
   refundAmount?: bigint;
-  /** Optional evidence/metadata (if available) */
-  evidence?: unknown;
+  /** On-chain evidence entries for this dispute */
+  evidence?: Evidence[];
+  /** Fetched IPFS content for each evidence entry (parallel to evidence array) */
+  evidenceContent?: unknown[];
 }
 
 /**
@@ -58,6 +61,10 @@ export interface WebhookHandlerConfig {
   autoSubmitDecision?: boolean;
   /** Minimum confidence threshold for auto-execution (default: 0.8) */
   confidenceThreshold?: number;
+  /** Whether to fetch on-chain evidence and IPFS content before evaluation (default: false) */
+  fetchEvidence?: boolean;
+  /** IPFS configuration for evidence fetching */
+  ipfsConfig?: IpfsConfig;
 }
 
 /**
@@ -110,9 +117,38 @@ export interface WebhookResult extends DecisionResult {
 export function createWebhookHandler(
   config: WebhookHandlerConfig,
 ): (context: CaseEvaluationContext) => Promise<WebhookResult> {
-  const { arbiter, evaluationHook, autoSubmitDecision = false, confidenceThreshold = 0.8 } = config;
+  const {
+    arbiter,
+    evaluationHook,
+    autoSubmitDecision = false,
+    confidenceThreshold = 0.8,
+    fetchEvidence: shouldFetchEvidence = false,
+    ipfsConfig,
+  } = config;
 
   return async (context: CaseEvaluationContext): Promise<WebhookResult> => {
+    // Fetch on-chain evidence and IPFS content if configured
+    if (shouldFetchEvidence && arbiter.refundRequestEvidenceAddress) {
+      const evidenceCtx = {
+        publicClient: arbiter.publicClient,
+        refundRequestEvidenceAddress: arbiter.refundRequestEvidenceAddress,
+      };
+
+      const entries = await getAllEvidence(evidenceCtx, context.paymentInfo, context.nonce);
+      context.evidence = entries;
+
+      const content = await Promise.all(
+        entries.map(async e => {
+          try {
+            return await fetchFromIpfs(e.cid, ipfsConfig);
+          } catch {
+            return null;
+          }
+        }),
+      );
+      context.evidenceContent = content;
+    }
+
     // Evaluate the case using the provided hook
     const decision = await evaluationHook(context);
 

@@ -17,10 +17,18 @@ import {
   getRefundRequestByKey as sharedGetRefundRequestByKey,
   isFrozen as sharedIsFrozen,
   watchFreezeEvents as sharedWatchFreezeEvents,
+  submitEvidence as sharedSubmitEvidence,
+  getEvidence as sharedGetEvidence,
+  getEvidenceCount as sharedGetEvidenceCount,
+  getEvidenceBatch as sharedGetEvidenceBatch,
+  getAllEvidence as sharedGetAllEvidence,
+  watchEvidenceSubmissions as sharedWatchEvidenceSubmissions,
   type PaymentInfo,
   type PaymentState,
   type RequestStatus,
   type RefundRequestData,
+  type Evidence,
+  type EvidenceEventLog,
   type FreezeEventLog,
   type PaymentOperatorEventLog,
   type RefundRequestEventLog,
@@ -40,6 +48,8 @@ export interface X402rClientConfig {
   escrowAddress?: `0x${string}`;
   /** Optional RefundRequest contract address (defaults from network config) */
   refundRequestAddress?: `0x${string}`;
+  /** Optional RefundRequestEvidence contract address */
+  refundRequestEvidenceAddress?: `0x${string}`;
   /** Chain ID for hash computation (default: 84532 for Base Sepolia) */
   chainId?: number;
 }
@@ -83,6 +93,8 @@ export class X402rClient {
   readonly escrowAddress?: `0x${string}`;
   /** RefundRequest contract address */
   readonly refundRequestAddress?: `0x${string}`;
+  /** RefundRequestEvidence contract address */
+  readonly refundRequestEvidenceAddress?: `0x${string}`;
   /** Chain ID */
   readonly chainId: number;
 
@@ -92,6 +104,7 @@ export class X402rClient {
     this.operatorAddress = config.operatorAddress;
     this.escrowAddress = config.escrowAddress;
     this.refundRequestAddress = config.refundRequestAddress;
+    this.refundRequestEvidenceAddress = config.refundRequestEvidenceAddress;
     this.chainId = config.chainId ?? 84532;
   }
 
@@ -671,5 +684,113 @@ export class X402rClient {
     callback: (event: FreezeEventLog) => void,
   ): { unsubscribe: () => void } {
     return sharedWatchFreezeEvents({ publicClient: this.publicClient }, freezeAddress, callback);
+  }
+
+  // ============ Evidence Operations ============
+
+  /** Get the evidence read context, throwing if refundRequestEvidenceAddress is not configured */
+  private getEvidenceCtx() {
+    if (!this.refundRequestEvidenceAddress) {
+      throw new Error("RefundRequestEvidence address required");
+    }
+    return {
+      publicClient: this.publicClient,
+      refundRequestEvidenceAddress: this.refundRequestEvidenceAddress,
+    };
+  }
+
+  /** Get the evidence write context, throwing if refundRequestEvidenceAddress is not configured */
+  private getEvidenceWriteCtx() {
+    if (!this.refundRequestEvidenceAddress) {
+      throw new Error("RefundRequestEvidence address required");
+    }
+    if (!this.walletClient) {
+      throw new Error("WalletClient required");
+    }
+    return {
+      publicClient: this.publicClient,
+      walletClient: this.walletClient,
+      refundRequestEvidenceAddress: this.refundRequestEvidenceAddress,
+    };
+  }
+
+  /**
+   * Submit evidence for a dispute as an IPFS CID
+   *
+   * @param paymentInfo - The payment information struct
+   * @param nonce - The record index (from PaymentIndexRecorder) identifying which charge
+   * @param cid - IPFS CID pointing to the evidence content
+   * @returns Transaction hash
+   */
+  async submitEvidence(
+    paymentInfo: PaymentInfo,
+    nonce: bigint,
+    cid: string,
+  ): Promise<{ txHash: `0x${string}` }> {
+    return sharedSubmitEvidence(this.getEvidenceWriteCtx(), paymentInfo, nonce, cid);
+  }
+
+  /**
+   * Get a single evidence entry by index
+   *
+   * @param paymentInfo - The payment information struct
+   * @param nonce - The record index identifying which charge
+   * @param index - The evidence entry index (0-based)
+   * @returns The evidence entry
+   */
+  async getEvidence(paymentInfo: PaymentInfo, nonce: bigint, index: bigint): Promise<Evidence> {
+    return sharedGetEvidence(this.getEvidenceCtx(), paymentInfo, nonce, index);
+  }
+
+  /**
+   * Get the total number of evidence entries for a payment+nonce
+   *
+   * @param paymentInfo - The payment information struct
+   * @param nonce - The record index identifying which charge
+   * @returns The count of evidence entries
+   */
+  async getEvidenceCount(paymentInfo: PaymentInfo, nonce: bigint): Promise<bigint> {
+    return sharedGetEvidenceCount(this.getEvidenceCtx(), paymentInfo, nonce);
+  }
+
+  /**
+   * Get a batch of evidence entries with pagination
+   *
+   * @param paymentInfo - The payment information struct
+   * @param nonce - The record index identifying which charge
+   * @param offset - Starting index (0-based)
+   * @param count - Number of entries to return
+   * @returns Object with entries array and total count
+   */
+  async getEvidenceBatch(
+    paymentInfo: PaymentInfo,
+    nonce: bigint,
+    offset: bigint,
+    count: bigint,
+  ): Promise<{ entries: Evidence[]; total: bigint }> {
+    return sharedGetEvidenceBatch(this.getEvidenceCtx(), paymentInfo, nonce, offset, count);
+  }
+
+  /**
+   * Get all evidence entries for a payment+nonce
+   *
+   * @param paymentInfo - The payment information struct
+   * @param nonce - The record index identifying which charge
+   * @returns Array of all evidence entries
+   */
+  async getAllEvidence(paymentInfo: PaymentInfo, nonce: bigint): Promise<Evidence[]> {
+    return sharedGetAllEvidence(this.getEvidenceCtx(), paymentInfo, nonce);
+  }
+
+  /**
+   * Watch for new evidence submissions
+   *
+   * @param callback - Callback function called when evidence is submitted
+   * @returns Object with unsubscribe function
+   */
+  watchEvidenceSubmissions(callback: (event: EvidenceEventLog) => void): {
+    unsubscribe: () => void;
+  } {
+    return sharedWatchEvidenceSubmissions(this.getEvidenceCtx(), callback);
   }
 }

@@ -2,7 +2,8 @@
  * Shared utilities for CLI examples
  */
 
-import type { PaymentInfo } from "@x402r/core";
+import type { PaymentInfo, Evidence } from "@x402r/core";
+import { SubmitterRole } from "@x402r/core";
 
 /**
  * Parse a PaymentInfo JSON string into a typed PaymentInfo object.
@@ -49,4 +50,39 @@ export function formatUSDC(amount: bigint): string {
   const whole = amount / BigInt(10 ** decimals);
   const fractional = amount % BigInt(10 ** decimals);
   return `${whole}.${fractional.toString().padStart(decimals, "0")} USDC`;
+}
+
+/**
+ * Map SubmitterRole enum to a human-readable string
+ */
+function roleName(role: SubmitterRole): string {
+  switch (role) {
+    case SubmitterRole.Payer:
+      return "Payer";
+    case SubmitterRole.Receiver:
+      return "Receiver";
+    case SubmitterRole.Arbiter:
+      return "Arbiter";
+    default:
+      return `Unknown(${role})`;
+  }
+}
+
+/**
+ * Format a single evidence entry for CLI display
+ */
+export function formatEvidence(evidence: Evidence, index?: number): string {
+  const prefix = index !== undefined ? `[${index}] ` : "";
+  const ts = new Date(Number(evidence.timestamp) * 1000).toISOString();
+  return `${prefix}${roleName(evidence.role)} ${shortAddress(evidence.submitter)} | ${ts} | CID: ${evidence.cid}`;
+}
+
+/**
+ * Format a list of evidence entries as a tabular display
+ */
+export function formatEvidenceList(entries: Evidence[]): string {
+  if (entries.length === 0) {
+    return "  No evidence submitted";
+  }
+  return entries.map((e, i) => `  ${formatEvidence(e, i)}`).join("\n");
 }

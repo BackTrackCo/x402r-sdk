@@ -2,7 +2,7 @@
  * E2E Integration Test: Full Payment Lifecycle on Base Sepolia
  *
  * Exercises the complete x402r refundable payment flow against real contracts:
- *   Authorize → Request Refund → Freeze → Arbiter Approve → Execute Refund
+ *   Authorize → Request Refund → Freeze → Submit Evidence → Read Evidence → Arbiter Approve → Execute Refund
  *
  * Uses 3 accounts derived from a single mnemonic (or separate private keys):
  *   - Account 0: Payer (has ETH + USDC)
@@ -43,6 +43,7 @@ import {
 } from "../../packages/core/dist/index.js";
 import { X402rClient } from "../../packages/client/dist/index.js";
 import { X402rArbiter } from "../../packages/arbiter/dist/index.js";
+import { X402rMerchant } from "../../packages/merchant/dist/index.js";
 
 // ============ Configuration ============
 
@@ -140,6 +141,12 @@ async function main() {
 
   const payerWallet = createWalletClient({
     account: payerAccount,
+    chain: baseSepolia,
+    transport: http(RPC_URL),
+  });
+
+  const merchantWallet = createWalletClient({
+    account: merchantAccount,
     chain: baseSepolia,
     transport: http(RPC_URL),
   });
@@ -417,6 +424,7 @@ async function main() {
     operatorAddress: deployResult.operatorAddress as Address,
     escrowAddress: networkConfig.authCaptureEscrow as Address,
     refundRequestAddress: networkConfig.refundRequest as Address,
+    refundRequestEvidenceAddress: networkConfig.refundRequestEvidence as Address,
     chainId: 84532,
   });
 
@@ -456,8 +464,59 @@ async function main() {
     fail("Freeze payment", "isFrozen returned false after freeze");
   }
 
-  // ---- Step 7: Arbiter Approves Refund ----
-  step("7. Arbiter Approves Refund");
+  // ---- Step 7: Payer Submits Evidence ----
+  step("7. Payer Submits Evidence");
+
+  log("Submitting payer evidence...");
+  const { txHash: payerEvidenceTx } = await client.submitEvidence(
+    paymentInfo,
+    0n,
+    "QmPayerEvidenceCID_RefundJustification",
+  );
+  await waitForTx(publicClient, payerEvidenceTx);
+  log(`  Payer evidence tx: ${SCANNER}/tx/${payerEvidenceTx}`);
+
+  const evidenceCount1 = await client.getEvidenceCount(paymentInfo, 0n);
+  log(`Evidence count: ${evidenceCount1} (expected 1)`);
+
+  if (evidenceCount1 === 1n) {
+    pass("Payer submits evidence (count = 1)", payerEvidenceTx);
+  } else {
+    fail("Payer submits evidence", `Expected count 1, got ${evidenceCount1}`);
+  }
+
+  // ---- Step 8: Merchant Submits Counter-Evidence ----
+  step("8. Merchant Submits Counter-Evidence");
+
+  const merchant = new X402rMerchant({
+    publicClient,
+    walletClient: merchantWallet,
+    operatorAddress: deployResult.operatorAddress as Address,
+    escrowAddress: networkConfig.authCaptureEscrow as Address,
+    refundRequestAddress: networkConfig.refundRequest as Address,
+    refundRequestEvidenceAddress: networkConfig.refundRequestEvidence as Address,
+  });
+
+  log("Submitting merchant counter-evidence...");
+  const { txHash: merchantEvidenceTx } = await merchant.submitEvidence(
+    paymentInfo,
+    0n,
+    "QmMerchantEvidenceCID_ServiceDelivered",
+  );
+  await waitForTx(publicClient, merchantEvidenceTx);
+  log(`  Merchant evidence tx: ${SCANNER}/tx/${merchantEvidenceTx}`);
+
+  const evidenceCount2 = await client.getEvidenceCount(paymentInfo, 0n);
+  log(`Evidence count: ${evidenceCount2} (expected 2)`);
+
+  if (evidenceCount2 === 2n) {
+    pass("Merchant submits counter-evidence (count = 2)", merchantEvidenceTx);
+  } else {
+    fail("Merchant submits counter-evidence", `Expected count 2, got ${evidenceCount2}`);
+  }
+
+  // ---- Step 9: Arbiter Reads All Evidence ----
+  step("9. Arbiter Reads All Evidence");
 
   const arbiter = new X402rArbiter({
     publicClient,
@@ -465,9 +524,38 @@ async function main() {
     operatorAddress: deployResult.operatorAddress as Address,
     escrowAddress: networkConfig.authCaptureEscrow as Address,
     refundRequestAddress: networkConfig.refundRequest as Address,
+    refundRequestEvidenceAddress: networkConfig.refundRequestEvidence as Address,
     arbiterRegistryAddress: networkConfig.arbiterRegistry as Address,
     chainId: 84532,
   });
+
+  const allEvidence = await arbiter.getAllEvidence(paymentInfo, 0n);
+  log(`Evidence entries: ${allEvidence.length}`);
+
+  for (let i = 0; i < allEvidence.length; i++) {
+    const e = allEvidence[i];
+    const roleName = e.role === 0 ? "Payer" : e.role === 1 ? "Receiver" : "Arbiter";
+    const ts = new Date(Number(e.timestamp) * 1000).toISOString();
+    log(`  [${i}] ${roleName} ${shortAddr(e.submitter)} | ${ts} | CID: ${e.cid}`);
+  }
+
+  if (
+    allEvidence.length === 2 &&
+    allEvidence[0].cid === "QmPayerEvidenceCID_RefundJustification" &&
+    allEvidence[1].cid === "QmMerchantEvidenceCID_ServiceDelivered" &&
+    allEvidence[0].role === 0 && // Payer
+    allEvidence[1].role === 1 // Receiver
+  ) {
+    pass("Arbiter reads all evidence (2 entries, correct roles and CIDs)");
+  } else {
+    fail(
+      "Arbiter reads all evidence",
+      `Expected 2 entries with correct data, got ${allEvidence.length}`,
+    );
+  }
+
+  // ---- Step 10: Arbiter Approves Refund ----
+  step("10. Arbiter Approves Refund (based on evidence review)");
 
   log("Approving refund request...");
   const { txHash: approveTxHash } = await arbiter.approveRefundRequest(paymentInfo, 0n);
@@ -487,8 +575,8 @@ async function main() {
     );
   }
 
-  // ---- Step 8: Arbiter Executes Refund ----
-  step("8. Arbiter Executes Refund");
+  // ---- Step 11: Arbiter Executes Refund ----
+  step("11. Arbiter Executes Refund");
 
   // Check payer USDC balance before
   const payerUsdcBefore = await publicClient.readContract({
@@ -531,6 +619,25 @@ async function main() {
     fail(
       "Execute refund",
       `capturable=${capturableAfter} (expected 0), recovered=${usdcRecovered} (expected > 0)`,
+    );
+  }
+
+  // ---- Step 12: Final Verification ----
+  step("12. Final Verification");
+
+  // Evidence should still be queryable after refund execution
+  const finalEvidenceCount = await arbiter.getEvidenceCount(paymentInfo, 0n);
+  log(`Evidence still queryable: ${finalEvidenceCount} entries`);
+
+  const finalRefundStatus = await arbiter.getRefundStatus(paymentInfo, 0n);
+  log(`Final refund status: ${finalRefundStatus}`);
+
+  if (finalEvidenceCount === 2n && capturableAfter === 0n && usdcRecovered > 0n) {
+    pass("Final verification (evidence persists, escrow emptied, USDC returned)");
+  } else {
+    fail(
+      "Final verification",
+      `evidence=${finalEvidenceCount} (expected 2), capturable=${capturableAfter} (expected 0), recovered=${usdcRecovered} (expected > 0)`,
     );
   }
 

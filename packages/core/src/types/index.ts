@@ -246,6 +246,51 @@ export interface RefundRequestEventLog {
 }
 
 /**
+ * Submitter role in a dispute evidence submission
+ */
+export enum SubmitterRole {
+  /** Payer who initiated the payment */
+  Payer = 0,
+  /** Receiver (merchant) who received the payment */
+  Receiver = 1,
+  /** Arbiter resolving the dispute */
+  Arbiter = 2,
+}
+
+/**
+ * Evidence entry submitted to the RefundRequestEvidence contract
+ */
+export interface Evidence {
+  /** Address that submitted this evidence */
+  submitter: `0x${string}`;
+  /** Role of the submitter (Payer, Receiver, or Arbiter) */
+  role: SubmitterRole;
+  /** Block timestamp when evidence was submitted */
+  timestamp: bigint;
+  /** IPFS CID pointing to the evidence content */
+  cid: string;
+}
+
+/**
+ * Typed event log for EvidenceSubmitted events from the RefundRequestEvidence contract
+ */
+export interface EvidenceEventLog {
+  eventName: "EvidenceSubmitted";
+  args: {
+    paymentInfo?: PaymentInfo;
+    nonce?: bigint;
+    submitter?: `0x${string}`;
+    role?: SubmitterRole;
+    cid?: string;
+    index?: bigint;
+  };
+  address: `0x${string}`;
+  blockNumber: bigint;
+  transactionHash: `0x${string}`;
+  logIndex: number;
+}
+
+/**
  * Typed event log for PaymentOperator events (ReleaseExecuted, AuthorizationCreated, etc.)
  */
 export interface PaymentOperatorEventLog {

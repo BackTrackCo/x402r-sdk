@@ -28,6 +28,7 @@ import {
 import { pay } from "./commands/pay.js";
 import { freeze, unfreeze, checkFrozen } from "./commands/freeze.js";
 import { requestRefund, cancelRefund, getRefundStatus } from "./commands/refund.js";
+import { submitEvidence, listEvidence } from "./commands/evidence.js";
 
 function parsePaymentInfo(json: string): PaymentInfo {
   try {
@@ -299,6 +300,65 @@ program
     } else {
       const statusNames = ["Pending", "Approved", "Denied", "Cancelled"];
       console.log(`\nRefund status: ${statusNames[status] || status}`);
+    }
+  });
+
+// Submit evidence command
+program
+  .command("submit-evidence")
+  .description("Submit evidence for a dispute")
+  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .requiredOption("-c, --cid <cid>", "IPFS CID of the evidence")
+  .requiredOption("-o, --operator-address <address>", "Operator address")
+  .option("-n, --nonce <nonce>", "Nonce (record index)", "0")
+  .action(async options => {
+    const { publicClient, walletClient } = createClients();
+    const paymentInfo = parsePaymentInfo(options.paymentJson);
+    const networkConfig = getNetworkConfig(NETWORK_ID)!;
+
+    const result = await submitEvidence({
+      paymentInfo,
+      nonce: BigInt(options.nonce),
+      cid: options.cid,
+      operatorAddress: options.operatorAddress as `0x${string}`,
+      refundRequestEvidenceAddress: networkConfig.refundRequestEvidence as `0x${string}`,
+      publicClient,
+      walletClient,
+    });
+
+    if (result.success) {
+      if (result.txHash) {
+        console.log(`\nhttps://sepolia.basescan.org/tx/${result.txHash}`);
+      }
+    } else {
+      console.error("\nSubmit evidence failed:", result.error);
+      process.exit(1);
+    }
+  });
+
+// List evidence command
+program
+  .command("list-evidence")
+  .description("List all evidence for a payment dispute")
+  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .requiredOption("-o, --operator-address <address>", "Operator address")
+  .option("-n, --nonce <nonce>", "Nonce (record index)", "0")
+  .action(async options => {
+    const { publicClient } = createClients();
+    const paymentInfo = parsePaymentInfo(options.paymentJson);
+    const networkConfig = getNetworkConfig(NETWORK_ID)!;
+
+    try {
+      await listEvidence({
+        paymentInfo,
+        nonce: BigInt(options.nonce),
+        operatorAddress: options.operatorAddress as `0x${string}`,
+        refundRequestEvidenceAddress: networkConfig.refundRequestEvidence as `0x${string}`,
+        publicClient,
+      });
+    } catch (error) {
+      console.error("\nFailed to list evidence:", error instanceof Error ? error.message : error);
+      process.exit(1);
     }
   });
 
