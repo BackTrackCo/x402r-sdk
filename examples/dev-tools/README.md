@@ -11,7 +11,7 @@ These are **not** examples of how to integrate x402r — see the parent `example
 | `client-cli/` | Payer operations: pay, freeze, refund | `pnpm example:client-cli` |
 | `merchant-cli/` | Merchant operations: release, approve/deny refunds | `pnpm example:merchant-cli` |
 | `arbiter-cli/` | Arbiter operations: review/decide refund requests | `pnpm example:arbiter-cli` |
-| `shared/` | Shared utilities used by the CLIs | - |
+| `shared/` | Shared utilities, CLI setup, and payment state management | - |
 
 ## Setup
 

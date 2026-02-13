@@ -39,6 +39,10 @@ A command-line tool for arbiter operations in the x402r refundable payments prot
    pnpm install
    ```
 
+## Payment State
+
+All commands that accept `--payment-json` will automatically read from `~/.x402r/last-payment.json` if the flag is omitted. This file is saved by the client-cli `pay` command. You can still pass `--payment-json` explicitly to override.
+
 ## Usage
 
 ### Show arbiter info
@@ -59,23 +63,27 @@ pnpm start show 0x1234...abcd
 
 ### Check refund status
 ```bash
+# Uses saved state from client-cli pay
+pnpm start status
+
+# Or with explicit payment JSON
 pnpm start status --payment-json '{"operator":"0x...",...}'
 ```
 
 ### Approve a refund request
 ```bash
-pnpm start approve 0x1234...abcd --payment-json '{"operator":"0x...",...}'
+pnpm start approve 0x1234...abcd
 ```
 
 ### Deny a refund request
 ```bash
-pnpm start deny 0x1234...abcd --payment-json '{"operator":"0x...",...}'
+pnpm start deny 0x1234...abcd
 ```
 
 ### Execute an approved refund
 ```bash
-pnpm start execute --payment-json '{"operator":"0x...",...}'
-pnpm start execute --payment-json '{"operator":"0x...",...}' --amount 500000
+pnpm start execute
+pnpm start execute --amount 500000
 ```
 
 ### Watch for new requests

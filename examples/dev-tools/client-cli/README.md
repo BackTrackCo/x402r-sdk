@@ -40,10 +40,25 @@ This will:
 1. Fetch payment requirements (402 response)
 2. Create and sign payment payload
 3. Submit payment and receive content
-4. Output PaymentInfo JSON for use with other commands
+4. **Auto-save PaymentInfo** to `~/.x402r/last-payment.json` for subsequent commands
+
+### View/Clear Saved State
+```bash
+# Show saved payment info
+pnpm start state
+
+# Clear saved state
+pnpm start state --clear
+```
 
 ### Check Freeze Status
 ```bash
+# Using saved state (no --payment-json needed after pay)
+pnpm start is-frozen \
+  --freeze-address 0xD0f99B7667076f151FD8240b277f1765d147e48C \
+  --operator-address 0xbb4f390b80E4F4895B96B95AE382B65fDC45974B
+
+# Or with explicit payment JSON
 pnpm start is-frozen \
   --payment-json '{"operator":"0x...","payer":"0x...",...}' \
   --freeze-address 0xD0f99B7667076f151FD8240b277f1765d147e48C \
@@ -53,7 +68,6 @@ pnpm start is-frozen \
 ### Freeze a Payment
 ```bash
 pnpm start freeze \
-  --payment-json '{"operator":"0x...","payer":"0x...",...}' \
   --freeze-address 0xD0f99B7667076f151FD8240b277f1765d147e48C \
   --operator-address 0xbb4f390b80E4F4895B96B95AE382B65fDC45974B
 ```
@@ -61,7 +75,6 @@ pnpm start freeze \
 ### Unfreeze a Payment
 ```bash
 pnpm start unfreeze \
-  --payment-json '{"operator":"0x...","payer":"0x...",...}' \
   --freeze-address 0xD0f99B7667076f151FD8240b277f1765d147e48C \
   --operator-address 0xbb4f390b80E4F4895B96B95AE382B65fDC45974B
 ```
@@ -69,7 +82,6 @@ pnpm start unfreeze \
 ### Request a Refund
 ```bash
 pnpm start refund \
-  --payment-json '{"operator":"0x...","payer":"0x...",...}' \
   --amount 5000 \
   --operator-address 0xbb4f390b80E4F4895B96B95AE382B65fDC45974B
 ```
@@ -77,14 +89,12 @@ pnpm start refund \
 ### Check Refund Status
 ```bash
 pnpm start refund-status \
-  --payment-json '{"operator":"0x...","payer":"0x...",...}' \
   --operator-address 0xbb4f390b80E4F4895B96B95AE382B65fDC45974B
 ```
 
 ### Cancel a Refund Request
 ```bash
 pnpm start cancel-refund \
-  --payment-json '{"operator":"0x...","payer":"0x...",...}' \
   --operator-address 0xbb4f390b80E4F4895B96B95AE382B65fDC45974B
 ```
 
@@ -125,41 +135,42 @@ pnpm start preview-fee \
 Submit evidence for a dispute (as payer):
 ```bash
 pnpm start submit-evidence \
-  --payment-json '{"operator":"0x...","payer":"0x...",...}' \
   --cid QmYourIpfsCid \
   --operator-address 0xbb4f390b80E4F4895B96B95AE382B65fDC45974B
 ```
 
-### List Evidence
-List all evidence submitted for a dispute:
+### Show Evidence
+Show all evidence submitted for a dispute:
 ```bash
-pnpm start list-evidence \
-  --payment-json '{"operator":"0x...","payer":"0x...",...}' \
+pnpm start show-evidence \
   --operator-address 0xbb4f390b80E4F4895B96B95AE382B65fDC45974B
 ```
 
 ## Example Workflow
 
 ```bash
-# 1. Make a payment
+# 1. Make a payment (auto-saves state)
 pnpm start pay --url http://localhost:3000/weather
-# Save the PaymentInfo JSON from output
 
-# 2. Check if frozen
-pnpm start is-frozen --payment-json '...' --freeze-address 0x... --operator-address 0x...
+# 2. Check if frozen (reads from saved state — no --payment-json needed)
+pnpm start is-frozen --freeze-address 0x... --operator-address 0x...
 
 # 3. Freeze the payment (blocks merchant from releasing)
-pnpm start freeze --payment-json '...' --freeze-address 0x... --operator-address 0x...
+pnpm start freeze --freeze-address 0x... --operator-address 0x...
 
 # 4. Request a refund
-pnpm start refund --payment-json '...' --amount 5000 --operator-address 0x...
+pnpm start refund --amount 5000 --operator-address 0x...
 
 # 5. Check refund status
-pnpm start refund-status --payment-json '...' --operator-address 0x...
+pnpm start refund-status --operator-address 0x...
 
 # 6. Submit evidence for dispute
-pnpm start submit-evidence --payment-json '...' --cid QmEvidence... --operator-address 0x...
+pnpm start submit-evidence --cid QmEvidence... --operator-address 0x...
 
 # 7. View all evidence
-pnpm start list-evidence --payment-json '...' --operator-address 0x...
+pnpm start show-evidence --operator-address 0x...
 ```
+
+## Payment State
+
+After running `pay`, the CLI saves PaymentInfo to `~/.x402r/last-payment.json`. All subsequent commands that need `--payment-json` will automatically read from this file if the flag is omitted. You can still pass `--payment-json` explicitly to override the saved state.
