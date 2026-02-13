@@ -6,26 +6,24 @@
  * A command-line tool for merchant operations: releasing funds, managing refunds, etc.
  *
  * Usage:
- *   pnpm start release --payment-json '{"operator":...}' --amount 10000
- *   pnpm start approve-refund --payment-json '{"operator":...}'
- *   pnpm start payment-amounts --payment-json '{"operator":...}'
+ *   pnpm start release --payment-json '{"operator":...}' --amount 10000  (or use saved state)
+ *   pnpm start approve-refund                                             (reads from saved state)
+ *   pnpm start payment-amounts                                            (reads from saved state)
  */
 
 import { Command } from "commander";
-import { createPublicClient, createWalletClient, http } from "viem";
-import { baseSepolia } from "viem/chains";
-import { privateKeyToAccount } from "viem/accounts";
 import { config as dotenvConfig } from "dotenv";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { X402rMerchant } from "@x402r/merchant";
 import {
-  getNetworkConfig,
   calculateTotalFees,
   formatFeeBreakdown,
   validateFeeBounds,
   type PaymentInfo,
 } from "@x402r/core";
+import { initCli } from "../../shared/cli-setup.js";
+import { getPaymentInfoFromState } from "../../shared/state.js";
 import { parsePaymentInfo, formatEvidenceList } from "../../shared/utils.js";
 import { showEvidence, submitMerchantEvidence } from "./commands/evidence.js";
 
@@ -34,41 +32,15 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenvConfig({ path: join(__dirname, "..", ".env") });
 
-const NETWORK_ID = process.env.NETWORK_ID || "eip155:84532";
-const RPC_URL = process.env.RPC_URL || "https://sepolia.base.org";
-
-// Create viem clients and merchant SDK
+// Create merchant SDK from shared setup
 function createMerchant() {
-  const privateKey = process.env.PRIVATE_KEY as `0x${string}`;
-  if (!privateKey) {
-    console.error("Error: PRIVATE_KEY environment variable is required");
-    process.exit(1);
-  }
-
-  const operatorAddress = process.env.OPERATOR_ADDRESS as `0x${string}`;
-  if (!operatorAddress) {
-    console.error("Error: OPERATOR_ADDRESS environment variable is required");
-    process.exit(1);
-  }
-
-  const account = privateKeyToAccount(privateKey);
-  const networkConfig = getNetworkConfig(NETWORK_ID)!;
-
-  const publicClient = createPublicClient({
-    chain: baseSepolia,
-    transport: http(RPC_URL),
-  });
-
-  const walletClient = createWalletClient({
-    account,
-    chain: baseSepolia,
-    transport: http(RPC_URL),
-  });
+  const { account, publicClient, walletClient, networkId, networkConfig, operatorAddress } =
+    initCli({ requireOperator: true });
 
   const merchant = new X402rMerchant({
     publicClient,
     walletClient,
-    operatorAddress,
+    operatorAddress: operatorAddress!,
     escrowAddress: networkConfig.authCaptureEscrow,
     refundRequestAddress: networkConfig.refundRequest,
     refundRequestEvidenceAddress: networkConfig.refundRequestEvidence,
@@ -80,7 +52,8 @@ function createMerchant() {
     account,
     publicClient,
     walletClient,
-    operatorAddress,
+    operatorAddress: operatorAddress!,
+    networkId,
     networkConfig,
   };
 }
@@ -98,12 +71,12 @@ program
   .command("info")
   .description("Show merchant configuration info")
   .action(() => {
-    const { account, operatorAddress, networkConfig } = createMerchant();
+    const { account, operatorAddress, networkId, networkConfig } = createMerchant();
 
     console.log("\n=== Merchant Info ===");
     console.log("  Address:", account.address);
-    console.log("  Network:", NETWORK_ID);
-    console.log("  RPC:", RPC_URL);
+    console.log("  Network:", networkId);
+    console.log("  RPC:", process.env.RPC_URL || "https://sepolia.base.org");
 
     console.log("\n=== Operator ===");
     console.log("  Operator:", operatorAddress);
@@ -118,11 +91,11 @@ program
 program
   .command("release")
   .description("Release funds from escrow to the merchant")
-  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .option("-p, --payment-json <json>", "Payment info JSON (reads from saved state if omitted)")
   .option("-a, --amount <amount>", "Amount to release (defaults to maxAmount)")
   .action(async options => {
     const { merchant } = createMerchant();
-    const paymentInfo = parsePaymentInfo(options.paymentJson);
+    const paymentInfo = getPaymentInfoFromState(options);
     const amount = options.amount ? BigInt(options.amount) : paymentInfo.maxAmount;
 
     console.log("\nReleasing funds from escrow...");
@@ -145,10 +118,10 @@ program
 program
   .command("payment-amounts")
   .description("Get capturable and refundable amounts for a payment")
-  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .option("-p, --payment-json <json>", "Payment info JSON (reads from saved state if omitted)")
   .action(async options => {
     const { merchant } = createMerchant();
-    const paymentInfo = parsePaymentInfo(options.paymentJson);
+    const paymentInfo = getPaymentInfoFromState(options);
 
     console.log("\nFetching payment amounts...");
 
@@ -171,11 +144,11 @@ program
 program
   .command("refund-in-escrow")
   .description("Refund funds that are still in escrow back to the payer")
-  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .option("-p, --payment-json <json>", "Payment info JSON (reads from saved state if omitted)")
   .requiredOption("-a, --amount <amount>", "Amount to refund")
   .action(async options => {
     const { merchant } = createMerchant();
-    const paymentInfo = parsePaymentInfo(options.paymentJson);
+    const paymentInfo = getPaymentInfoFromState(options);
     const amount = BigInt(options.amount);
 
     console.log("\nRefunding funds from escrow...");
@@ -197,11 +170,11 @@ program
 program
   .command("approve-refund")
   .description("Approve a pending refund request")
-  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .option("-p, --payment-json <json>", "Payment info JSON (reads from saved state if omitted)")
   .option("-n, --nonce <nonce>", "Nonce (record index)", "0")
   .action(async options => {
     const { merchant } = createMerchant();
-    const paymentInfo = parsePaymentInfo(options.paymentJson);
+    const paymentInfo = getPaymentInfoFromState(options);
     const nonce = BigInt(options.nonce);
 
     console.log("\nApproving refund request...");
@@ -237,11 +210,11 @@ program
 program
   .command("deny-refund")
   .description("Deny a pending refund request")
-  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .option("-p, --payment-json <json>", "Payment info JSON (reads from saved state if omitted)")
   .option("-n, --nonce <nonce>", "Nonce (record index)", "0")
   .action(async options => {
     const { merchant } = createMerchant();
-    const paymentInfo = parsePaymentInfo(options.paymentJson);
+    const paymentInfo = getPaymentInfoFromState(options);
     const nonce = BigInt(options.nonce);
 
     console.log("\nDenying refund request...");
@@ -277,11 +250,11 @@ program
 program
   .command("refund-status")
   .description("Check the status of a refund request")
-  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .option("-p, --payment-json <json>", "Payment info JSON (reads from saved state if omitted)")
   .option("-n, --nonce <nonce>", "Nonce (record index)", "0")
   .action(async options => {
     const { merchant } = createMerchant();
-    const paymentInfo = parsePaymentInfo(options.paymentJson);
+    const paymentInfo = getPaymentInfoFromState(options);
     const nonce = BigInt(options.nonce);
 
     try {
@@ -344,11 +317,11 @@ program
 program
   .command("unfreeze")
   .description("Unfreeze a frozen payment")
-  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .option("-p, --payment-json <json>", "Payment info JSON (reads from saved state if omitted)")
   .requiredOption("-f, --freeze-address <address>", "Freeze contract address")
   .action(async options => {
     const { merchant } = createMerchant();
-    const paymentInfo = parsePaymentInfo(options.paymentJson);
+    const paymentInfo = getPaymentInfoFromState(options);
     const freezeAddress = options.freezeAddress as `0x${string}`;
 
     console.log("\nUnfreezing payment...");
@@ -370,11 +343,11 @@ program
 program
   .command("is-frozen")
   .description("Check if a payment is frozen")
-  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .option("-p, --payment-json <json>", "Payment info JSON (reads from saved state if omitted)")
   .requiredOption("-f, --freeze-address <address>", "Freeze contract address")
   .action(async options => {
     const { merchant } = createMerchant();
-    const paymentInfo = parsePaymentInfo(options.paymentJson);
+    const paymentInfo = getPaymentInfoFromState(options);
     const freezeAddress = options.freezeAddress as `0x${string}`;
 
     try {
@@ -392,11 +365,11 @@ program
 program
   .command("show-evidence")
   .description("Show all evidence for a dispute")
-  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .option("-p, --payment-json <json>", "Payment info JSON (reads from saved state if omitted)")
   .option("-n, --nonce <nonce>", "Nonce (record index)", "0")
   .action(async options => {
     const { merchant } = createMerchant();
-    const paymentInfo = parsePaymentInfo(options.paymentJson);
+    const paymentInfo = getPaymentInfoFromState(options);
     const nonce = BigInt(options.nonce);
 
     try {
@@ -411,12 +384,12 @@ program
 program
   .command("submit-evidence")
   .description("Submit evidence as merchant (receiver role)")
-  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .option("-p, --payment-json <json>", "Payment info JSON (reads from saved state if omitted)")
   .requiredOption("-c, --cid <cid>", "IPFS CID of the evidence")
   .option("-n, --nonce <nonce>", "Nonce (record index)", "0")
   .action(async options => {
     const { merchant } = createMerchant();
-    const paymentInfo = parsePaymentInfo(options.paymentJson);
+    const paymentInfo = getPaymentInfoFromState(options);
     const nonce = BigInt(options.nonce);
 
     try {
@@ -470,7 +443,7 @@ program
   .option("-p, --payment-json <json>", "Payment info JSON (optional, for bounds validation)")
   .option("-c, --caller <address>", "Caller address (defaults to merchant address)")
   .action(async options => {
-    const { publicClient, account, operatorAddress } = createMerchant();
+    const { publicClient, account, operatorAddress, networkId } = createMerchant();
     const amount = BigInt(options.amount);
     const caller = (options.caller as `0x${string}`) || account.address;
 
