@@ -2,32 +2,17 @@
  * Shared utilities for CLI examples
  */
 
-import type { PaymentInfo, Evidence } from "@x402r/core";
-import { SubmitterRole } from "@x402r/core";
+import type { Evidence } from "@x402r/core";
+import { SubmitterRole, parsePaymentInfo as coreParsePaymentInfo } from "@x402r/core";
+import type { PaymentInfo } from "@x402r/core";
 
 /**
- * Parse a PaymentInfo JSON string into a typed PaymentInfo object.
- *
- * Uses BigInt() for all bigint-typed fields (maxAmount, preApprovalExpiry,
- * authorizationExpiry, refundExpiry, salt) to avoid precision loss from Number().
+ * Parse a PaymentInfo JSON string, with CLI-specific error handling (exits on failure).
+ * Delegates to @x402r/core's parsePaymentInfo for the actual parsing.
  */
 export function parsePaymentInfo(json: string): PaymentInfo {
   try {
-    const parsed = JSON.parse(json);
-    return {
-      operator: parsed.operator,
-      payer: parsed.payer,
-      receiver: parsed.receiver,
-      token: parsed.token,
-      maxAmount: BigInt(parsed.maxAmount),
-      preApprovalExpiry: BigInt(parsed.preApprovalExpiry),
-      authorizationExpiry: BigInt(parsed.authorizationExpiry),
-      refundExpiry: BigInt(parsed.refundExpiry),
-      minFeeBps: Number(parsed.minFeeBps),
-      maxFeeBps: Number(parsed.maxFeeBps),
-      feeReceiver: parsed.feeReceiver,
-      salt: BigInt(parsed.salt),
-    };
+    return coreParsePaymentInfo(json);
   } catch {
     console.error("Error: Invalid payment JSON");
     console.error('Expected format: {"operator":"0x...","payer":"0x...",...}');

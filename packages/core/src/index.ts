@@ -36,3 +36,9 @@ export * from "./shared/index.js";
 
 // IPFS utilities
 export * from "./ipfs/index.js";
+
+// Validation utilities
+export * from "./validation/index.js";
+
+// Discovery utilities
+export * from "./discovery/index.js";

@@ -6,10 +6,13 @@
 import type { PublicClient, WalletClient } from "viem";
 import {
   PaymentOperatorABI,
+  AuthCaptureEscrowABI,
   RefundRequestABI,
   EscrowPeriodABI,
   FreezeABI,
   NotImplementedError,
+  PaymentState,
+  computePaymentInfoHash,
   toAbiPaymentInfo,
   hasRefundRequest as sharedHasRefundRequest,
   getRefundRequest as sharedGetRefundRequest,
@@ -24,7 +27,6 @@ import {
   getAllEvidence as sharedGetAllEvidence,
   watchEvidenceSubmissions as sharedWatchEvidenceSubmissions,
   type PaymentInfo,
-  type PaymentState,
   type RequestStatus,
   type RefundRequestData,
   type Evidence,
@@ -111,7 +113,9 @@ export class X402rClient {
   /** Get the refund read context, throwing if refundRequestAddress is not configured */
   private getRefundCtx() {
     if (!this.refundRequestAddress) {
-      throw new Error("RefundRequest address required");
+      throw new Error(
+        "RefundRequest address required. Use resolveAddresses(networkId) from @x402r/core to get the address for your network.",
+      );
     }
     return {
       publicClient: this.publicClient,
@@ -136,48 +140,169 @@ export class X402rClient {
   }
 
   // ============ Payment Queries ============
-  // NOTE: These methods are stubbed for future Graph/indexer integration.
-  // The PaymentOperator contract does not store payment state on-chain.
-  // Payment state is derived from the escrow contract and event logs.
 
   /**
-   * Get the current state of a payment
-   * @throws NotImplementedError - This method requires subgraph integration
+   * Get the current state of a payment by reading the escrow contract.
+   *
+   * Derives the state from the on-chain escrow amounts and expiry timestamps:
+   * - NonExistent: payment has never been authorized
+   * - InEscrow: funds are held in escrow (capturableAmount > 0)
+   * - Released: funds released to receiver, may still be refundable
+   * - Settled: all funds have been moved (capturable = 0, refundable = 0)
+   * - Expired: authorization expiry has passed and funds are still in escrow
+   *
+   * @param paymentInfo - The payment information struct
+   * @returns The current PaymentState
+   * @throws Error if escrowAddress is not configured
    */
-  async getPaymentState(_paymentInfo: PaymentInfo): Promise<PaymentState> {
-    throw new NotImplementedError("getPaymentState");
+  async getPaymentState(paymentInfo: PaymentInfo): Promise<PaymentState> {
+    if (!this.escrowAddress) {
+      throw new Error(
+        "Escrow address required. Use resolveAddresses(networkId) from @x402r/core to get the escrow address for your network.",
+      );
+    }
+
+    const paymentInfoHash = computePaymentInfoHash(paymentInfo, this.escrowAddress, this.chainId);
+
+    const state = await this.publicClient.readContract({
+      address: this.escrowAddress,
+      abi: AuthCaptureEscrowABI,
+      functionName: "paymentState",
+      args: [paymentInfoHash],
+    });
+
+    const [hasCollectedPayment, capturableAmount, refundableAmount] = state as [
+      boolean,
+      bigint,
+      bigint,
+    ];
+
+    if (!hasCollectedPayment) {
+      return PaymentState.NonExistent;
+    }
+
+    // Check if authorization has expired with funds still capturable
+    const now = BigInt(Math.floor(Date.now() / 1000));
+    if (
+      capturableAmount > 0n &&
+      paymentInfo.authorizationExpiry > 0n &&
+      now > paymentInfo.authorizationExpiry
+    ) {
+      return PaymentState.Expired;
+    }
+
+    if (capturableAmount > 0n) {
+      return PaymentState.InEscrow;
+    }
+
+    if (refundableAmount > 0n) {
+      return PaymentState.Released;
+    }
+
+    return PaymentState.Settled;
   }
 
   /**
-   * Check if a payment exists (has been authorized)
-   * @throws NotImplementedError - This method requires subgraph integration
+   * Check if a payment exists (has been authorized) by reading the escrow contract.
+   *
+   * @param paymentInfoHash - The hash of the PaymentInfo
+   * @returns True if the payment has been authorized
+   * @throws Error if escrowAddress is not configured
    */
-  async paymentExists(_paymentInfoHash: `0x${string}`): Promise<boolean> {
-    throw new NotImplementedError("paymentExists");
+  async paymentExists(paymentInfoHash: `0x${string}`): Promise<boolean> {
+    if (!this.escrowAddress) {
+      throw new Error(
+        "Escrow address required. Use resolveAddresses(networkId) from @x402r/core to get the escrow address for your network.",
+      );
+    }
+
+    const state = await this.publicClient.readContract({
+      address: this.escrowAddress,
+      abi: AuthCaptureEscrowABI,
+      functionName: "paymentState",
+      args: [paymentInfoHash],
+    });
+
+    const [hasCollectedPayment] = state as [boolean, bigint, bigint];
+    return hasCollectedPayment;
   }
 
   /**
-   * Check if a payment is currently in escrow
-   * @throws NotImplementedError - This method requires subgraph integration
+   * Check if a payment is currently in escrow (funds locked, not yet released).
+   *
+   * @param paymentInfoHash - The hash of the PaymentInfo
+   * @returns True if funds are held in escrow (capturableAmount > 0)
+   * @throws Error if escrowAddress is not configured
    */
-  async isInEscrow(_paymentInfoHash: `0x${string}`): Promise<boolean> {
-    throw new NotImplementedError("isInEscrow");
+  async isInEscrow(paymentInfoHash: `0x${string}`): Promise<boolean> {
+    if (!this.escrowAddress) {
+      throw new Error(
+        "Escrow address required. Use resolveAddresses(networkId) from @x402r/core to get the escrow address for your network.",
+      );
+    }
+
+    const state = await this.publicClient.readContract({
+      address: this.escrowAddress,
+      abi: AuthCaptureEscrowABI,
+      functionName: "paymentState",
+      args: [paymentInfoHash],
+    });
+
+    const [hasCollectedPayment, capturableAmount] = state as [boolean, bigint, bigint];
+    return hasCollectedPayment && capturableAmount > 0n;
   }
 
   /**
-   * Get stored PaymentInfo for a given hash
-   * @throws NotImplementedError - This method requires subgraph integration
+   * Get stored PaymentInfo for a given hash.
+   *
+   * The escrow contract only stores the hash, not the full PaymentInfo struct.
+   * This method cannot reverse a hash into PaymentInfo. Store PaymentInfo locally
+   * when creating payments, or use a subgraph when available.
+   *
+   * @throws NotImplementedError - Cannot reverse hash to PaymentInfo without subgraph
    */
   async getPaymentDetails(_paymentInfoHash: `0x${string}`): Promise<PaymentInfo> {
-    throw new NotImplementedError("getPaymentDetails");
+    throw new NotImplementedError(
+      "getPaymentDetails",
+      "Cannot reverse hash to PaymentInfo. " +
+        "Store PaymentInfo locally when creating payments, or use a subgraph.",
+    );
   }
 
   /**
-   * Get all payment hashes where the current wallet is the payer
-   * @throws NotImplementedError - This method requires subgraph integration
+   * Get all payment hashes where the current wallet is the payer.
+   *
+   * Scans `AuthorizationCreated` event logs on the operator contract.
+   * This performs a full log scan which may be slow on chains with many blocks.
+   *
+   * @param fromBlock - Starting block for the scan (default: earliest)
+   * @returns Object with an array of payment info hashes
+   * @throws Error if walletClient is not configured
+   *
+   * @remarks
+   * This method performs a full event log scan which can be slow.
+   * For production use, consider using a subgraph or indexer instead.
    */
-  async getMyPayments(): Promise<{ hashes: readonly `0x${string}`[] }> {
-    throw new NotImplementedError("getMyPayments");
+  async getMyPayments(fromBlock?: bigint): Promise<{ hashes: readonly `0x${string}`[] }> {
+    if (!this.walletClient?.account) {
+      throw new Error("WalletClient required");
+    }
+
+    const logs = await this.publicClient.getContractEvents({
+      address: this.operatorAddress,
+      abi: PaymentOperatorABI,
+      eventName: "AuthorizationCreated",
+      args: {
+        payer: this.walletClient.account.address,
+      },
+      fromBlock: fromBlock ?? "earliest",
+    });
+
+    const hashes = logs
+      .map(log => (log.args as { paymentInfoHash?: `0x${string}` }).paymentInfoHash)
+      .filter((h): h is `0x${string}` => h !== undefined);
+
+    return { hashes };
   }
 
   // ============ Refund Operations ============
@@ -221,7 +346,9 @@ export class X402rClient {
     const walletClient = this.requireWalletAccount();
 
     if (!this.refundRequestAddress) {
-      throw new Error("RefundRequest address required");
+      throw new Error(
+        "RefundRequest address required. Use resolveAddresses(networkId) from @x402r/core to get the address for your network.",
+      );
     }
 
     const txHash = await walletClient.writeContract({
@@ -258,7 +385,9 @@ export class X402rClient {
     const walletClient = this.requireWalletAccount();
 
     if (!this.refundRequestAddress) {
-      throw new Error("RefundRequest address required");
+      throw new Error(
+        "RefundRequest address required. Use resolveAddresses(networkId) from @x402r/core to get the address for your network.",
+      );
     }
 
     const txHash = await walletClient.writeContract({
@@ -297,7 +426,9 @@ export class X402rClient {
     }
 
     if (!this.refundRequestAddress) {
-      throw new Error("RefundRequest address required");
+      throw new Error(
+        "RefundRequest address required. Use resolveAddresses(networkId) from @x402r/core to get the address for your network.",
+      );
     }
 
     const payerAddress = this.walletClient.account.address;
@@ -331,7 +462,9 @@ export class X402rClient {
     }
 
     if (!this.refundRequestAddress) {
-      throw new Error("RefundRequest address required");
+      throw new Error(
+        "RefundRequest address required. Use resolveAddresses(networkId) from @x402r/core to get the address for your network.",
+      );
     }
 
     const payerAddress = this.walletClient.account.address;
@@ -570,7 +703,9 @@ export class X402rClient {
     unsubscribe: () => void;
   } {
     if (!this.refundRequestAddress) {
-      throw new Error("RefundRequest address required");
+      throw new Error(
+        "RefundRequest address required. Use resolveAddresses(networkId) from @x402r/core to get the address for your network.",
+      );
     }
 
     const unsubscribers: (() => void)[] = [];
@@ -691,7 +826,9 @@ export class X402rClient {
   /** Get the evidence read context, throwing if refundRequestEvidenceAddress is not configured */
   private getEvidenceCtx() {
     if (!this.refundRequestEvidenceAddress) {
-      throw new Error("RefundRequestEvidence address required");
+      throw new Error(
+        "RefundRequestEvidence address required. Use resolveAddresses(networkId) from @x402r/core to get the evidence address for your network.",
+      );
     }
     return {
       publicClient: this.publicClient,
@@ -702,7 +839,9 @@ export class X402rClient {
   /** Get the evidence write context, throwing if refundRequestEvidenceAddress is not configured */
   private getEvidenceWriteCtx() {
     if (!this.refundRequestEvidenceAddress) {
-      throw new Error("RefundRequestEvidence address required");
+      throw new Error(
+        "RefundRequestEvidence address required. Use resolveAddresses(networkId) from @x402r/core to get the evidence address for your network.",
+      );
     }
     if (!this.walletClient) {
       throw new Error("WalletClient required");

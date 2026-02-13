@@ -6,10 +6,12 @@
 import type { PublicClient, WalletClient } from "viem";
 import {
   PaymentOperatorABI,
+  AuthCaptureEscrowABI,
   RefundRequestABI,
   ArbiterRegistryABI,
   RequestStatus,
-  NotImplementedError,
+  PaymentState,
+  computePaymentInfoHash,
   toAbiPaymentInfo,
   hasRefundRequest as sharedHasRefundRequest,
   getRefundRequest as sharedGetRefundRequest,
@@ -26,7 +28,6 @@ import {
   getAllEvidence as sharedGetAllEvidence,
   watchEvidenceSubmissions as sharedWatchEvidenceSubmissions,
   type PaymentInfo,
-  type PaymentState,
   type RefundRequestData,
   type ArbiterList,
   type Evidence,
@@ -143,7 +144,9 @@ export class X402rArbiter {
   /** Get the refund read context, throwing if refundRequestAddress is not configured */
   private getRefundCtx() {
     if (!this.refundRequestAddress) {
-      throw new Error("RefundRequest address required");
+      throw new Error(
+        "RefundRequest address required. Use resolveAddresses(networkId) from @x402r/core to get the address for your network.",
+      );
     }
     return {
       publicClient: this.publicClient,
@@ -154,7 +157,9 @@ export class X402rArbiter {
   /** Get the refund write context, throwing if refundRequestAddress is not configured */
   private getRefundWriteCtx() {
     if (!this.refundRequestAddress) {
-      throw new Error("RefundRequest address required");
+      throw new Error(
+        "RefundRequest address required. Use resolveAddresses(networkId) from @x402r/core to get the address for your network.",
+      );
     }
     return {
       publicClient: this.publicClient,
@@ -164,14 +169,65 @@ export class X402rArbiter {
   }
 
   // ============ Payment Queries ============
-  // NOTE: getPaymentState is stubbed for future Graph/indexer integration.
 
   /**
-   * Get the current state of a payment
-   * @throws NotImplementedError - This method requires subgraph integration
+   * Get the current state of a payment by reading the escrow contract.
+   *
+   * Derives the state from the on-chain escrow amounts and expiry timestamps:
+   * - NonExistent: payment has never been authorized
+   * - InEscrow: funds are held in escrow (capturableAmount > 0)
+   * - Released: funds released to receiver, may still be refundable
+   * - Settled: all funds have been moved (capturable = 0, refundable = 0)
+   * - Expired: authorization expiry has passed and funds are still in escrow
+   *
+   * @param paymentInfo - The payment information struct
+   * @returns The current PaymentState
+   * @throws Error if escrowAddress is not configured
    */
-  async getPaymentState(_paymentInfo: PaymentInfo): Promise<PaymentState> {
-    throw new NotImplementedError("getPaymentState");
+  async getPaymentState(paymentInfo: PaymentInfo): Promise<PaymentState> {
+    if (!this.escrowAddress) {
+      throw new Error(
+        "Escrow address required. Use resolveAddresses(networkId) from @x402r/core to get the escrow address for your network.",
+      );
+    }
+
+    const paymentInfoHash = computePaymentInfoHash(paymentInfo, this.escrowAddress, this.chainId);
+
+    const state = await this.publicClient.readContract({
+      address: this.escrowAddress,
+      abi: AuthCaptureEscrowABI,
+      functionName: "paymentState",
+      args: [paymentInfoHash],
+    });
+
+    const [hasCollectedPayment, capturableAmount, refundableAmount] = state as [
+      boolean,
+      bigint,
+      bigint,
+    ];
+
+    if (!hasCollectedPayment) {
+      return PaymentState.NonExistent;
+    }
+
+    const now = BigInt(Math.floor(Date.now() / 1000));
+    if (
+      capturableAmount > 0n &&
+      paymentInfo.authorizationExpiry > 0n &&
+      now > paymentInfo.authorizationExpiry
+    ) {
+      return PaymentState.Expired;
+    }
+
+    if (capturableAmount > 0n) {
+      return PaymentState.InEscrow;
+    }
+
+    if (refundableAmount > 0n) {
+      return PaymentState.Released;
+    }
+
+    return PaymentState.Settled;
   }
 
   /** Check if a refund request exists for a payment */
@@ -255,7 +311,9 @@ export class X402rArbiter {
     items: Array<{ paymentInfo: PaymentInfo; nonce: bigint }>,
   ): Promise<BatchResult[]> {
     if (!this.refundRequestAddress) {
-      throw new Error("RefundRequest address required");
+      throw new Error(
+        "RefundRequest address required. Use resolveAddresses(networkId) from @x402r/core to get the address for your network.",
+      );
     }
 
     const results: BatchResult[] = [];
@@ -289,7 +347,9 @@ export class X402rArbiter {
     items: Array<{ paymentInfo: PaymentInfo; nonce: bigint }>,
   ): Promise<BatchResult[]> {
     if (!this.refundRequestAddress) {
-      throw new Error("RefundRequest address required");
+      throw new Error(
+        "RefundRequest address required. Use resolveAddresses(networkId) from @x402r/core to get the address for your network.",
+      );
     }
 
     const results: BatchResult[] = [];
@@ -332,7 +392,9 @@ export class X402rArbiter {
     receiverAddress?: `0x${string}`,
   ): Promise<{ keys: readonly `0x${string}`[]; total: bigint }> {
     if (!this.refundRequestAddress) {
-      throw new Error("RefundRequest address required");
+      throw new Error(
+        "RefundRequest address required. Use resolveAddresses(networkId) from @x402r/core to get the address for your network.",
+      );
     }
 
     const address = receiverAddress ?? this.walletClient.account!.address;
@@ -370,7 +432,9 @@ export class X402rArbiter {
    */
   async getRefundRequestCount(receiverAddress?: `0x${string}`): Promise<bigint> {
     if (!this.refundRequestAddress) {
-      throw new Error("RefundRequest address required");
+      throw new Error(
+        "RefundRequest address required. Use resolveAddresses(networkId) from @x402r/core to get the address for your network.",
+      );
     }
 
     const address = receiverAddress ?? this.walletClient.account!.address;
@@ -420,7 +484,9 @@ export class X402rArbiter {
     unsubscribe: () => void;
   } {
     if (!this.refundRequestAddress) {
-      throw new Error("RefundRequest address required");
+      throw new Error(
+        "RefundRequest address required. Use resolveAddresses(networkId) from @x402r/core to get the address for your network.",
+      );
     }
 
     const unsubscribe = this.publicClient.watchContractEvent({
@@ -458,7 +524,9 @@ export class X402rArbiter {
     unsubscribe: () => void;
   } {
     if (!this.refundRequestAddress) {
-      throw new Error("RefundRequest address required");
+      throw new Error(
+        "RefundRequest address required. Use resolveAddresses(networkId) from @x402r/core to get the address for your network.",
+      );
     }
 
     const unsubscribe = this.publicClient.watchContractEvent({
@@ -516,7 +584,9 @@ export class X402rArbiter {
    */
   async registerArbiter(uri: string): Promise<{ txHash: `0x${string}` }> {
     if (!this.arbiterRegistryAddress) {
-      throw new Error("ArbiterRegistry address required");
+      throw new Error(
+        "ArbiterRegistry address required. Use resolveAddresses(networkId) from @x402r/core to get the registry address for your network.",
+      );
     }
 
     const txHash = await this.walletClient.writeContract({
@@ -546,7 +616,9 @@ export class X402rArbiter {
    */
   async updateArbiterUri(newUri: string): Promise<{ txHash: `0x${string}` }> {
     if (!this.arbiterRegistryAddress) {
-      throw new Error("ArbiterRegistry address required");
+      throw new Error(
+        "ArbiterRegistry address required. Use resolveAddresses(networkId) from @x402r/core to get the registry address for your network.",
+      );
     }
 
     const txHash = await this.walletClient.writeContract({
@@ -575,7 +647,9 @@ export class X402rArbiter {
    */
   async deregisterArbiter(): Promise<{ txHash: `0x${string}` }> {
     if (!this.arbiterRegistryAddress) {
-      throw new Error("ArbiterRegistry address required");
+      throw new Error(
+        "ArbiterRegistry address required. Use resolveAddresses(networkId) from @x402r/core to get the registry address for your network.",
+      );
     }
 
     const txHash = await this.walletClient.writeContract({
@@ -605,7 +679,9 @@ export class X402rArbiter {
    */
   async getArbiterUri(arbiter: `0x${string}`): Promise<string> {
     if (!this.arbiterRegistryAddress) {
-      throw new Error("ArbiterRegistry address required");
+      throw new Error(
+        "ArbiterRegistry address required. Use resolveAddresses(networkId) from @x402r/core to get the registry address for your network.",
+      );
     }
 
     const uri = await this.publicClient.readContract({
@@ -633,7 +709,9 @@ export class X402rArbiter {
    */
   async isArbiterRegistered(arbiter: `0x${string}`): Promise<boolean> {
     if (!this.arbiterRegistryAddress) {
-      throw new Error("ArbiterRegistry address required");
+      throw new Error(
+        "ArbiterRegistry address required. Use resolveAddresses(networkId) from @x402r/core to get the registry address for your network.",
+      );
     }
 
     const isRegistered = await this.publicClient.readContract({
@@ -660,7 +738,9 @@ export class X402rArbiter {
    */
   async getArbiterCount(): Promise<bigint> {
     if (!this.arbiterRegistryAddress) {
-      throw new Error("ArbiterRegistry address required");
+      throw new Error(
+        "ArbiterRegistry address required. Use resolveAddresses(networkId) from @x402r/core to get the registry address for your network.",
+      );
     }
 
     const count = await this.publicClient.readContract({
@@ -692,7 +772,9 @@ export class X402rArbiter {
    */
   async listArbiters(offset: bigint, count: bigint): Promise<ArbiterList> {
     if (!this.arbiterRegistryAddress) {
-      throw new Error("ArbiterRegistry address required");
+      throw new Error(
+        "ArbiterRegistry address required. Use resolveAddresses(networkId) from @x402r/core to get the registry address for your network.",
+      );
     }
 
     const [arbiters, uris, total] = (await this.publicClient.readContract({
@@ -710,7 +792,9 @@ export class X402rArbiter {
   /** Get the evidence read context, throwing if refundRequestEvidenceAddress is not configured */
   private getEvidenceCtx() {
     if (!this.refundRequestEvidenceAddress) {
-      throw new Error("RefundRequestEvidence address required");
+      throw new Error(
+        "RefundRequestEvidence address required. Use resolveAddresses(networkId) from @x402r/core to get the evidence address for your network.",
+      );
     }
     return {
       publicClient: this.publicClient,
@@ -721,7 +805,9 @@ export class X402rArbiter {
   /** Get the evidence write context, throwing if refundRequestEvidenceAddress is not configured */
   private getEvidenceWriteCtx() {
     if (!this.refundRequestEvidenceAddress) {
-      throw new Error("RefundRequestEvidence address required");
+      throw new Error(
+        "RefundRequestEvidence address required. Use resolveAddresses(networkId) from @x402r/core to get the evidence address for your network.",
+      );
     }
     return {
       publicClient: this.publicClient,
