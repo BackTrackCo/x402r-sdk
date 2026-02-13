@@ -7,7 +7,7 @@ Production TypeScript SDK for the x402r refundable payments protocol.
 ```bash
 pnpm install
 pnpm build              # Build all packages (Turborepo)
-pnpm test               # Run all tests (412 vitest tests across 30 files, 5 packages)
+pnpm test               # Run all tests (413 vitest tests across 30 files, 5 packages)
 pnpm test:coverage      # Run with coverage
 pnpm typecheck          # Type check all packages
 pnpm lint               # Lint code
