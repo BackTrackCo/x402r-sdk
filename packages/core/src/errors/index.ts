@@ -14,6 +14,10 @@ export type ContractErrorName =
   | "ConditionNotMet"
   | "NotReceiver"
   | "NotPayer"
+  | "InvalidFeeReceiver"
+  | "TransferFailed"
+  | "SignatureExpired"
+  | "FeeCalculatorError"
   // RefundRequest errors
   | "RequestAlreadyExists"
   | "RequestDoesNotExist"
@@ -92,6 +96,26 @@ export const CONTRACT_ERRORS: Record<ContractErrorName, ContractErrorDefinition>
     "Caller is not the receiver of this payment",
   ),
   NotPayer: defineError("NotPayer", "NotPayer()", "Caller is not the payer of this payment"),
+  InvalidFeeReceiver: defineError(
+    "InvalidFeeReceiver",
+    "InvalidFeeReceiver()",
+    "The feeReceiver in PaymentInfo must match the operator contract address",
+  ),
+  TransferFailed: defineError(
+    "TransferFailed",
+    "TransferFailed()",
+    "Token transfer failed — check allowance and balance",
+  ),
+  SignatureExpired: defineError(
+    "SignatureExpired",
+    "SignatureExpired()",
+    "The ERC-3009 signature has expired (validBefore / preApprovalExpiry is in the past)",
+  ),
+  FeeCalculatorError: defineError(
+    "FeeCalculatorError",
+    "FeeCalculatorError()",
+    "Fee calculator returned an invalid result",
+  ),
 
   // RefundRequest errors
   RequestAlreadyExists: defineError(

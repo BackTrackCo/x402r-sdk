@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { X402rMerchant } from "../src/merchant.js";
-import { NotImplementedError } from "@x402r/core";
 import type { PublicClient, WalletClient } from "viem";
 
 // Mock viem clients
@@ -8,6 +7,7 @@ const createMockPublicClient = (): PublicClient => {
   return {
     readContract: vi.fn(),
     watchContractEvent: vi.fn(),
+    getContractEvents: vi.fn().mockResolvedValue([]),
     getChainId: vi.fn().mockResolvedValue(84532),
   } as unknown as PublicClient;
 };
@@ -94,14 +94,29 @@ describe("X402rMerchant - Payment Operations", () => {
   });
 
   describe("getReceiverPayments", () => {
-    it("should throw NotImplementedError", async () => {
-      const merchant = new X402rMerchant({
-        publicClient,
-        walletClient,
-        operatorAddress,
-      });
+    it("should return hashes from AuthorizationCreated events", async () => {
+      const mockLogs = [
+        {
+          args: {
+            paymentInfoHash: "0xaaa0000000000000000000000000000000000000000000000000000000000001",
+          },
+        },
+      ];
+      (
+        publicClient as unknown as { getContractEvents: ReturnType<typeof vi.fn> }
+      ).getContractEvents = vi.fn().mockResolvedValue(mockLogs);
+      const merchant = new X402rMerchant({ publicClient, walletClient, operatorAddress });
+      const result = await merchant.getReceiverPayments();
+      expect(result.hashes).toHaveLength(1);
+    });
 
-      await expect(merchant.getReceiverPayments()).rejects.toThrow(NotImplementedError);
+    it("should return empty array when no events found", async () => {
+      (
+        publicClient as unknown as { getContractEvents: ReturnType<typeof vi.fn> }
+      ).getContractEvents = vi.fn().mockResolvedValue([]);
+      const merchant = new X402rMerchant({ publicClient, walletClient, operatorAddress });
+      const result = await merchant.getReceiverPayments();
+      expect(result.hashes).toHaveLength(0);
     });
   });
 
