@@ -223,14 +223,9 @@ export class X402rMerchant {
    * Get all payment hashes where the current wallet is the receiver.
    *
    * Scans `AuthorizationCreated` event logs on the operator contract.
-   * This performs a full log scan which may be slow on chains with many blocks.
    *
    * @param fromBlock - Starting block for the scan (default: earliest)
    * @returns Object with an array of payment info hashes
-   *
-   * @remarks
-   * This method performs a full event log scan which can be slow.
-   * For production use, consider using a subgraph or indexer instead.
    */
   async getReceiverPayments(fromBlock?: bigint): Promise<{ hashes: readonly `0x${string}`[] }> {
     const logs = await this.publicClient.getContractEvents({

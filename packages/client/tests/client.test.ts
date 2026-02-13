@@ -285,10 +285,10 @@ describe("X402rClient", () => {
     });
   });
 
-  describe("getMyPayments", () => {
+  describe("getPayerPayments", () => {
     it("should throw if walletClient not configured", async () => {
       const client = new X402rClient({ publicClient, operatorAddress });
-      await expect(client.getMyPayments()).rejects.toThrow("WalletClient required");
+      await expect(client.getPayerPayments()).rejects.toThrow("WalletClient required");
     });
 
     it("should return hashes from AuthorizationCreated events", async () => {
@@ -308,7 +308,7 @@ describe("X402rClient", () => {
         publicClient as unknown as { getContractEvents: ReturnType<typeof vi.fn> }
       ).getContractEvents = vi.fn().mockResolvedValue(mockLogs);
       const client = new X402rClient({ publicClient, walletClient, operatorAddress });
-      const result = await client.getMyPayments();
+      const result = await client.getPayerPayments();
       expect(result.hashes).toHaveLength(2);
     });
 
@@ -317,7 +317,7 @@ describe("X402rClient", () => {
         publicClient as unknown as { getContractEvents: ReturnType<typeof vi.fn> }
       ).getContractEvents = vi.fn().mockResolvedValue([]);
       const client = new X402rClient({ publicClient, walletClient, operatorAddress });
-      const result = await client.getMyPayments();
+      const result = await client.getPayerPayments();
       expect(result.hashes).toHaveLength(0);
     });
   });

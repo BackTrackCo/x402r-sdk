@@ -148,5 +148,21 @@ describe("X402rMerchant - Payment Operations", () => {
         "Escrow address required",
       );
     });
+
+    it("should handle zero amounts", async () => {
+      const merchant = new X402rMerchant({
+        publicClient,
+        walletClient,
+        operatorAddress,
+        escrowAddress,
+      });
+
+      const mockState = [true, 0n, 0n] as const;
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(mockState);
+
+      const amounts = await merchant.getPaymentAmounts(samplePaymentInfo);
+      expect(amounts.capturableAmount).toBe(0n);
+      expect(amounts.refundableAmount).toBe(0n);
+    });
   });
 });

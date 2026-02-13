@@ -23,8 +23,6 @@ import {
   http,
   formatEther,
   formatUnits,
-  encodeAbiParameters,
-  keccak256,
   type Address,
   type PublicClient,
   erc20Abi,
@@ -35,10 +33,16 @@ import { english } from "viem/accounts";
 import {
   deployMarketplaceOperator,
   getNetworkConfig,
+  resolveAddresses,
   toAbiPaymentInfo,
+  computeEscrowNonce,
+  signERC3009Authorization,
+  validatePaymentInfo,
+  computePaymentInfoHash,
   PaymentOperatorABI,
   AuthCaptureEscrowABI,
   RequestStatus,
+  PaymentState,
   type PaymentInfo,
 } from "../../packages/core/dist/index.js";
 import { X402rClient } from "../../packages/client/dist/index.js";
@@ -51,7 +55,7 @@ const NETWORK_ID = process.env.NETWORK_ID ?? "eip155:84532";
 const RPC_URL = process.env.RPC_URL ?? "https://sepolia.base.org";
 const USDC_ADDRESS = "0x036CbD53842c5426634e7929541eC2318f3dCF7e" as Address;
 const PAYMENT_AMOUNT = 10000n; // 0.01 USDC (6 decimals)
-const GAS_FUNDING = 30000000000000n; // 0.00003 ETH per derived account (Base Sepolia gas is cheap)
+const GAS_FUNDING = 10000000000000n; // 0.00001 ETH per derived account (Base Sepolia gas is cheap)
 
 // ============ Helpers ============
 
@@ -205,8 +209,9 @@ async function main() {
 
   pass("Setup accounts and fund derived wallets");
 
-  // Get network config
+  // Get network config and resolved addresses for SDK construction
   const networkConfig = getNetworkConfig(NETWORK_ID);
+  const addresses = resolveAddresses(NETWORK_ID);
   log(`Network: ${networkConfig.name} (${NETWORK_ID})`);
   log(`AuthCaptureEscrow: ${shortAddr(networkConfig.authCaptureEscrow)}`);
   log(`TokenCollector: ${shortAddr(networkConfig.tokenCollector)}`);
@@ -225,6 +230,9 @@ async function main() {
 
   log(`Arbiter: ${arbiterAccount.address}`);
   log(`Escrow period: 7 days, Freeze duration: 3 days`);
+
+  // Capture block number before deploy for event log scanning
+  const deployStartBlock = await publicClient.getBlockNumber();
 
   const deployResult = await deployMarketplaceOperator(
     payerWallet,
@@ -280,90 +288,31 @@ async function main() {
   // ---- Step 4: Authorize Payment ----
   step("4. Payer Authorizes Payment");
 
-  // ERC-3009: Compute escrow nonce (must match AuthCaptureEscrow.getHash with payer=0x0)
-  const PAYMENT_INFO_TYPEHASH = keccak256(
-    new TextEncoder().encode(
-      "PaymentInfo(address operator,address payer,address receiver,address token,uint120 maxAmount,uint48 preApprovalExpiry,uint48 authorizationExpiry,uint48 refundExpiry,uint16 minFeeBps,uint16 maxFeeBps,address feeReceiver,uint256 salt)",
-    ),
-  );
-  const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as Address;
+  // Validate PaymentInfo before authorizing
+  const issues = validatePaymentInfo(paymentInfo);
+  const errors = issues.filter(i => i.severity === "error");
+  if (errors.length > 0) {
+    throw new Error(`Invalid PaymentInfo: ${errors.map(e => e.message).join(", ")}`);
+  }
+  log(`PaymentInfo validation: ${issues.length === 0 ? "clean" : `${issues.length} warnings`}`);
 
-  const paymentInfoEncoded = encodeAbiParameters(
-    [
-      { name: "typehash", type: "bytes32" },
-      { name: "operator", type: "address" },
-      { name: "payer", type: "address" },
-      { name: "receiver", type: "address" },
-      { name: "token", type: "address" },
-      { name: "maxAmount", type: "uint120" },
-      { name: "preApprovalExpiry", type: "uint48" },
-      { name: "authorizationExpiry", type: "uint48" },
-      { name: "refundExpiry", type: "uint48" },
-      { name: "minFeeBps", type: "uint16" },
-      { name: "maxFeeBps", type: "uint16" },
-      { name: "feeReceiver", type: "address" },
-      { name: "salt", type: "uint256" },
-    ],
-    [
-      PAYMENT_INFO_TYPEHASH,
-      paymentInfo.operator,
-      ZERO_ADDRESS, // payer-agnostic nonce
-      paymentInfo.receiver,
-      paymentInfo.token,
-      paymentInfo.maxAmount,
-      paymentInfo.preApprovalExpiry,
-      paymentInfo.authorizationExpiry,
-      paymentInfo.refundExpiry,
-      paymentInfo.minFeeBps,
-      paymentInfo.maxFeeBps,
-      paymentInfo.feeReceiver,
-      paymentInfo.salt,
-    ],
+  // Compute escrow nonce using helper (replaces ~50 lines of manual hashing)
+  const escrowNonce = computeEscrowNonce(
+    paymentInfo,
+    networkConfig.authCaptureEscrow as Address,
+    84532,
   );
-  const paymentInfoHash = keccak256(paymentInfoEncoded);
-
-  const escrowNonce = keccak256(
-    encodeAbiParameters(
-      [
-        { name: "chainId", type: "uint256" },
-        { name: "escrow", type: "address" },
-        { name: "paymentInfoHash", type: "bytes32" },
-      ],
-      [BigInt(84532), networkConfig.authCaptureEscrow as Address, paymentInfoHash],
-    ),
-  );
-
   log(`Escrow nonce: ${escrowNonce.slice(0, 18)}...`);
 
-  // Sign ERC-3009 ReceiveWithAuthorization
+  // Sign ERC-3009 ReceiveWithAuthorization using helper
   log("Signing ERC-3009 ReceiveWithAuthorization...");
-  const erc3009Signature = await payerWallet.signTypedData({
-    account: payerAccount,
-    domain: {
-      name: "USDC",
-      version: "2",
-      chainId: 84532,
-      verifyingContract: USDC_ADDRESS,
-    },
-    types: {
-      ReceiveWithAuthorization: [
-        { name: "from", type: "address" },
-        { name: "to", type: "address" },
-        { name: "value", type: "uint256" },
-        { name: "validAfter", type: "uint256" },
-        { name: "validBefore", type: "uint256" },
-        { name: "nonce", type: "bytes32" },
-      ],
-    },
-    primaryType: "ReceiveWithAuthorization",
-    message: {
-      from: payerAccount.address,
-      to: networkConfig.tokenCollector,
-      value: PAYMENT_AMOUNT,
-      validAfter: 0n,
-      validBefore: paymentInfo.preApprovalExpiry,
-      nonce: escrowNonce,
-    },
+  const erc3009Signature = await signERC3009Authorization(payerWallet, USDC_ADDRESS, {
+    from: payerAccount.address,
+    to: networkConfig.tokenCollector as `0x${string}`,
+    value: PAYMENT_AMOUNT,
+    validAfter: 0n,
+    validBefore: paymentInfo.preApprovalExpiry,
+    nonce: escrowNonce,
   });
   log("  ERC-3009 signature obtained");
 
@@ -385,19 +334,18 @@ async function main() {
   await waitForTx(publicClient, authorizeTx);
   log(`  Authorize tx: ${SCANNER}/tx/${authorizeTx}`);
 
-  // Verify escrow state
-  const escrowHash = await publicClient.readContract({
-    address: networkConfig.authCaptureEscrow as Address,
-    abi: AuthCaptureEscrowABI,
-    functionName: "getHash",
-    args: [toAbiPaymentInfo(paymentInfo)],
-  });
+  // Verify escrow state using computePaymentInfoHash helper
+  const escrowHash = computePaymentInfoHash(
+    paymentInfo,
+    networkConfig.authCaptureEscrow as Address,
+    84532,
+  );
 
   const escrowState = await publicClient.readContract({
     address: networkConfig.authCaptureEscrow as Address,
     abi: AuthCaptureEscrowABI,
     functionName: "paymentState",
-    args: [escrowHash as `0x${string}`],
+    args: [escrowHash],
   });
 
   const [hasCollected, capturableAmount, refundableAmount] = escrowState as [
@@ -415,18 +363,87 @@ async function main() {
     fail("Authorize payment", "capturableAmount is 0 after authorize");
   }
 
-  // ---- Step 5: Payer Requests Refund ----
-  step("5. Payer Requests Refund");
+  // ---- Step 4b: Verify payment state via SDK ----
+  step("4b. Verify Payment State via SDK");
 
   const client = new X402rClient({
     publicClient,
     walletClient: payerWallet,
     operatorAddress: deployResult.operatorAddress as Address,
-    escrowAddress: networkConfig.authCaptureEscrow as Address,
-    refundRequestAddress: networkConfig.refundRequest as Address,
-    refundRequestEvidenceAddress: networkConfig.refundRequestEvidence as Address,
-    chainId: 84532,
+    escrowAddress: addresses.escrowAddress,
+    refundRequestAddress: addresses.refundRequestAddress,
+    refundRequestEvidenceAddress: addresses.evidenceAddress,
+    chainId: addresses.chainId,
   });
+
+  const merchant = new X402rMerchant({
+    publicClient,
+    walletClient: merchantWallet,
+    operatorAddress: deployResult.operatorAddress as Address,
+    escrowAddress: addresses.escrowAddress,
+    refundRequestAddress: addresses.refundRequestAddress,
+    refundRequestEvidenceAddress: addresses.evidenceAddress,
+    chainId: addresses.chainId,
+  });
+
+  const arbiter = new X402rArbiter({
+    publicClient,
+    walletClient: arbiterWallet,
+    operatorAddress: deployResult.operatorAddress as Address,
+    escrowAddress: addresses.escrowAddress,
+    refundRequestAddress: addresses.refundRequestAddress,
+    refundRequestEvidenceAddress: addresses.evidenceAddress,
+    arbiterRegistryAddress: addresses.arbiterRegistryAddress,
+    chainId: addresses.chainId,
+  });
+
+  try {
+    const clientState = await client.getPaymentState(paymentInfo);
+    log(`client.getPaymentState: ${clientState} (expected ${PaymentState.InEscrow})`);
+
+    const exists = await client.paymentExists(escrowHash);
+    log(`client.paymentExists: ${exists}`);
+
+    const inEscrow = await client.isInEscrow(escrowHash);
+    log(`client.isInEscrow: ${inEscrow}`);
+
+    const payerPayments = await client.getPayerPayments(deployStartBlock);
+    log(`client.getPayerPayments: ${payerPayments.hashes.length} payment(s)`);
+
+    const receiverPayments = await merchant.getReceiverPayments(deployStartBlock);
+    log(`merchant.getReceiverPayments: ${receiverPayments.hashes.length} payment(s)`);
+
+    const amounts = await merchant.getPaymentAmounts(paymentInfo);
+    log(
+      `merchant.getPaymentAmounts: capturable=${amounts.capturableAmount}, refundable=${amounts.refundableAmount}`,
+    );
+
+    const merchantState = await merchant.getPaymentState(paymentInfo);
+    log(`merchant.getPaymentState: ${merchantState}`);
+
+    const arbiterState = await arbiter.getPaymentState(paymentInfo);
+    log(`arbiter.getPaymentState: ${arbiterState}`);
+
+    if (
+      clientState === PaymentState.InEscrow &&
+      exists &&
+      inEscrow &&
+      payerPayments.hashes.length > 0 &&
+      receiverPayments.hashes.length > 0 &&
+      amounts.capturableAmount > 0n &&
+      merchantState === PaymentState.InEscrow &&
+      arbiterState === PaymentState.InEscrow
+    ) {
+      pass("All SDK payment queries return correct state after authorize");
+    } else {
+      fail("SDK payment queries", "One or more checks failed (see logs above)");
+    }
+  } catch (err) {
+    fail("SDK payment queries", String(err));
+  }
+
+  // ---- Step 5: Payer Requests Refund ----
+  step("5. Payer Requests Refund");
 
   log("Submitting refund request...");
   const { txHash: refundReqTx } = await client.requestRefund(paymentInfo, PAYMENT_AMOUNT, 0n);
@@ -488,15 +505,6 @@ async function main() {
   // ---- Step 8: Merchant Submits Counter-Evidence ----
   step("8. Merchant Submits Counter-Evidence");
 
-  const merchant = new X402rMerchant({
-    publicClient,
-    walletClient: merchantWallet,
-    operatorAddress: deployResult.operatorAddress as Address,
-    escrowAddress: networkConfig.authCaptureEscrow as Address,
-    refundRequestAddress: networkConfig.refundRequest as Address,
-    refundRequestEvidenceAddress: networkConfig.refundRequestEvidence as Address,
-  });
-
   log("Submitting merchant counter-evidence...");
   const { txHash: merchantEvidenceTx } = await merchant.submitEvidence(
     paymentInfo,
@@ -517,17 +525,6 @@ async function main() {
 
   // ---- Step 9: Arbiter Reads All Evidence ----
   step("9. Arbiter Reads All Evidence");
-
-  const arbiter = new X402rArbiter({
-    publicClient,
-    walletClient: arbiterWallet,
-    operatorAddress: deployResult.operatorAddress as Address,
-    escrowAddress: networkConfig.authCaptureEscrow as Address,
-    refundRequestAddress: networkConfig.refundRequest as Address,
-    refundRequestEvidenceAddress: networkConfig.refundRequestEvidence as Address,
-    arbiterRegistryAddress: networkConfig.arbiterRegistry as Address,
-    chainId: 84532,
-  });
 
   const allEvidence = await arbiter.getAllEvidence(paymentInfo, 0n);
   log(`Evidence entries: ${allEvidence.length}`);
@@ -596,7 +593,7 @@ async function main() {
     address: networkConfig.authCaptureEscrow as Address,
     abi: AuthCaptureEscrowABI,
     functionName: "paymentState",
-    args: [escrowHash as `0x${string}`],
+    args: [escrowHash],
   });
 
   const [, capturableAfter, refundableAfter] = escrowStateAfter as [boolean, bigint, bigint];
@@ -620,6 +617,35 @@ async function main() {
       "Execute refund",
       `capturable=${capturableAfter} (expected 0), recovered=${usdcRecovered} (expected > 0)`,
     );
+  }
+
+  // ---- Step 11b: Verify post-refund state via SDK ----
+  step("11b. Verify Post-Refund State via SDK");
+
+  try {
+    const postRefundState = await client.getPaymentState(paymentInfo);
+    log(`client.getPaymentState: ${postRefundState} (expected Settled)`);
+
+    const postRefundInEscrow = await client.isInEscrow(escrowHash);
+    log(`client.isInEscrow: ${postRefundInEscrow} (expected false)`);
+
+    const postRefundAmounts = await merchant.getPaymentAmounts(paymentInfo);
+    log(
+      `merchant.getPaymentAmounts: capturable=${postRefundAmounts.capturableAmount}, refundable=${postRefundAmounts.refundableAmount}`,
+    );
+
+    if (
+      postRefundState === PaymentState.Settled &&
+      !postRefundInEscrow &&
+      postRefundAmounts.capturableAmount === 0n &&
+      postRefundAmounts.refundableAmount === 0n
+    ) {
+      pass("All SDK queries return correct post-refund state");
+    } else {
+      fail("Post-refund SDK queries", "One or more checks failed (see logs above)");
+    }
+  } catch (err) {
+    fail("Post-refund SDK queries", String(err));
   }
 
   // ---- Step 12: Final Verification ----

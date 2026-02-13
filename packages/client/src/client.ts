@@ -273,17 +273,12 @@ export class X402rClient {
    * Get all payment hashes where the current wallet is the payer.
    *
    * Scans `AuthorizationCreated` event logs on the operator contract.
-   * This performs a full log scan which may be slow on chains with many blocks.
    *
    * @param fromBlock - Starting block for the scan (default: earliest)
    * @returns Object with an array of payment info hashes
    * @throws Error if walletClient is not configured
-   *
-   * @remarks
-   * This method performs a full event log scan which can be slow.
-   * For production use, consider using a subgraph or indexer instead.
    */
-  async getMyPayments(fromBlock?: bigint): Promise<{ hashes: readonly `0x${string}`[] }> {
+  async getPayerPayments(fromBlock?: bigint): Promise<{ hashes: readonly `0x${string}`[] }> {
     if (!this.walletClient?.account) {
       throw new Error("WalletClient required");
     }

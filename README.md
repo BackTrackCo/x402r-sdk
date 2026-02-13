@@ -100,13 +100,9 @@ Use this operator for testing:
 
 ## Known Limitations
 
-**Subgraph Not Deployed**: Query methods that require indexing will throw `NotImplementedError`:
-
-- `client.getPaymentState()`, `paymentExists()`, `isInEscrow()`, `getPaymentDetails()`, `getMyPayments()`
-- `merchant.getPaymentState()`, `getReceiverPayments()`
-- `arbiter.getPaymentState()`
-
-All write operations (refunds, releases, charges) work directly on-chain.
+- `client.getPaymentDetails()` throws `NotImplementedError` — cannot reverse a hash to PaymentInfo without a subgraph. Store PaymentInfo locally when creating payments.
+- All other query methods (`getPaymentState()`, `paymentExists()`, `isInEscrow()`, `getPayerPayments()`, `getReceiverPayments()`, `getPaymentAmounts()`) read directly from on-chain contracts.
+- All write operations (refunds, releases, charges) work directly on-chain.
 
 ## License
 
