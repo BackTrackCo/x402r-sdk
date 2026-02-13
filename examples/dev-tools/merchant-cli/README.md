@@ -25,6 +25,10 @@ A command-line tool for merchant operations: releasing funds, managing refunds, 
 3. Fund your wallet with ETH for gas:
    - https://www.coinbase.com/faucets/base-ethereum-sepolia-faucet
 
+## Payment State
+
+All commands that accept `--payment-json` will automatically read from `~/.x402r/last-payment.json` if the flag is omitted. This file is saved by the client-cli `pay` command. You can still pass `--payment-json` explicitly to override.
+
 ## Commands
 
 ### Show Configuration
@@ -39,40 +43,37 @@ pnpm start operator-config
 
 ### Check Payment Amounts
 ```bash
+# Uses saved state from client-cli pay
+pnpm start payment-amounts
+
+# Or with explicit payment JSON
 pnpm start payment-amounts \
   --payment-json '{"operator":"0x...","payer":"0x...",...}'
 ```
 
 ### Release Funds from Escrow
 ```bash
-pnpm start release \
-  --payment-json '{"operator":"0x...","payer":"0x...",...}' \
-  --amount 10000
+pnpm start release --amount 10000
 ```
 
 ### Refund Funds in Escrow
 ```bash
-pnpm start refund-in-escrow \
-  --payment-json '{"operator":"0x...","payer":"0x...",...}' \
-  --amount 5000
+pnpm start refund-in-escrow --amount 5000
 ```
 
 ### Check Refund Status
 ```bash
-pnpm start refund-status \
-  --payment-json '{"operator":"0x...","payer":"0x...",...}'
+pnpm start refund-status
 ```
 
 ### Approve a Refund Request
 ```bash
-pnpm start approve-refund \
-  --payment-json '{"operator":"0x...","payer":"0x...",...}'
+pnpm start approve-refund
 ```
 
 ### Deny a Refund Request
 ```bash
-pnpm start deny-refund \
-  --payment-json '{"operator":"0x...","payer":"0x...",...}'
+pnpm start deny-refund
 ```
 
 ### List Pending Refund Requests
@@ -198,4 +199,4 @@ pnpm start deny-refund --payment-json '...'
 | Operator config | - | `operator-config` |
 | Calculate fees | `preview-fee` | `calculate-fee` |
 | Submit evidence | `submit-evidence` | `submit-evidence` |
-| View evidence | `list-evidence` | `show-evidence` |
+| View evidence | `show-evidence` | `show-evidence` |
