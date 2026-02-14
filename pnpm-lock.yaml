@@ -149,6 +149,17 @@ importers:
         specifier: ^5.7.0
         version: 5.9.3
 
+  examples/dev-tools/shared:
+    dependencies:
+      '@x402r/core':
+        specifier: workspace:*
+        version: link:../../../packages/core
+      viem:
+        specifier: ^2.21.0
+        version: 2.45.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+
+  examples/e2e-test: {}
+
   examples/facilitator/basic:
     dependencies:
       '@x402/core':
