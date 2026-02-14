@@ -75,9 +75,8 @@ Important patterns discovered during E2E testing on Base Sepolia:
 
 ## Design Decisions
 
-See `x402r-notes/sdk/` for implementation plans and design decision records:
+See `x402r-notes/sdk/` for design decision records:
 
-- `SDK_IMPLEMENTATION_PLAN.md` — Overall SDK roadmap and phases
 - `DESIGN_DECISIONS.md` — Key architectural decisions
 - `SDK_TECHNICAL_DEBT.md` — Known issues, technical debt & TODO items
 

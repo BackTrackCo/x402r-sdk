@@ -103,7 +103,7 @@ Pay for weather data (from x402r-sdk root):
 pnpm example:client-cli pay --url http://localhost:4021/weather
 ```
 
-**Save the Payment Info JSON from the output** — you need it for freeze/refund.
+The CLI **auto-saves PaymentInfo** to `~/.x402r/last-payment.json`. Subsequent commands read from this file automatically — no need to paste JSON.
 
 ## Step 5: Freeze a Payment (Optional)
 
@@ -303,17 +303,22 @@ examples/
 
 ### Client CLI (payer operations)
 
-| Command                                                                          | Description                        |
-| -------------------------------------------------------------------------------- | ---------------------------------- |
-| `pay --url <url>`                                                                | Make a payment to a 402 endpoint   |
-| `freeze --payment-json <json> --freeze-address <addr> --operator-address <addr>` | Freeze a payment                   |
-| `unfreeze ...`                                                                   | Unfreeze a payment                 |
-| `is-frozen ...`                                                                  | Check if payment is frozen         |
-| `refund --payment-json <json> --amount <amt> --operator-address <addr>`          | Request refund                     |
-| `refund-status ...`                                                              | Check refund request status        |
-| `cancel-refund ...`                                                              | Cancel pending refund request      |
-| `preview-fee --operator-address <addr> --amount <amt>`                           | Preview fees before paying         |
-| `info`                                                                           | Show wallet and protocol addresses |
+| Command                                                     | Description                             |
+| ----------------------------------------------------------- | --------------------------------------- |
+| `pay --url <url>`                                           | Make a payment (auto-saves state)       |
+| `state`                                                     | Show/clear saved payment state          |
+| `freeze --freeze-address <addr> --operator-address <addr>`  | Freeze a payment                        |
+| `unfreeze ...`                                              | Unfreeze a payment                      |
+| `is-frozen ...`                                             | Check if payment is frozen              |
+| `refund --amount <amt> --operator-address <addr>`           | Request refund                          |
+| `refund-status --operator-address <addr>`                   | Check refund request status             |
+| `cancel-refund --operator-address <addr>`                   | Cancel pending refund request           |
+| `show-evidence --operator-address <addr>`                   | Show dispute evidence                   |
+| `submit-evidence --cid <cid> --operator-address <addr>`     | Submit dispute evidence                 |
+| `preview-fee --operator-address <addr> --amount <amt>`      | Preview fees before paying              |
+| `info`                                                      | Show wallet and protocol addresses      |
+
+> `--payment-json` is optional for all commands — reads from `~/.x402r/last-payment.json` saved by `pay`.
 
 ### Merchant CLI (merchant operations)
 
