@@ -69,7 +69,7 @@ Merchant and arbiter accounts are funded with a small amount of ETH from the pay
 - **ERC-3009 signing**: The authorize step uses `ReceiveWithAuthorization` (not ERC-20 `approve()`). Uses `computeEscrowNonce()` and `signERC3009Authorization()` from `@x402r/core`.
 - **PaymentInfo validation**: `validatePaymentInfo()` checks feeReceiver, expiry, amount, and fee bounds before on-chain transactions.
 - **Address resolution**: `resolveAddresses()` provides all protocol contract addresses for SDK construction.
-- **Hash computation**: `computePaymentInfoHash()` computes the escrow hash off-chain (matches on-chain `getHash`).
+- **Hash computation**: The escrow contract's `getHash()` pure function computes the payment info hash on-chain. The SDK calls this internally — callers never handle hashes directly.
 - **feeReceiver must be the operator**: `PaymentInfo.feeReceiver` must equal the deployed operator contract address.
 - **preApprovalExpiry = ERC-3009 validBefore**: Must be a future timestamp (not `0n`).
 - **RPC delay**: A 2-second delay after each transaction allows Base Sepolia RPC state propagation.

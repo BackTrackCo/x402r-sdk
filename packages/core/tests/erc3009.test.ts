@@ -1,11 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import {
-  signERC3009Authorization,
-  computeEscrowNonce,
-  computePaymentInfoHash,
-} from "../src/utils/index.js";
+import { signERC3009Authorization, computeEscrowNonce } from "../src/utils/index.js";
 import type { ERC3009Authorization } from "../src/utils/index.js";
 import type { PaymentInfo } from "../src/types/index.js";
+import type { PublicClient } from "viem";
 
 const samplePaymentInfo: PaymentInfo = {
   operator: "0x1234567890123456789012345678901234567890",
@@ -23,27 +20,46 @@ const samplePaymentInfo: PaymentInfo = {
 };
 
 const escrowAddress = "0xb9488351E48b23D798f24e8174514F28B741Eb4f" as const;
-const chainId = 84532;
+
+const MOCK_HASH = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as const;
+
+const createMockPublicClient = (): PublicClient => {
+  return {
+    readContract: vi.fn().mockResolvedValue(MOCK_HASH),
+  } as unknown as PublicClient;
+};
 
 describe("computeEscrowNonce", () => {
-  it("should return a bytes32 hash", () => {
-    const nonce = computeEscrowNonce(samplePaymentInfo, escrowAddress, chainId);
+  it("should return a bytes32 hash", async () => {
+    const publicClient = createMockPublicClient();
+    const nonce = await computeEscrowNonce(publicClient, samplePaymentInfo, escrowAddress);
     expect(nonce).toMatch(/^0x[a-fA-F0-9]{64}$/);
   });
 
-  it("should be deterministic", () => {
-    const nonce1 = computeEscrowNonce(samplePaymentInfo, escrowAddress, chainId);
-    const nonce2 = computeEscrowNonce(samplePaymentInfo, escrowAddress, chainId);
+  it("should be deterministic", async () => {
+    const publicClient = createMockPublicClient();
+    const nonce1 = await computeEscrowNonce(publicClient, samplePaymentInfo, escrowAddress);
+    const nonce2 = await computeEscrowNonce(publicClient, samplePaymentInfo, escrowAddress);
     expect(nonce1).toBe(nonce2);
   });
 
-  it("should differ from computePaymentInfoHash (payer zeroed)", () => {
-    const nonce = computeEscrowNonce(samplePaymentInfo, escrowAddress, chainId);
-    const hash = computePaymentInfoHash(samplePaymentInfo, escrowAddress, chainId);
-    expect(nonce).not.toBe(hash);
+  it("should call contract getHash with payer zeroed out", async () => {
+    const publicClient = createMockPublicClient();
+    await computeEscrowNonce(publicClient, samplePaymentInfo, escrowAddress);
+
+    const readContractMock = publicClient.readContract as ReturnType<typeof vi.fn>;
+    expect(readContractMock).toHaveBeenCalledOnce();
+    const call = readContractMock.mock.calls[0][0];
+    expect(call.functionName).toBe("getHash");
+    expect(call.address).toBe(escrowAddress);
+    // The payer should be zeroed out
+    const paymentInfoArg = call.args[0] as PaymentInfo;
+    expect(paymentInfoArg.payer).toBe("0x0000000000000000000000000000000000000000");
   });
 
-  it("should produce the same nonce regardless of payer address", () => {
+  it("should produce the same nonce regardless of payer address", async () => {
+    // Both calls should zero out payer before calling getHash
+    const publicClient = createMockPublicClient();
     const payerA = {
       ...samplePaymentInfo,
       payer: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as `0x${string}`,
@@ -53,18 +69,9 @@ describe("computeEscrowNonce", () => {
       payer: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" as `0x${string}`,
     };
 
-    const nonceA = computeEscrowNonce(payerA, escrowAddress, chainId);
-    const nonceB = computeEscrowNonce(payerB, escrowAddress, chainId);
+    const nonceA = await computeEscrowNonce(publicClient, payerA, escrowAddress);
+    const nonceB = await computeEscrowNonce(publicClient, payerB, escrowAddress);
     expect(nonceA).toBe(nonceB);
-  });
-
-  it("should match computePaymentInfoHash with zero payer", () => {
-    const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as const;
-    const zeroPayer = { ...samplePaymentInfo, payer: ZERO_ADDRESS };
-
-    const nonce = computeEscrowNonce(samplePaymentInfo, escrowAddress, chainId);
-    const hash = computePaymentInfoHash(zeroPayer, escrowAddress, chainId);
-    expect(nonce).toBe(hash);
   });
 });
 

@@ -12,7 +12,6 @@ import {
   FreezeABI,
   NotImplementedError,
   PaymentState,
-  computePaymentInfoHash,
   toAbiPaymentInfo,
   hasRefundRequest as sharedHasRefundRequest,
   getRefundRequest as sharedGetRefundRequest,
@@ -162,13 +161,18 @@ export class X402rClient {
       );
     }
 
-    const paymentInfoHash = computePaymentInfoHash(paymentInfo, this.escrowAddress, this.chainId);
+    const paymentInfoHash = await this.publicClient.readContract({
+      address: this.escrowAddress,
+      abi: AuthCaptureEscrowABI,
+      functionName: "getHash",
+      args: [toAbiPaymentInfo(paymentInfo)],
+    });
 
     const state = await this.publicClient.readContract({
       address: this.escrowAddress,
       abi: AuthCaptureEscrowABI,
       functionName: "paymentState",
-      args: [paymentInfoHash],
+      args: [paymentInfoHash as `0x${string}`],
     });
 
     const [hasCollectedPayment, capturableAmount, refundableAmount] = state as [
@@ -205,22 +209,29 @@ export class X402rClient {
   /**
    * Check if a payment exists (has been authorized) by reading the escrow contract.
    *
-   * @param paymentInfoHash - The hash of the PaymentInfo
+   * @param paymentInfo - The payment information struct
    * @returns True if the payment has been authorized
    * @throws Error if escrowAddress is not configured
    */
-  async paymentExists(paymentInfoHash: `0x${string}`): Promise<boolean> {
+  async paymentExists(paymentInfo: PaymentInfo): Promise<boolean> {
     if (!this.escrowAddress) {
       throw new Error(
         "Escrow address required. Use resolveAddresses(networkId) from @x402r/core to get the escrow address for your network.",
       );
     }
 
+    const paymentInfoHash = await this.publicClient.readContract({
+      address: this.escrowAddress,
+      abi: AuthCaptureEscrowABI,
+      functionName: "getHash",
+      args: [toAbiPaymentInfo(paymentInfo)],
+    });
+
     const state = await this.publicClient.readContract({
       address: this.escrowAddress,
       abi: AuthCaptureEscrowABI,
       functionName: "paymentState",
-      args: [paymentInfoHash],
+      args: [paymentInfoHash as `0x${string}`],
     });
 
     const [hasCollectedPayment] = state as [boolean, bigint, bigint];
@@ -230,22 +241,29 @@ export class X402rClient {
   /**
    * Check if a payment is currently in escrow (funds locked, not yet released).
    *
-   * @param paymentInfoHash - The hash of the PaymentInfo
+   * @param paymentInfo - The payment information struct
    * @returns True if funds are held in escrow (capturableAmount > 0)
    * @throws Error if escrowAddress is not configured
    */
-  async isInEscrow(paymentInfoHash: `0x${string}`): Promise<boolean> {
+  async isInEscrow(paymentInfo: PaymentInfo): Promise<boolean> {
     if (!this.escrowAddress) {
       throw new Error(
         "Escrow address required. Use resolveAddresses(networkId) from @x402r/core to get the escrow address for your network.",
       );
     }
 
+    const paymentInfoHash = await this.publicClient.readContract({
+      address: this.escrowAddress,
+      abi: AuthCaptureEscrowABI,
+      functionName: "getHash",
+      args: [toAbiPaymentInfo(paymentInfo)],
+    });
+
     const state = await this.publicClient.readContract({
       address: this.escrowAddress,
       abi: AuthCaptureEscrowABI,
       functionName: "paymentState",
-      args: [paymentInfoHash],
+      args: [paymentInfoHash as `0x${string}`],
     });
 
     const [hasCollectedPayment, capturableAmount] = state as [boolean, bigint, bigint];
@@ -253,15 +271,15 @@ export class X402rClient {
   }
 
   /**
-   * Get stored PaymentInfo for a given hash.
+   * Get stored PaymentInfo for a given payment.
    *
    * The escrow contract only stores the hash, not the full PaymentInfo struct.
-   * This method cannot reverse a hash into PaymentInfo. Store PaymentInfo locally
-   * when creating payments, or use a subgraph when available.
+   * This method cannot retrieve PaymentInfo from on-chain data alone.
+   * Store PaymentInfo locally when creating payments, or use a subgraph when available.
    *
-   * @throws NotImplementedError - Cannot reverse hash to PaymentInfo without subgraph
+   * @throws NotImplementedError - Cannot retrieve PaymentInfo without subgraph
    */
-  async getPaymentDetails(_paymentInfoHash: `0x${string}`): Promise<PaymentInfo> {
+  async getPaymentDetails(_paymentInfo: PaymentInfo): Promise<PaymentInfo> {
     throw new NotImplementedError(
       "getPaymentDetails",
       "Cannot reverse hash to PaymentInfo. " +
@@ -613,22 +631,20 @@ export class X402rClient {
   /**
    * Watch for payment state changes (releases and refunds)
    *
-   * @param _paymentInfoHash - The hash of the PaymentInfo to watch
    * @param callback - Callback function called when state changes
    * @returns Object with unsubscribe function
    *
    * @example
    * ```typescript
-   * const { unsubscribe } = client.watchPaymentState(paymentInfoHash, (event) => {
+   * const { unsubscribe } = client.watchPaymentState((event) => {
    *   console.log('Payment state changed:', event);
    * });
    * // Later: unsubscribe();
    * ```
    */
-  watchPaymentState(
-    _paymentInfoHash: `0x${string}`,
-    callback: (event: PaymentOperatorEventLog) => void,
-  ): { unsubscribe: () => void } {
+  watchPaymentState(callback: (event: PaymentOperatorEventLog) => void): {
+    unsubscribe: () => void;
+  } {
     const unsubscribers: (() => void)[] = [];
 
     // Watch ReleaseExecuted events

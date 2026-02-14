@@ -3,48 +3,9 @@
  * @module utils
  */
 
-import { keccak256, encodeAbiParameters, toHex } from "viem";
-import type { WalletClient } from "viem";
+import type { PublicClient, WalletClient } from "viem";
 import type { PaymentInfo } from "../types/index.js";
-
-/**
- * EIP-712 typehash for PaymentInfo struct
- *
- * Computed as: keccak256("PaymentInfo(address operator,address payer,address receiver,address token,uint120 maxAmount,uint48 preApprovalExpiry,uint48 authorizationExpiry,uint48 refundExpiry,uint16 minFeeBps,uint16 maxFeeBps,address feeReceiver,uint256 salt)")
- */
-export const PAYMENT_INFO_TYPEHASH = keccak256(
-  toHex(
-    "PaymentInfo(address operator,address payer,address receiver,address token,uint120 maxAmount,uint48 preApprovalExpiry,uint48 authorizationExpiry,uint48 refundExpiry,uint16 minFeeBps,uint16 maxFeeBps,address feeReceiver,uint256 salt)",
-  ),
-);
-
-/**
- * ABI parameter types for PaymentInfo struct encoding
- */
-const paymentInfoAbiParams: readonly { name: string; type: string }[] = [
-  { name: "typehash", type: "bytes32" },
-  { name: "operator", type: "address" },
-  { name: "payer", type: "address" },
-  { name: "receiver", type: "address" },
-  { name: "token", type: "address" },
-  { name: "maxAmount", type: "uint120" },
-  { name: "preApprovalExpiry", type: "uint48" },
-  { name: "authorizationExpiry", type: "uint48" },
-  { name: "refundExpiry", type: "uint48" },
-  { name: "minFeeBps", type: "uint16" },
-  { name: "maxFeeBps", type: "uint16" },
-  { name: "feeReceiver", type: "address" },
-  { name: "salt", type: "uint256" },
-];
-
-/**
- * ABI parameter types for final hash encoding (chainId, escrow, paymentInfoHash)
- */
-const finalHashAbiParams: readonly { name: string; type: string }[] = [
-  { name: "chainId", type: "uint256" },
-  { name: "escrow", type: "address" },
-  { name: "paymentInfoHash", type: "bytes32" },
-];
+import { AuthCaptureEscrowABI } from "../abis/index.js";
 
 /**
  * Convert a PaymentInfo object to ABI-compatible tuple format for viem contract calls.
@@ -60,85 +21,29 @@ export function toAbiPaymentInfo(paymentInfo: PaymentInfo): any {
 }
 
 /**
- * Compute the payment info hash as used by the escrow contract
- *
- * The hash is computed in two steps:
- * 1. Hash the PaymentInfo struct with its typehash
- * 2. Hash the result with chainId and escrow address
- *
- * This matches the Solidity implementation:
- * ```solidity
- * bytes32 paymentInfoHash = keccak256(abi.encode(PAYMENT_INFO_TYPEHASH, paymentInfo));
- * return keccak256(abi.encode(block.chainid, address(this), paymentInfoHash));
- * ```
- *
- * @param paymentInfo - The payment information struct
- * @param escrowAddress - The escrow contract address
- * @param chainId - The chain ID (e.g., 84532 for Base Sepolia)
- * @returns The bytes32 hash
- *
- * @example
- * ```typescript
- * const hash = computePaymentInfoHash(
- *   paymentInfo,
- *   '0xb9488351E48b23D798f24e8174514F28B741Eb4f',
- *   84532
- * );
- * ```
- */
-export function computePaymentInfoHash(
-  paymentInfo: PaymentInfo,
-  escrowAddress: `0x${string}`,
-  chainId: number,
-): `0x${string}` {
-  // Step 1: Encode and hash the PaymentInfo struct with typehash
-  const encodedPaymentInfo = encodeAbiParameters(paymentInfoAbiParams, [
-    PAYMENT_INFO_TYPEHASH,
-    paymentInfo.operator,
-    paymentInfo.payer,
-    paymentInfo.receiver,
-    paymentInfo.token,
-    paymentInfo.maxAmount,
-    paymentInfo.preApprovalExpiry,
-    paymentInfo.authorizationExpiry,
-    paymentInfo.refundExpiry,
-    BigInt(paymentInfo.minFeeBps),
-    BigInt(paymentInfo.maxFeeBps),
-    paymentInfo.feeReceiver,
-    paymentInfo.salt,
-  ]);
-
-  const paymentInfoHash = keccak256(encodedPaymentInfo);
-
-  // Step 2: Encode and hash with chainId and escrow address
-  const encodedFinal = encodeAbiParameters(finalHashAbiParams, [
-    BigInt(chainId),
-    escrowAddress,
-    paymentInfoHash,
-  ]);
-
-  return keccak256(encodedFinal);
-}
-
-/**
  * Compute the payer-agnostic escrow nonce for ERC-3009 authorization.
  *
- * This is the same as `computePaymentInfoHash` but with `payer = address(0)`.
- * It matches `AuthCaptureEscrow.getHash()` with payer=0x0.
+ * Calls the escrow contract's `getHash` pure function with `payer = address(0)`.
  *
+ * @param publicClient - viem PublicClient for reading contract state
  * @param paymentInfo - PaymentInfo (payer field is ignored — replaced with address(0))
  * @param escrowAddress - The escrow contract address
- * @param chainId - The chain ID
  * @returns The bytes32 nonce for ERC-3009 signing
  */
-export function computeEscrowNonce(
+export async function computeEscrowNonce(
+  publicClient: PublicClient,
   paymentInfo: PaymentInfo,
   escrowAddress: `0x${string}`,
-  chainId: number,
-): `0x${string}` {
+): Promise<`0x${string}`> {
   const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as const;
   const payerAgnostic: PaymentInfo = { ...paymentInfo, payer: ZERO_ADDRESS };
-  return computePaymentInfoHash(payerAgnostic, escrowAddress, chainId);
+  const hash = await publicClient.readContract({
+    address: escrowAddress,
+    abi: AuthCaptureEscrowABI,
+    functionName: "getHash",
+    args: [toAbiPaymentInfo(payerAgnostic)],
+  });
+  return hash as `0x${string}`;
 }
 
 /**
@@ -178,7 +83,7 @@ export interface ERC3009Authorization {
  * import { signERC3009Authorization, computeEscrowNonce, resolveAddresses } from '@x402r/core';
  *
  * const addrs = resolveAddresses('eip155:84532');
- * const nonce = computeEscrowNonce(paymentInfo, addrs.escrowAddress, addrs.chainId);
+ * const nonce = await computeEscrowNonce(publicClient, paymentInfo, addrs.escrowAddress);
  *
  * const signature = await signERC3009Authorization(walletClient, addrs.usdc, {
  *   from: payerAddress,

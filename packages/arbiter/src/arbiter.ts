@@ -11,7 +11,6 @@ import {
   ArbiterRegistryABI,
   RequestStatus,
   PaymentState,
-  computePaymentInfoHash,
   toAbiPaymentInfo,
   hasRefundRequest as sharedHasRefundRequest,
   getRefundRequest as sharedGetRefundRequest,
@@ -191,13 +190,18 @@ export class X402rArbiter {
       );
     }
 
-    const paymentInfoHash = computePaymentInfoHash(paymentInfo, this.escrowAddress, this.chainId);
+    const paymentInfoHash = await this.publicClient.readContract({
+      address: this.escrowAddress,
+      abi: AuthCaptureEscrowABI,
+      functionName: "getHash",
+      args: [toAbiPaymentInfo(paymentInfo)],
+    });
 
     const state = await this.publicClient.readContract({
       address: this.escrowAddress,
       abi: AuthCaptureEscrowABI,
       functionName: "paymentState",
-      args: [paymentInfoHash],
+      args: [paymentInfoHash as `0x${string}`],
     });
 
     const [hasCollectedPayment, capturableAmount, refundableAmount] = state as [

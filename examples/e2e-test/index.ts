@@ -38,7 +38,6 @@ import {
   computeEscrowNonce,
   signERC3009Authorization,
   validatePaymentInfo,
-  computePaymentInfoHash,
   PaymentOperatorABI,
   AuthCaptureEscrowABI,
   RequestStatus,
@@ -297,10 +296,10 @@ async function main() {
   log(`PaymentInfo validation: ${issues.length === 0 ? "clean" : `${issues.length} warnings`}`);
 
   // Compute escrow nonce using helper (replaces ~50 lines of manual hashing)
-  const escrowNonce = computeEscrowNonce(
+  const escrowNonce = await computeEscrowNonce(
+    publicClient,
     paymentInfo,
     networkConfig.authCaptureEscrow as Address,
-    84532,
   );
   log(`Escrow nonce: ${escrowNonce.slice(0, 18)}...`);
 
@@ -334,18 +333,19 @@ async function main() {
   await waitForTx(publicClient, authorizeTx);
   log(`  Authorize tx: ${SCANNER}/tx/${authorizeTx}`);
 
-  // Verify escrow state using computePaymentInfoHash helper
-  const escrowHash = computePaymentInfoHash(
-    paymentInfo,
-    networkConfig.authCaptureEscrow as Address,
-    84532,
-  );
+  // Verify escrow state using contract's getHash
+  const escrowHash = await publicClient.readContract({
+    address: networkConfig.authCaptureEscrow as Address,
+    abi: AuthCaptureEscrowABI,
+    functionName: "getHash",
+    args: [toAbiPaymentInfo(paymentInfo)],
+  });
 
   const escrowState = await publicClient.readContract({
     address: networkConfig.authCaptureEscrow as Address,
     abi: AuthCaptureEscrowABI,
     functionName: "paymentState",
-    args: [escrowHash],
+    args: [escrowHash as `0x${string}`],
   });
 
   const [hasCollected, capturableAmount, refundableAmount] = escrowState as [
