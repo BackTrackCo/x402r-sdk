@@ -24,6 +24,7 @@ import {
   formatFeeBreakdown,
   validateFeeBounds,
   type PaymentInfo,
+  parsePaymentInfo as coreParsePaymentInfo,
 } from "@x402r/core";
 import { pay } from "./commands/pay.js";
 import { freeze, unfreeze, checkFrozen } from "./commands/freeze.js";
@@ -32,21 +33,7 @@ import { submitEvidence, listEvidence } from "./commands/evidence.js";
 
 function parsePaymentInfo(json: string): PaymentInfo {
   try {
-    const parsed = JSON.parse(json);
-    return {
-      operator: parsed.operator,
-      payer: parsed.payer,
-      receiver: parsed.receiver,
-      token: parsed.token,
-      maxAmount: BigInt(parsed.maxAmount),
-      preApprovalExpiry: BigInt(parsed.preApprovalExpiry),
-      authorizationExpiry: BigInt(parsed.authorizationExpiry),
-      refundExpiry: BigInt(parsed.refundExpiry),
-      minFeeBps: Number(parsed.minFeeBps),
-      maxFeeBps: Number(parsed.maxFeeBps),
-      feeReceiver: parsed.feeReceiver,
-      salt: BigInt(parsed.salt),
-    };
+    return coreParsePaymentInfo(json);
   } catch {
     console.error("Error: Invalid payment JSON");
     console.error('Expected format: {"operator":"0x...","payer":"0x...",...}');

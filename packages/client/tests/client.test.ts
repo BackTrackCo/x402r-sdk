@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { X402rClient, X402rClientConfig } from "../src/client.js";
-import { NotImplementedError } from "@x402r/core";
+import { NotImplementedError, PaymentState } from "@x402r/core";
 import type { PublicClient, WalletClient } from "viem";
 
 // Mock viem clients
@@ -8,6 +8,7 @@ const createMockPublicClient = (): PublicClient => {
   return {
     readContract: vi.fn(),
     watchContractEvent: vi.fn(),
+    getContractEvents: vi.fn().mockResolvedValue([]),
     getChainId: vi.fn().mockResolvedValue(84532),
   } as unknown as PublicClient;
 };
@@ -117,86 +118,207 @@ describe("X402rClient", () => {
     });
   });
 
-  // ============ Stubbed Payment Query Methods ============
-  // These methods throw NotImplementedError as they require subgraph integration
+  // ============ Payment Query Methods ============
+
+  const escrowAddress = "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" as const;
+
+  const samplePaymentInfo = {
+    operator: operatorAddress,
+    payer: "0x2345678901234567890123456789012345678901" as const,
+    receiver: "0x3456789012345678901234567890123456789012" as const,
+    token: "0x4567890123456789012345678901234567890123" as const,
+    maxAmount: BigInt("1000000"),
+    preApprovalExpiry: 0n,
+    authorizationExpiry: BigInt(Math.floor(Date.now() / 1000) + 86400),
+    refundExpiry: BigInt(Math.floor(Date.now() / 1000) + 172800),
+    minFeeBps: 0,
+    maxFeeBps: 500,
+    feeReceiver: "0x5678901234567890123456789012345678901234" as const,
+    salt: BigInt("0x123456"),
+  };
 
   describe("getPaymentState", () => {
-    it("should throw NotImplementedError", async () => {
-      const client = new X402rClient({
-        publicClient,
-        operatorAddress,
-      });
+    it("should throw if escrowAddress not configured", async () => {
+      const client = new X402rClient({ publicClient, operatorAddress });
+      await expect(client.getPaymentState(samplePaymentInfo)).rejects.toThrow(
+        "Escrow address required",
+      );
+    });
 
-      const paymentInfo = {
-        operator: operatorAddress,
-        payer: "0x2345678901234567890123456789012345678901" as const,
-        receiver: "0x3456789012345678901234567890123456789012" as const,
-        token: "0x4567890123456789012345678901234567890123" as const,
-        maxAmount: BigInt("1000000"),
-        preApprovalExpiry: 0n,
-        authorizationExpiry: BigInt(1735689600),
-        refundExpiry: BigInt(1738368000),
-        minFeeBps: 0,
-        maxFeeBps: 500,
-        feeReceiver: "0x5678901234567890123456789012345678901234" as const,
-        salt: BigInt("0x123456"),
-      };
+    it("should return NonExistent when payment not found", async () => {
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue([false, 0n, 0n]);
+      const client = new X402rClient({ publicClient, operatorAddress, escrowAddress });
+      const state = await client.getPaymentState(samplePaymentInfo);
+      expect(state).toBe(PaymentState.NonExistent);
+    });
 
-      await expect(client.getPaymentState(paymentInfo)).rejects.toThrow(NotImplementedError);
+    it("should return InEscrow when capturable > 0", async () => {
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue([
+        true,
+        1000000n,
+        0n,
+      ]);
+      const client = new X402rClient({ publicClient, operatorAddress, escrowAddress });
+      const state = await client.getPaymentState(samplePaymentInfo);
+      expect(state).toBe(PaymentState.InEscrow);
+    });
+
+    it("should return Released when refundable > 0 but capturable = 0", async () => {
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue([
+        true,
+        0n,
+        500000n,
+      ]);
+      const client = new X402rClient({ publicClient, operatorAddress, escrowAddress });
+      const state = await client.getPaymentState(samplePaymentInfo);
+      expect(state).toBe(PaymentState.Released);
+    });
+
+    it("should return Settled when both amounts are 0", async () => {
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue([true, 0n, 0n]);
+      const client = new X402rClient({ publicClient, operatorAddress, escrowAddress });
+      const state = await client.getPaymentState(samplePaymentInfo);
+      expect(state).toBe(PaymentState.Settled);
+    });
+
+    it("should return Expired when authorization expired with capturable > 0", async () => {
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue([
+        true,
+        1000000n,
+        0n,
+      ]);
+      const expiredPayment = { ...samplePaymentInfo, authorizationExpiry: BigInt(1000) };
+      const client = new X402rClient({ publicClient, operatorAddress, escrowAddress });
+      const state = await client.getPaymentState(expiredPayment);
+      expect(state).toBe(PaymentState.Expired);
     });
   });
 
   describe("paymentExists", () => {
-    it("should throw NotImplementedError", async () => {
-      const client = new X402rClient({
-        publicClient,
-        operatorAddress,
-      });
+    it("should throw if escrowAddress not configured", async () => {
+      const client = new X402rClient({ publicClient, operatorAddress });
+      await expect(
+        client.paymentExists("0x1234567890123456789012345678901234567890123456789012345678901234"),
+      ).rejects.toThrow("Escrow address required");
+    });
 
-      const paymentInfoHash =
-        "0x1234567890123456789012345678901234567890123456789012345678901234" as const;
+    it("should return true when payment exists", async () => {
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue([
+        true,
+        1000000n,
+        0n,
+      ]);
+      const client = new X402rClient({ publicClient, operatorAddress, escrowAddress });
+      expect(
+        await client.paymentExists(
+          "0x1234567890123456789012345678901234567890123456789012345678901234",
+        ),
+      ).toBe(true);
+    });
 
-      await expect(client.paymentExists(paymentInfoHash)).rejects.toThrow(NotImplementedError);
+    it("should return false when payment does not exist", async () => {
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue([false, 0n, 0n]);
+      const client = new X402rClient({ publicClient, operatorAddress, escrowAddress });
+      expect(
+        await client.paymentExists(
+          "0x1234567890123456789012345678901234567890123456789012345678901234",
+        ),
+      ).toBe(false);
     });
   });
 
   describe("isInEscrow", () => {
-    it("should throw NotImplementedError", async () => {
-      const client = new X402rClient({
-        publicClient,
-        operatorAddress,
-      });
+    it("should throw if escrowAddress not configured", async () => {
+      const client = new X402rClient({ publicClient, operatorAddress });
+      await expect(
+        client.isInEscrow("0x1234567890123456789012345678901234567890123456789012345678901234"),
+      ).rejects.toThrow("Escrow address required");
+    });
 
-      const paymentInfoHash =
-        "0x1234567890123456789012345678901234567890123456789012345678901234" as const;
+    it("should return true when in escrow", async () => {
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue([
+        true,
+        1000000n,
+        0n,
+      ]);
+      const client = new X402rClient({ publicClient, operatorAddress, escrowAddress });
+      expect(
+        await client.isInEscrow(
+          "0x1234567890123456789012345678901234567890123456789012345678901234",
+        ),
+      ).toBe(true);
+    });
 
-      await expect(client.isInEscrow(paymentInfoHash)).rejects.toThrow(NotImplementedError);
+    it("should return false when not in escrow", async () => {
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue([
+        true,
+        0n,
+        500000n,
+      ]);
+      const client = new X402rClient({ publicClient, operatorAddress, escrowAddress });
+      expect(
+        await client.isInEscrow(
+          "0x1234567890123456789012345678901234567890123456789012345678901234",
+        ),
+      ).toBe(false);
+    });
+
+    it("should return false when payment does not exist", async () => {
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue([false, 0n, 0n]);
+      const client = new X402rClient({ publicClient, operatorAddress, escrowAddress });
+      expect(
+        await client.isInEscrow(
+          "0x1234567890123456789012345678901234567890123456789012345678901234",
+        ),
+      ).toBe(false);
     });
   });
 
   describe("getPaymentDetails", () => {
-    it("should throw NotImplementedError", async () => {
-      const client = new X402rClient({
-        publicClient,
-        operatorAddress,
-      });
-
-      const paymentInfoHash =
-        "0x1234567890123456789012345678901234567890123456789012345678901234" as const;
-
-      await expect(client.getPaymentDetails(paymentInfoHash)).rejects.toThrow(NotImplementedError);
+    it("should throw NotImplementedError (cannot reverse hash)", async () => {
+      const client = new X402rClient({ publicClient, operatorAddress });
+      await expect(
+        client.getPaymentDetails(
+          "0x1234567890123456789012345678901234567890123456789012345678901234",
+        ),
+      ).rejects.toThrow(NotImplementedError);
     });
   });
 
-  describe("getMyPayments", () => {
-    it("should throw NotImplementedError", async () => {
-      const client = new X402rClient({
-        publicClient,
-        walletClient,
-        operatorAddress,
-      });
+  describe("getPayerPayments", () => {
+    it("should throw if walletClient not configured", async () => {
+      const client = new X402rClient({ publicClient, operatorAddress });
+      await expect(client.getPayerPayments()).rejects.toThrow("WalletClient required");
+    });
 
-      await expect(client.getMyPayments()).rejects.toThrow(NotImplementedError);
+    it("should return hashes from AuthorizationCreated events", async () => {
+      const mockLogs = [
+        {
+          args: {
+            paymentInfoHash: "0xaaa0000000000000000000000000000000000000000000000000000000000001",
+          },
+        },
+        {
+          args: {
+            paymentInfoHash: "0xbbb0000000000000000000000000000000000000000000000000000000000002",
+          },
+        },
+      ];
+      (
+        publicClient as unknown as { getContractEvents: ReturnType<typeof vi.fn> }
+      ).getContractEvents = vi.fn().mockResolvedValue(mockLogs);
+      const client = new X402rClient({ publicClient, walletClient, operatorAddress });
+      const result = await client.getPayerPayments();
+      expect(result.hashes).toHaveLength(2);
+    });
+
+    it("should return empty array when no events found", async () => {
+      (
+        publicClient as unknown as { getContractEvents: ReturnType<typeof vi.fn> }
+      ).getContractEvents = vi.fn().mockResolvedValue([]);
+      const client = new X402rClient({ publicClient, walletClient, operatorAddress });
+      const result = await client.getPayerPayments();
+      expect(result.hashes).toHaveLength(0);
     });
   });
 

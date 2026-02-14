@@ -541,3 +541,69 @@ export function hasConditionSingletons(networkId: string): boolean {
   const { payer, receiver, alwaysTrue } = config.conditions;
   return isDeployedAddress(payer) && isDeployedAddress(receiver) && isDeployedAddress(alwaysTrue);
 }
+
+/**
+ * Resolved contract addresses for a network
+ */
+export interface ResolvedAddresses {
+  /** AuthCaptureEscrow contract address */
+  escrowAddress: `0x${string}`;
+  /** TokenCollector contract address */
+  tokenCollector: `0x${string}`;
+  /** RefundRequest contract address */
+  refundRequestAddress: `0x${string}`;
+  /** ArbiterRegistry contract address */
+  arbiterRegistryAddress: `0x${string}`;
+  /** USDC token address */
+  usdc: `0x${string}`;
+  /** ProtocolFeeConfig contract address */
+  protocolFeeConfig: `0x${string}`;
+  /** RefundRequestEvidence contract address (may be undefined) */
+  evidenceAddress?: `0x${string}`;
+  /** Chain ID */
+  chainId: number;
+  /** Network name */
+  name: string;
+}
+
+/**
+ * Resolve all contract addresses for a network
+ *
+ * Convenience function that extracts the most commonly needed addresses
+ * from the network config into a flat, descriptive object.
+ *
+ * @param networkId - EIP-155 chain identifier (e.g., 'eip155:84532')
+ * @returns Resolved addresses object
+ * @throws Error if the network is not supported
+ *
+ * @example
+ * ```typescript
+ * const addrs = resolveAddresses('eip155:84532');
+ * const client = new X402rClient({
+ *   publicClient,
+ *   operatorAddress: '0x...',
+ *   escrowAddress: addrs.escrowAddress,
+ *   refundRequestAddress: addrs.refundRequestAddress,
+ *   refundRequestEvidenceAddress: addrs.evidenceAddress,
+ * });
+ * ```
+ */
+export function resolveAddresses(networkId: string): ResolvedAddresses {
+  const config = getNetworkConfig(networkId);
+  if (!config) {
+    const supported = SupportedNetworks.join(", ");
+    throw new Error(`Network '${networkId}' is not supported. Supported networks: ${supported}`);
+  }
+
+  return {
+    escrowAddress: config.authCaptureEscrow,
+    tokenCollector: config.tokenCollector,
+    refundRequestAddress: config.refundRequest,
+    arbiterRegistryAddress: config.arbiterRegistry,
+    usdc: config.usdc,
+    protocolFeeConfig: config.protocolFeeConfig,
+    evidenceAddress: config.refundRequestEvidence,
+    chainId: config.chainId,
+    name: config.name,
+  };
+}

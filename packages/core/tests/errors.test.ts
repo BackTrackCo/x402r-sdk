@@ -13,6 +13,10 @@ describe("CONTRACT_ERRORS", () => {
     expect(CONTRACT_ERRORS.ConditionNotMet).toBeDefined();
     expect(CONTRACT_ERRORS.NotReceiver).toBeDefined();
     expect(CONTRACT_ERRORS.NotPayer).toBeDefined();
+    expect(CONTRACT_ERRORS.InvalidFeeReceiver).toBeDefined();
+    expect(CONTRACT_ERRORS.TransferFailed).toBeDefined();
+    expect(CONTRACT_ERRORS.SignatureExpired).toBeDefined();
+    expect(CONTRACT_ERRORS.FeeCalculatorError).toBeDefined();
   });
 
   it("should have refund request errors", () => {
@@ -110,6 +114,26 @@ describe("decodeContractError", () => {
 
     expect(result?.name).toBe("RequestNotPending");
   });
+
+  it("should decode InvalidFeeReceiver error", () => {
+    const result = decodeContractError(CONTRACT_ERRORS.InvalidFeeReceiver.selector);
+    expect(result?.name).toBe("InvalidFeeReceiver");
+  });
+
+  it("should decode TransferFailed error", () => {
+    const result = decodeContractError(CONTRACT_ERRORS.TransferFailed.selector);
+    expect(result?.name).toBe("TransferFailed");
+  });
+
+  it("should decode SignatureExpired error", () => {
+    const result = decodeContractError(CONTRACT_ERRORS.SignatureExpired.selector);
+    expect(result?.name).toBe("SignatureExpired");
+  });
+
+  it("should decode FeeCalculatorError error", () => {
+    const result = decodeContractError(CONTRACT_ERRORS.FeeCalculatorError.selector);
+    expect(result?.name).toBe("FeeCalculatorError");
+  });
 });
 
 describe("ContractErrorName type", () => {
@@ -119,6 +143,10 @@ describe("ContractErrorName type", () => {
       "ConditionNotMet",
       "NotReceiver",
       "NotPayer",
+      "InvalidFeeReceiver",
+      "TransferFailed",
+      "SignatureExpired",
+      "FeeCalculatorError",
       "RequestAlreadyExists",
       "RequestDoesNotExist",
       "RequestNotPending",

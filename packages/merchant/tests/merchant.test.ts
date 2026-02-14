@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { X402rMerchant, X402rMerchantConfig } from "../src/merchant.js";
-import { NotImplementedError } from "@x402r/core";
+import { PaymentState } from "@x402r/core";
 import type { PublicClient, WalletClient } from "viem";
 
 // Mock viem clients
@@ -103,29 +103,56 @@ describe("X402rMerchant", () => {
   });
 
   describe("getPaymentState", () => {
-    it("should throw NotImplementedError", async () => {
+    const escrowAddress = "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" as const;
+
+    const paymentInfo = {
+      operator: operatorAddress,
+      payer: "0x2345678901234567890123456789012345678901" as const,
+      receiver: "0x3456789012345678901234567890123456789012" as const,
+      token: "0x4567890123456789012345678901234567890123" as const,
+      maxAmount: BigInt("1000000"),
+      preApprovalExpiry: 0n,
+      authorizationExpiry: BigInt(Math.floor(Date.now() / 1000) + 86400),
+      refundExpiry: BigInt(Math.floor(Date.now() / 1000) + 172800),
+      minFeeBps: 0,
+      maxFeeBps: 500,
+      feeReceiver: "0x5678901234567890123456789012345678901234" as const,
+      salt: BigInt("0x123456"),
+    };
+
+    it("should throw if escrowAddress not configured", async () => {
+      const merchant = new X402rMerchant({ publicClient, walletClient, operatorAddress });
+      await expect(merchant.getPaymentState(paymentInfo)).rejects.toThrow(
+        "Escrow address required",
+      );
+    });
+
+    it("should return NonExistent when payment not found", async () => {
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue([false, 0n, 0n]);
       const merchant = new X402rMerchant({
         publicClient,
         walletClient,
         operatorAddress,
+        escrowAddress,
       });
+      const state = await merchant.getPaymentState(paymentInfo);
+      expect(state).toBe(PaymentState.NonExistent);
+    });
 
-      const paymentInfo = {
-        operator: operatorAddress,
-        payer: "0x2345678901234567890123456789012345678901" as const,
-        receiver: "0x3456789012345678901234567890123456789012" as const,
-        token: "0x4567890123456789012345678901234567890123" as const,
-        maxAmount: BigInt("1000000"),
-        preApprovalExpiry: 0n,
-        authorizationExpiry: BigInt(1735689600),
-        refundExpiry: BigInt(1738368000),
-        minFeeBps: 0,
-        maxFeeBps: 500,
-        feeReceiver: "0x5678901234567890123456789012345678901234" as const,
-        salt: BigInt("0x123456"),
-      };
-
-      await expect(merchant.getPaymentState(paymentInfo)).rejects.toThrow(NotImplementedError);
+    it("should return InEscrow when capturable > 0", async () => {
+      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue([
+        true,
+        1000000n,
+        0n,
+      ]);
+      const merchant = new X402rMerchant({
+        publicClient,
+        walletClient,
+        operatorAddress,
+        escrowAddress,
+      });
+      const state = await merchant.getPaymentState(paymentInfo);
+      expect(state).toBe(PaymentState.InEscrow);
     });
   });
 

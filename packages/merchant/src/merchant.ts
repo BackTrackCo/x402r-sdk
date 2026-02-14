@@ -10,7 +10,7 @@ import {
   RefundRequestABI,
   FreezeABI,
   RequestStatus,
-  NotImplementedError,
+  PaymentState,
   computePaymentInfoHash,
   toAbiPaymentInfo,
   hasRefundRequest as sharedHasRefundRequest,
@@ -28,7 +28,6 @@ import {
   getAllEvidence as sharedGetAllEvidence,
   watchEvidenceSubmissions as sharedWatchEvidenceSubmissions,
   type PaymentInfo,
-  type PaymentState,
   type OperatorConfig,
   type FeeStructure,
   type RefundRequestData,
@@ -134,7 +133,9 @@ export class X402rMerchant {
   /** Get the refund read context, throwing if refundRequestAddress is not configured */
   private getRefundCtx() {
     if (!this.refundRequestAddress) {
-      throw new Error("RefundRequest address required");
+      throw new Error(
+        "RefundRequest address required. Use resolveAddresses(networkId) from @x402r/core to get the address for your network.",
+      );
     }
     return {
       publicClient: this.publicClient,
@@ -145,7 +146,9 @@ export class X402rMerchant {
   /** Get the refund write context, throwing if refundRequestAddress is not configured */
   private getRefundWriteCtx() {
     if (!this.refundRequestAddress) {
-      throw new Error("RefundRequest address required");
+      throw new Error(
+        "RefundRequest address required. Use resolveAddresses(networkId) from @x402r/core to get the address for your network.",
+      );
     }
     return {
       publicClient: this.publicClient,
@@ -155,24 +158,91 @@ export class X402rMerchant {
   }
 
   // ============ Payment Queries ============
-  // NOTE: Some methods are stubbed for future Graph/indexer integration.
-  // The PaymentOperator contract does not store payment listings on-chain.
-  // Payment amounts can still be queried from escrow contract.
 
   /**
-   * Get the current state of a payment
-   * @throws NotImplementedError - Requires subgraph integration
+   * Get the current state of a payment by reading the escrow contract.
+   *
+   * Derives the state from the on-chain escrow amounts and expiry timestamps:
+   * - NonExistent: payment has never been authorized
+   * - InEscrow: funds are held in escrow (capturableAmount > 0)
+   * - Released: funds released to receiver, may still be refundable
+   * - Settled: all funds have been moved (capturable = 0, refundable = 0)
+   * - Expired: authorization expiry has passed and funds are still in escrow
+   *
+   * @param paymentInfo - The payment information struct
+   * @returns The current PaymentState
+   * @throws Error if escrowAddress is not configured
    */
-  async getPaymentState(_paymentInfo: PaymentInfo): Promise<PaymentState> {
-    throw new NotImplementedError("getPaymentState");
+  async getPaymentState(paymentInfo: PaymentInfo): Promise<PaymentState> {
+    if (!this.escrowAddress) {
+      throw new Error(
+        "Escrow address required. Use resolveAddresses(networkId) from @x402r/core to get the escrow address for your network.",
+      );
+    }
+
+    const paymentInfoHash = computePaymentInfoHash(paymentInfo, this.escrowAddress, this.chainId);
+
+    const state = await this.publicClient.readContract({
+      address: this.escrowAddress,
+      abi: AuthCaptureEscrowABI,
+      functionName: "paymentState",
+      args: [paymentInfoHash],
+    });
+
+    const [hasCollectedPayment, capturableAmount, refundableAmount] = state as [
+      boolean,
+      bigint,
+      bigint,
+    ];
+
+    if (!hasCollectedPayment) {
+      return PaymentState.NonExistent;
+    }
+
+    const now = BigInt(Math.floor(Date.now() / 1000));
+    if (
+      capturableAmount > 0n &&
+      paymentInfo.authorizationExpiry > 0n &&
+      now > paymentInfo.authorizationExpiry
+    ) {
+      return PaymentState.Expired;
+    }
+
+    if (capturableAmount > 0n) {
+      return PaymentState.InEscrow;
+    }
+
+    if (refundableAmount > 0n) {
+      return PaymentState.Released;
+    }
+
+    return PaymentState.Settled;
   }
 
   /**
-   * Get all payment hashes where the current wallet is the receiver
-   * @throws NotImplementedError - Requires subgraph integration
+   * Get all payment hashes where the current wallet is the receiver.
+   *
+   * Scans `AuthorizationCreated` event logs on the operator contract.
+   *
+   * @param fromBlock - Starting block for the scan (default: earliest)
+   * @returns Object with an array of payment info hashes
    */
-  async getReceiverPayments(): Promise<{ hashes: readonly `0x${string}`[] }> {
-    throw new NotImplementedError("getReceiverPayments");
+  async getReceiverPayments(fromBlock?: bigint): Promise<{ hashes: readonly `0x${string}`[] }> {
+    const logs = await this.publicClient.getContractEvents({
+      address: this.operatorAddress,
+      abi: PaymentOperatorABI,
+      eventName: "AuthorizationCreated",
+      args: {
+        receiver: this.walletClient.account!.address,
+      },
+      fromBlock: fromBlock ?? "earliest",
+    });
+
+    const hashes = logs
+      .map(log => (log.args as { paymentInfoHash?: `0x${string}` }).paymentInfoHash)
+      .filter((h): h is `0x${string}` => h !== undefined);
+
+    return { hashes };
   }
 
   /**
@@ -192,7 +262,9 @@ export class X402rMerchant {
     paymentInfo: PaymentInfo,
   ): Promise<{ capturableAmount: bigint; refundableAmount: bigint }> {
     if (!this.escrowAddress) {
-      throw new Error("Escrow address required");
+      throw new Error(
+        "Escrow address required. Use resolveAddresses(networkId) from @x402r/core to get the escrow address for your network.",
+      );
     }
 
     const paymentInfoHash = computePaymentInfoHash(paymentInfo, this.escrowAddress, this.chainId);
@@ -579,7 +651,9 @@ export class X402rMerchant {
     count: bigint,
   ): Promise<{ keys: readonly `0x${string}`[]; total: bigint }> {
     if (!this.refundRequestAddress) {
-      throw new Error("RefundRequest address required");
+      throw new Error(
+        "RefundRequest address required. Use resolveAddresses(networkId) from @x402r/core to get the address for your network.",
+      );
     }
 
     const [keys, total] = (await this.publicClient.readContract({
@@ -606,7 +680,9 @@ export class X402rMerchant {
    */
   async getRefundRequestCount(): Promise<bigint> {
     if (!this.refundRequestAddress) {
-      throw new Error("RefundRequest address required");
+      throw new Error(
+        "RefundRequest address required. Use resolveAddresses(networkId) from @x402r/core to get the address for your network.",
+      );
     }
 
     const count = await this.publicClient.readContract({
@@ -683,7 +759,9 @@ export class X402rMerchant {
     unsubscribe: () => void;
   } {
     if (!this.refundRequestAddress) {
-      throw new Error("RefundRequest address required");
+      throw new Error(
+        "RefundRequest address required. Use resolveAddresses(networkId) from @x402r/core to get the address for your network.",
+      );
     }
 
     const unsubscribe = this.publicClient.watchContractEvent({
@@ -762,7 +840,9 @@ export class X402rMerchant {
   /** Get the evidence read context, throwing if refundRequestEvidenceAddress is not configured */
   private getEvidenceCtx() {
     if (!this.refundRequestEvidenceAddress) {
-      throw new Error("RefundRequestEvidence address required");
+      throw new Error(
+        "RefundRequestEvidence address required. Use resolveAddresses(networkId) from @x402r/core to get the evidence address for your network.",
+      );
     }
     return {
       publicClient: this.publicClient,
@@ -773,7 +853,9 @@ export class X402rMerchant {
   /** Get the evidence write context, throwing if refundRequestEvidenceAddress is not configured */
   private getEvidenceWriteCtx() {
     if (!this.refundRequestEvidenceAddress) {
-      throw new Error("RefundRequestEvidence address required");
+      throw new Error(
+        "RefundRequestEvidence address required. Use resolveAddresses(networkId) from @x402r/core to get the evidence address for your network.",
+      );
     }
     return {
       publicClient: this.publicClient,
