@@ -94,29 +94,87 @@ describe("X402rMerchant - Payment Operations", () => {
   });
 
   describe("getReceiverPayments", () => {
-    it("should return hashes from AuthorizationCreated events", async () => {
-      const mockLogs = [
-        {
-          args: {
-            paymentInfoHash: "0xaaa0000000000000000000000000000000000000000000000000000000000001",
-          },
-        },
-      ];
+    it("should return full PaymentInfo from AuthorizationCreated + escrow events", async () => {
+      const hash1 = "0xaaa0000000000000000000000000000000000000000000000000000000000001" as const;
+
+      const getContractEventsMock = vi.fn();
+      // First call: AuthorizationCreated from operator
+      getContractEventsMock.mockResolvedValueOnce([{ args: { paymentInfoHash: hash1 } }]);
+      // Second call: PaymentAuthorized from escrow
+      getContractEventsMock.mockResolvedValueOnce([
+        { args: { paymentInfoHash: hash1, paymentInfo: samplePaymentInfo } },
+      ]);
+
       (
         publicClient as unknown as { getContractEvents: ReturnType<typeof vi.fn> }
-      ).getContractEvents = vi.fn().mockResolvedValue(mockLogs);
-      const merchant = new X402rMerchant({ publicClient, walletClient, operatorAddress });
+      ).getContractEvents = getContractEventsMock;
+
+      const merchant = new X402rMerchant({
+        publicClient,
+        walletClient,
+        operatorAddress,
+        escrowAddress,
+      });
       const result = await merchant.getReceiverPayments();
-      expect(result.hashes).toHaveLength(1);
+      expect(result).toHaveLength(1);
+      expect(result[0].hash).toBe(hash1);
+      expect(result[0].paymentInfo.operator).toBe(samplePaymentInfo.operator);
     });
 
     it("should return empty array when no events found", async () => {
       (
         publicClient as unknown as { getContractEvents: ReturnType<typeof vi.fn> }
       ).getContractEvents = vi.fn().mockResolvedValue([]);
-      const merchant = new X402rMerchant({ publicClient, walletClient, operatorAddress });
+      const merchant = new X402rMerchant({
+        publicClient,
+        walletClient,
+        operatorAddress,
+        escrowAddress,
+      });
       const result = await merchant.getReceiverPayments();
-      expect(result.hashes).toHaveLength(0);
+      expect(result).toHaveLength(0);
+    });
+  });
+
+  describe("getPaymentDetails", () => {
+    const testHash = "0x1234567890123456789012345678901234567890123456789012345678901234" as const;
+
+    it("should throw if escrowAddress not configured and no store", async () => {
+      const merchant = new X402rMerchant({ publicClient, walletClient, operatorAddress });
+      await expect(merchant.getPaymentDetails(testHash)).rejects.toThrow("Escrow address required");
+    });
+
+    it("should resolve PaymentInfo from escrow events", async () => {
+      (
+        publicClient as unknown as { getContractEvents: ReturnType<typeof vi.fn> }
+      ).getContractEvents = vi
+        .fn()
+        .mockResolvedValue([
+          { args: { paymentInfoHash: testHash, paymentInfo: samplePaymentInfo } },
+        ]);
+
+      const merchant = new X402rMerchant({
+        publicClient,
+        walletClient,
+        operatorAddress,
+        escrowAddress,
+      });
+      const result = await merchant.getPaymentDetails(testHash);
+      expect(result.operator).toBe(samplePaymentInfo.operator);
+    });
+
+    it("should throw if not found", async () => {
+      (
+        publicClient as unknown as { getContractEvents: ReturnType<typeof vi.fn> }
+      ).getContractEvents = vi.fn().mockResolvedValue([]);
+
+      const merchant = new X402rMerchant({
+        publicClient,
+        walletClient,
+        operatorAddress,
+        escrowAddress,
+      });
+      await expect(merchant.getPaymentDetails(testHash)).rejects.toThrow("PaymentInfo not found");
     });
   });
 

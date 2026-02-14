@@ -42,3 +42,6 @@ export * from "./validation/index.js";
 
 // Discovery utilities
 export * from "./discovery/index.js";
+
+// Payment storage
+export * from "./storage/index.js";

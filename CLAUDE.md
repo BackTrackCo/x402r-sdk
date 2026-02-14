@@ -7,7 +7,7 @@ Production TypeScript SDK for the x402r refundable payments protocol.
 ```bash
 pnpm install
 pnpm build              # Build all packages (Turborepo)
-pnpm test               # Run all tests (413 vitest tests across 30 files, 5 packages)
+pnpm test               # Run all tests (vitest, 33 test files across 5 packages)
 pnpm test:coverage      # Run with coverage
 pnpm typecheck          # Type check all packages
 pnpm lint               # Lint code
@@ -29,7 +29,7 @@ All packages live in `packages/` and are built via Turborepo.
 
 ## Contract Address Source of Truth
 
-`packages/core/src/config/index.ts` — canonical contract addresses for Base Sepolia and Base Mainnet. All other repos should reference this file.
+`packages/core/src/config/index.ts` — canonical contract addresses for 10 networks (deployed; only Base Sepolia tested). All other repos should reference this file.
 
 ## Key Files
 
@@ -60,9 +60,13 @@ pnpm --filter @x402r/helpers test
 | Example | Script | Description |
 |---------|--------|-------------|
 | `deploy-operator` | `pnpm example:deploy-operator` | Deploy a marketplace operator |
+| `facilitator` | `pnpm example:facilitator` | Facilitator server (verify/settle) |
+| `server:express` | `pnpm example:server:express` | Express merchant server |
+| `server:hono` | `pnpm example:server:hono` | Hono merchant server |
+| `client-cli` | `pnpm example:client-cli` | Client CLI (payer operations) |
+| `merchant-cli` | `pnpm example:merchant-cli` | Merchant CLI (release, refunds) |
+| `arbiter-cli` | `pnpm example:arbiter-cli` | Arbiter CLI (dispute resolution) |
 | `e2e-test` | `PRIVATE_KEY=0x... pnpm example:e2e-test` | Full payment lifecycle on Base Sepolia |
-| `client-cli` | `pnpm example:client-cli` | Client SDK usage patterns |
-| `arbiter-cli` | `pnpm example:arbiter-cli` | Arbiter SDK usage patterns |
 
 ## E2E Test Key Learnings
 

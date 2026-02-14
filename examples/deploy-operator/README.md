@@ -110,23 +110,24 @@ Freeze: 0xD0f99B7667076f151FD8240b277f1765d147e48C
 
 ## Next Steps
 
-After deployment:
+After deployment, test the full payment flow. From the SDK root:
 
-1. **Configure merchant server:**
+1. **Configure and start the merchant server:**
    ```bash
-   cd ../merchant-server
-   cp .env.example .env
-   # Add the deployed addresses to .env
+   cd examples/servers/express
+   cp .env-local .env
+   # Add OPERATOR_ADDRESS=<your deployed operator address> to .env
+   ```
+   ```bash
+   pnpm example:server:express
    ```
 
-2. **Test the payment flow:**
+2. **Make a payment:**
    ```bash
-   # Start merchant
-   cd ../merchant-server && pnpm start
-
-   # Make payment
-   cd ../client-cli && pnpm start pay --url http://localhost:3000/weather
+   pnpm example:client-cli pay --url http://localhost:4021/weather
    ```
+
+See the [Examples Guide](../../docs/EXAMPLES_GUIDE.md) for the full walkthrough.
 
 ## Customization
 

@@ -209,6 +209,25 @@ export interface ArbiterList {
   total: bigint;
 }
 
+// ============ Payment Store ============
+
+/**
+ * Interface for persisting PaymentInfo structs locally.
+ *
+ * Used by X402rClient and X402rMerchant to cache PaymentInfo for fast lookup
+ * and to recover full payment details after restart without RPC calls.
+ */
+export interface PaymentStore {
+  /** Persist a PaymentInfo by its hash */
+  save(hash: `0x${string}`, paymentInfo: PaymentInfo): Promise<void>;
+  /** Load a PaymentInfo by its hash, or null if not found */
+  load(hash: `0x${string}`): Promise<PaymentInfo | null>;
+  /** List all stored payments where payer matches the given address */
+  listByPayer(
+    payer: `0x${string}`,
+  ): Promise<Array<{ hash: `0x${string}`; paymentInfo: PaymentInfo }>>;
+}
+
 // ============ Event Log Types ============
 
 /**
