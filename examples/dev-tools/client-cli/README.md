@@ -6,7 +6,7 @@ A command-line tool for making x402r payments, freezing payments, and requesting
 
 - Node.js 20+
 - Private key with Base Sepolia ETH and USDC
-- A running merchant server (see `../merchant-server`)
+- A running merchant server (see `../../servers/express` or the [Examples Guide](../../../docs/EXAMPLES_GUIDE.md))
 
 ## Setup
 

@@ -340,6 +340,22 @@ describe("AuthCaptureEscrowABI", () => {
     expect(paymentStateFn).toBeDefined();
     expect(paymentStateFn?.outputs).toHaveLength(3);
   });
+
+  it("should have PaymentAuthorized event with indexed hash and full struct", () => {
+    const event = AuthCaptureEscrowABI.find(
+      item => item.name === "PaymentAuthorized" && item.type === "event",
+    );
+    expect(event).toBeDefined();
+    expect(event?.inputs).toHaveLength(4);
+    // paymentInfoHash is indexed for filtering
+    const hashInput = event?.inputs?.find(i => i.name === "paymentInfoHash");
+    expect(hashInput?.indexed).toBe(true);
+    expect(hashInput?.type).toBe("bytes32");
+    // paymentInfo is the full struct (not indexed)
+    const paymentInfoInput = event?.inputs?.find(i => i.name === "paymentInfo");
+    expect(paymentInfoInput?.type).toBe("tuple");
+    expect(paymentInfoInput?.indexed).toBe(false);
+  });
 });
 
 describe("StaticAddressConditionABI", () => {

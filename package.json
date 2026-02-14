@@ -30,7 +30,8 @@
     "example:client-cli": "tsx examples/dev-tools/client-cli/src/index.ts",
     "example:merchant-cli": "tsx examples/dev-tools/merchant-cli/src/index.ts",
     "example:arbiter-cli": "tsx examples/dev-tools/arbiter-cli/src/index.ts",
-    "example:e2e-test": "tsx examples/e2e-test/index.ts"
+    "example:e2e-test": "tsx examples/e2e-test/index.ts",
+    "example:e2e-recovery": "tsx examples/e2e-test/payment-recovery.ts"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",

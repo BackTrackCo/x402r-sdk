@@ -689,6 +689,22 @@ export const AuthCaptureEscrowABI = [
       { name: "refundableAmount", type: "uint120" },
     ],
   },
+  // Events
+  {
+    name: "PaymentAuthorized",
+    type: "event",
+    inputs: [
+      { name: "paymentInfoHash", type: "bytes32", indexed: true },
+      {
+        name: "paymentInfo",
+        type: "tuple",
+        components: paymentInfoComponents,
+        indexed: false,
+      },
+      { name: "amount", type: "uint256", indexed: false },
+      { name: "tokenCollector", type: "address", indexed: false },
+    ],
+  },
 ] as const;
 
 /**
