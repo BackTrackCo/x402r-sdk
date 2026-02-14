@@ -7,14 +7,11 @@
  *
  * Usage:
  *   pnpm start pay --url http://localhost:3000/weather
- *   pnpm start freeze --payment-json '{"operator":...}'
- *   pnpm start refund --payment-json '{"operator":...}' --amount 10000
+ *   pnpm start freeze --payment-json '{"operator":...}'  (or use saved state)
+ *   pnpm start refund --amount 10000                      (reads from saved state)
  */
 
 import { Command } from "commander";
-import { createPublicClient, createWalletClient, http } from "viem";
-import { baseSepolia } from "viem/chains";
-import { privateKeyToAccount } from "viem/accounts";
 import { config as dotenvConfig } from "dotenv";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
@@ -24,54 +21,24 @@ import {
   formatFeeBreakdown,
   validateFeeBounds,
   type PaymentInfo,
-  parsePaymentInfo as coreParsePaymentInfo,
 } from "@x402r/core";
+import { initCli } from "../../shared/cli-setup.js";
+import {
+  getPaymentInfoFromState,
+  savePaymentState,
+  printPaymentState,
+  clearPaymentState,
+} from "../../shared/state.js";
+import { parsePaymentInfo } from "../../shared/utils.js";
 import { pay } from "./commands/pay.js";
 import { freeze, unfreeze, checkFrozen } from "./commands/freeze.js";
 import { requestRefund, cancelRefund, getRefundStatus } from "./commands/refund.js";
 import { submitEvidence, listEvidence } from "./commands/evidence.js";
 
-function parsePaymentInfo(json: string): PaymentInfo {
-  try {
-    return coreParsePaymentInfo(json);
-  } catch {
-    console.error("Error: Invalid payment JSON");
-    console.error('Expected format: {"operator":"0x...","payer":"0x...",...}');
-    process.exit(1);
-  }
-}
-
 // Load environment from the example directory
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenvConfig({ path: join(__dirname, "..", ".env") });
-
-const NETWORK_ID = process.env.NETWORK_ID || "eip155:84532";
-const RPC_URL = process.env.RPC_URL || "https://sepolia.base.org";
-
-// Create viem clients
-function createClients() {
-  const privateKey = process.env.PRIVATE_KEY as `0x${string}`;
-  if (!privateKey) {
-    console.error("Error: PRIVATE_KEY environment variable is required");
-    process.exit(1);
-  }
-
-  const account = privateKeyToAccount(privateKey);
-
-  const publicClient = createPublicClient({
-    chain: baseSepolia,
-    transport: http(RPC_URL),
-  });
-
-  const walletClient = createWalletClient({
-    account,
-    chain: baseSepolia,
-    transport: http(RPC_URL),
-  });
-
-  return { publicClient, walletClient, account };
-}
 
 // Create CLI
 const program = new Command();
@@ -84,7 +51,7 @@ program
   .description("Make a payment to a URL that returns 402")
   .requiredOption("-u, --url <url>", "URL to pay for")
   .action(async options => {
-    const { walletClient } = createClients();
+    const { walletClient, networkId, operatorAddress } = initCli();
 
     const result = await pay({
       url: options.url,
@@ -96,6 +63,7 @@ program
       console.log(JSON.stringify(result.response, null, 2));
 
       if (result.paymentInfo) {
+        const paymentInfo = result.paymentInfo as PaymentInfo;
         console.log("\n=== Payment Info (save for freeze/refund) ===");
         console.log(
           JSON.stringify(
@@ -104,6 +72,17 @@ program
             2,
           ),
         );
+
+        // Auto-save state for subsequent commands
+        const paymentOperator = paymentInfo.operator;
+        savePaymentState({
+          paymentInfo,
+          operatorAddress: operatorAddress || paymentOperator,
+          paymentHash: result.transaction || "unknown",
+          timestamp: new Date().toISOString(),
+          networkId,
+        });
+        console.log("\n  State saved to ~/.x402r/last-payment.json");
       }
 
       if (result.transaction) {
@@ -116,16 +95,30 @@ program
     }
   });
 
+// State command
+program
+  .command("state")
+  .description("Show or clear saved payment state")
+  .option("--clear", "Clear saved payment state")
+  .action(options => {
+    if (options.clear) {
+      clearPaymentState();
+      console.log("Payment state cleared.");
+    } else {
+      printPaymentState();
+    }
+  });
+
 // Freeze command
 program
   .command("freeze")
   .description("Freeze a payment to extend escrow period")
-  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .option("-p, --payment-json <json>", "Payment info JSON (reads from saved state if omitted)")
   .requiredOption("-f, --freeze-address <address>", "Freeze contract address")
   .requiredOption("-o, --operator-address <address>", "Operator address")
   .action(async options => {
-    const { publicClient, walletClient } = createClients();
-    const paymentInfo = parsePaymentInfo(options.paymentJson);
+    const { publicClient, walletClient } = initCli();
+    const paymentInfo = getPaymentInfoFromState(options);
 
     const result = await freeze({
       paymentInfo,
@@ -149,12 +142,12 @@ program
 program
   .command("unfreeze")
   .description("Unfreeze a previously frozen payment")
-  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .option("-p, --payment-json <json>", "Payment info JSON (reads from saved state if omitted)")
   .requiredOption("-f, --freeze-address <address>", "Freeze contract address")
   .requiredOption("-o, --operator-address <address>", "Operator address")
   .action(async options => {
-    const { publicClient, walletClient } = createClients();
-    const paymentInfo = parsePaymentInfo(options.paymentJson);
+    const { publicClient, walletClient } = initCli();
+    const paymentInfo = getPaymentInfoFromState(options);
 
     const result = await unfreeze({
       paymentInfo,
@@ -178,12 +171,12 @@ program
 program
   .command("is-frozen")
   .description("Check if a payment is frozen")
-  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .option("-p, --payment-json <json>", "Payment info JSON (reads from saved state if omitted)")
   .requiredOption("-f, --freeze-address <address>", "Freeze contract address")
   .requiredOption("-o, --operator-address <address>", "Operator address")
   .action(async options => {
-    const { publicClient } = createClients();
-    const paymentInfo = parsePaymentInfo(options.paymentJson);
+    const { publicClient } = initCli();
+    const paymentInfo = getPaymentInfoFromState(options);
 
     const isFrozen = await checkFrozen({
       paymentInfo,
@@ -199,14 +192,14 @@ program
 program
   .command("refund")
   .description("Request a refund for a payment")
-  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .option("-p, --payment-json <json>", "Payment info JSON (reads from saved state if omitted)")
   .requiredOption("-a, --amount <amount>", "Amount to refund (in token units)")
   .requiredOption("-o, --operator-address <address>", "Operator address")
   .option("-n, --nonce <nonce>", "Nonce (record index)", "0")
   .action(async options => {
-    const { publicClient, walletClient } = createClients();
-    const paymentInfo = parsePaymentInfo(options.paymentJson);
-    const networkConfig = getNetworkConfig(NETWORK_ID)!;
+    const { publicClient, walletClient, networkId } = initCli();
+    const paymentInfo = getPaymentInfoFromState(options);
+    const networkConfig = getNetworkConfig(networkId)!;
 
     const result = await requestRefund({
       paymentInfo,
@@ -235,13 +228,13 @@ program
 program
   .command("cancel-refund")
   .description("Cancel a pending refund request")
-  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .option("-p, --payment-json <json>", "Payment info JSON (reads from saved state if omitted)")
   .requiredOption("-o, --operator-address <address>", "Operator address")
   .option("-n, --nonce <nonce>", "Nonce (record index)", "0")
   .action(async options => {
-    const { publicClient, walletClient } = createClients();
-    const paymentInfo = parsePaymentInfo(options.paymentJson);
-    const networkConfig = getNetworkConfig(NETWORK_ID)!;
+    const { publicClient, walletClient, networkId } = initCli();
+    const paymentInfo = getPaymentInfoFromState(options);
+    const networkConfig = getNetworkConfig(networkId)!;
 
     const result = await cancelRefund({
       paymentInfo,
@@ -266,13 +259,13 @@ program
 program
   .command("refund-status")
   .description("Check the status of a refund request")
-  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .option("-p, --payment-json <json>", "Payment info JSON (reads from saved state if omitted)")
   .requiredOption("-o, --operator-address <address>", "Operator address")
   .option("-n, --nonce <nonce>", "Nonce (record index)", "0")
   .action(async options => {
-    const { publicClient } = createClients();
-    const paymentInfo = parsePaymentInfo(options.paymentJson);
-    const networkConfig = getNetworkConfig(NETWORK_ID)!;
+    const { publicClient, networkId } = initCli();
+    const paymentInfo = getPaymentInfoFromState(options);
+    const networkConfig = getNetworkConfig(networkId)!;
 
     const status = await getRefundStatus({
       paymentInfo,
@@ -294,14 +287,14 @@ program
 program
   .command("submit-evidence")
   .description("Submit evidence for a dispute")
-  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .option("-p, --payment-json <json>", "Payment info JSON (reads from saved state if omitted)")
   .requiredOption("-c, --cid <cid>", "IPFS CID of the evidence")
   .requiredOption("-o, --operator-address <address>", "Operator address")
   .option("-n, --nonce <nonce>", "Nonce (record index)", "0")
   .action(async options => {
-    const { publicClient, walletClient } = createClients();
-    const paymentInfo = parsePaymentInfo(options.paymentJson);
-    const networkConfig = getNetworkConfig(NETWORK_ID)!;
+    const { publicClient, walletClient, networkId } = initCli();
+    const paymentInfo = getPaymentInfoFromState(options);
+    const networkConfig = getNetworkConfig(networkId)!;
 
     const result = await submitEvidence({
       paymentInfo,
@@ -323,17 +316,17 @@ program
     }
   });
 
-// List evidence command
+// Show evidence command (renamed from list-evidence for consistency with merchant/arbiter CLIs)
 program
-  .command("list-evidence")
-  .description("List all evidence for a payment dispute")
-  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .command("show-evidence")
+  .description("Show all evidence for a payment dispute")
+  .option("-p, --payment-json <json>", "Payment info JSON (reads from saved state if omitted)")
   .requiredOption("-o, --operator-address <address>", "Operator address")
   .option("-n, --nonce <nonce>", "Nonce (record index)", "0")
   .action(async options => {
-    const { publicClient } = createClients();
-    const paymentInfo = parsePaymentInfo(options.paymentJson);
-    const networkConfig = getNetworkConfig(NETWORK_ID)!;
+    const { publicClient, networkId } = initCli();
+    const paymentInfo = getPaymentInfoFromState(options);
+    const networkConfig = getNetworkConfig(networkId)!;
 
     try {
       await listEvidence({
@@ -354,13 +347,12 @@ program
   .command("info")
   .description("Show configuration info")
   .action(() => {
-    const { account } = createClients();
-    const networkConfig = getNetworkConfig(NETWORK_ID)!;
+    const { account, networkId, networkConfig } = initCli();
 
     console.log("\n=== Client Info ===");
     console.log("  Address:", account.address);
-    console.log("  Network:", NETWORK_ID);
-    console.log("  RPC:", RPC_URL);
+    console.log("  Network:", networkId);
+    console.log("  RPC:", process.env.RPC_URL || "https://sepolia.base.org");
 
     console.log("\n=== Protocol Addresses ===");
     console.log("  Escrow:", networkConfig.authCaptureEscrow);
@@ -377,10 +369,10 @@ program
   .requiredOption("-a, --amount <amount>", "Amount to calculate fees for (in token units)")
   .option("-p, --payment-json <json>", "Payment info JSON (optional, for bounds validation)")
   .action(async options => {
-    const { publicClient, account } = createClients();
+    const { publicClient, account, networkId } = initCli();
     const operatorAddress = options.operatorAddress as `0x${string}`;
     const amount = BigInt(options.amount);
-    const networkConfig = getNetworkConfig(NETWORK_ID)!;
+    const networkConfig = getNetworkConfig(networkId)!;
 
     // Create a minimal payment info for fee calculation if not provided
     const paymentInfo: PaymentInfo = options.paymentJson

@@ -51,8 +51,9 @@ Merchant and arbiter accounts are funded with a small amount of ETH from the pay
 |------|------------|---------|
 | 1. Setup accounts | — | Generate payer, merchant, arbiter wallets |
 | 2. Deploy operator | `@x402r/core` | `deployMarketplaceOperator` |
-| 3. Construct PaymentInfo | `@x402r/core` | `toAbiPaymentInfo`, `PaymentOperatorABI` |
-| 4. Authorize payment | `@x402r/core` | ERC-3009 `ReceiveWithAuthorization` |
+| 3. Construct PaymentInfo | `@x402r/core` | `toAbiPaymentInfo`, `validatePaymentInfo`, `resolveAddresses` |
+| 4. Authorize payment | `@x402r/core` | `computeEscrowNonce`, `signERC3009Authorization` |
+| 4b. Verify post-authorize state | all | `getPaymentState`, `paymentExists`, `isInEscrow`, `getPayerPayments`, `getReceiverPayments`, `getPaymentAmounts` |
 | 5. Request refund | `@x402r/client` | `X402rClient.requestRefund()` |
 | 6. Freeze payment | `@x402r/client` | `X402rClient.freezePayment()`, `isFrozen()` |
 | 7. Payer submits evidence | `@x402r/client` | `X402rClient.submitEvidence()`, `getEvidenceCount()` |
@@ -60,14 +61,19 @@ Merchant and arbiter accounts are funded with a small amount of ETH from the pay
 | 9. Arbiter reads all evidence | `@x402r/arbiter` | `X402rArbiter.getAllEvidence()` |
 | 10. Approve refund | `@x402r/arbiter` | `X402rArbiter.approveRefundRequest()` |
 | 11. Execute refund | `@x402r/arbiter` | `X402rArbiter.executeRefundInEscrow()` |
+| 11b. Verify post-refund state | all | `getPaymentState` (Settled), `isInEscrow` (false), `getPaymentAmounts` (0/0) |
 | 12. Final verification | all | Evidence persists, escrow emptied, USDC returned |
 
 ## Key Implementation Details
 
-- **ERC-3009 signing**: The authorize step uses `ReceiveWithAuthorization` (not ERC-20 `approve()`). The script computes a payer-agnostic escrow nonce and signs EIP-712 typed data.
+- **ERC-3009 signing**: The authorize step uses `ReceiveWithAuthorization` (not ERC-20 `approve()`). Uses `computeEscrowNonce()` and `signERC3009Authorization()` from `@x402r/core`.
+- **PaymentInfo validation**: `validatePaymentInfo()` checks feeReceiver, expiry, amount, and fee bounds before on-chain transactions.
+- **Address resolution**: `resolveAddresses()` provides all protocol contract addresses for SDK construction.
+- **Hash computation**: `computePaymentInfoHash()` computes the escrow hash off-chain (matches on-chain `getHash`).
 - **feeReceiver must be the operator**: `PaymentInfo.feeReceiver` must equal the deployed operator contract address.
 - **preApprovalExpiry = ERC-3009 validBefore**: Must be a future timestamp (not `0n`).
 - **RPC delay**: A 2-second delay after each transaction allows Base Sepolia RPC state propagation.
+- **Event log range**: Base Sepolia RPC limits `eth_getLogs` to 10,000 blocks — `getPayerPayments`/`getReceiverPayments` require a `fromBlock` parameter.
 
 ## Environment Variables
 

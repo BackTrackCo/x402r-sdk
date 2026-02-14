@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { X402rClient, X402rClientConfig } from "../src/client.js";
-import { NotImplementedError, PaymentState } from "@x402r/core";
+import { PaymentState, MemoryPaymentStore } from "@x402r/core";
+import type { PaymentInfo, PaymentStore } from "@x402r/core";
 import type { PublicClient, WalletClient } from "viem";
 
 // Mock viem clients
@@ -275,147 +276,193 @@ describe("X402rClient", () => {
   });
 
   describe("getPaymentDetails", () => {
-    it("should throw NotImplementedError (cannot reverse hash)", async () => {
-      const client = new X402rClient({ publicClient, operatorAddress });
-      await expect(
-        client.getPaymentDetails(
-          "0x1234567890123456789012345678901234567890123456789012345678901234",
-        ),
-      ).rejects.toThrow(NotImplementedError);
-    });
-  });
+    const testHash = "0x1234567890123456789012345678901234567890123456789012345678901234" as const;
 
-  describe("getMyPayments", () => {
-    it("should throw if walletClient not configured", async () => {
+    it("should throw if escrowAddress not configured and no store", async () => {
       const client = new X402rClient({ publicClient, operatorAddress });
-      await expect(client.getMyPayments()).rejects.toThrow("WalletClient required");
+      await expect(client.getPaymentDetails(testHash)).rejects.toThrow("Escrow address required");
     });
 
-    it("should return hashes from AuthorizationCreated events", async () => {
+    it("should return PaymentInfo from local store if available", async () => {
+      const store = new MemoryPaymentStore();
+      await store.save(testHash, samplePaymentInfo);
+
+      const client = new X402rClient({ publicClient, operatorAddress, paymentStore: store });
+      const result = await client.getPaymentDetails(testHash);
+      expect(result.operator).toBe(samplePaymentInfo.operator);
+      expect(result.maxAmount).toBe(samplePaymentInfo.maxAmount);
+    });
+
+    it("should fall back to escrow events when not in store", async () => {
+      const store = new MemoryPaymentStore();
       const mockLogs = [
         {
           args: {
-            paymentInfoHash: "0xaaa0000000000000000000000000000000000000000000000000000000000001",
-          },
-        },
-        {
-          args: {
-            paymentInfoHash: "0xbbb0000000000000000000000000000000000000000000000000000000000002",
+            paymentInfoHash: testHash,
+            paymentInfo: samplePaymentInfo,
+            amount: 1000000n,
+            tokenCollector: "0x0000000000000000000000000000000000000000",
           },
         },
       ];
       (
         publicClient as unknown as { getContractEvents: ReturnType<typeof vi.fn> }
       ).getContractEvents = vi.fn().mockResolvedValue(mockLogs);
-      const client = new X402rClient({ publicClient, walletClient, operatorAddress });
-      const result = await client.getMyPayments();
-      expect(result.hashes).toHaveLength(2);
+
+      const client = new X402rClient({
+        publicClient,
+        operatorAddress,
+        escrowAddress,
+        paymentStore: store,
+      });
+      const result = await client.getPaymentDetails(testHash);
+      expect(result.operator).toBe(samplePaymentInfo.operator);
+      expect(result.maxAmount).toBe(samplePaymentInfo.maxAmount);
+    });
+
+    it("should cache-fill store after event lookup", async () => {
+      const store = new MemoryPaymentStore();
+      const mockLogs = [
+        {
+          args: {
+            paymentInfoHash: testHash,
+            paymentInfo: samplePaymentInfo,
+            amount: 1000000n,
+            tokenCollector: "0x0000000000000000000000000000000000000000",
+          },
+        },
+      ];
+      (
+        publicClient as unknown as { getContractEvents: ReturnType<typeof vi.fn> }
+      ).getContractEvents = vi.fn().mockResolvedValue(mockLogs);
+
+      const client = new X402rClient({
+        publicClient,
+        operatorAddress,
+        escrowAddress,
+        paymentStore: store,
+      });
+      await client.getPaymentDetails(testHash);
+
+      // Should now be in the store
+      const cached = await store.load(testHash);
+      expect(cached).not.toBeNull();
+      expect(cached!.operator).toBe(samplePaymentInfo.operator);
+    });
+
+    it("should throw if not found in store or events", async () => {
+      (
+        publicClient as unknown as { getContractEvents: ReturnType<typeof vi.fn> }
+      ).getContractEvents = vi.fn().mockResolvedValue([]);
+
+      const client = new X402rClient({ publicClient, operatorAddress, escrowAddress });
+      await expect(client.getPaymentDetails(testHash)).rejects.toThrow("PaymentInfo not found");
+    });
+
+    it("should work without a store (event-only fallback)", async () => {
+      const mockLogs = [
+        {
+          args: {
+            paymentInfoHash: testHash,
+            paymentInfo: samplePaymentInfo,
+            amount: 1000000n,
+            tokenCollector: "0x0000000000000000000000000000000000000000",
+          },
+        },
+      ];
+      (
+        publicClient as unknown as { getContractEvents: ReturnType<typeof vi.fn> }
+      ).getContractEvents = vi.fn().mockResolvedValue(mockLogs);
+
+      const client = new X402rClient({ publicClient, operatorAddress, escrowAddress });
+      const result = await client.getPaymentDetails(testHash);
+      expect(result.operator).toBe(samplePaymentInfo.operator);
+    });
+  });
+
+  describe("getPayerPayments", () => {
+    it("should throw if walletClient not configured", async () => {
+      const client = new X402rClient({ publicClient, operatorAddress });
+      await expect(client.getPayerPayments()).rejects.toThrow("WalletClient required");
+    });
+
+    it("should return full PaymentInfo from AuthorizationCreated + escrow events", async () => {
+      const hash1 = "0xaaa0000000000000000000000000000000000000000000000000000000000001" as const;
+      const hash2 = "0xbbb0000000000000000000000000000000000000000000000000000000000002" as const;
+
+      // First call: AuthorizationCreated from operator
+      // Second + Third calls: PaymentAuthorized from escrow
+      const getContractEventsMock = vi.fn();
+      getContractEventsMock.mockResolvedValueOnce([
+        { args: { paymentInfoHash: hash1 } },
+        { args: { paymentInfoHash: hash2 } },
+      ]);
+      getContractEventsMock.mockResolvedValueOnce([
+        { args: { paymentInfoHash: hash1, paymentInfo: samplePaymentInfo } },
+      ]);
+      getContractEventsMock.mockResolvedValueOnce([
+        { args: { paymentInfoHash: hash2, paymentInfo: { ...samplePaymentInfo, salt: 999n } } },
+      ]);
+
+      (
+        publicClient as unknown as { getContractEvents: ReturnType<typeof vi.fn> }
+      ).getContractEvents = getContractEventsMock;
+
+      const client = new X402rClient({
+        publicClient,
+        walletClient,
+        operatorAddress,
+        escrowAddress,
+      });
+      const result = await client.getPayerPayments();
+      expect(result).toHaveLength(2);
+      expect(result[0].hash).toBe(hash1);
+      expect(result[0].paymentInfo.operator).toBe(samplePaymentInfo.operator);
+      expect(result[1].hash).toBe(hash2);
+      expect(result[1].paymentInfo.salt).toBe(999n);
     });
 
     it("should return empty array when no events found", async () => {
       (
         publicClient as unknown as { getContractEvents: ReturnType<typeof vi.fn> }
       ).getContractEvents = vi.fn().mockResolvedValue([]);
-      const client = new X402rClient({ publicClient, walletClient, operatorAddress });
-      const result = await client.getMyPayments();
-      expect(result.hashes).toHaveLength(0);
-    });
-  });
-
-  // ============ Evidence Operations ============
-
-  describe("evidence operations", () => {
-    const evidenceAddress = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" as const;
-
-    const samplePaymentInfo = {
-      operator: operatorAddress,
-      payer: "0x2345678901234567890123456789012345678901" as const,
-      receiver: "0x3456789012345678901234567890123456789012" as const,
-      token: "0x4567890123456789012345678901234567890123" as const,
-      maxAmount: BigInt("1000000"),
-      preApprovalExpiry: 0n,
-      authorizationExpiry: BigInt(1735689600),
-      refundExpiry: BigInt(1738368000),
-      minFeeBps: 0,
-      maxFeeBps: 500,
-      feeReceiver: "0x5678901234567890123456789012345678901234" as const,
-      salt: BigInt("0x123456"),
-    };
-
-    it("should accept refundRequestEvidenceAddress in constructor", () => {
       const client = new X402rClient({
         publicClient,
         walletClient,
         operatorAddress,
-        refundRequestEvidenceAddress: evidenceAddress,
+        escrowAddress,
       });
-
-      expect(client.refundRequestEvidenceAddress).toBe(evidenceAddress);
+      const result = await client.getPayerPayments();
+      expect(result).toHaveLength(0);
     });
 
-    it("should throw if evidence address not configured", async () => {
-      const client = new X402rClient({
-        publicClient,
-        walletClient,
-        operatorAddress,
-      });
+    it("should use store for cached payments instead of hitting escrow events", async () => {
+      const hash1 = "0xaaa0000000000000000000000000000000000000000000000000000000000001" as const;
 
-      await expect(client.getEvidenceCount(samplePaymentInfo, 0n)).rejects.toThrow(
-        "RefundRequestEvidence address required",
-      );
-    });
+      const store = new MemoryPaymentStore();
+      await store.save(hash1, samplePaymentInfo);
 
-    it("should delegate submitEvidence to shared ops", async () => {
-      (walletClient.writeContract as ReturnType<typeof vi.fn>).mockResolvedValue("0xtxhash");
+      const getContractEventsMock = vi.fn();
+      // AuthorizationCreated from operator
+      getContractEventsMock.mockResolvedValueOnce([{ args: { paymentInfoHash: hash1 } }]);
+
+      (
+        publicClient as unknown as { getContractEvents: ReturnType<typeof vi.fn> }
+      ).getContractEvents = getContractEventsMock;
 
       const client = new X402rClient({
         publicClient,
         walletClient,
         operatorAddress,
-        refundRequestEvidenceAddress: evidenceAddress,
+        escrowAddress,
+        paymentStore: store,
       });
-
-      const result = await client.submitEvidence(samplePaymentInfo, 0n, "QmTestCid");
-      expect(result.txHash).toBe("0xtxhash");
-    });
-
-    it("should delegate getEvidenceCount to shared ops", async () => {
-      (publicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(3n);
-
-      const client = new X402rClient({
-        publicClient,
-        operatorAddress,
-        refundRequestEvidenceAddress: evidenceAddress,
-      });
-
-      const count = await client.getEvidenceCount(samplePaymentInfo, 0n);
-      expect(count).toBe(3n);
-    });
-
-    it("should delegate getAllEvidence to shared ops", async () => {
-      const readContractMock = publicClient.readContract as ReturnType<typeof vi.fn>;
-      readContractMock.mockResolvedValueOnce(1n);
-      readContractMock.mockResolvedValueOnce([
-        [
-          {
-            submitter: "0x2345678901234567890123456789012345678901",
-            role: 0,
-            timestamp: BigInt(1700000000),
-            cid: "QmCid1",
-          },
-        ],
-        1n,
-      ]);
-
-      const client = new X402rClient({
-        publicClient,
-        operatorAddress,
-        refundRequestEvidenceAddress: evidenceAddress,
-      });
-
-      const entries = await client.getAllEvidence(samplePaymentInfo, 0n);
-      expect(entries).toHaveLength(1);
-      expect(entries[0].cid).toBe("QmCid1");
+      const result = await client.getPayerPayments();
+      expect(result).toHaveLength(1);
+      expect(result[0].paymentInfo.operator).toBe(samplePaymentInfo.operator);
+      // Should only have called getContractEvents once (for AuthorizationCreated),
+      // not a second time for PaymentAuthorized (resolved from store)
+      expect(getContractEventsMock).toHaveBeenCalledTimes(1);
     });
   });
 

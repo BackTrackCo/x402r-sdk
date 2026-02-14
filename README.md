@@ -52,38 +52,38 @@ pnpm docs:watch
 
 ## Running Examples
 
-The SDK includes working examples for a complete payment flow:
+The SDK includes working examples for a complete payment flow. All commands run from the SDK root.
 
 ```bash
-# 1. Deploy an operator (one-time setup)
+# 1. Deploy an operator (one-time setup — or use the pre-deployed one below)
 PRIVATE_KEY=0x... pnpm example:deploy-operator
 
-# 2. Start the facilitator service
-cd examples/facilitator && cp .env.example .env  # Configure with PRIVATE_KEY + OPERATOR_ADDRESS
-pnpm dev
+# 2. Start the facilitator (new terminal)
+# Configure examples/facilitator/basic/.env first (copy from .env-local)
+pnpm example:facilitator
 
-# 3. Start the merchant server (in a new terminal)
-cd examples/merchant-server && cp .env.example .env  # Configure with PRIVATE_KEY, OPERATOR_ADDRESS, FACILITATOR_URL
-pnpm example:merchant-server
+# 3. Start the merchant server (new terminal)
+# Configure examples/servers/express/.env first (copy from .env-local)
+pnpm example:server:express
 
-# 4. Make a payment with the client CLI (in a new terminal)
-cd examples/client-cli && cp .env.example .env  # Configure first
-pnpm example:client-cli pay --url http://localhost:3000/weather
+# 4. Make a payment (new terminal)
+# Configure examples/dev-tools/client-cli/.env first (copy from .env.example)
+pnpm example:client-cli pay --url http://localhost:4021/weather
 ```
 
 The flow is: Client -> Merchant Server -> Facilitator -> Blockchain. The merchant server uses x402's standard `paymentMiddleware` and delegates verify/settle to the facilitator service.
 
-See the [Examples Guide](./docs/EXAMPLES_GUIDE.md) for the complete walkthrough including freeze and refund operations.
+See the [Examples Guide](./docs/EXAMPLES_GUIDE.md) for the complete walkthrough including freeze, refund, and arbiter operations.
 
 ### Pre-deployed Test Operator (Base Sepolia)
 
-Use this operator for testing:
+Short-escrow operator for testing (5min escrow, 3min freeze window, 1% fee):
 
 | Contract        | Address                                      |
 | --------------- | -------------------------------------------- |
-| PaymentOperator | `0xbb4f390b80E4F4895B96B95AE382B65fDC45974B` |
-| Freeze          | `0xD0f99B7667076f151FD8240b277f1765d147e48C` |
-| EscrowPeriod    | `0xFcFb7e197823D304D53F47BE1E9761e9D102589b` |
+| PaymentOperator | `0x8140b98ec518843EA1Dd40C42617ACBa71752C33` |
+| EscrowPeriod    | `0x0402f5b49126786c01c3e0885767bB11C0199372` |
+| Freeze          | `0x6d64A0B25A1494f347941614fc8799B486a603A6` |
 
 ## Documentation
 
@@ -93,20 +93,18 @@ Use this operator for testing:
 
 ## Network Support
 
-| Network      | Chain ID | Status       |
-| ------------ | -------- | ------------ |
-| Base Sepolia | 84532    | ✅ Supported |
-| Base Mainnet | 8453     | 🚧 Pending   |
+| Network | Chain ID | Status |
+| ------- | -------- | ------ |
+| Base Sepolia | 84532 | ✅ Tested |
+| Base Mainnet | 8453 | 🚧 Deployed, not yet tested |
+| Ethereum, Ethereum Sepolia, Polygon, Arbitrum, Optimism, Avalanche, Celo, Monad | various | 🚧 Deployed, not yet tested |
+
+Contracts are deployed to 10 networks. Addresses: `packages/core/src/config/index.ts`.
 
 ## Known Limitations
 
-**Subgraph Not Deployed**: Query methods that require indexing will throw `NotImplementedError`:
-
-- `client.getPaymentState()`, `paymentExists()`, `isInEscrow()`, `getPaymentDetails()`, `getMyPayments()`
-- `merchant.getPaymentState()`, `getReceiverPayments()`
-- `arbiter.getPaymentState()`
-
-All write operations (refunds, releases, charges) work directly on-chain.
+- All query methods (`getPaymentDetails()`, `getPaymentState()`, `paymentExists()`, `isInEscrow()`, `getPayerPayments()`, `getReceiverPayments()`, `getPaymentAmounts()`) read directly from on-chain contracts.
+- All write operations (refunds, releases, charges) work directly on-chain.
 
 ## License
 

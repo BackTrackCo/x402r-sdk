@@ -10,26 +10,20 @@
  *   pnpm start show <key>                        # Show request details
  *   pnpm start approve <key>                     # Approve a refund request
  *   pnpm start deny <key>                        # Deny a refund request
- *   pnpm start execute --payment-json '...'      # Execute approved refund
+ *   pnpm start execute --payment-json '...'      # Execute approved refund (or use saved state)
  *   pnpm start watch                             # Watch for new refund requests
  *   pnpm start info                              # Show arbiter wallet info
  */
 
 import { Command } from "commander";
-import { createPublicClient, createWalletClient, http } from "viem";
-import { baseSepolia } from "viem/chains";
-import { privateKeyToAccount } from "viem/accounts";
 import { config as dotenvConfig } from "dotenv";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { X402rArbiter } from "@x402r/arbiter";
-import { getNetworkConfig, RequestStatus, type PaymentInfo } from "@x402r/core";
-import {
-  parsePaymentInfo,
-  shortAddress,
-  formatUSDC,
-  formatEvidenceList,
-} from "../../shared/utils.js";
+import { RequestStatus } from "@x402r/core";
+import { initCli } from "../../shared/cli-setup.js";
+import { getPaymentInfoFromState } from "../../shared/state.js";
+import { shortAddress, formatUSDC, formatEvidenceList } from "../../shared/utils.js";
 import { showEvidence, submitArbiterEvidence } from "./commands/evidence.js";
 
 // Load environment from the example directory
@@ -37,46 +31,20 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenvConfig({ path: join(__dirname, "..", ".env") });
 
-const NETWORK_ID = process.env.NETWORK_ID || "eip155:84532";
-const RPC_URL = process.env.RPC_URL || "https://sepolia.base.org";
-
 // Status name mapping
 const STATUS_NAMES = ["Pending", "Approved", "Denied", "Cancelled"] as const;
 
-// Create viem clients and arbiter SDK
+// Create arbiter SDK from shared setup
 function createArbiter() {
-  const privateKey = process.env.PRIVATE_KEY as `0x${string}`;
-  if (!privateKey) {
-    console.error("Error: PRIVATE_KEY environment variable is required");
-    process.exit(1);
-  }
-
-  const operatorAddress = process.env.OPERATOR_ADDRESS as `0x${string}`;
-  if (!operatorAddress) {
-    console.error("Error: OPERATOR_ADDRESS environment variable is required");
-    process.exit(1);
-  }
-
-  const account = privateKeyToAccount(privateKey);
-  const networkConfig = getNetworkConfig(NETWORK_ID)!;
-
-  const publicClient = createPublicClient({
-    chain: baseSepolia,
-    transport: http(RPC_URL),
-  });
-
-  const walletClient = createWalletClient({
-    account,
-    chain: baseSepolia,
-    transport: http(RPC_URL),
-  });
+  const { account, publicClient, walletClient, networkId, networkConfig, operatorAddress } =
+    initCli({ requireOperator: true });
 
   const arbiterRegistryAddress = process.env.ARBITER_REGISTRY_ADDRESS as `0x${string}` | undefined;
 
   const arbiter = new X402rArbiter({
     publicClient,
     walletClient,
-    operatorAddress,
+    operatorAddress: operatorAddress!,
     escrowAddress: networkConfig.authCaptureEscrow,
     refundRequestAddress: networkConfig.refundRequest,
     refundRequestEvidenceAddress: networkConfig.refundRequestEvidence,
@@ -92,7 +60,8 @@ function createArbiter() {
     account,
     publicClient,
     walletClient,
-    operatorAddress,
+    operatorAddress: operatorAddress!,
+    networkId,
     networkConfig,
     receiverAddress,
     freezeAddress,
@@ -109,13 +78,13 @@ program
   .command("info")
   .description("Show arbiter configuration info")
   .action(() => {
-    const { account, operatorAddress, networkConfig, receiverAddress, freezeAddress } =
+    const { account, operatorAddress, networkId, networkConfig, receiverAddress, freezeAddress } =
       createArbiter();
 
     console.log("\n=== Arbiter Info ===");
     console.log("  Address:", account.address);
-    console.log("  Network:", NETWORK_ID);
-    console.log("  RPC:", RPC_URL);
+    console.log("  Network:", networkId);
+    console.log("  RPC:", process.env.RPC_URL || "https://sepolia.base.org");
 
     console.log("\n=== Operator ===");
     console.log("  Operator:", operatorAddress);
@@ -207,17 +176,17 @@ program
       try {
         // We need paymentInfo to query evidence — this is a limitation
         // when only the key is provided. Show a hint instead.
-        console.log("\n  💡 Use 'show-evidence' with --payment-json to view dispute evidence");
+        console.log("\n  Use 'show-evidence' with --payment-json to view dispute evidence");
       } catch {
         // Ignore
       }
 
       if (request.status === RequestStatus.Pending) {
-        console.log("\n💡 This request is pending. You can approve or deny it:");
+        console.log("\nThis request is pending. You can approve or deny it:");
         console.log(`   pnpm start approve ${key}`);
         console.log(`   pnpm start deny ${key}`);
       } else if (request.status === RequestStatus.Approved) {
-        console.log("\n💡 This request is approved. It can be executed by the payer.");
+        console.log("\nThis request is approved. It can be executed by the payer.");
       }
     } catch (error) {
       console.error("\nFailed to fetch request:", error instanceof Error ? error.message : error);
@@ -229,11 +198,11 @@ program
 program
   .command("approve <key>")
   .description("Approve a refund request (requires payment JSON)")
-  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .option("-p, --payment-json <json>", "Payment info JSON (reads from saved state if omitted)")
   .option("-n, --nonce <nonce>", "Nonce (record index)", "0")
   .action(async (key: string, options) => {
     const { arbiter } = createArbiter();
-    const paymentInfo = parsePaymentInfo(options.paymentJson);
+    const paymentInfo = getPaymentInfoFromState(options);
     const nonce = BigInt(options.nonce);
 
     // The key parameter is for display/audit trail only.
@@ -259,11 +228,11 @@ program
 
     try {
       const result = await arbiter.approveRefundRequest(paymentInfo, nonce);
-      console.log("\n✅ Refund request approved!");
+      console.log("\nRefund request approved!");
       console.log("  Transaction:", result.txHash);
       console.log(`\nhttps://sepolia.basescan.org/tx/${result.txHash}`);
     } catch (error) {
-      console.error("\n❌ Approval failed:", error instanceof Error ? error.message : error);
+      console.error("\nApproval failed:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });
@@ -272,11 +241,11 @@ program
 program
   .command("deny <key>")
   .description("Deny a refund request (requires payment JSON)")
-  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .option("-p, --payment-json <json>", "Payment info JSON (reads from saved state if omitted)")
   .option("-n, --nonce <nonce>", "Nonce (record index)", "0")
   .action(async (key: string, options) => {
     const { arbiter } = createArbiter();
-    const paymentInfo = parsePaymentInfo(options.paymentJson);
+    const paymentInfo = getPaymentInfoFromState(options);
     const nonce = BigInt(options.nonce);
 
     // The key parameter is for display/audit trail only.
@@ -302,11 +271,11 @@ program
 
     try {
       const result = await arbiter.denyRefundRequest(paymentInfo, nonce);
-      console.log("\n❌ Refund request denied!");
+      console.log("\nRefund request denied!");
       console.log("  Transaction:", result.txHash);
       console.log(`\nhttps://sepolia.basescan.org/tx/${result.txHash}`);
     } catch (error) {
-      console.error("\n❌ Denial failed:", error instanceof Error ? error.message : error);
+      console.error("\nDenial failed:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });
@@ -315,11 +284,11 @@ program
 program
   .command("execute")
   .description("Execute a refund for an approved request")
-  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .option("-p, --payment-json <json>", "Payment info JSON (reads from saved state if omitted)")
   .option("-a, --amount <amount>", "Amount to refund (defaults to maxAmount)")
   .action(async options => {
     const { arbiter } = createArbiter();
-    const paymentInfo = parsePaymentInfo(options.paymentJson);
+    const paymentInfo = getPaymentInfoFromState(options);
     const amount = options.amount ? BigInt(options.amount) : undefined;
 
     console.log("\nExecuting refund...");
@@ -328,11 +297,11 @@ program
 
     try {
       const result = await arbiter.executeRefundInEscrow(paymentInfo, amount);
-      console.log("\n✅ Refund executed!");
+      console.log("\nRefund executed!");
       console.log("  Transaction:", result.txHash);
       console.log(`\nhttps://sepolia.basescan.org/tx/${result.txHash}`);
     } catch (error) {
-      console.error("\n❌ Execution failed:", error instanceof Error ? error.message : error);
+      console.error("\nExecution failed:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });
@@ -341,11 +310,11 @@ program
 program
   .command("status")
   .description("Check the status of a refund request")
-  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .option("-p, --payment-json <json>", "Payment info JSON (reads from saved state if omitted)")
   .option("-n, --nonce <nonce>", "Nonce (record index)", "0")
   .action(async options => {
     const { arbiter } = createArbiter();
-    const paymentInfo = parsePaymentInfo(options.paymentJson);
+    const paymentInfo = getPaymentInfoFromState(options);
     const nonce = BigInt(options.nonce);
 
     try {
@@ -371,14 +340,14 @@ program
 program
   .command("is-frozen")
   .description("Check if a payment is frozen")
-  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .option("-p, --payment-json <json>", "Payment info JSON (reads from saved state if omitted)")
   .option(
     "-f, --freeze-address <address>",
     "Freeze contract address (uses FREEZE_ADDRESS env if not provided)",
   )
   .action(async options => {
     const { arbiter, freezeAddress: envFreezeAddress } = createArbiter();
-    const paymentInfo = parsePaymentInfo(options.paymentJson);
+    const paymentInfo = getPaymentInfoFromState(options);
     const freezeAddress = (options.freezeAddress as `0x${string}`) || envFreezeAddress;
 
     if (!freezeAddress) {
@@ -388,7 +357,7 @@ program
 
     try {
       const isFrozen = await arbiter.isFrozen(paymentInfo, freezeAddress);
-      console.log(`\nPayment is ${isFrozen ? "FROZEN 🧊" : "NOT FROZEN"}`);
+      console.log(`\nPayment is ${isFrozen ? "FROZEN" : "NOT FROZEN"}`);
     } catch (error) {
       console.error(
         "\nFailed to check freeze status:",
@@ -405,7 +374,7 @@ program
   .action(() => {
     const { arbiter, receiverAddress } = createArbiter();
 
-    console.log("\n👀 Watching for new refund requests...");
+    console.log("\nWatching for new refund requests...");
     console.log("  Receiver:", receiverAddress);
     console.log("  Press Ctrl+C to stop\n");
 
@@ -414,7 +383,7 @@ program
         args?: { payer?: string; receiver?: string; amount?: bigint };
       };
       const timestamp = new Date().toLocaleTimeString();
-      console.log(`[${timestamp}] 🆕 New refund request`);
+      console.log(`[${timestamp}] New refund request`);
       if (log.args) {
         if (log.args.payer) console.log(`    Payer: ${shortAddress(log.args.payer)}`);
         if (log.args.receiver) console.log(`    Receiver: ${shortAddress(log.args.receiver)}`);
@@ -428,7 +397,7 @@ program
       const timestamp = new Date().toLocaleTimeString();
       const status = log.args?.status;
       const statusName = status !== undefined ? STATUS_NAMES[status] || String(status) : "Unknown";
-      console.log(`[${timestamp}] 📋 Status updated: ${statusName}`);
+      console.log(`[${timestamp}] Status updated: ${statusName}`);
       console.log("");
     });
 
@@ -466,11 +435,11 @@ program
 program
   .command("show-evidence")
   .description("Show all evidence for a dispute case")
-  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .option("-p, --payment-json <json>", "Payment info JSON (reads from saved state if omitted)")
   .option("-n, --nonce <nonce>", "Nonce (record index)", "0")
   .action(async options => {
     const { arbiter } = createArbiter();
-    const paymentInfo = parsePaymentInfo(options.paymentJson);
+    const paymentInfo = getPaymentInfoFromState(options);
     const nonce = BigInt(options.nonce);
 
     try {
@@ -485,12 +454,12 @@ program
 program
   .command("submit-evidence")
   .description("Submit evidence as arbiter")
-  .requiredOption("-p, --payment-json <json>", "Payment info JSON")
+  .option("-p, --payment-json <json>", "Payment info JSON (reads from saved state if omitted)")
   .requiredOption("-c, --cid <cid>", "IPFS CID of the evidence")
   .option("-n, --nonce <nonce>", "Nonce (record index)", "0")
   .action(async options => {
     const { arbiter } = createArbiter();
-    const paymentInfo = parsePaymentInfo(options.paymentJson);
+    const paymentInfo = getPaymentInfoFromState(options);
     const nonce = BigInt(options.nonce);
 
     try {
@@ -517,11 +486,11 @@ program
 
     try {
       const result = await arbiter.registerArbiter(options.uri);
-      console.log("\n✅ Registered!");
+      console.log("\nRegistered!");
       console.log("  Transaction:", result.txHash);
       console.log(`\nhttps://sepolia.basescan.org/tx/${result.txHash}`);
     } catch (error) {
-      console.error("\n❌ Registration failed:", error instanceof Error ? error.message : error);
+      console.error("\nRegistration failed:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });
@@ -539,11 +508,11 @@ program
 
     try {
       const result = await arbiter.updateArbiterUri(options.uri);
-      console.log("\n✅ URI updated!");
+      console.log("\nURI updated!");
       console.log("  Transaction:", result.txHash);
       console.log(`\nhttps://sepolia.basescan.org/tx/${result.txHash}`);
     } catch (error) {
-      console.error("\n❌ Update failed:", error instanceof Error ? error.message : error);
+      console.error("\nUpdate failed:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });
@@ -559,11 +528,11 @@ program
 
     try {
       const result = await arbiter.deregisterArbiter();
-      console.log("\n✅ Deregistered!");
+      console.log("\nDeregistered!");
       console.log("  Transaction:", result.txHash);
       console.log(`\nhttps://sepolia.basescan.org/tx/${result.txHash}`);
     } catch (error) {
-      console.error("\n❌ Deregistration failed:", error instanceof Error ? error.message : error);
+      console.error("\nDeregistration failed:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });
@@ -613,10 +582,10 @@ program
       const isRegistered = await arbiter.isArbiterRegistered(address);
       if (isRegistered) {
         const uri = await arbiter.getArbiterUri(address);
-        console.log(`\n✅ ${address} is a registered arbiter`);
+        console.log(`\n${address} is a registered arbiter`);
         console.log(`   URI: ${uri}`);
       } else {
-        console.log(`\n❌ ${address} is NOT a registered arbiter`);
+        console.log(`\n${address} is NOT a registered arbiter`);
       }
     } catch (error) {
       console.error("\nFailed to check:", error instanceof Error ? error.message : error);

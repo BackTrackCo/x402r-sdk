@@ -10,7 +10,6 @@ import {
   RefundRequestABI,
   EscrowPeriodABI,
   FreezeABI,
-  NotImplementedError,
   PaymentState,
   computePaymentInfoHash,
   toAbiPaymentInfo,
@@ -27,6 +26,7 @@ import {
   getAllEvidence as sharedGetAllEvidence,
   watchEvidenceSubmissions as sharedWatchEvidenceSubmissions,
   type PaymentInfo,
+  type PaymentStore,
   type RequestStatus,
   type RefundRequestData,
   type Evidence,
@@ -54,6 +54,8 @@ export interface X402rClientConfig {
   refundRequestEvidenceAddress?: `0x${string}`;
   /** Chain ID for hash computation (default: 84532 for Base Sepolia) */
   chainId?: number;
+  /** Optional PaymentStore for caching PaymentInfo locally */
+  paymentStore?: PaymentStore;
 }
 
 /**
@@ -99,6 +101,8 @@ export class X402rClient {
   readonly refundRequestEvidenceAddress?: `0x${string}`;
   /** Chain ID */
   readonly chainId: number;
+  /** Optional PaymentStore for caching PaymentInfo locally */
+  readonly paymentStore?: PaymentStore;
 
   constructor(config: X402rClientConfig) {
     this.publicClient = config.publicClient;
@@ -108,6 +112,7 @@ export class X402rClient {
     this.refundRequestAddress = config.refundRequestAddress;
     this.refundRequestEvidenceAddress = config.refundRequestEvidenceAddress;
     this.chainId = config.chainId ?? 84532;
+    this.paymentStore = config.paymentStore;
   }
 
   /** Get the refund read context, throwing if refundRequestAddress is not configured */
@@ -253,37 +258,112 @@ export class X402rClient {
   }
 
   /**
-   * Get stored PaymentInfo for a given hash.
+   * Get the full PaymentInfo for a given hash.
    *
-   * The escrow contract only stores the hash, not the full PaymentInfo struct.
-   * This method cannot reverse a hash into PaymentInfo. Store PaymentInfo locally
-   * when creating payments, or use a subgraph when available.
+   * Resolution strategy:
+   * 1. Check local PaymentStore (instant, zero RPC)
+   * 2. Scan escrow `PaymentAuthorized` events by hash (1 getLogs call)
+   * 3. Cache-fill: save to store if found via events
    *
-   * @throws NotImplementedError - Cannot reverse hash to PaymentInfo without subgraph
+   * @param paymentInfoHash - The hash of the PaymentInfo
+   * @param fromBlock - Starting block for event scan fallback (default: earliest)
+   * @returns The full PaymentInfo struct
+   * @throws Error if PaymentInfo cannot be found in store or events
+   * @throws Error if escrowAddress is not configured
    */
-  async getPaymentDetails(_paymentInfoHash: `0x${string}`): Promise<PaymentInfo> {
-    throw new NotImplementedError(
-      "getPaymentDetails",
-      "Cannot reverse hash to PaymentInfo. " +
-        "Store PaymentInfo locally when creating payments, or use a subgraph.",
-    );
+  async getPaymentDetails(
+    paymentInfoHash: `0x${string}`,
+    fromBlock?: bigint,
+  ): Promise<PaymentInfo> {
+    // 1. Check local store first
+    if (this.paymentStore) {
+      const cached = await this.paymentStore.load(paymentInfoHash);
+      if (cached) return cached;
+    }
+
+    // 2. Fall back to scanning escrow PaymentAuthorized events
+    if (!this.escrowAddress) {
+      throw new Error(
+        "Escrow address required. Use resolveAddresses(networkId) from @x402r/core to get the escrow address for your network.",
+      );
+    }
+
+    const logs = await this.publicClient.getContractEvents({
+      address: this.escrowAddress,
+      abi: AuthCaptureEscrowABI,
+      eventName: "PaymentAuthorized",
+      args: {
+        paymentInfoHash,
+      },
+      fromBlock: fromBlock ?? "earliest",
+    });
+
+    if (logs.length === 0) {
+      throw new Error(
+        `PaymentInfo not found for hash ${paymentInfoHash}. ` +
+          "Payment may not exist or event logs may have been pruned.",
+      );
+    }
+
+    const eventArgs = logs[0].args as {
+      paymentInfo?: {
+        operator: `0x${string}`;
+        payer: `0x${string}`;
+        receiver: `0x${string}`;
+        token: `0x${string}`;
+        maxAmount: bigint;
+        preApprovalExpiry: bigint;
+        authorizationExpiry: bigint;
+        refundExpiry: bigint;
+        minFeeBps: number;
+        maxFeeBps: number;
+        feeReceiver: `0x${string}`;
+        salt: bigint;
+      };
+    };
+
+    if (!eventArgs.paymentInfo) {
+      throw new Error(`PaymentAuthorized event missing paymentInfo for hash ${paymentInfoHash}`);
+    }
+
+    const paymentInfo: PaymentInfo = {
+      operator: eventArgs.paymentInfo.operator,
+      payer: eventArgs.paymentInfo.payer,
+      receiver: eventArgs.paymentInfo.receiver,
+      token: eventArgs.paymentInfo.token,
+      maxAmount: eventArgs.paymentInfo.maxAmount,
+      preApprovalExpiry: eventArgs.paymentInfo.preApprovalExpiry,
+      authorizationExpiry: eventArgs.paymentInfo.authorizationExpiry,
+      refundExpiry: eventArgs.paymentInfo.refundExpiry,
+      minFeeBps: Number(eventArgs.paymentInfo.minFeeBps),
+      maxFeeBps: Number(eventArgs.paymentInfo.maxFeeBps),
+      feeReceiver: eventArgs.paymentInfo.feeReceiver,
+      salt: eventArgs.paymentInfo.salt,
+    };
+
+    // 3. Cache-fill: save to store for future lookups
+    if (this.paymentStore) {
+      await this.paymentStore.save(paymentInfoHash, paymentInfo);
+    }
+
+    return paymentInfo;
   }
 
   /**
-   * Get all payment hashes where the current wallet is the payer.
+   * Get all payments where the current wallet is the payer.
    *
-   * Scans `AuthorizationCreated` event logs on the operator contract.
-   * This performs a full log scan which may be slow on chains with many blocks.
+   * Returns full PaymentInfo structs by:
+   * 1. Scanning `AuthorizationCreated` event logs on the operator (payer-indexed)
+   * 2. Resolving each hash to full PaymentInfo via `getPaymentDetails()`
    *
    * @param fromBlock - Starting block for the scan (default: earliest)
-   * @returns Object with an array of payment info hashes
+   * @returns Array of objects containing the hash and full PaymentInfo
    * @throws Error if walletClient is not configured
-   *
-   * @remarks
-   * This method performs a full event log scan which can be slow.
-   * For production use, consider using a subgraph or indexer instead.
+   * @throws Error if escrowAddress is not configured
    */
-  async getMyPayments(fromBlock?: bigint): Promise<{ hashes: readonly `0x${string}`[] }> {
+  async getPayerPayments(
+    fromBlock?: bigint,
+  ): Promise<Array<{ hash: `0x${string}`; paymentInfo: PaymentInfo }>> {
     if (!this.walletClient?.account) {
       throw new Error("WalletClient required");
     }
@@ -302,7 +382,12 @@ export class X402rClient {
       .map(log => (log.args as { paymentInfoHash?: `0x${string}` }).paymentInfoHash)
       .filter((h): h is `0x${string}` => h !== undefined);
 
-    return { hashes };
+    const results: Array<{ hash: `0x${string}`; paymentInfo: PaymentInfo }> = [];
+    for (const hash of hashes) {
+      const paymentInfo = await this.getPaymentDetails(hash, fromBlock);
+      results.push({ hash, paymentInfo });
+    }
+    return results;
   }
 
   // ============ Refund Operations ============
