@@ -401,10 +401,10 @@ async function main() {
     const clientState = await client.getPaymentState(paymentInfo);
     log(`client.getPaymentState: ${clientState} (expected ${PaymentState.InEscrow})`);
 
-    const exists = await client.paymentExists(escrowHash);
+    const exists = await client.paymentExists(paymentInfo);
     log(`client.paymentExists: ${exists}`);
 
-    const inEscrow = await client.isInEscrow(escrowHash);
+    const inEscrow = await client.isInEscrow(paymentInfo);
     log(`client.isInEscrow: ${inEscrow}`);
 
     const payerPayments = await client.getPayerPayments(deployStartBlock);
@@ -626,7 +626,7 @@ async function main() {
     const postRefundState = await client.getPaymentState(paymentInfo);
     log(`client.getPaymentState: ${postRefundState} (expected Settled)`);
 
-    const postRefundInEscrow = await client.isInEscrow(escrowHash);
+    const postRefundInEscrow = await client.isInEscrow(paymentInfo);
     log(`client.isInEscrow: ${postRefundInEscrow} (expected false)`);
 
     const postRefundAmounts = await merchant.getPaymentAmounts(paymentInfo);
