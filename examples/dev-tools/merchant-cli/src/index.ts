@@ -443,7 +443,7 @@ program
   .option("-p, --payment-json <json>", "Payment info JSON (optional, for bounds validation)")
   .option("-c, --caller <address>", "Caller address (defaults to merchant address)")
   .action(async options => {
-    const { publicClient, account, operatorAddress, networkId } = createMerchant();
+    const { publicClient, account, operatorAddress } = createMerchant();
     const amount = BigInt(options.amount);
     const caller = (options.caller as `0x${string}`) || account.address;
 

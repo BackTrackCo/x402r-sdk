@@ -51,7 +51,7 @@ program
   .description("Make a payment to a URL that returns 402")
   .requiredOption("-u, --url <url>", "URL to pay for")
   .action(async options => {
-    const { walletClient, networkId, networkConfig, operatorAddress } = initCli();
+    const { walletClient, networkId, operatorAddress } = initCli();
 
     const result = await pay({
       url: options.url,
