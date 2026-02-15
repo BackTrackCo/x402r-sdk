@@ -1,6 +1,6 @@
 {
   "name": "@x402r/core",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "Core types, ABIs, and utilities for the X402r SDK",
   "author": "x402r.org",
   "license": "Apache-2.0",
