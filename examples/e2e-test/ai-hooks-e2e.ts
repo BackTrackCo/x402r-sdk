@@ -45,7 +45,6 @@ import {
   PaymentOperatorABI,
   AuthCaptureEscrowABI,
   RequestStatus,
-  PaymentState,
   type PaymentInfo,
 } from "../../packages/core/dist/index.js";
 import { X402rClient } from "../../packages/client/dist/index.js";
@@ -97,10 +96,6 @@ function fail(name: string, error: string) {
   console.log(`  FAIL: ${name}`);
   console.log(`    error: ${error}`);
   results.push({ name, pass: false, error });
-}
-
-function shortAddr(addr: string): string {
-  return `${addr.slice(0, 10)}...${addr.slice(-8)}`;
 }
 
 function sleep(ms: number) {
