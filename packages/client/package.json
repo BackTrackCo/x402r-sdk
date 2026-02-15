@@ -50,6 +50,9 @@
     "url": "https://github.com/x402r/x402r-sdk.git",
     "directory": "packages/client"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "keywords": [
     "x402",
     "x402r",
