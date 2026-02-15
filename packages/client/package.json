@@ -1,6 +1,6 @@
 {
   "name": "@x402r/client",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "Client SDK for payers using X402r refundable payments",
   "author": "x402r.org",
   "license": "Apache-2.0",
