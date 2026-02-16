@@ -30,6 +30,7 @@
     "example:client-cli": "tsx examples/dev-tools/client-cli/src/index.ts",
     "example:merchant-cli": "tsx examples/dev-tools/merchant-cli/src/index.ts",
     "example:arbiter-cli": "tsx examples/dev-tools/arbiter-cli/src/index.ts",
+    "example:client:fetch": "tsx examples/clients/fetch/index.ts",
     "example:e2e-test": "tsx examples/e2e-test/index.ts",
     "example:e2e-recovery": "tsx examples/e2e-test/payment-recovery.ts",
     "example:e2e-ai-hooks": "tsx examples/e2e-test/ai-hooks-e2e.ts"
