@@ -43,10 +43,7 @@ app.use(
         mimeType: "application/json",
       },
     },
-    new x402ResourceServer(facilitatorClient).register(
-      "eip155:84532",
-      new EscrowServerScheme() as never,
-    ),
+    new x402ResourceServer(facilitatorClient).register("eip155:84532", new EscrowServerScheme()),
   ),
 );
 

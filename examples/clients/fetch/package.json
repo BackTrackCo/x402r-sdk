@@ -1,0 +1,19 @@
+{
+  "name": "@x402r/fetch-client-example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx index.ts",
+    "dev": "tsx index.ts"
+  },
+  "dependencies": {
+    "@x402/fetch": "^2.3.0",
+    "@x402r/evm": "file:../../../../x402r-scheme/packages/evm",
+    "dotenv": "^16.4.7",
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.0",
+    "typescript": "^5.7.0"
+  }
+}

@@ -5,12 +5,13 @@
  * Uses x402 v2 protocol (Payment-Signature header, amount field).
  */
 
-import { createPaymentPayload } from "@x402r/evm/escrow/client";
-import type { WalletClient } from "viem";
+import { EscrowEvmScheme, type EscrowPayload } from "@x402r/evm/escrow/client";
+import type { ClientEvmSigner } from "@x402/evm";
+import type { PaymentRequirements } from "@x402/core/types";
 
 export interface PayOptions {
   url: string;
-  walletClient: WalletClient;
+  signer: ClientEvmSigner;
 }
 
 export interface PayResult {
@@ -25,7 +26,7 @@ export interface PayResult {
  * Execute a paid request to a URL
  */
 export async function pay(options: PayOptions): Promise<PayResult> {
-  const { url, walletClient } = options;
+  const { url, signer } = options;
 
   console.log(`\nFetching payment requirements from ${url}...`);
 
@@ -81,7 +82,12 @@ export async function pay(options: PayOptions): Promise<PayResult> {
 
   // Step 2: Create payment payload
   console.log("\nCreating payment payload...");
-  const escrowPayload = await createPaymentPayload(requirements, walletClient);
+  const scheme = new EscrowEvmScheme(signer);
+  const { x402Version, payload } = await scheme.createPaymentPayload(
+    2,
+    requirements as unknown as PaymentRequirements,
+  );
+  const escrowPayload = payload as unknown as EscrowPayload;
 
   console.log("  Payer:", escrowPayload.authorization.from);
   console.log("  Value:", escrowPayload.authorization.value);
@@ -89,7 +95,7 @@ export async function pay(options: PayOptions): Promise<PayResult> {
 
   // Step 3: Build payment header and make paid request (x402 v2)
   const x402Payload = {
-    x402Version: 2,
+    x402Version,
     resource: paymentRequired.resource,
     accepted: requirements,
     payload: escrowPayload,

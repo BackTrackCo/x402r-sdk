@@ -8,6 +8,8 @@
     "start": "tsx src/index.ts"
   },
   "dependencies": {
+    "@x402/core": "^2.3.0",
+    "@x402/evm": "^2.3.0",
     "@x402r/client": "workspace:*",
     "@x402r/core": "workspace:*",
     "@x402r/evm": "file:../../../../x402r-scheme/packages/evm",
