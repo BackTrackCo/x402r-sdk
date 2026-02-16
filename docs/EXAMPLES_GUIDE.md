@@ -282,6 +282,31 @@ Source of truth: `packages/core/src/config/index.ts`
 | ArbiterRegistry   | `0x762d562a5ff10EcbFD2Bc4fea663433b84226F35` |
 | USDC              | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` |
 
+## Programmatic Client (fetch)
+
+For programmatic access without a CLI, use `wrapFetchWithPayment` from `@x402/fetch`:
+
+```bash
+cd x402r-sdk/examples/clients/fetch
+cp .env.example .env   # or create .env with PRIVATE_KEY=0x...
+```
+
+Edit `.env`:
+
+```env
+PRIVATE_KEY=0x...your_payer_private_key...
+RESOURCE_SERVER_URL=http://localhost:4021
+ENDPOINT_PATH=/weather
+```
+
+Run (from x402r-sdk root):
+
+```bash
+pnpm example:client:fetch
+```
+
+This wraps the standard `fetch()` API so any 402 response is automatically handled — the escrow payment is created, signed, and attached as a `PAYMENT-SIGNATURE` header on retry.
+
 ## Directory Structure
 
 ```
@@ -289,6 +314,8 @@ examples/
 ├── deploy-operator/           # Deploy a new operator (pnpm example:deploy-operator)
 ├── facilitator/
 │   └── basic/                 # Facilitator server (pnpm example:facilitator)
+├── clients/
+│   └── fetch/                 # Programmatic fetch client (pnpm example:client:fetch)
 ├── servers/
 │   ├── express/               # Express merchant server (pnpm example:server:express)
 │   └── hono/                  # Hono merchant server (pnpm example:server:hono)

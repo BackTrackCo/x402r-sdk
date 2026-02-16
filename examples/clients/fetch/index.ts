@@ -6,6 +6,12 @@ import { privateKeyToAccount } from "viem/accounts";
 config();
 
 const privateKey = process.env.PRIVATE_KEY as `0x${string}`;
+if (!privateKey) {
+  console.error("Error: PRIVATE_KEY environment variable is required");
+  process.exit(1);
+}
+
+const networkId = process.env.NETWORK_ID || "eip155:84532";
 const baseURL = process.env.RESOURCE_SERVER_URL || "http://localhost:4021";
 const endpointPath = process.env.ENDPOINT_PATH || "/weather";
 const url = `${baseURL}${endpointPath}`;
@@ -23,7 +29,7 @@ async function main(): Promise<void> {
   const signer = privateKeyToAccount(privateKey);
 
   const client = new x402Client();
-  registerEscrowScheme(client, { signer, networks: "eip155:84532" });
+  registerEscrowScheme(client, { signer, networks: networkId });
 
   const fetchWithPayment = wrapFetchWithPayment(fetch, client);
 
