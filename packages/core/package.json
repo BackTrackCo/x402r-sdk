@@ -40,6 +40,10 @@
     "./fees": {
       "import": "./dist/fees/index.js",
       "types": "./dist/fees/index.d.ts"
+    },
+    "./http402": {
+      "import": "./dist/http402/index.js",
+      "types": "./dist/http402/index.d.ts"
     }
   },
   "files": [

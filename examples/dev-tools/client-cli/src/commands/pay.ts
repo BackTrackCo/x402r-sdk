@@ -5,7 +5,9 @@
  * Uses x402 v2 protocol (Payment-Signature header, amount field).
  */
 
-import { EscrowEvmScheme, type EscrowPayload } from "@x402r/evm/escrow/client";
+import { EscrowEvmScheme } from "@x402r/evm/escrow/client";
+import { isEscrowPayload } from "@x402r/evm/escrow/types";
+import type { EscrowPayload } from "@x402r/evm/escrow/types";
 import type { ClientEvmSigner } from "@x402/evm";
 import type { PaymentRequirements } from "@x402/core/types";
 
@@ -87,7 +89,13 @@ export async function pay(options: PayOptions): Promise<PayResult> {
     2,
     requirements as unknown as PaymentRequirements,
   );
-  const escrowPayload = payload as unknown as EscrowPayload;
+  if (!isEscrowPayload(payload)) {
+    return {
+      success: false,
+      error: "Unexpected payload format: not an EscrowPayload",
+    };
+  }
+  const escrowPayload = payload as EscrowPayload;
 
   console.log("  Payer:", escrowPayload.authorization.from);
   console.log("  Value:", escrowPayload.authorization.value);
