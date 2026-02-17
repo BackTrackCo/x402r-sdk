@@ -558,5 +558,6 @@ export {
   RequestStatus,
   PaymentState,
   computePaymentInfoHash,
+  distributeFees,
 } from "@x402r/core";
 export { erc20Abi, formatUnits, formatEther } from "viem";

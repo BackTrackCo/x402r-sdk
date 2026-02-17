@@ -6,6 +6,7 @@ import type { PublicClient, WalletClient } from "viem";
 const createMockPublicClient = (): PublicClient => {
   const unsubscribeMock = vi.fn();
   return {
+    chain: { id: 84532 },
     readContract: vi.fn(),
     watchContractEvent: vi.fn().mockReturnValue(unsubscribeMock),
     getChainId: vi.fn().mockResolvedValue(84532),

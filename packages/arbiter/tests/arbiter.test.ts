@@ -6,6 +6,7 @@ import type { PublicClient, WalletClient } from "viem";
 // Mock viem clients
 const createMockPublicClient = (): PublicClient => {
   return {
+    chain: { id: 84532 },
     readContract: vi.fn(),
     watchContractEvent: vi.fn(),
     getChainId: vi.fn().mockResolvedValue(84532),
@@ -61,14 +62,44 @@ describe("X402rArbiter", () => {
       expect(arbiter.chainId).toBe(84532);
     });
 
-    it("should default chainId to 84532 (Base Sepolia)", () => {
+    it("should derive chainId from publicClient.chain", () => {
       const arbiter = new X402rArbiter({
         publicClient,
         walletClient,
         operatorAddress,
       });
 
+      // publicClient mock has chain: { id: 84532 }
       expect(arbiter.chainId).toBe(84532);
+    });
+
+    it("should throw if neither chainId nor publicClient.chain is set", () => {
+      const noChainPublicClient = {
+        chain: undefined,
+        readContract: vi.fn(),
+        watchContractEvent: vi.fn(),
+        getChainId: vi.fn().mockResolvedValue(84532),
+      } as unknown as PublicClient;
+
+      expect(
+        () =>
+          new X402rArbiter({
+            publicClient: noChainPublicClient,
+            walletClient,
+            operatorAddress,
+          }),
+      ).toThrow("chainId required");
+    });
+
+    it("should prefer explicit chainId over publicClient.chain", () => {
+      const arbiter = new X402rArbiter({
+        publicClient,
+        walletClient,
+        operatorAddress,
+        chainId: 8453,
+      });
+
+      expect(arbiter.chainId).toBe(8453);
     });
   });
 

@@ -20,7 +20,7 @@ import { config as dotenvConfig } from "dotenv";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { X402rArbiter } from "@x402r/arbiter";
-import { RequestStatus } from "@x402r/core";
+import { RequestStatus, distributeFees } from "@x402r/core";
 import { initCli } from "../../shared/cli-setup.js";
 import { getPaymentInfoFromState } from "../../shared/state.js";
 import { shortAddress, formatUSDC, formatEvidenceList } from "../../shared/utils.js";
@@ -49,7 +49,6 @@ function createArbiter() {
     refundRequestAddress: networkConfig.refundRequest,
     refundRequestEvidenceAddress: networkConfig.refundRequestEvidence,
     arbiterRegistryAddress,
-    chainId: 84532,
   });
 
   const receiverAddress = (process.env.RECEIVER_ADDRESS as `0x${string}`) || account.address;
@@ -589,6 +588,30 @@ program
       }
     } catch (error) {
       console.error("\nFailed to check:", error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
+
+// Distribute fees command
+program
+  .command("distribute-fees")
+  .description("Distribute accumulated protocol and operator fees")
+  .option("-t, --token <address>", "Token address (defaults to USDC)")
+  .action(async options => {
+    const { walletClient, operatorAddress, networkConfig } = createArbiter();
+    const token = (options.token as `0x${string}`) || (networkConfig.usdc as `0x${string}`);
+
+    console.log("\nDistributing fees...");
+    console.log("  Operator:", operatorAddress);
+    console.log("  Token:", token);
+
+    try {
+      const txHash = await distributeFees(walletClient, operatorAddress, token);
+      console.log("\nFees distributed!");
+      console.log("  Transaction:", txHash);
+      console.log(`\nhttps://sepolia.basescan.org/tx/${txHash}`);
+    } catch (error) {
+      console.error("\nFee distribution failed:", error instanceof Error ? error.message : error);
       process.exit(1);
     }
   });

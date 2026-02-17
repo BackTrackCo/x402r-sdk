@@ -3,7 +3,7 @@
  * @module fees
  */
 
-import { zeroAddress, type PublicClient, type Address } from "viem";
+import { zeroAddress, type PublicClient, type WalletClient, type Address } from "viem";
 import type { PaymentInfo } from "../types/index.js";
 import { PaymentOperatorABI, IFeeCalculatorABI, ProtocolFeeConfigABI } from "../abis/index.js";
 import { toAbiPaymentInfo } from "../utils/index.js";
@@ -283,4 +283,29 @@ export function formatFeeBreakdown(
     `  Total Fee:    ${formatBps(fees.totalFeeBps)} = ${formatAmount(fees.totalFeeAmount)}`,
     `  Net Amount:   ${formatAmount(fees.netAmount)}`,
   ].join("\n");
+}
+
+/**
+ * Distribute accumulated protocol and operator fees for a token.
+ * Anyone can call this — the contract splits fees between protocol and operator recipients.
+ *
+ * @param walletClient - Viem wallet client with an account
+ * @param operatorAddress - PaymentOperator contract address
+ * @param token - ERC-20 token address to distribute fees for
+ * @returns Transaction hash
+ */
+export async function distributeFees(
+  walletClient: WalletClient,
+  operatorAddress: Address,
+  token: Address,
+): Promise<`0x${string}`> {
+  const txHash = await walletClient.writeContract({
+    chain: walletClient.chain,
+    account: walletClient.account!,
+    address: operatorAddress,
+    abi: PaymentOperatorABI,
+    functionName: "distributeFees",
+    args: [token],
+  });
+  return txHash as `0x${string}`;
 }

@@ -1,10 +1,12 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
   validateFeeBounds,
   formatFeeBreakdown,
+  distributeFees,
   type FeeCalculationResult,
 } from "../src/fees/index.js";
 import type { PaymentInfo } from "../src/types/index.js";
+import type { WalletClient } from "viem";
 
 describe("validateFeeBounds", () => {
   const createFees = (totalBps: bigint): FeeCalculationResult => ({
@@ -117,6 +119,32 @@ describe("formatFeeBreakdown", () => {
   });
 });
 
+describe("distributeFees", () => {
+  it("should call writeContract with correct args", async () => {
+    const mockWriteContract = vi.fn().mockResolvedValue("0xtxhash");
+    const walletClient = {
+      writeContract: mockWriteContract,
+      account: { address: "0x1234567890123456789012345678901234567890" },
+      chain: { id: 84532 },
+    } as unknown as WalletClient;
+
+    const operatorAddress = "0x0000000000000000000000000000000000000001" as `0x${string}`;
+    const token = "0x036CbD53842c5426634e7929541eC2318f3dCF7e" as `0x${string}`;
+
+    const txHash = await distributeFees(walletClient, operatorAddress, token);
+
+    expect(txHash).toBe("0xtxhash");
+    expect(mockWriteContract).toHaveBeenCalledOnce();
+    expect(mockWriteContract).toHaveBeenCalledWith(
+      expect.objectContaining({
+        address: operatorAddress,
+        functionName: "distributeFees",
+        args: [token],
+      }),
+    );
+  });
+});
+
 describe("Fee exports", () => {
   it("should export all fee calculation functions", async () => {
     const feesModule = await import("../src/fees/index.js");
@@ -126,5 +154,6 @@ describe("Fee exports", () => {
     expect(typeof feesModule.calculateTotalFees).toBe("function");
     expect(typeof feesModule.validateFeeBounds).toBe("function");
     expect(typeof feesModule.formatFeeBreakdown).toBe("function");
+    expect(typeof feesModule.distributeFees).toBe("function");
   });
 });

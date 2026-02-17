@@ -69,7 +69,7 @@ export interface X402rArbiterConfig {
   arbiterRegistryAddress?: `0x${string}`;
   /** Optional RefundRequestEvidence contract address */
   refundRequestEvidenceAddress?: `0x${string}`;
-  /** Chain ID for hash computation (default: 84532 for Base Sepolia) */
+  /** Chain ID for hash computation (derived from publicClient.chain if omitted) */
   chainId?: number;
 }
 
@@ -146,7 +146,14 @@ export class X402rArbiter {
     this.refundRequestAddress = config.refundRequestAddress;
     this.arbiterRegistryAddress = config.arbiterRegistryAddress;
     this.refundRequestEvidenceAddress = config.refundRequestEvidenceAddress;
-    this.chainId = config.chainId ?? 84532;
+    const derivedChainId = config.chainId ?? config.publicClient.chain?.id;
+    if (!derivedChainId) {
+      throw new Error(
+        "chainId required: pass chainId in config or create your publicClient with a chain " +
+          "(e.g., createPublicClient({ chain: baseSepolia, transport: http() }))",
+      );
+    }
+    this.chainId = derivedChainId;
   }
 
   /** Get the refund read context, throwing if refundRequestAddress is not configured */
