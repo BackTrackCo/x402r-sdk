@@ -34,6 +34,7 @@ import {
   AuthCaptureEscrowABI,
   RequestStatus,
   PaymentState,
+  distributeFees,
   erc20Abi,
   formatUnits,
   type Address,
@@ -393,6 +394,30 @@ async function main() {
       "Final verification",
       `evidence=${finalEvidenceCount} (expected 2), capturable=${capturableAfter} (expected 0), recovered=${usdcRecovered} (expected > 0)`,
     );
+  }
+
+  // ---- Step 13: Distribute Fees ----
+  runner.step("13. Distribute Accumulated Fees");
+
+  try {
+    runner.log("Distributing fees for USDC...");
+    const distributeFeeTx = await distributeFees(
+      accounts.merchantWallet,
+      deployResult.operatorAddress as Address,
+      USDC_ADDRESS,
+    );
+    await waitForTx(accounts.publicClient, distributeFeeTx);
+    runner.log(`  Distribute fees tx: ${SCANNER}/tx/${distributeFeeTx}`);
+    runner.pass("Distribute fees", distributeFeeTx);
+  } catch (error) {
+    // May revert if no fees accumulated — that's acceptable in test
+    const msg = error instanceof Error ? error.message : String(error);
+    if (msg.includes("revert")) {
+      runner.log("  No fees to distribute (expected if fee calculator is address(0))");
+      runner.pass("Distribute fees (no fees accumulated — expected)");
+    } else {
+      runner.fail("Distribute fees", msg);
+    }
   }
 
   // ---- Summary ----

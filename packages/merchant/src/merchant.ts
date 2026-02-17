@@ -61,7 +61,7 @@ export interface X402rMerchantConfig {
   refundRequestAddress?: `0x${string}`;
   /** Optional RefundRequestEvidence contract address */
   refundRequestEvidenceAddress?: `0x${string}`;
-  /** Chain ID for hash computation (default: 84532 for Base Sepolia) */
+  /** Chain ID for hash computation (derived from publicClient.chain if omitted) */
   chainId?: number;
   /** Optional PaymentStore for caching PaymentInfo locally */
   paymentStore?: PaymentStore;
@@ -138,7 +138,14 @@ export class X402rMerchant {
     this.escrowAddress = config.escrowAddress;
     this.refundRequestAddress = config.refundRequestAddress;
     this.refundRequestEvidenceAddress = config.refundRequestEvidenceAddress;
-    this.chainId = config.chainId ?? 84532;
+    const derivedChainId = config.chainId ?? config.publicClient.chain?.id;
+    if (!derivedChainId) {
+      throw new Error(
+        "chainId required: pass chainId in config or create your publicClient with a chain " +
+          "(e.g., createPublicClient({ chain: baseSepolia, transport: http() }))",
+      );
+    }
+    this.chainId = derivedChainId;
     this.paymentStore = config.paymentStore;
   }
 
