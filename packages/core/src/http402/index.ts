@@ -138,13 +138,11 @@ export interface FacilitatorEvmSignerLike {
  * @example
  * ```typescript
  * const viemClient = createWalletClient({ ... }).extend(publicActions);
- * const signer = createFacilitatorSignerFromViem(viemClient);
+ * const signer = toFacilitatorEvmSigner(viemClient);
  * registerEscrowFacilitatorScheme(facilitator, { signer, networks: "eip155:84532" });
  * ```
  */
-export function createFacilitatorSignerFromViem(
-  client: ViemExtendedClient,
-): FacilitatorEvmSignerLike {
+export function toFacilitatorEvmSigner(client: ViemExtendedClient): FacilitatorEvmSignerLike {
   return {
     getAddresses: () => [client.account.address],
     getCode: (args: { address: `0x${string}` }) => client.getCode(args),
@@ -168,6 +166,9 @@ export function createFacilitatorSignerFromViem(
       client.waitForTransactionReceipt(args),
   };
 }
+
+/** @deprecated Use toFacilitatorEvmSigner instead */
+export const createFacilitatorSignerFromViem = toFacilitatorEvmSigner;
 
 /**
  * FacilitatorClient shape from @x402/core — structural typing to avoid hard dep.
@@ -201,7 +202,7 @@ interface FacilitatorLike {
  *
  * @example
  * ```typescript
- * const signer = createFacilitatorSignerFromViem(viemClient);
+ * const signer = toFacilitatorEvmSigner(viemClient);
  * const { facilitator, client } = createInProcessFacilitator(
  *   new x402Facilitator(),
  *   (fac) => registerEscrowFacilitatorScheme(fac, { signer, networks: "eip155:84532" }),

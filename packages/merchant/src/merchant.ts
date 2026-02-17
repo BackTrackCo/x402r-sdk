@@ -281,7 +281,7 @@ export class X402rMerchant {
       );
     }
 
-    const paymentInfoHash = computePaymentInfoHash(paymentInfo, this.escrowAddress, this.chainId);
+    const paymentInfoHash = computePaymentInfoHash(this.chainId, this.escrowAddress, paymentInfo);
 
     const state = await this.publicClient.readContract({
       address: this.escrowAddress,

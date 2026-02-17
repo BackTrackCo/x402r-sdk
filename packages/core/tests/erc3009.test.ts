@@ -27,19 +27,19 @@ const chainId = 84532;
 
 describe("computeEscrowNonce", () => {
   it("should return a bytes32 hash", () => {
-    const nonce = computeEscrowNonce(samplePaymentInfo, escrowAddress, chainId);
+    const nonce = computeEscrowNonce(chainId, escrowAddress, samplePaymentInfo);
     expect(nonce).toMatch(/^0x[a-fA-F0-9]{64}$/);
   });
 
   it("should be deterministic", () => {
-    const nonce1 = computeEscrowNonce(samplePaymentInfo, escrowAddress, chainId);
-    const nonce2 = computeEscrowNonce(samplePaymentInfo, escrowAddress, chainId);
+    const nonce1 = computeEscrowNonce(chainId, escrowAddress, samplePaymentInfo);
+    const nonce2 = computeEscrowNonce(chainId, escrowAddress, samplePaymentInfo);
     expect(nonce1).toBe(nonce2);
   });
 
   it("should differ from computePaymentInfoHash (payer zeroed)", () => {
-    const nonce = computeEscrowNonce(samplePaymentInfo, escrowAddress, chainId);
-    const hash = computePaymentInfoHash(samplePaymentInfo, escrowAddress, chainId);
+    const nonce = computeEscrowNonce(chainId, escrowAddress, samplePaymentInfo);
+    const hash = computePaymentInfoHash(chainId, escrowAddress, samplePaymentInfo);
     expect(nonce).not.toBe(hash);
   });
 
@@ -53,8 +53,8 @@ describe("computeEscrowNonce", () => {
       payer: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" as `0x${string}`,
     };
 
-    const nonceA = computeEscrowNonce(payerA, escrowAddress, chainId);
-    const nonceB = computeEscrowNonce(payerB, escrowAddress, chainId);
+    const nonceA = computeEscrowNonce(chainId, escrowAddress, payerA);
+    const nonceB = computeEscrowNonce(chainId, escrowAddress, payerB);
     expect(nonceA).toBe(nonceB);
   });
 
@@ -62,8 +62,8 @@ describe("computeEscrowNonce", () => {
     const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as const;
     const zeroPayer = { ...samplePaymentInfo, payer: ZERO_ADDRESS };
 
-    const nonce = computeEscrowNonce(samplePaymentInfo, escrowAddress, chainId);
-    const hash = computePaymentInfoHash(zeroPayer, escrowAddress, chainId);
+    const nonce = computeEscrowNonce(chainId, escrowAddress, samplePaymentInfo);
+    const hash = computePaymentInfoHash(chainId, escrowAddress, zeroPayer);
     expect(nonce).toBe(hash);
   });
 });

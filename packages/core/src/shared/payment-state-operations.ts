@@ -40,7 +40,7 @@ export async function getPaymentState(
   ctx: PaymentStateReadContext,
   paymentInfo: PaymentInfo,
 ): Promise<PaymentState> {
-  const paymentInfoHash = computePaymentInfoHash(paymentInfo, ctx.escrowAddress, ctx.chainId);
+  const paymentInfoHash = computePaymentInfoHash(ctx.chainId, ctx.escrowAddress, paymentInfo);
 
   const state = await ctx.publicClient.readContract({
     address: ctx.escrowAddress,

@@ -51,12 +51,12 @@ const finalHashAbiParams: readonly { name: string; type: string }[] = [
  *
  * viem's strict ABI typing cannot infer our PaymentInfo interface as the expected
  * tuple type (the interface uses `bigint` and `number` which don't match viem's
- * inferred `uint120`/`uint48`/`uint16` types). This helper centralizes the cast
- * so callers don't need `as never` at every call site.
+ * inferred `uint120`/`uint48`/`uint16` types). The `never` return type is assignable
+ * to any parameter position without leaking `any` to callers, so this centralizes
+ * the cast at one boundary.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function toAbiPaymentInfo(paymentInfo: PaymentInfo): any {
-  return paymentInfo;
+export function toAbiPaymentInfo(paymentInfo: PaymentInfo): never {
+  return paymentInfo as never;
 }
 
 /**
@@ -72,24 +72,24 @@ export function toAbiPaymentInfo(paymentInfo: PaymentInfo): any {
  * return keccak256(abi.encode(block.chainid, address(this), paymentInfoHash));
  * ```
  *
- * @param paymentInfo - The payment information struct
- * @param escrowAddress - The escrow contract address
  * @param chainId - The chain ID (e.g., 84532 for Base Sepolia)
+ * @param escrowAddress - The escrow contract address
+ * @param paymentInfo - The payment information struct
  * @returns The bytes32 hash
  *
  * @example
  * ```typescript
  * const hash = computePaymentInfoHash(
- *   paymentInfo,
+ *   84532,
  *   '0xb9488351E48b23D798f24e8174514F28B741Eb4f',
- *   84532
+ *   paymentInfo
  * );
  * ```
  */
 export function computePaymentInfoHash(
-  paymentInfo: PaymentInfo,
-  escrowAddress: `0x${string}`,
   chainId: number,
+  escrowAddress: `0x${string}`,
+  paymentInfo: PaymentInfo,
 ): `0x${string}` {
   // Step 1: Encode and hash the PaymentInfo struct with typehash
   const encodedPaymentInfo = encodeAbiParameters(paymentInfoAbiParams, [
@@ -126,18 +126,18 @@ export function computePaymentInfoHash(
  * This is the same as `computePaymentInfoHash` but with `payer = address(0)`.
  * It matches `AuthCaptureEscrow.getHash()` with payer=0x0.
  *
- * @param paymentInfo - PaymentInfo (payer field is ignored — replaced with address(0))
- * @param escrowAddress - The escrow contract address
  * @param chainId - The chain ID
+ * @param escrowAddress - The escrow contract address
+ * @param paymentInfo - PaymentInfo (payer field is ignored — replaced with address(0))
  * @returns The bytes32 nonce for ERC-3009 signing
  */
 export function computeEscrowNonce(
-  paymentInfo: PaymentInfo,
-  escrowAddress: `0x${string}`,
   chainId: number,
+  escrowAddress: `0x${string}`,
+  paymentInfo: PaymentInfo,
 ): `0x${string}` {
   const payerAgnostic: PaymentInfo = { ...paymentInfo, payer: zeroAddress };
-  return computePaymentInfoHash(payerAgnostic, escrowAddress, chainId);
+  return computePaymentInfoHash(chainId, escrowAddress, payerAgnostic);
 }
 
 /**
@@ -177,7 +177,7 @@ export interface ERC3009Authorization {
  * import { signERC3009Authorization, computeEscrowNonce, resolveAddresses } from '@x402r/core';
  *
  * const addrs = resolveAddresses('eip155:84532');
- * const nonce = computeEscrowNonce(paymentInfo, addrs.escrowAddress, addrs.chainId);
+ * const nonce = computeEscrowNonce(addrs.chainId, addrs.escrowAddress, paymentInfo);
  *
  * const signature = await signERC3009Authorization(walletClient, addrs.usdc, {
  *   from: payerAddress,
