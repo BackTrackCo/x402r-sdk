@@ -25,10 +25,7 @@
 import { createWalletClient, createPublicClient, http, formatEther, type Address } from "viem";
 import { baseSepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
-import {
-  deployMarketplaceOperator,
-  previewMarketplaceOperator,
-} from "../../packages/core/dist/index.js";
+import { deployMarketplaceOperator, previewMarketplaceOperator } from "@x402r/core";
 
 // Network configuration (overridable via env vars)
 const NETWORK_ID = process.env.NETWORK_ID ?? "eip155:84532";

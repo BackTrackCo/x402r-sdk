@@ -84,6 +84,12 @@ importers:
         specifier: ^5.7.0
         version: 5.9.3
 
+  examples/deploy-operator:
+    dependencies:
+      '@x402r/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
   examples/dev-tools/arbiter-cli:
     dependencies:
       '@x402r/arbiter':
@@ -194,12 +200,24 @@ importers:
       '@x402/evm':
         specifier: ^2.3.0
         version: 2.3.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)
+      '@x402r/arbiter':
+        specifier: workspace:*
+        version: link:../../packages/arbiter
+      '@x402r/client':
+        specifier: workspace:*
+        version: link:../../packages/client
+      '@x402r/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@x402r/evm':
         specifier: file:../../../x402r-scheme/packages/evm
         version: file:../x402r-scheme/packages/evm(@x402/core@2.3.0(patch_hash=wng4rpihzpsrif3iprw527ojpy))(@x402/evm@2.3.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10))(viem@2.45.0(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))
       '@x402r/helpers':
         specifier: workspace:*
         version: link:../../packages/helpers
+      '@x402r/merchant':
+        specifier: workspace:*
+        version: link:../../packages/merchant
 
   examples/facilitator/basic:
     dependencies:

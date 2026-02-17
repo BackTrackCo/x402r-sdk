@@ -6,19 +6,10 @@
  */
 
 import { EscrowEvmScheme } from "@x402r/evm/escrow/client";
+import { isEscrowPayload } from "@x402r/evm/escrow/types";
 import type { EscrowPayload } from "@x402r/evm/escrow/types";
 import type { ClientEvmSigner } from "@x402/evm";
 import type { PaymentRequirements } from "@x402/core/types";
-
-function isEscrowPayload(value: unknown): value is EscrowPayload {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "authorization" in value &&
-    "signature" in value &&
-    "paymentInfo" in value
-  );
-}
 
 export interface PayOptions {
   url: string;

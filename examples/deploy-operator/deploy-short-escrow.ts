@@ -12,10 +12,7 @@
 import { createWalletClient, createPublicClient, http, formatEther } from "viem";
 import { baseSepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
-import {
-  deployMarketplaceOperator,
-  previewMarketplaceOperator,
-} from "../../packages/core/dist/index.js";
+import { deployMarketplaceOperator, previewMarketplaceOperator } from "@x402r/core";
 
 const NETWORK_ID = "eip155:84532"; // Base Sepolia
 const RPC_URL = "https://sepolia.base.org";
