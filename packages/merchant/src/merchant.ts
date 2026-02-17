@@ -27,6 +27,12 @@ import {
   getEvidenceBatch as sharedGetEvidenceBatch,
   getAllEvidence as sharedGetAllEvidence,
   watchEvidenceSubmissions as sharedWatchEvidenceSubmissions,
+  getPaymentState as sharedGetPaymentState,
+  getPaymentDetails as sharedGetPaymentDetails,
+  createRefundReadCtx,
+  createRefundWriteCtx,
+  createEvidenceReadCtx,
+  createEvidenceWriteCtx,
   type PaymentInfo,
   type PaymentStore,
   type OperatorConfig,
@@ -138,29 +144,12 @@ export class X402rMerchant {
 
   /** Get the refund read context, throwing if refundRequestAddress is not configured */
   private getRefundCtx() {
-    if (!this.refundRequestAddress) {
-      throw new Error(
-        "RefundRequest address required. Use resolveAddresses(networkId) from @x402r/core to get the address for your network.",
-      );
-    }
-    return {
-      publicClient: this.publicClient,
-      refundRequestAddress: this.refundRequestAddress,
-    };
+    return createRefundReadCtx(this);
   }
 
   /** Get the refund write context, throwing if refundRequestAddress is not configured */
   private getRefundWriteCtx() {
-    if (!this.refundRequestAddress) {
-      throw new Error(
-        "RefundRequest address required. Use resolveAddresses(networkId) from @x402r/core to get the address for your network.",
-      );
-    }
-    return {
-      publicClient: this.publicClient,
-      walletClient: this.walletClient,
-      refundRequestAddress: this.refundRequestAddress,
-    };
+    return createRefundWriteCtx(this);
   }
 
   // ============ Payment Queries ============
@@ -186,43 +175,10 @@ export class X402rMerchant {
       );
     }
 
-    const paymentInfoHash = computePaymentInfoHash(paymentInfo, this.escrowAddress, this.chainId);
-
-    const state = await this.publicClient.readContract({
-      address: this.escrowAddress,
-      abi: AuthCaptureEscrowABI,
-      functionName: "paymentState",
-      args: [paymentInfoHash],
-    });
-
-    const [hasCollectedPayment, capturableAmount, refundableAmount] = state as [
-      boolean,
-      bigint,
-      bigint,
-    ];
-
-    if (!hasCollectedPayment) {
-      return PaymentState.NonExistent;
-    }
-
-    const now = BigInt(Math.floor(Date.now() / 1000));
-    if (
-      capturableAmount > 0n &&
-      paymentInfo.authorizationExpiry > 0n &&
-      now > paymentInfo.authorizationExpiry
-    ) {
-      return PaymentState.Expired;
-    }
-
-    if (capturableAmount > 0n) {
-      return PaymentState.InEscrow;
-    }
-
-    if (refundableAmount > 0n) {
-      return PaymentState.Released;
-    }
-
-    return PaymentState.Settled;
+    return sharedGetPaymentState(
+      { publicClient: this.publicClient, escrowAddress: this.escrowAddress, chainId: this.chainId },
+      paymentInfo,
+    );
   }
 
   /**
@@ -279,78 +235,21 @@ export class X402rMerchant {
     paymentInfoHash: `0x${string}`,
     fromBlock?: bigint,
   ): Promise<PaymentInfo> {
-    // 1. Check local store first
-    if (this.paymentStore) {
-      const cached = await this.paymentStore.load(paymentInfoHash);
-      if (cached) return cached;
-    }
-
-    // 2. Fall back to scanning escrow PaymentAuthorized events
     if (!this.escrowAddress) {
       throw new Error(
         "Escrow address required. Use resolveAddresses(networkId) from @x402r/core to get the escrow address for your network.",
       );
     }
 
-    const logs = await this.publicClient.getContractEvents({
-      address: this.escrowAddress,
-      abi: AuthCaptureEscrowABI,
-      eventName: "PaymentAuthorized",
-      args: {
-        paymentInfoHash,
+    return sharedGetPaymentDetails(
+      {
+        publicClient: this.publicClient,
+        escrowAddress: this.escrowAddress,
+        paymentStore: this.paymentStore,
       },
-      fromBlock: fromBlock ?? "earliest",
-    });
-
-    if (logs.length === 0) {
-      throw new Error(
-        `PaymentInfo not found for hash ${paymentInfoHash}. ` +
-          "Payment may not exist or event logs may have been pruned.",
-      );
-    }
-
-    const eventArgs = logs[0].args as {
-      paymentInfo?: {
-        operator: `0x${string}`;
-        payer: `0x${string}`;
-        receiver: `0x${string}`;
-        token: `0x${string}`;
-        maxAmount: bigint;
-        preApprovalExpiry: bigint;
-        authorizationExpiry: bigint;
-        refundExpiry: bigint;
-        minFeeBps: number;
-        maxFeeBps: number;
-        feeReceiver: `0x${string}`;
-        salt: bigint;
-      };
-    };
-
-    if (!eventArgs.paymentInfo) {
-      throw new Error(`PaymentAuthorized event missing paymentInfo for hash ${paymentInfoHash}`);
-    }
-
-    const paymentInfo: PaymentInfo = {
-      operator: eventArgs.paymentInfo.operator,
-      payer: eventArgs.paymentInfo.payer,
-      receiver: eventArgs.paymentInfo.receiver,
-      token: eventArgs.paymentInfo.token,
-      maxAmount: eventArgs.paymentInfo.maxAmount,
-      preApprovalExpiry: eventArgs.paymentInfo.preApprovalExpiry,
-      authorizationExpiry: eventArgs.paymentInfo.authorizationExpiry,
-      refundExpiry: eventArgs.paymentInfo.refundExpiry,
-      minFeeBps: Number(eventArgs.paymentInfo.minFeeBps),
-      maxFeeBps: Number(eventArgs.paymentInfo.maxFeeBps),
-      feeReceiver: eventArgs.paymentInfo.feeReceiver,
-      salt: eventArgs.paymentInfo.salt,
-    };
-
-    // 3. Cache-fill: save to store for future lookups
-    if (this.paymentStore) {
-      await this.paymentStore.save(paymentInfoHash, paymentInfo);
-    }
-
-    return paymentInfo;
+      paymentInfoHash,
+      fromBlock,
+    );
   }
 
   /**
@@ -947,29 +846,12 @@ export class X402rMerchant {
 
   /** Get the evidence read context, throwing if refundRequestEvidenceAddress is not configured */
   private getEvidenceCtx() {
-    if (!this.refundRequestEvidenceAddress) {
-      throw new Error(
-        "RefundRequestEvidence address required. Use resolveAddresses(networkId) from @x402r/core to get the evidence address for your network.",
-      );
-    }
-    return {
-      publicClient: this.publicClient,
-      refundRequestEvidenceAddress: this.refundRequestEvidenceAddress,
-    };
+    return createEvidenceReadCtx(this);
   }
 
   /** Get the evidence write context, throwing if refundRequestEvidenceAddress is not configured */
   private getEvidenceWriteCtx() {
-    if (!this.refundRequestEvidenceAddress) {
-      throw new Error(
-        "RefundRequestEvidence address required. Use resolveAddresses(networkId) from @x402r/core to get the evidence address for your network.",
-      );
-    }
-    return {
-      publicClient: this.publicClient,
-      walletClient: this.walletClient,
-      refundRequestEvidenceAddress: this.refundRequestEvidenceAddress,
-    };
+    return createEvidenceWriteCtx(this);
   }
 
   /**

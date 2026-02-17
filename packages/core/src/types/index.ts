@@ -3,6 +3,8 @@
  * @module types
  */
 
+import { zeroAddress } from "viem";
+
 /**
  * Payment lifecycle states matching the Solidity enum
  *
@@ -141,7 +143,7 @@ export interface FeeStructure {
 // ============ Constants ============
 
 /** Zero address constant for validation */
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as const;
+const ZERO_ADDRESS = zeroAddress;
 
 /** Maximum uint32 value (used for authorizationExpiry) */
 export const MAX_UINT32 = 4294967295n;

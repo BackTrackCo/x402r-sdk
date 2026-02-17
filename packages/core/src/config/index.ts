@@ -3,6 +3,8 @@
  * @module config
  */
 
+import { zeroAddress } from "viem";
+
 /**
  * Factory addresses for deploying protocol components
  */
@@ -427,7 +429,7 @@ export function isSupportedNetwork(networkId: string): boolean {
 /**
  * Zero address constant for checking if addresses are deployed
  */
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as const;
+const ZERO_ADDRESS = zeroAddress;
 
 /**
  * Check if an address is a valid deployed address (not zero)
