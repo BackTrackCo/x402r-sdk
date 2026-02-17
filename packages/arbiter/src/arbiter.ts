@@ -3,15 +3,18 @@
  * @module arbiter
  */
 
-import type { PublicClient, WalletClient } from "viem";
+import {
+  BaseError,
+  ContractFunctionRevertedError,
+  type PublicClient,
+  type WalletClient,
+} from "viem";
 import {
   PaymentOperatorABI,
-  AuthCaptureEscrowABI,
   RefundRequestABI,
   ArbiterRegistryABI,
   RequestStatus,
   PaymentState,
-  computePaymentInfoHash,
   toAbiPaymentInfo,
   hasRefundRequest as sharedHasRefundRequest,
   getRefundRequest as sharedGetRefundRequest,
@@ -27,6 +30,11 @@ import {
   getEvidenceBatch as sharedGetEvidenceBatch,
   getAllEvidence as sharedGetAllEvidence,
   watchEvidenceSubmissions as sharedWatchEvidenceSubmissions,
+  getPaymentState as sharedGetPaymentState,
+  createRefundReadCtx,
+  createRefundWriteCtx,
+  createEvidenceReadCtx,
+  createEvidenceWriteCtx,
   type PaymentInfo,
   type RefundRequestData,
   type ArbiterList,
@@ -41,7 +49,7 @@ import {
  */
 export type BatchResult =
   | { success: true; txHash: `0x${string}` }
-  | { success: false; error: string };
+  | { success: false; error: string; cause?: unknown };
 
 /**
  * Configuration for X402rArbiter
@@ -143,29 +151,12 @@ export class X402rArbiter {
 
   /** Get the refund read context, throwing if refundRequestAddress is not configured */
   private getRefundCtx() {
-    if (!this.refundRequestAddress) {
-      throw new Error(
-        "RefundRequest address required. Use resolveAddresses(networkId) from @x402r/core to get the address for your network.",
-      );
-    }
-    return {
-      publicClient: this.publicClient,
-      refundRequestAddress: this.refundRequestAddress,
-    };
+    return createRefundReadCtx(this);
   }
 
   /** Get the refund write context, throwing if refundRequestAddress is not configured */
   private getRefundWriteCtx() {
-    if (!this.refundRequestAddress) {
-      throw new Error(
-        "RefundRequest address required. Use resolveAddresses(networkId) from @x402r/core to get the address for your network.",
-      );
-    }
-    return {
-      publicClient: this.publicClient,
-      walletClient: this.walletClient,
-      refundRequestAddress: this.refundRequestAddress,
-    };
+    return createRefundWriteCtx(this);
   }
 
   // ============ Payment Queries ============
@@ -191,43 +182,10 @@ export class X402rArbiter {
       );
     }
 
-    const paymentInfoHash = computePaymentInfoHash(paymentInfo, this.escrowAddress, this.chainId);
-
-    const state = await this.publicClient.readContract({
-      address: this.escrowAddress,
-      abi: AuthCaptureEscrowABI,
-      functionName: "paymentState",
-      args: [paymentInfoHash],
-    });
-
-    const [hasCollectedPayment, capturableAmount, refundableAmount] = state as [
-      boolean,
-      bigint,
-      bigint,
-    ];
-
-    if (!hasCollectedPayment) {
-      return PaymentState.NonExistent;
-    }
-
-    const now = BigInt(Math.floor(Date.now() / 1000));
-    if (
-      capturableAmount > 0n &&
-      paymentInfo.authorizationExpiry > 0n &&
-      now > paymentInfo.authorizationExpiry
-    ) {
-      return PaymentState.Expired;
-    }
-
-    if (capturableAmount > 0n) {
-      return PaymentState.InEscrow;
-    }
-
-    if (refundableAmount > 0n) {
-      return PaymentState.Released;
-    }
-
-    return PaymentState.Settled;
+    return sharedGetPaymentState(
+      { publicClient: this.publicClient, escrowAddress: this.escrowAddress, chainId: this.chainId },
+      paymentInfo,
+    );
   }
 
   /** Check if a refund request exists for a payment */
@@ -325,7 +283,13 @@ export class X402rArbiter {
       } catch (err) {
         results.push({
           success: false,
-          error: err instanceof Error ? err.message : String(err),
+          error:
+            err instanceof BaseError
+              ? err.shortMessage
+              : err instanceof Error
+                ? err.message
+                : String(err),
+          cause: err instanceof ContractFunctionRevertedError ? err.data : undefined,
         });
       }
     }
@@ -361,7 +325,13 @@ export class X402rArbiter {
       } catch (err) {
         results.push({
           success: false,
-          error: err instanceof Error ? err.message : String(err),
+          error:
+            err instanceof BaseError
+              ? err.shortMessage
+              : err instanceof Error
+                ? err.message
+                : String(err),
+          cause: err instanceof ContractFunctionRevertedError ? err.data : undefined,
         });
       }
     }
@@ -791,29 +761,12 @@ export class X402rArbiter {
 
   /** Get the evidence read context, throwing if refundRequestEvidenceAddress is not configured */
   private getEvidenceCtx() {
-    if (!this.refundRequestEvidenceAddress) {
-      throw new Error(
-        "RefundRequestEvidence address required. Use resolveAddresses(networkId) from @x402r/core to get the evidence address for your network.",
-      );
-    }
-    return {
-      publicClient: this.publicClient,
-      refundRequestEvidenceAddress: this.refundRequestEvidenceAddress,
-    };
+    return createEvidenceReadCtx(this);
   }
 
   /** Get the evidence write context, throwing if refundRequestEvidenceAddress is not configured */
   private getEvidenceWriteCtx() {
-    if (!this.refundRequestEvidenceAddress) {
-      throw new Error(
-        "RefundRequestEvidence address required. Use resolveAddresses(networkId) from @x402r/core to get the evidence address for your network.",
-      );
-    }
-    return {
-      publicClient: this.publicClient,
-      walletClient: this.walletClient,
-      refundRequestEvidenceAddress: this.refundRequestEvidenceAddress,
-    };
+    return createEvidenceWriteCtx(this);
   }
 
   /**

@@ -3,9 +3,10 @@
  * @module validation
  */
 
+import { zeroAddress } from "viem";
 import type { PaymentInfo } from "../types/index.js";
 
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as const;
+const ZERO_ADDRESS = zeroAddress;
 
 /**
  * Severity level for validation issues

@@ -3,7 +3,7 @@
  * @module fees
  */
 
-import type { PublicClient, Address } from "viem";
+import { zeroAddress, type PublicClient, type Address } from "viem";
 import type { PaymentInfo } from "../types/index.js";
 import { PaymentOperatorABI, IFeeCalculatorABI, ProtocolFeeConfigABI } from "../abis/index.js";
 import { toAbiPaymentInfo } from "../utils/index.js";
@@ -44,7 +44,7 @@ export interface FeeAddresses {
   protocolFeeRecipient: Address;
 }
 
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as Address;
+const ZERO_ADDRESS = zeroAddress;
 
 /**
  * Get the fee-related addresses from an operator

@@ -7,6 +7,7 @@ import type { PublicClient, WalletClient } from "viem";
 import { RefundRequestEvidenceABI } from "../abis/index.js";
 import type { PaymentInfo, Evidence, EvidenceEventLog } from "../types/index.js";
 import { toAbiPaymentInfo } from "../utils/index.js";
+import { requireAccount } from "./require-account.js";
 
 /** Read-only context for evidence operations */
 export interface EvidenceReadContext {
@@ -17,20 +18,6 @@ export interface EvidenceReadContext {
 /** Read-write context for evidence operations */
 export interface EvidenceWriteContext extends EvidenceReadContext {
   walletClient: WalletClient;
-}
-
-/**
- * Asserts that a WalletClient has an account attached.
- */
-function requireAccount(walletClient: WalletClient): asserts walletClient is WalletClient & {
-  account: NonNullable<WalletClient["account"]>;
-} {
-  if (!walletClient.account) {
-    throw new Error(
-      "WalletClient must have an account. Pass an account when creating the WalletClient: " +
-        "createWalletClient({ account, chain, transport })",
-    );
-  }
 }
 
 /**

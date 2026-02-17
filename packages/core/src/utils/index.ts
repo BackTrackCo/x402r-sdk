@@ -3,7 +3,7 @@
  * @module utils
  */
 
-import { keccak256, encodeAbiParameters, toHex } from "viem";
+import { keccak256, encodeAbiParameters, toHex, zeroAddress } from "viem";
 import type { WalletClient } from "viem";
 import type { PaymentInfo } from "../types/index.js";
 
@@ -136,8 +136,7 @@ export function computeEscrowNonce(
   escrowAddress: `0x${string}`,
   chainId: number,
 ): `0x${string}` {
-  const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as const;
-  const payerAgnostic: PaymentInfo = { ...paymentInfo, payer: ZERO_ADDRESS };
+  const payerAgnostic: PaymentInfo = { ...paymentInfo, payer: zeroAddress };
   return computePaymentInfoHash(payerAgnostic, escrowAddress, chainId);
 }
 
