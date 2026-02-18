@@ -9,6 +9,7 @@ import {
   StaticAddressConditionABI,
   FreezeABI,
   ProtocolFeeConfigABI,
+  ERC20ABI,
 } from "../src/abis/index.js";
 
 describe("PaymentOperatorABI", () => {
@@ -427,6 +428,32 @@ describe("ProtocolFeeConfigABI", () => {
   });
 });
 
+describe("ERC20ABI", () => {
+  it("should have approve function", () => {
+    const approveFn = ERC20ABI.find(item => item.name === "approve" && item.type === "function");
+    expect(approveFn).toBeDefined();
+    expect(approveFn?.stateMutability).toBe("nonpayable");
+    expect(approveFn?.inputs).toHaveLength(2);
+    const inputNames = approveFn?.inputs?.map(i => i.name);
+    expect(inputNames).toContain("spender");
+    expect(inputNames).toContain("amount");
+    expect(approveFn?.outputs?.[0]?.type).toBe("bool");
+  });
+
+  it("should have allowance function", () => {
+    const allowanceFn = ERC20ABI.find(
+      item => item.name === "allowance" && item.type === "function",
+    );
+    expect(allowanceFn).toBeDefined();
+    expect(allowanceFn?.stateMutability).toBe("view");
+    expect(allowanceFn?.inputs).toHaveLength(2);
+    const inputNames = allowanceFn?.inputs?.map(i => i.name);
+    expect(inputNames).toContain("owner");
+    expect(inputNames).toContain("spender");
+    expect(allowanceFn?.outputs?.[0]?.type).toBe("uint256");
+  });
+});
+
 describe("ABI structure validation", () => {
   it("all ABIs should be readonly arrays", () => {
     expect(Array.isArray(PaymentOperatorABI)).toBe(true);
@@ -438,6 +465,7 @@ describe("ABI structure validation", () => {
     expect(Array.isArray(StaticAddressConditionABI)).toBe(true);
     expect(Array.isArray(FreezeABI)).toBe(true);
     expect(Array.isArray(ProtocolFeeConfigABI)).toBe(true);
+    expect(Array.isArray(ERC20ABI)).toBe(true);
   });
 
   it("all ABI items should have name and type", () => {
@@ -451,6 +479,7 @@ describe("ABI structure validation", () => {
       ...StaticAddressConditionABI,
       ...FreezeABI,
       ...ProtocolFeeConfigABI,
+      ...ERC20ABI,
     ];
 
     allAbis.forEach(item => {

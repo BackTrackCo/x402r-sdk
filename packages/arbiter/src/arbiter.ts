@@ -31,10 +31,17 @@ import {
   getAllEvidence as sharedGetAllEvidence,
   watchEvidenceSubmissions as sharedWatchEvidenceSubmissions,
   getPaymentState as sharedGetPaymentState,
+  getRefundBudget as sharedGetRefundBudget,
+  approveRefundBudget as sharedApproveRefundBudget,
+  refundPostEscrow as sharedRefundPostEscrow,
+  refundPostEscrowFromBudget as sharedRefundPostEscrowFromBudget,
   createRefundReadCtx,
   createRefundWriteCtx,
   createEvidenceReadCtx,
   createEvidenceWriteCtx,
+  createRefundBudgetReadCtx,
+  createRefundBudgetWriteCtx,
+  createOperatorWriteCtx,
   type PaymentInfo,
   type RefundRequestData,
   type ArbiterList,
@@ -69,6 +76,8 @@ export interface X402rArbiterConfig {
   arbiterRegistryAddress?: `0x${string}`;
   /** Optional RefundRequestEvidence contract address */
   refundRequestEvidenceAddress?: `0x${string}`;
+  /** Optional ReceiverRefundCollector address (for post-escrow refunds from budget) */
+  receiverRefundCollectorAddress?: `0x${string}`;
   /** Chain ID for hash computation (derived from publicClient.chain if omitted) */
   chainId?: number;
 }
@@ -129,6 +138,8 @@ export class X402rArbiter {
   readonly arbiterRegistryAddress?: `0x${string}`;
   /** RefundRequestEvidence contract address */
   readonly refundRequestEvidenceAddress?: `0x${string}`;
+  /** ReceiverRefundCollector contract address */
+  readonly receiverRefundCollectorAddress?: `0x${string}`;
   /** Chain ID */
   readonly chainId: number;
 
@@ -146,6 +157,7 @@ export class X402rArbiter {
     this.refundRequestAddress = config.refundRequestAddress;
     this.arbiterRegistryAddress = config.arbiterRegistryAddress;
     this.refundRequestEvidenceAddress = config.refundRequestEvidenceAddress;
+    this.receiverRefundCollectorAddress = config.receiverRefundCollectorAddress;
     const derivedChainId = config.chainId ?? config.publicClient.chain?.id;
     if (!derivedChainId) {
       throw new Error(
@@ -258,6 +270,103 @@ export class X402rArbiter {
     });
 
     return { txHash: txHash as `0x${string}` };
+  }
+
+  // ============ Post-Escrow Refunds (Refund Budget) ============
+
+  /**
+   * Execute a post-escrow refund via the operator
+   *
+   * Calls `operator.refundPostEscrow()` with a generic token collector.
+   * This operation is gated by the operator's REFUND_POST_ESCROW_CONDITION,
+   * not by caller role.
+   *
+   * @param paymentInfo - The payment information struct
+   * @param amount - Amount to refund in token units
+   * @param tokenCollector - Address of the token collector contract that will source the refund
+   * @param collectorData - Data to pass to the token collector (e.g., signatures)
+   * @returns Transaction hash
+   */
+  async refundPostEscrow(
+    paymentInfo: PaymentInfo,
+    amount: bigint,
+    tokenCollector: `0x${string}`,
+    collectorData: `0x${string}`,
+  ): Promise<{ txHash: `0x${string}` }> {
+    return sharedRefundPostEscrow(
+      createOperatorWriteCtx(this),
+      paymentInfo,
+      amount,
+      tokenCollector,
+      collectorData,
+    );
+  }
+
+  /**
+   * Execute a post-escrow refund using the ReceiverRefundCollector
+   *
+   * Convenience wrapper that calls `refundPostEscrow()` with the default
+   * ReceiverRefundCollector address and empty collector data.
+   * Requires a prior `approveRefundBudget()` call with sufficient allowance.
+   *
+   * @param paymentInfo - The payment information struct
+   * @param amount - Amount to refund in token units
+   * @returns Transaction hash
+   * @throws Error if receiverRefundCollectorAddress is not configured
+   */
+  async refundPostEscrowFromBudget(
+    paymentInfo: PaymentInfo,
+    amount: bigint,
+  ): Promise<{ txHash: `0x${string}` }> {
+    if (!this.receiverRefundCollectorAddress) {
+      throw new Error("ReceiverRefundCollector address required");
+    }
+
+    return sharedRefundPostEscrowFromBudget(
+      {
+        ...createOperatorWriteCtx(this),
+        receiverRefundCollectorAddress: this.receiverRefundCollectorAddress,
+      },
+      paymentInfo,
+      amount,
+    );
+  }
+
+  /**
+   * Approve a refund budget by setting an ERC-20 allowance on the ReceiverRefundCollector
+   *
+   * The arbiter/platform calls `token.approve(receiverRefundCollector, amount)` to pre-authorize
+   * a refund budget. Post-escrow refunds can then be processed without per-refund signatures.
+   *
+   * @param tokenAddress - ERC-20 token contract address
+   * @param amount - Amount to approve as refund budget (in token units)
+   * @returns Transaction hash
+   * @throws Error if receiverRefundCollectorAddress is not configured
+   */
+  async approveRefundBudget(
+    tokenAddress: `0x${string}`,
+    amount: bigint,
+  ): Promise<{ txHash: `0x${string}` }> {
+    return sharedApproveRefundBudget(createRefundBudgetWriteCtx(this), tokenAddress, amount);
+  }
+
+  /**
+   * Get the remaining refund budget (ERC-20 allowance) for the ReceiverRefundCollector
+   *
+   * @param tokenAddress - ERC-20 token contract address
+   * @param ownerAddress - The address whose allowance to check (defaults to own wallet)
+   * @returns Remaining allowance in token units
+   * @throws Error if receiverRefundCollectorAddress is not configured
+   */
+  async getRefundBudget(
+    tokenAddress: `0x${string}`,
+    ownerAddress?: `0x${string}`,
+  ): Promise<bigint> {
+    return sharedGetRefundBudget(
+      createRefundBudgetReadCtx(this),
+      tokenAddress,
+      ownerAddress ?? this.walletClient.account!.address,
+    );
   }
 
   // ============ Batch Operations ============

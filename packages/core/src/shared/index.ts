@@ -35,8 +35,21 @@ export {
 } from "./payment-state-operations.js";
 
 export {
+  getRefundBudget,
+  approveRefundBudget,
+  refundPostEscrow,
+  refundPostEscrowFromBudget,
+  type RefundBudgetReadContext,
+  type RefundBudgetWriteContext,
+  type OperatorWriteContext,
+} from "./refund-budget-operations.js";
+
+export {
   createRefundReadCtx,
   createRefundWriteCtx,
   createEvidenceReadCtx,
   createEvidenceWriteCtx,
+  createRefundBudgetReadCtx,
+  createRefundBudgetWriteCtx,
+  createOperatorWriteCtx,
 } from "./context-helpers.js";

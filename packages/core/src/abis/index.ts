@@ -1186,6 +1186,34 @@ export const RefundRequestEvidenceABI = [
   },
 ] as const;
 
+/**
+ * Minimal ERC-20 ABI fragment for approve and allowance
+ *
+ * Used by shared operations for managing ReceiverRefundCollector allowances.
+ */
+export const ERC20ABI = [
+  {
+    name: "approve",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "spender", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [{ name: "", type: "bool" }],
+  },
+  {
+    name: "allowance",
+    type: "function",
+    stateMutability: "view",
+    inputs: [
+      { name: "owner", type: "address" },
+      { name: "spender", type: "address" },
+    ],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+] as const;
+
 // Export types for ABI consumers
 export type PaymentOperatorABIType = typeof PaymentOperatorABI;
 export type RefundRequestABIType = typeof RefundRequestABI;
@@ -1198,3 +1226,4 @@ export type FreezeABIType = typeof FreezeABI;
 export type ProtocolFeeConfigABIType = typeof ProtocolFeeConfigABI;
 export type ArbiterRegistryABIType = typeof ArbiterRegistryABI;
 export type RefundRequestEvidenceABIType = typeof RefundRequestEvidenceABI;
+export type ERC20ABIType = typeof ERC20ABI;
