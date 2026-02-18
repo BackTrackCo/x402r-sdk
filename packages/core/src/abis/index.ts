@@ -1189,7 +1189,7 @@ export const RefundRequestEvidenceABI = [
 /**
  * Minimal ERC-20 ABI fragment for approve and allowance
  *
- * Used by merchant SDK for managing ReceiverRefundCollector allowances.
+ * Used by shared operations for managing ReceiverRefundCollector allowances.
  */
 export const ERC20ABI = [
   {

@@ -574,6 +574,8 @@ export interface ResolvedAddresses {
   protocolFeeConfig: `0x${string}`;
   /** RefundRequestEvidence contract address (may be undefined) */
   evidenceAddress?: `0x${string}`;
+  /** ReceiverRefundCollector contract address (may be undefined if not deployed) */
+  receiverRefundCollectorAddress?: `0x${string}`;
   /** Chain ID */
   chainId: number;
   /** Network name */
@@ -617,6 +619,9 @@ export function resolveAddresses(networkId: string): ResolvedAddresses {
     usdc: config.usdc,
     protocolFeeConfig: config.protocolFeeConfig,
     evidenceAddress: config.refundRequestEvidence,
+    receiverRefundCollectorAddress: isDeployedAddress(config.receiverRefundCollector)
+      ? config.receiverRefundCollector
+      : undefined,
     chainId: config.chainId,
     name: config.name,
   };

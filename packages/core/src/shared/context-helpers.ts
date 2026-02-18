@@ -4,6 +4,7 @@
  */
 
 import type { PublicClient, WalletClient } from "viem";
+import { zeroAddress } from "viem";
 import type { RefundReadContext, RefundWriteContext } from "./refund-operations.js";
 import type { EvidenceReadContext, EvidenceWriteContext } from "./evidence-operations.js";
 import type {
@@ -113,7 +114,15 @@ interface OperatorHost {
  */
 export function createRefundBudgetReadCtx(host: RefundBudgetHost): RefundBudgetReadContext {
   if (!host.receiverRefundCollectorAddress) {
-    throw new Error("ReceiverRefundCollector address required");
+    throw new Error(
+      "ReceiverRefundCollector address required. Use resolveAddresses(networkId) from @x402r/core to get the address for your network.",
+    );
+  }
+  if (host.receiverRefundCollectorAddress === zeroAddress) {
+    throw new Error(
+      "ReceiverRefundCollector is not deployed on this network (zero address). " +
+        "This feature is not available on the current chain.",
+    );
   }
   return {
     publicClient: host.publicClient,
@@ -126,7 +135,15 @@ export function createRefundBudgetReadCtx(host: RefundBudgetHost): RefundBudgetR
  */
 export function createRefundBudgetWriteCtx(host: RefundBudgetHost): RefundBudgetWriteContext {
   if (!host.receiverRefundCollectorAddress) {
-    throw new Error("ReceiverRefundCollector address required");
+    throw new Error(
+      "ReceiverRefundCollector address required. Use resolveAddresses(networkId) from @x402r/core to get the address for your network.",
+    );
+  }
+  if (host.receiverRefundCollectorAddress === zeroAddress) {
+    throw new Error(
+      "ReceiverRefundCollector is not deployed on this network (zero address). " +
+        "This feature is not available on the current chain.",
+    );
   }
   if (!host.walletClient) {
     throw new Error("WalletClient required");
