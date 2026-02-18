@@ -43,11 +43,25 @@ describe("resolveAddresses", () => {
   it("should return non-zero addresses for all supported networks", () => {
     for (const networkId of SupportedNetworks) {
       const addrs = resolveAddresses(networkId);
-      expect(addrs.escrowAddress).not.toBe(ZERO_ADDRESS);
-      expect(addrs.refundRequestAddress).not.toBe(ZERO_ADDRESS);
-      expect(addrs.tokenCollector).not.toBe(ZERO_ADDRESS);
-      expect(addrs.arbiterRegistryAddress).not.toBe(ZERO_ADDRESS);
-      expect(addrs.usdc).not.toBe(ZERO_ADDRESS);
+      expect(addrs.escrowAddress, `${networkId} escrowAddress`).not.toBe(ZERO_ADDRESS);
+      expect(addrs.refundRequestAddress, `${networkId} refundRequestAddress`).not.toBe(
+        ZERO_ADDRESS,
+      );
+      expect(addrs.tokenCollector, `${networkId} tokenCollector`).not.toBe(ZERO_ADDRESS);
+      expect(addrs.arbiterRegistryAddress, `${networkId} arbiterRegistryAddress`).not.toBe(
+        ZERO_ADDRESS,
+      );
+      expect(addrs.usdc, `${networkId} usdc`).not.toBe(ZERO_ADDRESS);
+      expect(
+        addrs.receiverRefundCollectorAddress,
+        `${networkId} receiverRefundCollectorAddress`,
+      ).toBeDefined();
+      expect(
+        addrs.receiverRefundCollectorAddress,
+        `${networkId} receiverRefundCollectorAddress`,
+      ).not.toBe(ZERO_ADDRESS);
+      expect(addrs.evidenceAddress, `${networkId} evidenceAddress`).toBeDefined();
+      expect(addrs.evidenceAddress, `${networkId} evidenceAddress`).not.toBe(ZERO_ADDRESS);
     }
   });
 
@@ -55,5 +69,11 @@ describe("resolveAddresses", () => {
     const addrs = resolveAddresses("eip155:84532");
     expect(addrs.evidenceAddress).toBeDefined();
     expect(addrs.evidenceAddress).toMatch(/^0x[a-fA-F0-9]{40}$/);
+  });
+
+  it("should include receiverRefundCollectorAddress for Base Sepolia", () => {
+    const addrs = resolveAddresses("eip155:84532");
+    expect(addrs.receiverRefundCollectorAddress).toBeDefined();
+    expect(addrs.receiverRefundCollectorAddress).toMatch(/^0x[a-fA-F0-9]{40}$/);
   });
 });

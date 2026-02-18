@@ -57,12 +57,30 @@ describe("isSupportedNetwork", () => {
 });
 
 describe("receiverRefundCollector", () => {
-  it("should have receiverRefundCollector on all networks", () => {
+  it("should have non-zero receiverRefundCollector on all networks", () => {
+    const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
     for (const [networkId, config] of Object.entries(NETWORK_CONFIG)) {
       expect(
         config.receiverRefundCollector,
         `${networkId} missing receiverRefundCollector`,
       ).toMatch(/^0x[a-fA-F0-9]{40}$/);
+      expect(
+        config.receiverRefundCollector,
+        `${networkId} has zero-address receiverRefundCollector`,
+      ).not.toBe(ZERO_ADDRESS);
+    }
+  });
+
+  it("should have non-zero refundRequestEvidence on all networks", () => {
+    const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+    for (const [networkId, config] of Object.entries(NETWORK_CONFIG)) {
+      expect(config.refundRequestEvidence, `${networkId} missing refundRequestEvidence`).toMatch(
+        /^0x[a-fA-F0-9]{40}$/,
+      );
+      expect(
+        config.refundRequestEvidence,
+        `${networkId} has zero-address refundRequestEvidence`,
+      ).not.toBe(ZERO_ADDRESS);
     }
   });
 

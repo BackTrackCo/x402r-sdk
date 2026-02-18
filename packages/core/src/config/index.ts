@@ -307,7 +307,7 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
     protocolFeeConfig: "0xD979dBfBdA5f4b16AAF60Eaab32A44f352076838",
     usdcTvlLimit: "0xA50F51254E8B08899EdB76Bd24b4DC6A61ba7dE7",
     arbiterRegistry: "0xE78648e7af7B1BaDE717FF6E410B922F92adE80f",
-    receiverRefundCollector: "0x0000000000000000000000000000000000000000",
+    receiverRefundCollector: "0x9B16ff5bcF5C0B2c31Cd17032a306E91CA67F546",
     usdc: "0x754704Bc059F8C67012fEd69BC8A327a5aafb603",
     refundRequestEvidence: "0x19a798c7F66E6401f6004b732dA604196952e843",
     factories: {
