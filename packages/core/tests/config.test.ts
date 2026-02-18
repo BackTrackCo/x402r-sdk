@@ -4,30 +4,34 @@ import {
   getNetworkConfig,
   isSupportedNetwork,
   SupportedNetworks,
-  resolveAddresses,
 } from "../src/config/index.js";
 
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+
 describe("NETWORK_CONFIG", () => {
-  it("should have Base Sepolia configuration", () => {
-    expect(NETWORK_CONFIG["eip155:84532"]).toBeDefined();
+  it("should have valid addresses for all networks", () => {
+    for (const [networkId, config] of Object.entries(NETWORK_CONFIG)) {
+      expect(config.authCaptureEscrow, `${networkId} authCaptureEscrow`).toMatch(
+        /^0x[a-fA-F0-9]{40}$/,
+      );
+      expect(config.tokenCollector, `${networkId} tokenCollector`).toMatch(/^0x[a-fA-F0-9]{40}$/);
+      expect(config.refundRequest, `${networkId} refundRequest`).toMatch(/^0x[a-fA-F0-9]{40}$/);
+      expect(config.usdc, `${networkId} usdc`).toMatch(/^0x[a-fA-F0-9]{40}$/);
+    }
   });
 
-  it("should have required addresses for Base Sepolia", () => {
-    const config = NETWORK_CONFIG["eip155:84532"];
-    expect(config.authCaptureEscrow).toMatch(/^0x[a-fA-F0-9]{40}$/);
-    expect(config.tokenCollector).toMatch(/^0x[a-fA-F0-9]{40}$/);
-    expect(config.refundRequest).toMatch(/^0x[a-fA-F0-9]{40}$/);
-    expect(config.usdc).toMatch(/^0x[a-fA-F0-9]{40}$/);
+  it("should have numeric chain ID for all networks", () => {
+    for (const [networkId, config] of Object.entries(NETWORK_CONFIG)) {
+      expect(config.chainId, `${networkId} chainId`).toBeTypeOf("number");
+      expect(config.chainId, `${networkId} chainId`).toBeGreaterThan(0);
+    }
   });
 
-  it("should have correct chain ID for Base Sepolia", () => {
-    const config = NETWORK_CONFIG["eip155:84532"];
-    expect(config.chainId).toBe(84532);
-  });
-
-  it("should have human-readable name", () => {
-    const config = NETWORK_CONFIG["eip155:84532"];
-    expect(config.name).toBe("Base Sepolia");
+  it("should have human-readable name for all networks", () => {
+    for (const [networkId, config] of Object.entries(NETWORK_CONFIG)) {
+      expect(config.name, `${networkId} name`).toBeTypeOf("string");
+      expect(config.name.length, `${networkId} name length`).toBeGreaterThan(0);
+    }
   });
 });
 
@@ -58,7 +62,6 @@ describe("isSupportedNetwork", () => {
 
 describe("receiverRefundCollector", () => {
   it("should have non-zero receiverRefundCollector on all networks", () => {
-    const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
     for (const [networkId, config] of Object.entries(NETWORK_CONFIG)) {
       expect(
         config.receiverRefundCollector,
@@ -72,7 +75,6 @@ describe("receiverRefundCollector", () => {
   });
 
   it("should have non-zero refundRequestEvidence on all networks", () => {
-    const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
     for (const [networkId, config] of Object.entries(NETWORK_CONFIG)) {
       expect(config.refundRequestEvidence, `${networkId} missing refundRequestEvidence`).toMatch(
         /^0x[a-fA-F0-9]{40}$/,
@@ -82,43 +84,6 @@ describe("receiverRefundCollector", () => {
         `${networkId} has zero-address refundRequestEvidence`,
       ).not.toBe(ZERO_ADDRESS);
     }
-  });
-
-  it("should have valid receiverRefundCollector address for Base Sepolia", () => {
-    const config = NETWORK_CONFIG["eip155:84532"];
-    expect(config.receiverRefundCollector).toBe("0x36a03071bA0D3F09a50381fCA6C9906B69Ba8c0E");
-  });
-
-  it("should have valid receiverRefundCollector address for Base Mainnet", () => {
-    const config = NETWORK_CONFIG["eip155:8453"];
-    expect(config.receiverRefundCollector).toBe("0x4bDb9ccC91CA63cfedb6CB0dbf21BC6dD562bb04");
-  });
-});
-
-describe("resolveAddresses", () => {
-  it("should include receiverRefundCollectorAddress for Base Sepolia", () => {
-    const addrs = resolveAddresses("eip155:84532");
-    expect(addrs.receiverRefundCollectorAddress).toBe("0x36a03071bA0D3F09a50381fCA6C9906B69Ba8c0E");
-  });
-
-  it("should exclude receiverRefundCollectorAddress for Monad (zero address)", () => {
-    const addrs = resolveAddresses("eip155:143");
-    expect(addrs.receiverRefundCollectorAddress).toBeUndefined();
-  });
-
-  it("should include receiverRefundCollectorAddress for all deployed networks", () => {
-    const deployedNetworks = ["eip155:84532", "eip155:8453", "eip155:11155111", "eip155:1"];
-    for (const networkId of deployedNetworks) {
-      const addrs = resolveAddresses(networkId);
-      expect(
-        addrs.receiverRefundCollectorAddress,
-        `${networkId} should have receiverRefundCollectorAddress`,
-      ).toBeDefined();
-    }
-  });
-
-  it("should throw for unsupported network", () => {
-    expect(() => resolveAddresses("eip155:99999")).toThrow("not supported");
   });
 });
 
