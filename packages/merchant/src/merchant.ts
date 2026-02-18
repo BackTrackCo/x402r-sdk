@@ -9,7 +9,6 @@ import {
   AuthCaptureEscrowABI,
   RefundRequestABI,
   FreezeABI,
-  ERC20ABI,
   RequestStatus,
   PaymentState,
   computePaymentInfoHash,
@@ -30,10 +29,17 @@ import {
   watchEvidenceSubmissions as sharedWatchEvidenceSubmissions,
   getPaymentState as sharedGetPaymentState,
   getPaymentDetails as sharedGetPaymentDetails,
+  getRefundBudget as sharedGetRefundBudget,
+  approveRefundBudget as sharedApproveRefundBudget,
+  refundPostEscrow as sharedRefundPostEscrow,
+  refundPostEscrowFromBudget as sharedRefundPostEscrowFromBudget,
   createRefundReadCtx,
   createRefundWriteCtx,
   createEvidenceReadCtx,
   createEvidenceWriteCtx,
+  createRefundBudgetReadCtx,
+  createRefundBudgetWriteCtx,
+  createOperatorWriteCtx,
   type PaymentInfo,
   type PaymentStore,
   type OperatorConfig,
@@ -422,16 +428,13 @@ export class X402rMerchant {
     tokenCollector: `0x${string}`,
     collectorData: `0x${string}`,
   ): Promise<{ txHash: `0x${string}` }> {
-    const txHash = await this.walletClient.writeContract({
-      chain: this.walletClient.chain,
-      account: this.walletClient.account!,
-      address: this.operatorAddress,
-      abi: PaymentOperatorABI,
-      functionName: "refundPostEscrow",
-      args: [toAbiPaymentInfo(paymentInfo), amount, tokenCollector, collectorData],
-    });
-
-    return { txHash: txHash as `0x${string}` };
+    return sharedRefundPostEscrow(
+      createOperatorWriteCtx(this),
+      paymentInfo,
+      amount,
+      tokenCollector,
+      collectorData,
+    );
   }
 
   // ============ Refund Budget (ReceiverRefundCollector) ============
@@ -457,20 +460,7 @@ export class X402rMerchant {
     tokenAddress: `0x${string}`,
     amount: bigint,
   ): Promise<{ txHash: `0x${string}` }> {
-    if (!this.receiverRefundCollectorAddress) {
-      throw new Error("ReceiverRefundCollector address required");
-    }
-
-    const txHash = await this.walletClient.writeContract({
-      chain: this.walletClient.chain,
-      account: this.walletClient.account!,
-      address: tokenAddress,
-      abi: ERC20ABI,
-      functionName: "approve",
-      args: [this.receiverRefundCollectorAddress, amount],
-    });
-
-    return { txHash: txHash as `0x${string}` };
+    return sharedApproveRefundBudget(createRefundBudgetWriteCtx(this), tokenAddress, amount);
   }
 
   /**
@@ -487,18 +477,11 @@ export class X402rMerchant {
    * ```
    */
   async getRefundBudget(tokenAddress: `0x${string}`): Promise<bigint> {
-    if (!this.receiverRefundCollectorAddress) {
-      throw new Error("ReceiverRefundCollector address required");
-    }
-
-    const allowance = await this.publicClient.readContract({
-      address: tokenAddress,
-      abi: ERC20ABI,
-      functionName: "allowance",
-      args: [this.walletClient.account!.address, this.receiverRefundCollectorAddress],
-    });
-
-    return allowance as bigint;
+    return sharedGetRefundBudget(
+      createRefundBudgetReadCtx(this),
+      tokenAddress,
+      this.walletClient.account!.address,
+    );
   }
 
   /**
@@ -528,7 +511,14 @@ export class X402rMerchant {
       throw new Error("ReceiverRefundCollector address required");
     }
 
-    return this.refundPostEscrow(paymentInfo, amount, this.receiverRefundCollectorAddress, "0x");
+    return sharedRefundPostEscrowFromBudget(
+      {
+        ...createOperatorWriteCtx(this),
+        receiverRefundCollectorAddress: this.receiverRefundCollectorAddress,
+      },
+      paymentInfo,
+      amount,
+    );
   }
 
   // ============ Operator Config ============
