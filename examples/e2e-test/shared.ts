@@ -28,7 +28,7 @@ import {
   resolveAddresses,
   computePaymentInfoHash,
   toPaymentInfo,
-  createFacilitatorSignerFromViem,
+  toFacilitatorEvmSigner,
   createInProcessFacilitator,
   type PaymentInfo,
   type FacilitatorClientLike,
@@ -329,7 +329,7 @@ export async function setupHTTP402(
     transport: http(RPC_URL),
   }).extend(publicActions);
 
-  const signer = createFacilitatorSignerFromViem(facilitatorViemClient);
+  const signer = toFacilitatorEvmSigner(facilitatorViemClient);
   const { client: facilitatorClient } = createInProcessFacilitator(new x402Facilitator(), fac =>
     registerEscrowFacilitatorScheme(fac, {
       signer: signer as Parameters<typeof registerEscrowFacilitatorScheme>[1]["signer"],
@@ -481,9 +481,9 @@ export async function performHTTP402Payment(
   const paymentInfo = toPaymentInfo(verifiedPayload.payload as EscrowPayload);
 
   const escrowHash = computePaymentInfoHash(
-    paymentInfo,
-    accounts.networkConfig.authCaptureEscrow as Address,
     84532,
+    accounts.networkConfig.authCaptureEscrow as Address,
+    paymentInfo,
   );
 
   return {
