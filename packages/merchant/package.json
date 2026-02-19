@@ -1,6 +1,6 @@
 {
   "name": "@x402r/merchant",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Merchant SDK for servers using X402r refundable payments",
   "author": "x402r.org",
   "license": "Apache-2.0",

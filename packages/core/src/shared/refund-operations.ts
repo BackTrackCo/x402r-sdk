@@ -113,6 +113,45 @@ export async function getRefundRequestByKey(
 }
 
 /**
+ * Batch-fetch refund request data for multiple composite keys.
+ *
+ * Processes keys in concurrent chunks using `Promise.allSettled` on
+ * the existing `getRefundRequestByKey` function.
+ *
+ * @param ctx - Read context with publicClient and refundRequestAddress
+ * @param keys - Array of composite keys to fetch
+ * @param options - Optional concurrency limit (default: 10)
+ * @returns Array of results with key, data (on success), and error (on failure)
+ */
+export async function getRefundRequestsByKeys(
+  ctx: RefundReadContext,
+  keys: readonly `0x${string}`[],
+  options?: { concurrency?: number },
+): Promise<Array<{ key: `0x${string}`; data?: RefundRequestData; error?: string }>> {
+  const concurrency = options?.concurrency ?? 10;
+  const results: Array<{ key: `0x${string}`; data?: RefundRequestData; error?: string }> = [];
+
+  for (let i = 0; i < keys.length; i += concurrency) {
+    const chunk = keys.slice(i, i + concurrency);
+    const settled = await Promise.allSettled(chunk.map(key => getRefundRequestByKey(ctx, key)));
+
+    for (let j = 0; j < chunk.length; j++) {
+      const result = settled[j];
+      if (result.status === "fulfilled") {
+        results.push({ key: chunk[j], data: result.value });
+      } else {
+        results.push({
+          key: chunk[j],
+          error: result.reason instanceof Error ? result.reason.message : String(result.reason),
+        });
+      }
+    }
+  }
+
+  return results;
+}
+
+/**
  * Approve a refund request
  *
  * @param ctx - Write context with publicClient, walletClient, and refundRequestAddress

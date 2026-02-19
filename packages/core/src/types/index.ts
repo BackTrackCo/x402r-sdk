@@ -311,6 +311,38 @@ export interface EvidenceEventLog {
   logIndex: number;
 }
 
+// ============ Evidence Content Types ============
+
+/** Evidence submitted by an arbiter with a ruling decision */
+export interface ArbiterRulingEvidence {
+  type: "arbiter-ruling";
+  decision: "approve" | "deny";
+  reasoning: string;
+  confidence?: number;
+  commitment?: string;
+  model?: string;
+}
+
+/** Evidence submitted by a payer requesting a refund */
+export interface PayerRefundEvidence {
+  type: "payer-refund-request";
+  reason: string;
+  description?: string;
+}
+
+/** Evidence submitted by a merchant responding to a dispute */
+export interface MerchantResponseEvidence {
+  type: "merchant-response";
+  response: string;
+  description?: string;
+}
+
+/** Union of all standard evidence content types */
+export type EvidenceContent =
+  | ArbiterRulingEvidence
+  | PayerRefundEvidence
+  | MerchantResponseEvidence;
+
 /**
  * Typed event log for PaymentOperator events (ReleaseExecuted, AuthorizationCreated, etc.)
  */

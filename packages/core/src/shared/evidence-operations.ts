@@ -169,6 +169,47 @@ export async function getAllEvidence(
 }
 
 /**
+ * Resolve evidence content from an inline JSON string or an IPFS CID.
+ *
+ * Evidence entries store a `cid` field that may contain either:
+ * 1. Inline JSON (a stringified JSON object) — returned directly after parsing
+ * 2. An IPFS CID — fetched from the gateway and returned as parsed JSON
+ *
+ * @param cid - The evidence CID field value (inline JSON or IPFS CID)
+ * @param options - Optional gateway URL and custom fetch function
+ * @returns The parsed evidence content
+ * @throws Error if the content cannot be parsed or fetched
+ */
+export async function resolveEvidenceContent(
+  cid: string,
+  options?: { gateway?: string; fetchFn?: typeof fetch },
+): Promise<Record<string, unknown>> {
+  // Try inline JSON first
+  try {
+    const parsed = JSON.parse(cid);
+    if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+      return parsed as Record<string, unknown>;
+    }
+  } catch {
+    // Not inline JSON — treat as IPFS CID
+  }
+
+  const gateway = options?.gateway ?? "https://ipfs.io/ipfs/";
+  const fetchFn = options?.fetchFn ?? fetch;
+  const url = `${gateway}${cid}`;
+
+  const response = await fetchFn(url);
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch evidence from IPFS: ${response.status} ${response.statusText}`,
+    );
+  }
+
+  const content = await response.json();
+  return content as Record<string, unknown>;
+}
+
+/**
  * Watch for new evidence submissions
  *
  * @param ctx - Read context with publicClient and refundRequestEvidenceAddress

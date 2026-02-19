@@ -15,11 +15,13 @@ import {
   ArbiterRegistryABI,
   RequestStatus,
   PaymentState,
+  computePaymentInfoHash as sharedComputePaymentInfoHash,
   toAbiPaymentInfo,
   hasRefundRequest as sharedHasRefundRequest,
   getRefundRequest as sharedGetRefundRequest,
   getRefundStatus as sharedGetRefundStatus,
   getRefundRequestByKey as sharedGetRefundRequestByKey,
+  getRefundRequestsByKeys as sharedGetRefundRequestsByKeys,
   approveRefundRequest as sharedApproveRefundRequest,
   denyRefundRequest as sharedDenyRefundRequest,
   isFrozen as sharedIsFrozen,
@@ -31,6 +33,7 @@ import {
   getAllEvidence as sharedGetAllEvidence,
   watchEvidenceSubmissions as sharedWatchEvidenceSubmissions,
   getPaymentState as sharedGetPaymentState,
+  indexPaymentInfoFromEvents as sharedIndexPaymentInfoFromEvents,
   getRefundBudget as sharedGetRefundBudget,
   approveRefundBudget as sharedApproveRefundBudget,
   refundPostEscrow as sharedRefundPostEscrow,
@@ -204,6 +207,58 @@ export class X402rArbiter {
     return sharedGetPaymentState(
       { publicClient: this.publicClient, escrowAddress: this.escrowAddress, chainId: this.chainId },
       paymentInfo,
+    );
+  }
+
+  /**
+   * Compute the paymentInfoHash for a PaymentInfo struct.
+   *
+   * Convenience wrapper that uses the instance's chainId and escrowAddress.
+   *
+   * @param paymentInfo - The payment information struct
+   * @returns The bytes32 hash
+   * @throws Error if escrowAddress is not configured
+   */
+  computePaymentInfoHash(paymentInfo: PaymentInfo): `0x${string}` {
+    if (!this.escrowAddress) {
+      throw new Error(
+        "Escrow address required. Use resolveAddresses(networkId) from @x402r/core to get the escrow address for your network.",
+      );
+    }
+    return sharedComputePaymentInfoHash(this.chainId, this.escrowAddress, paymentInfo);
+  }
+
+  /**
+   * Build a Map of paymentInfoHash → PaymentInfo by scanning RefundRequested events.
+   *
+   * @param opts - Optional block range and receiver filter
+   * @returns Map from paymentInfoHash to PaymentInfo
+   * @throws Error if escrowAddress or refundRequestAddress is not configured
+   */
+  async indexPaymentInfo(opts?: {
+    fromBlock?: bigint;
+    toBlock?: bigint;
+    receiver?: `0x${string}`;
+  }): Promise<Map<`0x${string}`, PaymentInfo>> {
+    if (!this.escrowAddress) {
+      throw new Error(
+        "Escrow address required. Use resolveAddresses(networkId) from @x402r/core to get the escrow address for your network.",
+      );
+    }
+    if (!this.refundRequestAddress) {
+      throw new Error(
+        "RefundRequest address required. Use resolveAddresses(networkId) from @x402r/core to get the address for your network.",
+      );
+    }
+
+    return sharedIndexPaymentInfoFromEvents(
+      {
+        publicClient: this.publicClient,
+        escrowAddress: this.escrowAddress,
+        chainId: this.chainId,
+        refundRequestAddress: this.refundRequestAddress,
+      },
+      opts,
     );
   }
 
@@ -463,19 +518,15 @@ export class X402rArbiter {
    * @param offset - Starting index (0-based)
    * @param count - Number of keys to return
    * @param receiverAddress - The receiver address to query (defaults to wallet account)
+   * @param options - Optional ordering: 'newest' returns newest-first, 'oldest' (default) returns oldest-first
    * @returns Object with keys array and total count
    * @throws Error if refundRequestAddress is not configured
-   *
-   * @example
-   * ```typescript
-   * const { keys, total } = await arbiter.getPendingRefundRequests(0n, 10n, '0x...');
-   * console.log(`${total} total cases, showing first ${keys.length}`);
-   * ```
    */
-  async getPendingRefundRequests(
+  async getReceiverRefundRequests(
     offset: bigint,
     count: bigint,
     receiverAddress?: `0x${string}`,
+    options?: { order?: "newest" | "oldest" },
   ): Promise<{ keys: readonly `0x${string}`[]; total: bigint }> {
     if (!this.refundRequestAddress) {
       throw new Error(
@@ -485,6 +536,25 @@ export class X402rArbiter {
 
     const address = receiverAddress ?? this.walletClient.account!.address;
 
+    if (options?.order === "newest") {
+      const total = await this.getRefundRequestCount(address);
+      const reverseOffset = total > offset + count ? total - offset - count : 0n;
+      const reverseCount = total > offset + count ? count : total - offset;
+
+      if (reverseCount <= 0n) {
+        return { keys: [], total };
+      }
+
+      const [keys] = (await this.publicClient.readContract({
+        address: this.refundRequestAddress,
+        abi: RefundRequestABI,
+        functionName: "getReceiverRefundRequests",
+        args: [address, reverseOffset, reverseCount],
+      })) as [readonly `0x${string}`[], bigint];
+
+      return { keys: [...keys].reverse(), total };
+    }
+
     const [keys, total] = (await this.publicClient.readContract({
       address: this.refundRequestAddress,
       abi: RefundRequestABI,
@@ -493,6 +563,18 @@ export class X402rArbiter {
     })) as [readonly `0x${string}`[], bigint];
 
     return { keys, total };
+  }
+
+  /**
+   * @deprecated Use `getReceiverRefundRequests` instead. This method returns all statuses, not just pending.
+   */
+  async getPendingRefundRequests(
+    offset: bigint,
+    count: bigint,
+    receiverAddress?: `0x${string}`,
+    options?: { order?: "newest" | "oldest" },
+  ): Promise<{ keys: readonly `0x${string}`[]; total: bigint }> {
+    return this.getReceiverRefundRequests(offset, count, receiverAddress, options);
   }
 
   /** Get the status of a refund request */
@@ -538,6 +620,14 @@ export class X402rArbiter {
   /** Get refund request data by composite key */
   async getRefundRequestByKey(compositeKey: `0x${string}`): Promise<RefundRequestData> {
     return sharedGetRefundRequestByKey(this.getRefundCtx(), compositeKey);
+  }
+
+  /** Batch-fetch refund request data for multiple composite keys */
+  async getRefundRequestsByKeys(
+    keys: readonly `0x${string}`[],
+    options?: { concurrency?: number },
+  ): Promise<Array<{ key: `0x${string}`; data?: RefundRequestData; error?: string }>> {
+    return sharedGetRefundRequestsByKeys(this.getRefundCtx(), keys, options);
   }
 
   // ============ Freeze Operations ============

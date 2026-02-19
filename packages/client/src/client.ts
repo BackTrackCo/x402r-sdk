@@ -11,11 +11,13 @@ import {
   EscrowPeriodABI,
   FreezeABI,
   PaymentState,
+  computePaymentInfoHash as sharedComputePaymentInfoHash,
   toAbiPaymentInfo,
   hasRefundRequest as sharedHasRefundRequest,
   getRefundRequest as sharedGetRefundRequest,
   getRefundStatus as sharedGetRefundStatus,
   getRefundRequestByKey as sharedGetRefundRequestByKey,
+  getRefundRequestsByKeys as sharedGetRefundRequestsByKeys,
   isFrozen as sharedIsFrozen,
   watchFreezeEvents as sharedWatchFreezeEvents,
   submitEvidence as sharedSubmitEvidence,
@@ -174,6 +176,24 @@ export class X402rClient {
       { publicClient: this.publicClient, escrowAddress: this.escrowAddress, chainId: this.chainId },
       paymentInfo,
     );
+  }
+
+  /**
+   * Compute the paymentInfoHash for a PaymentInfo struct.
+   *
+   * Convenience wrapper that uses the instance's chainId and escrowAddress.
+   *
+   * @param paymentInfo - The payment information struct
+   * @returns The bytes32 hash
+   * @throws Error if escrowAddress is not configured
+   */
+  computePaymentInfoHash(paymentInfo: PaymentInfo): `0x${string}` {
+    if (!this.escrowAddress) {
+      throw new Error(
+        "Escrow address required. Use resolveAddresses(networkId) from @x402r/core to get the escrow address for your network.",
+      );
+    }
+    return sharedComputePaymentInfoHash(this.chainId, this.escrowAddress, paymentInfo);
   }
 
   /**
@@ -485,6 +505,14 @@ export class X402rClient {
   /** Get refund request data by composite key */
   async getRefundRequestByKey(compositeKey: `0x${string}`): Promise<RefundRequestData> {
     return sharedGetRefundRequestByKey(this.getRefundCtx(), compositeKey);
+  }
+
+  /** Batch-fetch refund request data for multiple composite keys */
+  async getRefundRequestsByKeys(
+    keys: readonly `0x${string}`[],
+    options?: { concurrency?: number },
+  ): Promise<Array<{ key: `0x${string}`; data?: RefundRequestData; error?: string }>> {
+    return sharedGetRefundRequestsByKeys(this.getRefundCtx(), keys, options);
   }
 
   // ============ Freeze Operations ============
