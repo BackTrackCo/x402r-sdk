@@ -8,6 +8,7 @@ export {
   getRefundRequest,
   getRefundStatus,
   getRefundRequestByKey,
+  getRefundRequestsByKeys,
   approveRefundRequest,
   denyRefundRequest,
   type RefundReadContext,
@@ -22,6 +23,7 @@ export {
   getEvidenceCount,
   getEvidenceBatch,
   getAllEvidence,
+  resolveEvidenceContent,
   watchEvidenceSubmissions,
   type EvidenceReadContext,
   type EvidenceWriteContext,
@@ -30,6 +32,7 @@ export {
 export {
   getPaymentState,
   getPaymentDetails,
+  indexPaymentInfoFromEvents,
   type PaymentStateReadContext,
   type PaymentDetailsContext,
 } from "./payment-state-operations.js";

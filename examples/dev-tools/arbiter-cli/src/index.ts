@@ -113,7 +113,7 @@ program
     console.log("  Receiver:", receiverAddress);
 
     try {
-      const { keys, total } = await arbiter.getPendingRefundRequests(
+      const { keys, total } = await arbiter.getReceiverRefundRequests(
         offset,
         count,
         receiverAddress,

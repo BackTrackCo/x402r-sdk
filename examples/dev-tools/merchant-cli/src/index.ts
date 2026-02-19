@@ -290,7 +290,7 @@ program
     console.log("\nFetching pending refund requests...");
 
     try {
-      const { keys, total } = await merchant.getPendingRefundRequests(offset, count);
+      const { keys, total } = await merchant.getReceiverRefundRequests(offset, count);
       console.log(`\nFound ${total} total refund requests`);
 
       if (keys.length === 0) {

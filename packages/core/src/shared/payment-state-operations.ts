@@ -4,7 +4,7 @@
  */
 
 import type { PublicClient } from "viem";
-import { AuthCaptureEscrowABI } from "../abis/index.js";
+import { AuthCaptureEscrowABI, RefundRequestABI } from "../abis/index.js";
 import { PaymentState, type PaymentInfo, type PaymentStore } from "../types/index.js";
 import { computePaymentInfoHash } from "../utils/index.js";
 
@@ -164,4 +164,78 @@ export async function getPaymentDetails(
   }
 
   return paymentInfo;
+}
+
+/** Maximum block range per RPC request (Base Sepolia limit) */
+const MAX_BLOCK_RANGE = 50_000n;
+
+/**
+ * Build a Map of paymentInfoHash → PaymentInfo by scanning RefundRequested events.
+ *
+ * The RefundRequest contract emits the full PaymentInfo tuple in each
+ * `RefundRequested` event, so this function can reconstruct PaymentInfo
+ * structs without requiring a separate PaymentStore.
+ *
+ * @param ctx - Read context with publicClient, escrowAddress, chainId, and refundRequestAddress
+ * @param opts - Optional block range and receiver filter
+ * @returns Map from paymentInfoHash to PaymentInfo
+ */
+export async function indexPaymentInfoFromEvents(
+  ctx: PaymentStateReadContext & { refundRequestAddress: `0x${string}` },
+  opts?: { fromBlock?: bigint; toBlock?: bigint; receiver?: `0x${string}` },
+): Promise<Map<`0x${string}`, PaymentInfo>> {
+  const toBlock = opts?.toBlock ?? (await ctx.publicClient.getBlockNumber());
+  const fromBlock = opts?.fromBlock ?? (toBlock > MAX_BLOCK_RANGE ? toBlock - MAX_BLOCK_RANGE : 0n);
+
+  const logs = await ctx.publicClient.getContractEvents({
+    address: ctx.refundRequestAddress,
+    abi: RefundRequestABI,
+    eventName: "RefundRequested",
+    args: opts?.receiver ? { receiver: opts.receiver } : undefined,
+    fromBlock,
+    toBlock,
+  });
+
+  const result = new Map<`0x${string}`, PaymentInfo>();
+
+  for (const log of logs) {
+    const args = log.args as {
+      paymentInfo?: {
+        operator: `0x${string}`;
+        payer: `0x${string}`;
+        receiver: `0x${string}`;
+        token: `0x${string}`;
+        maxAmount: bigint;
+        preApprovalExpiry: bigint;
+        authorizationExpiry: bigint;
+        refundExpiry: bigint;
+        minFeeBps: number;
+        maxFeeBps: number;
+        feeReceiver: `0x${string}`;
+        salt: bigint;
+      };
+    };
+
+    if (!args.paymentInfo) continue;
+
+    const paymentInfo: PaymentInfo = {
+      operator: args.paymentInfo.operator,
+      payer: args.paymentInfo.payer,
+      receiver: args.paymentInfo.receiver,
+      token: args.paymentInfo.token,
+      maxAmount: args.paymentInfo.maxAmount,
+      preApprovalExpiry: args.paymentInfo.preApprovalExpiry,
+      authorizationExpiry: args.paymentInfo.authorizationExpiry,
+      refundExpiry: args.paymentInfo.refundExpiry,
+      minFeeBps: Number(args.paymentInfo.minFeeBps),
+      maxFeeBps: Number(args.paymentInfo.maxFeeBps),
+      feeReceiver: args.paymentInfo.feeReceiver,
+      salt: args.paymentInfo.salt,
+    };
+
+    const hash = computePaymentInfoHash(ctx.chainId, ctx.escrowAddress, paymentInfo);
+    result.set(hash, paymentInfo);
+  }
+
+  return result;
 }
