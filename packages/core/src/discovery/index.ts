@@ -4,7 +4,7 @@
  */
 
 import type { PublicClient } from "viem";
-import { PaymentOperatorABI } from "../abis/index.js";
+import { paymentOperatorAbi } from "../abis/index.js";
 import { resolveAddresses, type ResolvedAddresses } from "../config/index.js";
 
 /**
@@ -67,32 +67,32 @@ export async function getOperatorDeployment(
   ] = await Promise.all([
     publicClient.readContract({
       address: operatorAddress,
-      abi: PaymentOperatorABI,
+      abi: paymentOperatorAbi,
       functionName: "ESCROW",
     }) as Promise<`0x${string}`>,
     publicClient.readContract({
       address: operatorAddress,
-      abi: PaymentOperatorABI,
+      abi: paymentOperatorAbi,
       functionName: "FEE_RECIPIENT",
     }) as Promise<`0x${string}`>,
     publicClient.readContract({
       address: operatorAddress,
-      abi: PaymentOperatorABI,
+      abi: paymentOperatorAbi,
       functionName: "FEE_CALCULATOR",
     }) as Promise<`0x${string}`>,
     publicClient.readContract({
       address: operatorAddress,
-      abi: PaymentOperatorABI,
+      abi: paymentOperatorAbi,
       functionName: "PROTOCOL_FEE_CONFIG",
     }) as Promise<`0x${string}`>,
     publicClient.readContract({
       address: operatorAddress,
-      abi: PaymentOperatorABI,
+      abi: paymentOperatorAbi,
       functionName: "AUTHORIZE_CONDITION",
     }) as Promise<`0x${string}`>,
     publicClient.readContract({
       address: operatorAddress,
-      abi: PaymentOperatorABI,
+      abi: paymentOperatorAbi,
       functionName: "RELEASE_CONDITION",
     }) as Promise<`0x${string}`>,
   ]);

@@ -4,7 +4,7 @@
  */
 
 import type { PublicClient, WalletClient } from "viem";
-import { RefundRequestEvidenceABI } from "../abis/index.js";
+import { refundRequestEvidenceAbi } from "../abis/index.js";
 import type { PaymentInfo, Evidence, EvidenceEventLog } from "../types/index.js";
 import { toAbiPaymentInfo } from "../utils/index.js";
 import { requireAccount } from "./require-account.js";
@@ -41,7 +41,7 @@ export async function submitEvidence(
     chain: ctx.walletClient.chain,
     account: ctx.walletClient.account,
     address: ctx.refundRequestEvidenceAddress,
-    abi: RefundRequestEvidenceABI,
+    abi: refundRequestEvidenceAbi,
     functionName: "submitEvidence",
     args: [toAbiPaymentInfo(paymentInfo), nonce, cid],
   });
@@ -66,7 +66,7 @@ export async function getEvidence(
 ): Promise<Evidence> {
   const result = await ctx.publicClient.readContract({
     address: ctx.refundRequestEvidenceAddress,
-    abi: RefundRequestEvidenceABI,
+    abi: refundRequestEvidenceAbi,
     functionName: "getEvidence",
     args: [toAbiPaymentInfo(paymentInfo), nonce, index],
   });
@@ -96,7 +96,7 @@ export async function getEvidenceCount(
 ): Promise<bigint> {
   const count = await ctx.publicClient.readContract({
     address: ctx.refundRequestEvidenceAddress,
-    abi: RefundRequestEvidenceABI,
+    abi: refundRequestEvidenceAbi,
     functionName: "getEvidenceCount",
     args: [toAbiPaymentInfo(paymentInfo), nonce],
   });
@@ -123,7 +123,7 @@ export async function getEvidenceBatch(
 ): Promise<{ entries: Evidence[]; total: bigint }> {
   const result = await ctx.publicClient.readContract({
     address: ctx.refundRequestEvidenceAddress,
-    abi: RefundRequestEvidenceABI,
+    abi: refundRequestEvidenceAbi,
     functionName: "getEvidenceBatch",
     args: [toAbiPaymentInfo(paymentInfo), nonce, offset, count],
   });
@@ -222,7 +222,7 @@ export function watchEvidenceSubmissions(
 ): { unsubscribe: () => void } {
   const unsubscribe = ctx.publicClient.watchContractEvent({
     address: ctx.refundRequestEvidenceAddress,
-    abi: RefundRequestEvidenceABI,
+    abi: refundRequestEvidenceAbi,
     eventName: "EvidenceSubmitted",
     onLogs: logs => {
       for (const log of logs) {

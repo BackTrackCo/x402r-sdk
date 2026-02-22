@@ -5,11 +5,11 @@
 
 import type { PublicClient, WalletClient } from "viem";
 import {
-  PaymentOperatorABI,
-  AuthCaptureEscrowABI,
-  RefundRequestABI,
-  EscrowPeriodABI,
-  FreezeABI,
+  paymentOperatorAbi,
+  authCaptureEscrowAbi,
+  refundRequestAbi,
+  escrowPeriodAbi,
+  freezeAbi,
   PaymentState,
   computePaymentInfoHash as sharedComputePaymentInfoHash,
   toAbiPaymentInfo,
@@ -212,7 +212,7 @@ export class X402rClient {
 
     const state = await this.publicClient.readContract({
       address: this.escrowAddress,
-      abi: AuthCaptureEscrowABI,
+      abi: authCaptureEscrowAbi,
       functionName: "paymentState",
       args: [paymentInfoHash],
     });
@@ -237,7 +237,7 @@ export class X402rClient {
 
     const state = await this.publicClient.readContract({
       address: this.escrowAddress,
-      abi: AuthCaptureEscrowABI,
+      abi: authCaptureEscrowAbi,
       functionName: "paymentState",
       args: [paymentInfoHash],
     });
@@ -308,7 +308,7 @@ export class X402rClient {
 
     const logs = await this.publicClient.getContractEvents({
       address: this.operatorAddress,
-      abi: PaymentOperatorABI,
+      abi: paymentOperatorAbi,
       eventName: "AuthorizationCreated",
       args: {
         payer: this.walletClient.account.address,
@@ -378,7 +378,7 @@ export class X402rClient {
       chain: walletClient.chain,
       account: walletClient.account,
       address: this.refundRequestAddress,
-      abi: RefundRequestABI,
+      abi: refundRequestAbi,
       functionName: "requestRefund",
       args: [toAbiPaymentInfo(paymentInfo), amount, nonce],
     });
@@ -417,7 +417,7 @@ export class X402rClient {
       chain: walletClient.chain,
       account: walletClient.account,
       address: this.refundRequestAddress,
-      abi: RefundRequestABI,
+      abi: refundRequestAbi,
       functionName: "cancelRefundRequest",
       args: [toAbiPaymentInfo(paymentInfo), nonce],
     });
@@ -458,7 +458,7 @@ export class X402rClient {
 
     const [keys, total] = (await this.publicClient.readContract({
       address: this.refundRequestAddress,
-      abi: RefundRequestABI,
+      abi: refundRequestAbi,
       functionName: "getPayerRefundRequests",
       args: [payerAddress, offset, count],
     })) as [readonly `0x${string}`[], bigint];
@@ -494,7 +494,7 @@ export class X402rClient {
 
     const count = await this.publicClient.readContract({
       address: this.refundRequestAddress,
-      abi: RefundRequestABI,
+      abi: refundRequestAbi,
       functionName: "payerRefundRequestCount",
       args: [payerAddress],
     });
@@ -541,7 +541,7 @@ export class X402rClient {
       chain: walletClient.chain,
       account: walletClient.account,
       address: freezeAddress,
-      abi: FreezeABI,
+      abi: freezeAbi,
       functionName: "freeze",
       args: [toAbiPaymentInfo(paymentInfo)],
     });
@@ -573,7 +573,7 @@ export class X402rClient {
       chain: walletClient.chain,
       account: walletClient.account,
       address: freezeAddress,
-      abi: FreezeABI,
+      abi: freezeAbi,
       functionName: "unfreeze",
       args: [toAbiPaymentInfo(paymentInfo)],
     });
@@ -607,7 +607,7 @@ export class X402rClient {
   ): Promise<bigint> {
     const authTime = await this.publicClient.readContract({
       address: escrowPeriodAddress,
-      abi: EscrowPeriodABI,
+      abi: escrowPeriodAbi,
       functionName: "getAuthorizationTime",
       args: [toAbiPaymentInfo(paymentInfo)],
     });
@@ -636,7 +636,7 @@ export class X402rClient {
   ): Promise<boolean> {
     const inEscrow = await this.publicClient.readContract({
       address: escrowPeriodAddress,
-      abi: EscrowPeriodABI,
+      abi: escrowPeriodAbi,
       functionName: "isDuringEscrowPeriod",
       args: [toAbiPaymentInfo(paymentInfo)],
     });
@@ -670,7 +670,7 @@ export class X402rClient {
     // Watch ReleaseExecuted events
     const unsubscribeRelease = this.publicClient.watchContractEvent({
       address: this.operatorAddress,
-      abi: PaymentOperatorABI,
+      abi: paymentOperatorAbi,
       eventName: "ReleaseExecuted",
       onLogs: logs => {
         for (const log of logs) {
@@ -683,7 +683,7 @@ export class X402rClient {
     // Watch RefundInEscrowExecuted events
     const unsubscribeRefundInEscrow = this.publicClient.watchContractEvent({
       address: this.operatorAddress,
-      abi: PaymentOperatorABI,
+      abi: paymentOperatorAbi,
       eventName: "RefundInEscrowExecuted",
       onLogs: logs => {
         for (const log of logs) {
@@ -696,7 +696,7 @@ export class X402rClient {
     // Watch RefundPostEscrowExecuted events
     const unsubscribeRefundPostEscrow = this.publicClient.watchContractEvent({
       address: this.operatorAddress,
-      abi: PaymentOperatorABI,
+      abi: paymentOperatorAbi,
       eventName: "RefundPostEscrowExecuted",
       onLogs: logs => {
         for (const log of logs) {
@@ -744,7 +744,7 @@ export class X402rClient {
     // Watch RefundRequested events
     const unsubscribeRequested = this.publicClient.watchContractEvent({
       address: this.refundRequestAddress,
-      abi: RefundRequestABI,
+      abi: refundRequestAbi,
       eventName: "RefundRequested",
       onLogs: logs => {
         for (const log of logs) {
@@ -757,7 +757,7 @@ export class X402rClient {
     // Watch RefundRequestStatusUpdated events
     const unsubscribeStatusUpdated = this.publicClient.watchContractEvent({
       address: this.refundRequestAddress,
-      abi: RefundRequestABI,
+      abi: refundRequestAbi,
       eventName: "RefundRequestStatusUpdated",
       onLogs: logs => {
         for (const log of logs) {
@@ -770,7 +770,7 @@ export class X402rClient {
     // Watch RefundRequestCancelled events
     const unsubscribeCancelled = this.publicClient.watchContractEvent({
       address: this.refundRequestAddress,
-      abi: RefundRequestABI,
+      abi: refundRequestAbi,
       eventName: "RefundRequestCancelled",
       onLogs: logs => {
         for (const log of logs) {
@@ -815,7 +815,7 @@ export class X402rClient {
 
     const unsubscribe = this.publicClient.watchContractEvent({
       address: this.operatorAddress,
-      abi: PaymentOperatorABI,
+      abi: paymentOperatorAbi,
       eventName: "AuthorizationCreated",
       args: {
         payer: payerAddress,

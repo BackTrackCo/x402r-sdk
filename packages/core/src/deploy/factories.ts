@@ -6,15 +6,17 @@
 import type { WalletClient, PublicClient, Address, Hash } from "viem";
 import { getFactoryAddress } from "../config/index.js";
 import {
-  PaymentOperatorFactoryABI,
-  EscrowPeriodFactoryABI,
-  FreezeFactoryABI,
-  StaticFeeCalculatorFactoryABI,
-  StaticAddressConditionFactoryABI,
-  AndConditionFactoryABI,
-  OrConditionFactoryABI,
-  NotConditionFactoryABI,
-  RecorderCombinatorFactoryABI,
+  paymentOperatorFactoryAbi,
+  escrowPeriodFactoryAbi,
+  freezeFactoryAbi,
+  staticFeeCalculatorFactoryAbi,
+  staticAddressConditionFactoryAbi,
+  andConditionFactoryAbi,
+  orConditionFactoryAbi,
+  notConditionFactoryAbi,
+  recorderCombinatorFactoryAbi,
+} from "../abis/index.js";
+import {
   type PaymentOperatorConfig,
   type EscrowPeriodConfigInput,
   type FreezeConfigInput,
@@ -98,7 +100,7 @@ export async function computeStaticFeeCalculatorAddress(
   const factoryAddress = getFactoryAddress(networkId, "staticFeeCalculator");
   return publicClient.readContract({
     address: factoryAddress,
-    abi: StaticFeeCalculatorFactoryABI,
+    abi: staticFeeCalculatorFactoryAbi,
     functionName: "computeAddress",
     args: [feeBps],
   });
@@ -115,7 +117,7 @@ export async function getDeployedStaticFeeCalculator(
   const factoryAddress = getFactoryAddress(networkId, "staticFeeCalculator");
   return publicClient.readContract({
     address: factoryAddress,
-    abi: StaticFeeCalculatorFactoryABI,
+    abi: staticFeeCalculatorFactoryAbi,
     functionName: "getDeployed",
     args: [feeBps],
   });
@@ -147,7 +149,7 @@ export async function deployStaticFeeCalculator(
   // Deploy via factory
   const { request } = await publicClient.simulateContract({
     address: factoryAddress,
-    abi: StaticFeeCalculatorFactoryABI,
+    abi: staticFeeCalculatorFactoryAbi,
     functionName: "deploy",
     args: [feeBps],
     account: walletClient.account!,
@@ -187,7 +189,7 @@ export async function computeEscrowPeriodAddress(
 
   return publicClient.readContract({
     address: factoryAddress,
-    abi: EscrowPeriodFactoryABI,
+    abi: escrowPeriodFactoryAbi,
     functionName: "computeAddress",
     args: [fullConfig.escrowPeriod, fullConfig.authorizedCodehash],
   });
@@ -206,7 +208,7 @@ export async function getDeployedEscrowPeriod(
 
   return publicClient.readContract({
     address: factoryAddress,
-    abi: EscrowPeriodFactoryABI,
+    abi: escrowPeriodFactoryAbi,
     functionName: "getDeployed",
     args: [fullConfig.escrowPeriod, fullConfig.authorizedCodehash],
   });
@@ -233,7 +235,7 @@ export async function deployEscrowPeriod(
   // Deploy via factory
   const { request } = await publicClient.simulateContract({
     address: factoryAddress,
-    abi: EscrowPeriodFactoryABI,
+    abi: escrowPeriodFactoryAbi,
     functionName: "deploy",
     args: [fullConfig.escrowPeriod, fullConfig.authorizedCodehash],
     account: walletClient.account!,
@@ -276,7 +278,7 @@ export async function computeFreezeAddress(
 
   return publicClient.readContract({
     address: factoryAddress,
-    abi: FreezeFactoryABI,
+    abi: freezeFactoryAbi,
     functionName: "computeAddress",
     args: [
       fullConfig.freezeCondition,
@@ -300,7 +302,7 @@ export async function getDeployedFreeze(
 
   return publicClient.readContract({
     address: factoryAddress,
-    abi: FreezeFactoryABI,
+    abi: freezeFactoryAbi,
     functionName: "getDeployed",
     args: [
       fullConfig.freezeCondition,
@@ -332,7 +334,7 @@ export async function deployFreeze(
   // Deploy via factory
   const { request } = await publicClient.simulateContract({
     address: factoryAddress,
-    abi: FreezeFactoryABI,
+    abi: freezeFactoryAbi,
     functionName: "deploy",
     args: [
       fullConfig.freezeCondition,
@@ -382,7 +384,7 @@ export async function computeStaticAddressConditionAddress(
 
   return publicClient.readContract({
     address: factoryAddress,
-    abi: StaticAddressConditionFactoryABI,
+    abi: staticAddressConditionFactoryAbi,
     functionName: "computeAddress",
     args: [designatedAddress],
   });
@@ -400,7 +402,7 @@ export async function getDeployedStaticAddressCondition(
 
   return publicClient.readContract({
     address: factoryAddress,
-    abi: StaticAddressConditionFactoryABI,
+    abi: staticAddressConditionFactoryAbi,
     functionName: "getDeployed",
     args: [designatedAddress],
   });
@@ -430,7 +432,7 @@ export async function deployStaticAddressCondition(
   // Deploy via factory
   const { request } = await publicClient.simulateContract({
     address: factoryAddress,
-    abi: StaticAddressConditionFactoryABI,
+    abi: staticAddressConditionFactoryAbi,
     functionName: "deploy",
     args: [designatedAddress],
     account: walletClient.account!,
@@ -471,7 +473,7 @@ export async function computeAndConditionAddress(
 
   return publicClient.readContract({
     address: factoryAddress,
-    abi: AndConditionFactoryABI,
+    abi: andConditionFactoryAbi,
     functionName: "computeAddress",
     args: [conditions],
   });
@@ -489,7 +491,7 @@ export async function getDeployedAndCondition(
 
   return publicClient.readContract({
     address: factoryAddress,
-    abi: AndConditionFactoryABI,
+    abi: andConditionFactoryAbi,
     functionName: "getDeployed",
     args: [conditions],
   });
@@ -515,7 +517,7 @@ export async function deployAndCondition(
   // Deploy via factory
   const { request } = await publicClient.simulateContract({
     address: factoryAddress,
-    abi: AndConditionFactoryABI,
+    abi: andConditionFactoryAbi,
     functionName: "deploy",
     args: [conditions],
     account: walletClient.account!,
@@ -554,7 +556,7 @@ export async function computeOrConditionAddress(
 
   return publicClient.readContract({
     address: factoryAddress,
-    abi: OrConditionFactoryABI,
+    abi: orConditionFactoryAbi,
     functionName: "computeAddress",
     args: [conditions],
   });
@@ -572,7 +574,7 @@ export async function getDeployedOrCondition(
 
   return publicClient.readContract({
     address: factoryAddress,
-    abi: OrConditionFactoryABI,
+    abi: orConditionFactoryAbi,
     functionName: "getDeployed",
     args: [conditions],
   });
@@ -598,7 +600,7 @@ export async function deployOrCondition(
   // Deploy via factory
   const { request } = await publicClient.simulateContract({
     address: factoryAddress,
-    abi: OrConditionFactoryABI,
+    abi: orConditionFactoryAbi,
     functionName: "deploy",
     args: [conditions],
     account: walletClient.account!,
@@ -637,7 +639,7 @@ export async function computeNotConditionAddress(
 
   return publicClient.readContract({
     address: factoryAddress,
-    abi: NotConditionFactoryABI,
+    abi: notConditionFactoryAbi,
     functionName: "computeAddress",
     args: [condition],
   });
@@ -655,7 +657,7 @@ export async function getDeployedNotCondition(
 
   return publicClient.readContract({
     address: factoryAddress,
-    abi: NotConditionFactoryABI,
+    abi: notConditionFactoryAbi,
     functionName: "getDeployed",
     args: [condition],
   });
@@ -681,7 +683,7 @@ export async function deployNotCondition(
   // Deploy via factory
   const { request } = await publicClient.simulateContract({
     address: factoryAddress,
-    abi: NotConditionFactoryABI,
+    abi: notConditionFactoryAbi,
     functionName: "deploy",
     args: [condition],
     account: walletClient.account!,
@@ -720,7 +722,7 @@ export async function computeRecorderCombinatorAddress(
 
   return publicClient.readContract({
     address: factoryAddress,
-    abi: RecorderCombinatorFactoryABI,
+    abi: recorderCombinatorFactoryAbi,
     functionName: "computeAddress",
     args: [recorders],
   });
@@ -738,7 +740,7 @@ export async function getDeployedRecorderCombinator(
 
   return publicClient.readContract({
     address: factoryAddress,
-    abi: RecorderCombinatorFactoryABI,
+    abi: recorderCombinatorFactoryAbi,
     functionName: "getDeployed",
     args: [recorders],
   });
@@ -764,7 +766,7 @@ export async function deployRecorderCombinator(
   // Deploy via factory
   const { request } = await publicClient.simulateContract({
     address: factoryAddress,
-    abi: RecorderCombinatorFactoryABI,
+    abi: recorderCombinatorFactoryAbi,
     functionName: "deploy",
     args: [recorders],
     account: walletClient.account!,
@@ -805,7 +807,7 @@ export async function computeOperatorAddress(
 
   return publicClient.readContract({
     address: factoryAddress,
-    abi: PaymentOperatorFactoryABI,
+    abi: paymentOperatorFactoryAbi,
     functionName: "computeAddress",
     args: [config],
   });
@@ -823,7 +825,7 @@ export async function getDeployedOperator(
 
   return publicClient.readContract({
     address: factoryAddress,
-    abi: PaymentOperatorFactoryABI,
+    abi: paymentOperatorFactoryAbi,
     functionName: "getOperator",
     args: [config],
   });
@@ -849,7 +851,7 @@ export async function deployOperator(
   // Deploy via factory
   const { request } = await publicClient.simulateContract({
     address: factoryAddress,
-    abi: PaymentOperatorFactoryABI,
+    abi: paymentOperatorFactoryAbi,
     functionName: "deployOperator",
     args: [config],
     account: walletClient.account!,

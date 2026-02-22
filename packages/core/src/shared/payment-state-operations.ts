@@ -4,7 +4,7 @@
  */
 
 import type { PublicClient } from "viem";
-import { AuthCaptureEscrowABI, RefundRequestABI } from "../abis/index.js";
+import { authCaptureEscrowAbi, refundRequestAbi } from "../abis/index.js";
 import { PaymentState, type PaymentInfo, type PaymentStore } from "../types/index.js";
 import { computePaymentInfoHash } from "../utils/index.js";
 
@@ -44,7 +44,7 @@ export async function getPaymentState(
 
   const state = await ctx.publicClient.readContract({
     address: ctx.escrowAddress,
-    abi: AuthCaptureEscrowABI,
+    abi: authCaptureEscrowAbi,
     functionName: "paymentState",
     args: [paymentInfoHash],
   });
@@ -107,7 +107,7 @@ export async function getPaymentDetails(
   // 2. Fall back to scanning escrow PaymentAuthorized events
   const logs = await ctx.publicClient.getContractEvents({
     address: ctx.escrowAddress,
-    abi: AuthCaptureEscrowABI,
+    abi: authCaptureEscrowAbi,
     eventName: "PaymentAuthorized",
     args: {
       paymentInfoHash,
@@ -189,7 +189,7 @@ export async function indexPaymentInfoFromEvents(
 
   const logs = await ctx.publicClient.getContractEvents({
     address: ctx.refundRequestAddress,
-    abi: RefundRequestABI,
+    abi: refundRequestAbi,
     eventName: "RefundRequested",
     args: opts?.receiver ? { receiver: opts.receiver } : undefined,
     fromBlock,

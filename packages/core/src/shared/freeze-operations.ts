@@ -4,7 +4,7 @@
  */
 
 import type { PublicClient } from "viem";
-import { FreezeABI } from "../abis/index.js";
+import { freezeAbi } from "../abis/index.js";
 import type { PaymentInfo, FreezeEventLog } from "../types/index.js";
 import { toAbiPaymentInfo } from "../utils/index.js";
 
@@ -28,7 +28,7 @@ export async function isFrozen(
 ): Promise<boolean> {
   const frozen = await ctx.publicClient.readContract({
     address: freezeAddress,
-    abi: FreezeABI,
+    abi: freezeAbi,
     functionName: "isFrozen",
     args: [toAbiPaymentInfo(paymentInfo)],
   });
@@ -51,7 +51,7 @@ export function watchFreezeEvents(
 ): { unsubscribe: () => void } {
   const unsubscribeFrozen = ctx.publicClient.watchContractEvent({
     address: freezeAddress,
-    abi: FreezeABI,
+    abi: freezeAbi,
     eventName: "PaymentFrozen",
     onLogs: logs => {
       for (const log of logs) {
@@ -62,7 +62,7 @@ export function watchFreezeEvents(
 
   const unsubscribeUnfrozen = ctx.publicClient.watchContractEvent({
     address: freezeAddress,
-    abi: FreezeABI,
+    abi: freezeAbi,
     eventName: "PaymentUnfrozen",
     onLogs: logs => {
       for (const log of logs) {

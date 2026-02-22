@@ -4,13 +4,9 @@ export default defineConfig({
   entry: [
     "src/index.ts",
     "src/types/index.ts",
-    "src/abis/index.ts",
     "src/config/index.ts",
     "src/errors/index.ts",
-    "src/factory/index.ts",
-    "src/conditions/index.ts",
     "src/fees/index.ts",
-    "src/http402/index.ts",
   ],
   format: ["esm"],
   dts: true,

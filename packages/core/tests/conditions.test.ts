@@ -1,33 +1,34 @@
 import { describe, it, expect } from "vitest";
 import {
-  // ABIs
-  IConditionABI,
-  PayerConditionABI,
-  ReceiverConditionABI,
-  AlwaysTrueConditionABI,
-  StaticAddressConditionABI,
-  AndConditionABI,
-  OrConditionABI,
-  NotConditionABI,
+  iConditionAbi,
+  payerConditionAbi,
+  receiverConditionAbi,
+  alwaysTrueConditionAbi,
+  staticAddressConditionAbi,
+  andConditionAbi,
+  orConditionAbi,
+  notConditionAbi,
+} from "../src/abis/index.js";
+import {
   // Types
-  ConditionAddress,
-  AndConditionConfig,
-  OrConditionConfig,
-  NotConditionConfig,
-  StaticAddressConditionConfig,
+  type ConditionAddress,
+  type AndConditionConfig,
+  type OrConditionConfig,
+  type NotConditionConfig,
+  type StaticAddressConditionConfig,
   // Builder
   createConditionHelpers,
 } from "../src/conditions/index.js";
 import { NETWORK_CONFIG } from "../src/config/index.js";
 
 describe("Condition ABIs", () => {
-  it("should export IConditionABI", () => {
-    expect(IConditionABI).toBeDefined();
-    expect(Array.isArray(IConditionABI)).toBe(true);
+  it("should export iConditionAbi", () => {
+    expect(iConditionAbi).toBeDefined();
+    expect(Array.isArray(iConditionAbi)).toBe(true);
   });
 
-  it("should have check function in IConditionABI with 3 parameters", () => {
-    const check = IConditionABI.find(item => item.type === "function" && item.name === "check");
+  it("should have check function in iConditionAbi with 3 parameters", () => {
+    const check = iConditionAbi.find(item => item.type === "function" && item.name === "check");
     expect(check).toBeDefined();
     // Critical: check must have 3 parameters - paymentInfo, amount, caller
     expect(check?.inputs).toHaveLength(3);
@@ -37,53 +38,53 @@ describe("Condition ABIs", () => {
     expect(inputNames).toContain("caller");
   });
 
-  it("should export PayerConditionABI", () => {
-    expect(PayerConditionABI).toBeDefined();
-    expect(Array.isArray(PayerConditionABI)).toBe(true);
+  it("should export payerConditionAbi", () => {
+    expect(payerConditionAbi).toBeDefined();
+    expect(Array.isArray(payerConditionAbi)).toBe(true);
   });
 
-  it("should export ReceiverConditionABI", () => {
-    expect(ReceiverConditionABI).toBeDefined();
-    expect(Array.isArray(ReceiverConditionABI)).toBe(true);
+  it("should export receiverConditionAbi", () => {
+    expect(receiverConditionAbi).toBeDefined();
+    expect(Array.isArray(receiverConditionAbi)).toBe(true);
   });
 
-  it("should export AlwaysTrueConditionABI", () => {
-    expect(AlwaysTrueConditionABI).toBeDefined();
-    expect(Array.isArray(AlwaysTrueConditionABI)).toBe(true);
+  it("should export alwaysTrueConditionAbi", () => {
+    expect(alwaysTrueConditionAbi).toBeDefined();
+    expect(Array.isArray(alwaysTrueConditionAbi)).toBe(true);
   });
 
-  it("should export StaticAddressConditionABI", () => {
-    expect(StaticAddressConditionABI).toBeDefined();
-    expect(Array.isArray(StaticAddressConditionABI)).toBe(true);
+  it("should export staticAddressConditionAbi", () => {
+    expect(staticAddressConditionAbi).toBeDefined();
+    expect(Array.isArray(staticAddressConditionAbi)).toBe(true);
   });
 
-  it("should have DESIGNATED_ADDRESS in StaticAddressConditionABI", () => {
-    const getter = StaticAddressConditionABI.find(
+  it("should have DESIGNATED_ADDRESS in staticAddressConditionAbi", () => {
+    const getter = staticAddressConditionAbi.find(
       item => item.type === "function" && item.name === "DESIGNATED_ADDRESS",
     );
     expect(getter).toBeDefined();
   });
 
-  it("should export AndConditionABI", () => {
-    expect(AndConditionABI).toBeDefined();
-    expect(Array.isArray(AndConditionABI)).toBe(true);
+  it("should export andConditionAbi", () => {
+    expect(andConditionAbi).toBeDefined();
+    expect(Array.isArray(andConditionAbi)).toBe(true);
   });
 
-  it("should have conditionCount in AndConditionABI", () => {
-    const getter = AndConditionABI.find(
+  it("should have conditionCount in andConditionAbi", () => {
+    const getter = andConditionAbi.find(
       item => item.type === "function" && item.name === "conditionCount",
     );
     expect(getter).toBeDefined();
   });
 
-  it("should export OrConditionABI", () => {
-    expect(OrConditionABI).toBeDefined();
-    expect(Array.isArray(OrConditionABI)).toBe(true);
+  it("should export orConditionAbi", () => {
+    expect(orConditionAbi).toBeDefined();
+    expect(Array.isArray(orConditionAbi)).toBe(true);
   });
 
-  it("should export NotConditionABI", () => {
-    expect(NotConditionABI).toBeDefined();
-    expect(Array.isArray(NotConditionABI)).toBe(true);
+  it("should export notConditionAbi", () => {
+    expect(notConditionAbi).toBeDefined();
+    expect(Array.isArray(notConditionAbi)).toBe(true);
   });
 });
 

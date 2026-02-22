@@ -554,7 +554,7 @@ export type {
   PaymentRequirements,
 };
 export {
-  AuthCaptureEscrowABI,
+  authCaptureEscrowAbi,
   RequestStatus,
   PaymentState,
   computePaymentInfoHash,

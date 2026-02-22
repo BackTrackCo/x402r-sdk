@@ -4,7 +4,7 @@
  */
 
 import type { PublicClient, WalletClient } from "viem";
-import { RefundRequestABI } from "../abis/index.js";
+import { refundRequestAbi } from "../abis/index.js";
 import { RequestStatus, type PaymentInfo, type RefundRequestData } from "../types/index.js";
 import { toAbiPaymentInfo } from "../utils/index.js";
 import { requireAccount } from "./require-account.js";
@@ -35,7 +35,7 @@ export async function hasRefundRequest(
 ): Promise<boolean> {
   const exists = await ctx.publicClient.readContract({
     address: ctx.refundRequestAddress,
-    abi: RefundRequestABI,
+    abi: refundRequestAbi,
     functionName: "hasRefundRequest",
     args: [toAbiPaymentInfo(paymentInfo), nonce],
   });
@@ -58,7 +58,7 @@ export async function getRefundRequest(
 ): Promise<RefundRequestData> {
   const request = await ctx.publicClient.readContract({
     address: ctx.refundRequestAddress,
-    abi: RefundRequestABI,
+    abi: refundRequestAbi,
     functionName: "getRefundRequest",
     args: [toAbiPaymentInfo(paymentInfo), nonce],
   });
@@ -83,7 +83,7 @@ export async function getRefundStatus(
 ): Promise<RequestStatus> {
   const status = await ctx.publicClient.readContract({
     address: ctx.refundRequestAddress,
-    abi: RefundRequestABI,
+    abi: refundRequestAbi,
     functionName: "getRefundRequestStatus",
     args: [toAbiPaymentInfo(paymentInfo), nonce],
   });
@@ -104,7 +104,7 @@ export async function getRefundRequestByKey(
 ): Promise<RefundRequestData> {
   const request = await ctx.publicClient.readContract({
     address: ctx.refundRequestAddress,
-    abi: RefundRequestABI,
+    abi: refundRequestAbi,
     functionName: "getRefundRequestByKey",
     args: [compositeKey],
   });
@@ -170,7 +170,7 @@ export async function approveRefundRequest(
     chain: ctx.walletClient.chain,
     account: ctx.walletClient.account,
     address: ctx.refundRequestAddress,
-    abi: RefundRequestABI,
+    abi: refundRequestAbi,
     functionName: "updateStatus",
     args: [toAbiPaymentInfo(paymentInfo), nonce, RequestStatus.Approved],
   });
@@ -197,7 +197,7 @@ export async function denyRefundRequest(
     chain: ctx.walletClient.chain,
     account: ctx.walletClient.account,
     address: ctx.refundRequestAddress,
-    abi: RefundRequestABI,
+    abi: refundRequestAbi,
     functionName: "updateStatus",
     args: [toAbiPaymentInfo(paymentInfo), nonce, RequestStatus.Denied],
   });

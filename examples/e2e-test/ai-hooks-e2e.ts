@@ -35,7 +35,7 @@ import {
   createSDKInstances,
   waitForTx,
   computePaymentInfoHash,
-  AuthCaptureEscrowABI,
+  authCaptureEscrowAbi,
   RequestStatus,
   erc20Abi,
   formatUnits,
@@ -246,7 +246,7 @@ async function main() {
 
   const escrowStateAfter = await accounts.publicClient.readContract({
     address: accounts.networkConfig.authCaptureEscrow as Address,
-    abi: AuthCaptureEscrowABI,
+    abi: authCaptureEscrowAbi,
     functionName: "paymentState",
     args: [escrowHash],
   });

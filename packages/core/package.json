@@ -17,10 +17,6 @@
       "import": "./dist/types/index.js",
       "types": "./dist/types/index.d.ts"
     },
-    "./abis": {
-      "import": "./dist/abis/index.js",
-      "types": "./dist/abis/index.d.ts"
-    },
     "./config": {
       "import": "./dist/config/index.js",
       "types": "./dist/config/index.d.ts"
@@ -29,21 +25,9 @@
       "import": "./dist/errors/index.js",
       "types": "./dist/errors/index.d.ts"
     },
-    "./factory": {
-      "import": "./dist/factory/index.js",
-      "types": "./dist/factory/index.d.ts"
-    },
-    "./conditions": {
-      "import": "./dist/conditions/index.js",
-      "types": "./dist/conditions/index.d.ts"
-    },
     "./fees": {
       "import": "./dist/fees/index.js",
       "types": "./dist/fees/index.d.ts"
-    },
-    "./http402": {
-      "import": "./dist/http402/index.js",
-      "types": "./dist/http402/index.d.ts"
     }
   },
   "files": [

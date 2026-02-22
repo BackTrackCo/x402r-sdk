@@ -31,7 +31,7 @@ import {
   createSDKInstances,
   shortAddr,
   waitForTx,
-  AuthCaptureEscrowABI,
+  authCaptureEscrowAbi,
   RequestStatus,
   PaymentState,
   distributeFees,
@@ -107,7 +107,7 @@ async function main() {
   // Verify escrow state
   const escrowState = await accounts.publicClient.readContract({
     address: accounts.networkConfig.authCaptureEscrow as Address,
-    abi: AuthCaptureEscrowABI,
+    abi: authCaptureEscrowAbi,
     functionName: "paymentState",
     args: [escrowHash],
   });
@@ -322,7 +322,7 @@ async function main() {
 
   const escrowStateAfter = await accounts.publicClient.readContract({
     address: accounts.networkConfig.authCaptureEscrow as Address,
-    abi: AuthCaptureEscrowABI,
+    abi: authCaptureEscrowAbi,
     functionName: "paymentState",
     args: [escrowHash],
   });

@@ -25,7 +25,7 @@ import {
   setupHTTP402,
   performHTTP402Payment,
   waitForTx,
-  AuthCaptureEscrowABI,
+  authCaptureEscrowAbi,
   type Address,
 } from "./shared.js";
 import { MemoryPaymentStore, FilePaymentStore, resolveAddresses } from "@x402r/core";
@@ -77,7 +77,7 @@ async function main() {
   // Verify funds in escrow
   const escrowState = (await accounts.publicClient.readContract({
     address: accounts.networkConfig.authCaptureEscrow as Address,
-    abi: AuthCaptureEscrowABI,
+    abi: authCaptureEscrowAbi,
     functionName: "paymentState",
     args: [escrowHash],
   })) as [boolean, bigint, bigint];
