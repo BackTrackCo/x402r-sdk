@@ -5,7 +5,7 @@
 
 import type { PublicClient, WalletClient } from "viem";
 import { refundRequestEvidenceAbi } from "../abis/index.js";
-import type { PaymentInfo, Evidence, EvidenceEventLog } from "../types/index.js";
+import type { SubmitterRole, PaymentInfo, Evidence, EvidenceEventLog } from "../types/index.js";
 import { toAbiPaymentInfo } from "../utils/index.js";
 import { requireAccount } from "./require-account.js";
 
@@ -46,7 +46,7 @@ export async function submitEvidence(
     args: [toAbiPaymentInfo(paymentInfo), nonce, cid],
   });
 
-  return { txHash: txHash as `0x${string}` };
+  return { txHash };
 }
 
 /**
@@ -71,14 +71,12 @@ export async function getEvidence(
     args: [toAbiPaymentInfo(paymentInfo), nonce, index],
   });
 
-  const [submitter, role, timestamp, cid] = result as unknown as [
-    `0x${string}`,
-    number,
-    bigint,
-    string,
-  ];
-
-  return { submitter, role, timestamp: BigInt(timestamp), cid };
+  return {
+    submitter: result.submitter,
+    role: result.role as SubmitterRole,
+    timestamp: BigInt(result.timestamp),
+    cid: result.cid,
+  };
 }
 
 /**
@@ -101,7 +99,7 @@ export async function getEvidenceCount(
     args: [toAbiPaymentInfo(paymentInfo), nonce],
   });
 
-  return count as bigint;
+  return count;
 }
 
 /**
@@ -121,21 +119,16 @@ export async function getEvidenceBatch(
   offset: bigint,
   count: bigint,
 ): Promise<{ entries: Evidence[]; total: bigint }> {
-  const result = await ctx.publicClient.readContract({
+  const [rawEntries, total] = await ctx.publicClient.readContract({
     address: ctx.refundRequestEvidenceAddress,
     abi: refundRequestEvidenceAbi,
     functionName: "getEvidenceBatch",
     args: [toAbiPaymentInfo(paymentInfo), nonce, offset, count],
   });
 
-  const [rawEntries, total] = result as unknown as [
-    readonly { submitter: `0x${string}`; role: number; timestamp: number | bigint; cid: string }[],
-    bigint,
-  ];
-
   const entries: Evidence[] = rawEntries.map(e => ({
     submitter: e.submitter,
-    role: e.role,
+    role: e.role as SubmitterRole,
     timestamp: BigInt(e.timestamp),
     cid: e.cid,
   }));

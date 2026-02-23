@@ -95,12 +95,12 @@ describe("evidence-operations", () => {
 
   describe("getEvidence", () => {
     it("should call readContract and return typed Evidence", async () => {
-      const mockResult = [
-        "0x2345678901234567890123456789012345678901",
-        0, // Payer role
-        BigInt(1700000000),
-        "QmTestCid123",
-      ];
+      const mockResult = {
+        submitter: "0x2345678901234567890123456789012345678901",
+        role: 0, // Payer role
+        timestamp: 1700000000, // uint48 → number
+        cid: "QmTestCid123",
+      };
       (mockPublicClient.readContract as ReturnType<typeof vi.fn>).mockResolvedValue(mockResult);
 
       const evidence = await getEvidence(readCtx, samplePaymentInfo, 0n, 0n);
@@ -140,13 +140,13 @@ describe("evidence-operations", () => {
         {
           submitter: "0x2345678901234567890123456789012345678901",
           role: 0,
-          timestamp: BigInt(1700000000),
+          timestamp: 1700000000, // uint48 → number
           cid: "QmCid1",
         },
         {
           submitter: "0x3456789012345678901234567890123456789012",
           role: 1,
-          timestamp: BigInt(1700000100),
+          timestamp: 1700000100, // uint48 → number
           cid: "QmCid2",
         },
       ];
@@ -179,7 +179,7 @@ describe("evidence-operations", () => {
         {
           submitter: "0x2345678901234567890123456789012345678901",
           role: 0,
-          timestamp: BigInt(1700000000),
+          timestamp: 1700000000, // uint48 → number
           cid: "QmCid1",
         },
       ];

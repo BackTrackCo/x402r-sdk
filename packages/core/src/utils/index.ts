@@ -47,16 +47,54 @@ const finalHashAbiParams: readonly { name: string; type: string }[] = [
 ];
 
 /**
- * Convert a PaymentInfo object to ABI-compatible tuple format for viem contract calls.
+ * ABI-compatible PaymentInfo matching viem's inferred struct type.
  *
- * viem's strict ABI typing cannot infer our PaymentInfo interface as the expected
- * tuple type (the interface uses `bigint` and `number` which don't match viem's
- * inferred `uint120`/`uint48`/`uint16` types). The `never` return type is assignable
- * to any parameter position without leaking `any` to callers, so this centralizes
- * the cast at one boundary.
+ * abitype maps uint48 to `number` (M<=48) and uint120/uint256 to `bigint` (M>48).
+ * Our SDK's `PaymentInfo` uses `bigint` for uint48 fields (preApprovalExpiry,
+ * authorizationExpiry, refundExpiry), so this interface bridges the gap.
  */
-export function toAbiPaymentInfo(paymentInfo: PaymentInfo): never {
-  return paymentInfo as never;
+export interface AbiPaymentInfo {
+  operator: `0x${string}`;
+  payer: `0x${string}`;
+  receiver: `0x${string}`;
+  token: `0x${string}`;
+  maxAmount: bigint;
+  preApprovalExpiry: number;
+  authorizationExpiry: number;
+  refundExpiry: number;
+  minFeeBps: number;
+  maxFeeBps: number;
+  feeReceiver: `0x${string}`;
+  salt: bigint;
+}
+
+/**
+ * Convert a PaymentInfo object to ABI-compatible format for viem contract calls.
+ *
+ * Converts uint48 fields from `bigint` (SDK type) to `number` (abitype's mapping).
+ */
+export function toAbiPaymentInfo(paymentInfo: PaymentInfo): AbiPaymentInfo {
+  return {
+    ...paymentInfo,
+    preApprovalExpiry: Number(paymentInfo.preApprovalExpiry),
+    authorizationExpiry: Number(paymentInfo.authorizationExpiry),
+    refundExpiry: Number(paymentInfo.refundExpiry),
+  };
+}
+
+/**
+ * Convert an ABI-typed PaymentInfo back to the SDK's PaymentInfo type.
+ *
+ * Converts uint48 fields from `number` (abitype's mapping) to `bigint` (SDK type).
+ * Used when reading PaymentInfo from contract return values or event args.
+ */
+export function fromAbiPaymentInfo(abi: AbiPaymentInfo): PaymentInfo {
+  return {
+    ...abi,
+    preApprovalExpiry: BigInt(abi.preApprovalExpiry),
+    authorizationExpiry: BigInt(abi.authorizationExpiry),
+    refundExpiry: BigInt(abi.refundExpiry),
+  };
 }
 
 /**

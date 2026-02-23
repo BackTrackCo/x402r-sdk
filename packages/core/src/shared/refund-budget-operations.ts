@@ -51,7 +51,7 @@ export async function getRefundBudget(
     args: [ownerAddress, ctx.receiverRefundCollectorAddress],
   });
 
-  return allowance as bigint;
+  return allowance;
 }
 
 /**
@@ -81,7 +81,7 @@ export async function approveRefundBudget(
     args: [ctx.receiverRefundCollectorAddress, amount],
   });
 
-  return { txHash: txHash as `0x${string}` };
+  return { txHash };
 }
 
 /**
@@ -116,7 +116,7 @@ export async function refundPostEscrow(
     args: [toAbiPaymentInfo(paymentInfo), amount, tokenCollector, collectorData],
   });
 
-  return { txHash: txHash as `0x${string}` };
+  return { txHash };
 }
 
 /**
