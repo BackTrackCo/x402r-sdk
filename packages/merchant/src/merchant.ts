@@ -5,10 +5,10 @@
 
 import type { PublicClient, WalletClient } from "viem";
 import {
-  PaymentOperatorABI,
-  AuthCaptureEscrowABI,
-  RefundRequestABI,
-  FreezeABI,
+  paymentOperatorAbi,
+  authCaptureEscrowAbi,
+  refundRequestAbi,
+  freezeAbi,
   RequestStatus,
   PaymentState,
   computePaymentInfoHash,
@@ -235,7 +235,7 @@ export class X402rMerchant {
   ): Promise<Array<{ hash: `0x${string}`; paymentInfo: PaymentInfo }>> {
     const logs = await this.publicClient.getContractEvents({
       address: this.operatorAddress,
-      abi: PaymentOperatorABI,
+      abi: paymentOperatorAbi,
       eventName: "AuthorizationCreated",
       args: {
         receiver: this.walletClient.account!.address,
@@ -316,7 +316,7 @@ export class X402rMerchant {
 
     const state = await this.publicClient.readContract({
       address: this.escrowAddress,
-      abi: AuthCaptureEscrowABI,
+      abi: authCaptureEscrowAbi,
       functionName: "paymentState",
       args: [paymentInfoHash],
     });
@@ -346,7 +346,7 @@ export class X402rMerchant {
       chain: this.walletClient.chain,
       account: this.walletClient.account!,
       address: this.operatorAddress,
-      abi: PaymentOperatorABI,
+      abi: paymentOperatorAbi,
       functionName: "release",
       args: [toAbiPaymentInfo(paymentInfo), amount],
     });
@@ -375,7 +375,7 @@ export class X402rMerchant {
       chain: this.walletClient.chain,
       account: this.walletClient.account!,
       address: this.operatorAddress,
-      abi: PaymentOperatorABI,
+      abi: paymentOperatorAbi,
       functionName: "refundInEscrow",
       args: [toAbiPaymentInfo(paymentInfo), amount],
     });
@@ -413,7 +413,7 @@ export class X402rMerchant {
       chain: this.walletClient.chain,
       account: this.walletClient.account!,
       address: this.operatorAddress,
-      abi: PaymentOperatorABI,
+      abi: paymentOperatorAbi,
       functionName: "charge",
       args: [toAbiPaymentInfo(paymentInfo), amount, tokenCollector, collectorData],
     });
@@ -573,72 +573,72 @@ export class X402rMerchant {
     ] = await Promise.all([
       this.publicClient.readContract({
         address: this.operatorAddress,
-        abi: PaymentOperatorABI,
+        abi: paymentOperatorAbi,
         functionName: "ESCROW",
       }),
       this.publicClient.readContract({
         address: this.operatorAddress,
-        abi: PaymentOperatorABI,
+        abi: paymentOperatorAbi,
         functionName: "FEE_RECIPIENT",
       }),
       this.publicClient.readContract({
         address: this.operatorAddress,
-        abi: PaymentOperatorABI,
+        abi: paymentOperatorAbi,
         functionName: "FEE_CALCULATOR",
       }),
       this.publicClient.readContract({
         address: this.operatorAddress,
-        abi: PaymentOperatorABI,
+        abi: paymentOperatorAbi,
         functionName: "PROTOCOL_FEE_CONFIG",
       }),
       this.publicClient.readContract({
         address: this.operatorAddress,
-        abi: PaymentOperatorABI,
+        abi: paymentOperatorAbi,
         functionName: "AUTHORIZE_CONDITION",
       }),
       this.publicClient.readContract({
         address: this.operatorAddress,
-        abi: PaymentOperatorABI,
+        abi: paymentOperatorAbi,
         functionName: "CHARGE_CONDITION",
       }),
       this.publicClient.readContract({
         address: this.operatorAddress,
-        abi: PaymentOperatorABI,
+        abi: paymentOperatorAbi,
         functionName: "RELEASE_CONDITION",
       }),
       this.publicClient.readContract({
         address: this.operatorAddress,
-        abi: PaymentOperatorABI,
+        abi: paymentOperatorAbi,
         functionName: "REFUND_IN_ESCROW_CONDITION",
       }),
       this.publicClient.readContract({
         address: this.operatorAddress,
-        abi: PaymentOperatorABI,
+        abi: paymentOperatorAbi,
         functionName: "REFUND_POST_ESCROW_CONDITION",
       }),
       this.publicClient.readContract({
         address: this.operatorAddress,
-        abi: PaymentOperatorABI,
+        abi: paymentOperatorAbi,
         functionName: "AUTHORIZE_RECORDER",
       }),
       this.publicClient.readContract({
         address: this.operatorAddress,
-        abi: PaymentOperatorABI,
+        abi: paymentOperatorAbi,
         functionName: "CHARGE_RECORDER",
       }),
       this.publicClient.readContract({
         address: this.operatorAddress,
-        abi: PaymentOperatorABI,
+        abi: paymentOperatorAbi,
         functionName: "RELEASE_RECORDER",
       }),
       this.publicClient.readContract({
         address: this.operatorAddress,
-        abi: PaymentOperatorABI,
+        abi: paymentOperatorAbi,
         functionName: "REFUND_IN_ESCROW_RECORDER",
       }),
       this.publicClient.readContract({
         address: this.operatorAddress,
-        abi: PaymentOperatorABI,
+        abi: paymentOperatorAbi,
         functionName: "REFUND_POST_ESCROW_RECORDER",
       }),
     ]);
@@ -677,17 +677,17 @@ export class X402rMerchant {
     const [feeCalculator, protocolFeeConfig, feeRecipient] = await Promise.all([
       this.publicClient.readContract({
         address: this.operatorAddress,
-        abi: PaymentOperatorABI,
+        abi: paymentOperatorAbi,
         functionName: "FEE_CALCULATOR",
       }),
       this.publicClient.readContract({
         address: this.operatorAddress,
-        abi: PaymentOperatorABI,
+        abi: paymentOperatorAbi,
         functionName: "PROTOCOL_FEE_CONFIG",
       }),
       this.publicClient.readContract({
         address: this.operatorAddress,
-        abi: PaymentOperatorABI,
+        abi: paymentOperatorAbi,
         functionName: "FEE_RECIPIENT",
       }),
     ]);
@@ -715,7 +715,7 @@ export class X402rMerchant {
   async getReleaseConditions(): Promise<`0x${string}`> {
     const releaseCondition = await this.publicClient.readContract({
       address: this.operatorAddress,
-      abi: PaymentOperatorABI,
+      abi: paymentOperatorAbi,
       functionName: "RELEASE_CONDITION",
     });
 
@@ -791,7 +791,7 @@ export class X402rMerchant {
 
       const [keys] = (await this.publicClient.readContract({
         address: this.refundRequestAddress,
-        abi: RefundRequestABI,
+        abi: refundRequestAbi,
         functionName: "getReceiverRefundRequests",
         args: [address, reverseOffset, reverseCount],
       })) as [readonly `0x${string}`[], bigint];
@@ -801,7 +801,7 @@ export class X402rMerchant {
 
     const [keys, total] = (await this.publicClient.readContract({
       address: this.refundRequestAddress,
-      abi: RefundRequestABI,
+      abi: refundRequestAbi,
       functionName: "getReceiverRefundRequests",
       args: [address, offset, count],
     })) as [readonly `0x${string}`[], bigint];
@@ -841,7 +841,7 @@ export class X402rMerchant {
 
     const count = await this.publicClient.readContract({
       address: this.refundRequestAddress,
-      abi: RefundRequestABI,
+      abi: refundRequestAbi,
       functionName: "receiverRefundRequestCount",
       args: [this.walletClient.account!.address],
     });
@@ -885,7 +885,7 @@ export class X402rMerchant {
       chain: this.walletClient.chain,
       account: this.walletClient.account!,
       address: freezeAddress,
-      abi: FreezeABI,
+      abi: freezeAbi,
       functionName: "unfreeze",
       args: [toAbiPaymentInfo(paymentInfo)],
     });
@@ -928,7 +928,7 @@ export class X402rMerchant {
 
     const unsubscribe = this.publicClient.watchContractEvent({
       address: this.refundRequestAddress,
-      abi: RefundRequestABI,
+      abi: refundRequestAbi,
       eventName: "RefundRequested",
       onLogs: logs => {
         for (const log of logs) {
@@ -961,7 +961,7 @@ export class X402rMerchant {
   } {
     const unsubscribe = this.publicClient.watchContractEvent({
       address: this.operatorAddress,
-      abi: PaymentOperatorABI,
+      abi: paymentOperatorAbi,
       eventName: "ReleaseExecuted",
       onLogs: logs => {
         for (const log of logs) {

@@ -6,3 +6,4 @@ docs-generated/
 pnpm-lock.yaml
 **/*.json
 *.md
+packages/core/src/abis/generated.ts

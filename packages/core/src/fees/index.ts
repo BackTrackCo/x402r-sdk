@@ -5,7 +5,7 @@
 
 import { zeroAddress, type PublicClient, type WalletClient, type Address } from "viem";
 import type { PaymentInfo } from "../types/index.js";
-import { PaymentOperatorABI, IFeeCalculatorABI, ProtocolFeeConfigABI } from "../abis/index.js";
+import { paymentOperatorAbi, iFeeCalculatorAbi, protocolFeeConfigAbi } from "../abis/index.js";
 import { toAbiPaymentInfo } from "../utils/index.js";
 
 /**
@@ -60,17 +60,17 @@ export async function getFeeAddresses(
   const [feeCalculator, protocolFeeConfig, feeRecipient] = await Promise.all([
     publicClient.readContract({
       address: operatorAddress,
-      abi: PaymentOperatorABI,
+      abi: paymentOperatorAbi,
       functionName: "FEE_CALCULATOR",
     }) as Promise<Address>,
     publicClient.readContract({
       address: operatorAddress,
-      abi: PaymentOperatorABI,
+      abi: paymentOperatorAbi,
       functionName: "PROTOCOL_FEE_CONFIG",
     }) as Promise<Address>,
     publicClient.readContract({
       address: operatorAddress,
-      abi: PaymentOperatorABI,
+      abi: paymentOperatorAbi,
       functionName: "FEE_RECIPIENT",
     }) as Promise<Address>,
   ]);
@@ -83,12 +83,12 @@ export async function getFeeAddresses(
     [protocolFeeCalculator, protocolFeeRecipient] = await Promise.all([
       publicClient.readContract({
         address: protocolFeeConfig,
-        abi: ProtocolFeeConfigABI,
+        abi: protocolFeeConfigAbi,
         functionName: "calculator",
       }) as Promise<Address>,
       publicClient.readContract({
         address: protocolFeeConfig,
-        abi: ProtocolFeeConfigABI,
+        abi: protocolFeeConfigAbi,
         functionName: "protocolFeeRecipient",
       }) as Promise<Address>,
     ]);
@@ -123,7 +123,7 @@ export async function calculateOperatorFeeBps(
   // Get the fee calculator address
   const feeCalculator = (await publicClient.readContract({
     address: operatorAddress,
-    abi: PaymentOperatorABI,
+    abi: paymentOperatorAbi,
     functionName: "FEE_CALCULATOR",
   })) as Address;
 
@@ -134,7 +134,7 @@ export async function calculateOperatorFeeBps(
 
   const feeBps = (await publicClient.readContract({
     address: feeCalculator,
-    abi: IFeeCalculatorABI,
+    abi: iFeeCalculatorAbi,
     functionName: "calculateFee",
     args: [toAbiPaymentInfo(paymentInfo), amount, caller],
   })) as bigint;
@@ -162,7 +162,7 @@ export async function calculateProtocolFeeBps(
   // Get the protocol fee config address
   const protocolFeeConfig = (await publicClient.readContract({
     address: operatorAddress,
-    abi: PaymentOperatorABI,
+    abi: paymentOperatorAbi,
     functionName: "PROTOCOL_FEE_CONFIG",
   })) as Address;
 
@@ -173,7 +173,7 @@ export async function calculateProtocolFeeBps(
 
   const feeBps = (await publicClient.readContract({
     address: protocolFeeConfig,
-    abi: ProtocolFeeConfigABI,
+    abi: protocolFeeConfigAbi,
     functionName: "getProtocolFeeBps",
     args: [toAbiPaymentInfo(paymentInfo), amount, caller],
   })) as bigint;
@@ -303,7 +303,7 @@ export async function distributeFees(
     chain: walletClient.chain,
     account: walletClient.account!,
     address: operatorAddress,
-    abi: PaymentOperatorABI,
+    abi: paymentOperatorAbi,
     functionName: "distributeFees",
     args: [token],
   });

@@ -1,16 +1,18 @@
 import { describe, it, expect } from "vitest";
 import {
-  PaymentOperatorConfig,
-  EscrowPeriodConfig,
-  FreezeConfig,
+  paymentOperatorFactoryAbi,
+  escrowPeriodFactoryAbi,
+  freezeFactoryAbi,
+  staticFeeCalculatorFactoryAbi,
+  staticAddressConditionFactoryAbi,
+} from "../src/abis/index.js";
+import {
+  type PaymentOperatorConfig,
+  type EscrowPeriodConfig,
+  type FreezeConfig,
   createPaymentOperatorConfig,
   createEscrowPeriodConfig,
   createFreezeConfig,
-  PaymentOperatorFactoryABI,
-  EscrowPeriodFactoryABI,
-  FreezeFactoryABI,
-  StaticFeeCalculatorFactoryABI,
-  StaticAddressConditionFactoryABI,
   ZERO_ADDRESS,
   ZERO_BYTES32,
 } from "../src/factory/index.js";
@@ -142,75 +144,75 @@ describe("FreezeConfig", () => {
 });
 
 describe("Factory ABIs", () => {
-  describe("PaymentOperatorFactoryABI", () => {
+  describe("paymentOperatorFactoryAbi", () => {
     it("should be defined and be an array", () => {
-      expect(PaymentOperatorFactoryABI).toBeDefined();
-      expect(Array.isArray(PaymentOperatorFactoryABI)).toBe(true);
+      expect(paymentOperatorFactoryAbi).toBeDefined();
+      expect(Array.isArray(paymentOperatorFactoryAbi)).toBe(true);
     });
 
     it("should have computeAddress function", () => {
-      const computeAddress = PaymentOperatorFactoryABI.find(
+      const computeAddress = paymentOperatorFactoryAbi.find(
         item => item.type === "function" && item.name === "computeAddress",
       );
       expect(computeAddress).toBeDefined();
     });
 
     it("should have deployOperator function", () => {
-      const deployOperator = PaymentOperatorFactoryABI.find(
+      const deployOperator = paymentOperatorFactoryAbi.find(
         item => item.type === "function" && item.name === "deployOperator",
       );
       expect(deployOperator).toBeDefined();
     });
 
     it("should have getOperator function", () => {
-      const getOperator = PaymentOperatorFactoryABI.find(
+      const getOperator = paymentOperatorFactoryAbi.find(
         item => item.type === "function" && item.name === "getOperator",
       );
       expect(getOperator).toBeDefined();
     });
   });
 
-  describe("EscrowPeriodFactoryABI", () => {
+  describe("escrowPeriodFactoryAbi", () => {
     it("should be defined and be an array", () => {
-      expect(EscrowPeriodFactoryABI).toBeDefined();
-      expect(Array.isArray(EscrowPeriodFactoryABI)).toBe(true);
+      expect(escrowPeriodFactoryAbi).toBeDefined();
+      expect(Array.isArray(escrowPeriodFactoryAbi)).toBe(true);
     });
 
     it("should have deploy function", () => {
-      const deploy = EscrowPeriodFactoryABI.find(
+      const deploy = escrowPeriodFactoryAbi.find(
         item => item.type === "function" && item.name === "deploy",
       );
       expect(deploy).toBeDefined();
     });
 
     it("should have computeAddress function (not computeAddresses)", () => {
-      const computeAddress = EscrowPeriodFactoryABI.find(
+      const computeAddress = escrowPeriodFactoryAbi.find(
         item => item.type === "function" && item.name === "computeAddress",
       );
       expect(computeAddress).toBeDefined();
 
-      const computeAddresses = EscrowPeriodFactoryABI.find(
+      const computeAddresses = escrowPeriodFactoryAbi.find(
         item => item.type === "function" && item.name === "computeAddresses",
       );
       expect(computeAddresses).toBeUndefined(); // Should NOT exist
     });
 
     it("should have getDeployed function", () => {
-      const getDeployed = EscrowPeriodFactoryABI.find(
+      const getDeployed = escrowPeriodFactoryAbi.find(
         item => item.type === "function" && item.name === "getDeployed",
       );
       expect(getDeployed).toBeDefined();
     });
   });
 
-  describe("FreezeFactoryABI", () => {
+  describe("freezeFactoryAbi", () => {
     it("should be defined and be an array", () => {
-      expect(FreezeFactoryABI).toBeDefined();
-      expect(Array.isArray(FreezeFactoryABI)).toBe(true);
+      expect(freezeFactoryAbi).toBeDefined();
+      expect(Array.isArray(freezeFactoryAbi)).toBe(true);
     });
 
     it("should have deploy function with 4 params", () => {
-      const deploy = FreezeFactoryABI.find(
+      const deploy = freezeFactoryAbi.find(
         item => item.type === "function" && item.name === "deploy",
       );
       expect(deploy).toBeDefined();
@@ -224,7 +226,7 @@ describe("Factory ABIs", () => {
     });
 
     it("should have computeAddress function with 4 params", () => {
-      const computeAddress = FreezeFactoryABI.find(
+      const computeAddress = freezeFactoryAbi.find(
         item => item.type === "function" && item.name === "computeAddress",
       );
       expect(computeAddress).toBeDefined();
@@ -234,42 +236,42 @@ describe("Factory ABIs", () => {
     });
   });
 
-  describe("StaticFeeCalculatorFactoryABI", () => {
+  describe("staticFeeCalculatorFactoryAbi", () => {
     it("should be defined and be an array", () => {
-      expect(StaticFeeCalculatorFactoryABI).toBeDefined();
-      expect(Array.isArray(StaticFeeCalculatorFactoryABI)).toBe(true);
+      expect(staticFeeCalculatorFactoryAbi).toBeDefined();
+      expect(Array.isArray(staticFeeCalculatorFactoryAbi)).toBe(true);
     });
 
     it("should have deploy function", () => {
-      const deploy = StaticFeeCalculatorFactoryABI.find(
+      const deploy = staticFeeCalculatorFactoryAbi.find(
         item => item.type === "function" && item.name === "deploy",
       );
       expect(deploy).toBeDefined();
     });
 
     it("should have computeAddress function", () => {
-      const computeAddress = StaticFeeCalculatorFactoryABI.find(
+      const computeAddress = staticFeeCalculatorFactoryAbi.find(
         item => item.type === "function" && item.name === "computeAddress",
       );
       expect(computeAddress).toBeDefined();
     });
   });
 
-  describe("StaticAddressConditionFactoryABI", () => {
+  describe("staticAddressConditionFactoryAbi", () => {
     it("should be defined and be an array", () => {
-      expect(StaticAddressConditionFactoryABI).toBeDefined();
-      expect(Array.isArray(StaticAddressConditionFactoryABI)).toBe(true);
+      expect(staticAddressConditionFactoryAbi).toBeDefined();
+      expect(Array.isArray(staticAddressConditionFactoryAbi)).toBe(true);
     });
 
     it("should have deploy function", () => {
-      const deploy = StaticAddressConditionFactoryABI.find(
+      const deploy = staticAddressConditionFactoryAbi.find(
         item => item.type === "function" && item.name === "deploy",
       );
       expect(deploy).toBeDefined();
     });
 
     it("should have computeAddress function", () => {
-      const computeAddress = StaticAddressConditionFactoryABI.find(
+      const computeAddress = staticAddressConditionFactoryAbi.find(
         item => item.type === "function" && item.name === "computeAddress",
       );
       expect(computeAddress).toBeDefined();

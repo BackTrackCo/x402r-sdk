@@ -33,7 +33,8 @@
     "example:client:fetch": "tsx examples/clients/fetch/index.ts",
     "example:e2e-test": "tsx examples/e2e-test/index.ts",
     "example:e2e-recovery": "tsx examples/e2e-test/payment-recovery.ts",
-    "example:e2e-ai-hooks": "tsx examples/e2e-test/ai-hooks-e2e.ts"
+    "example:e2e-ai-hooks": "tsx examples/e2e-test/ai-hooks-e2e.ts",
+    "generate:abis": "wagmi generate"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",
@@ -42,6 +43,7 @@
     "@typescript-eslint/eslint-plugin": "^8.53.1",
     "@typescript-eslint/parser": "^8.53.1",
     "@vitest/coverage-v8": "^2.1.0",
+    "@wagmi/cli": "^2.10.0",
     "eslint": "^9.39.2",
     "prettier": "^3.2.0",
     "tsup": "^8.0.0",

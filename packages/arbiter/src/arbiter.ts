@@ -10,9 +10,9 @@ import {
   type WalletClient,
 } from "viem";
 import {
-  PaymentOperatorABI,
-  RefundRequestABI,
-  ArbiterRegistryABI,
+  paymentOperatorAbi,
+  refundRequestAbi,
+  arbiterRegistryAbi,
   RequestStatus,
   PaymentState,
   computePaymentInfoHash as sharedComputePaymentInfoHash,
@@ -319,7 +319,7 @@ export class X402rArbiter {
       chain: this.walletClient.chain,
       account: this.walletClient.account!,
       address: this.operatorAddress,
-      abi: PaymentOperatorABI,
+      abi: paymentOperatorAbi,
       functionName: "refundInEscrow",
       args: [toAbiPaymentInfo(paymentInfo), refundAmount],
     });
@@ -547,7 +547,7 @@ export class X402rArbiter {
 
       const [keys] = (await this.publicClient.readContract({
         address: this.refundRequestAddress,
-        abi: RefundRequestABI,
+        abi: refundRequestAbi,
         functionName: "getReceiverRefundRequests",
         args: [address, reverseOffset, reverseCount],
       })) as [readonly `0x${string}`[], bigint];
@@ -557,7 +557,7 @@ export class X402rArbiter {
 
     const [keys, total] = (await this.publicClient.readContract({
       address: this.refundRequestAddress,
-      abi: RefundRequestABI,
+      abi: refundRequestAbi,
       functionName: "getReceiverRefundRequests",
       args: [address, offset, count],
     })) as [readonly `0x${string}`[], bigint];
@@ -609,7 +609,7 @@ export class X402rArbiter {
 
     const count = await this.publicClient.readContract({
       address: this.refundRequestAddress,
-      abi: RefundRequestABI,
+      abi: refundRequestAbi,
       functionName: "receiverRefundRequestCount",
       args: [address],
     });
@@ -667,7 +667,7 @@ export class X402rArbiter {
 
     const unsubscribe = this.publicClient.watchContractEvent({
       address: this.refundRequestAddress,
-      abi: RefundRequestABI,
+      abi: refundRequestAbi,
       eventName: "RefundRequested",
       onLogs: logs => {
         for (const log of logs) {
@@ -707,7 +707,7 @@ export class X402rArbiter {
 
     const unsubscribe = this.publicClient.watchContractEvent({
       address: this.refundRequestAddress,
-      abi: RefundRequestABI,
+      abi: refundRequestAbi,
       eventName: "RefundRequestStatusUpdated",
       onLogs: logs => {
         for (const log of logs) {
@@ -769,7 +769,7 @@ export class X402rArbiter {
       chain: this.walletClient.chain,
       account: this.walletClient.account!,
       address: this.arbiterRegistryAddress,
-      abi: ArbiterRegistryABI,
+      abi: arbiterRegistryAbi,
       functionName: "register",
       args: [uri],
     });
@@ -801,7 +801,7 @@ export class X402rArbiter {
       chain: this.walletClient.chain,
       account: this.walletClient.account!,
       address: this.arbiterRegistryAddress,
-      abi: ArbiterRegistryABI,
+      abi: arbiterRegistryAbi,
       functionName: "updateUri",
       args: [newUri],
     });
@@ -832,7 +832,7 @@ export class X402rArbiter {
       chain: this.walletClient.chain,
       account: this.walletClient.account!,
       address: this.arbiterRegistryAddress,
-      abi: ArbiterRegistryABI,
+      abi: arbiterRegistryAbi,
       functionName: "deregister",
       args: [],
     });
@@ -862,7 +862,7 @@ export class X402rArbiter {
 
     const uri = await this.publicClient.readContract({
       address: this.arbiterRegistryAddress,
-      abi: ArbiterRegistryABI,
+      abi: arbiterRegistryAbi,
       functionName: "getUri",
       args: [arbiter],
     });
@@ -892,7 +892,7 @@ export class X402rArbiter {
 
     const isRegistered = await this.publicClient.readContract({
       address: this.arbiterRegistryAddress,
-      abi: ArbiterRegistryABI,
+      abi: arbiterRegistryAbi,
       functionName: "isRegistered",
       args: [arbiter],
     });
@@ -921,7 +921,7 @@ export class X402rArbiter {
 
     const count = await this.publicClient.readContract({
       address: this.arbiterRegistryAddress,
-      abi: ArbiterRegistryABI,
+      abi: arbiterRegistryAbi,
       functionName: "arbiterCount",
       args: [],
     });
@@ -955,7 +955,7 @@ export class X402rArbiter {
 
     const [arbiters, uris, total] = (await this.publicClient.readContract({
       address: this.arbiterRegistryAddress,
-      abi: ArbiterRegistryABI,
+      abi: arbiterRegistryAbi,
       functionName: "getArbiters",
       args: [offset, count],
     })) as [readonly `0x${string}`[], readonly string[], bigint];

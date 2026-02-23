@@ -84,3 +84,30 @@ jobs:
         run: pnpm build
       - name: Test
         run: pnpm test
+
+  abi-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Clone x402r-contracts (ABI source)
+        run: git clone --depth 1 https://github.com/BackTrackCo/x402r-contracts.git ../x402r-contracts
+      - name: Clone x402r-scheme (sibling dependency)
+        run: git clone --depth 1 https://github.com/BackTrackCo/x402r-scheme.git ../x402r-scheme
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+      - name: Build contracts
+        run: cd ../x402r-contracts && forge build
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Regenerate ABIs
+        run: pnpm generate:abis
+      - name: Check for ABI drift
+        run: git diff --exit-code packages/core/src/abis/generated.ts

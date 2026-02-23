@@ -7,8 +7,8 @@
  * @module shared/refund-budget-operations
  */
 
-import type { PublicClient, WalletClient } from "viem";
-import { PaymentOperatorABI, ERC20ABI } from "../abis/index.js";
+import { erc20Abi, type PublicClient, type WalletClient } from "viem";
+import { paymentOperatorAbi } from "../abis/index.js";
 import type { PaymentInfo } from "../types/index.js";
 import { toAbiPaymentInfo } from "../utils/index.js";
 import { requireAccount } from "./require-account.js";
@@ -46,7 +46,7 @@ export async function getRefundBudget(
 ): Promise<bigint> {
   const allowance = await ctx.publicClient.readContract({
     address: tokenAddress,
-    abi: ERC20ABI,
+    abi: erc20Abi,
     functionName: "allowance",
     args: [ownerAddress, ctx.receiverRefundCollectorAddress],
   });
@@ -76,7 +76,7 @@ export async function approveRefundBudget(
     chain: ctx.walletClient.chain,
     account: ctx.walletClient.account,
     address: tokenAddress,
-    abi: ERC20ABI,
+    abi: erc20Abi,
     functionName: "approve",
     args: [ctx.receiverRefundCollectorAddress, amount],
   });
@@ -111,7 +111,7 @@ export async function refundPostEscrow(
     chain: ctx.walletClient.chain,
     account: ctx.walletClient.account,
     address: ctx.operatorAddress,
-    abi: PaymentOperatorABI,
+    abi: paymentOperatorAbi,
     functionName: "refundPostEscrow",
     args: [toAbiPaymentInfo(paymentInfo), amount, tokenCollector, collectorData],
   });
