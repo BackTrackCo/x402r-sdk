@@ -27,12 +27,13 @@ import {
   getNetworkConfig,
   resolveAddresses,
   computePaymentInfoHash,
+  toPaymentInfo,
   type PaymentInfo,
 } from "@x402r/core";
 import { X402rClient } from "@x402r/client";
 import { X402rMerchant } from "@x402r/merchant";
 import { X402rArbiter } from "@x402r/arbiter";
-import { refundable, toPaymentInfo } from "@x402r/helpers";
+import { refundable } from "@x402r/helpers";
 import { toFacilitatorEvmSigner } from "@x402/evm";
 import { x402Client } from "@x402/core/client";
 import { x402Facilitator } from "@x402/core/facilitator";
