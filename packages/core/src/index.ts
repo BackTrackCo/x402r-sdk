@@ -45,6 +45,3 @@ export * from "./discovery/index.js";
 
 // Payment storage
 export * from "./storage/index.js";
-
-// HTTP 402 bridge utilities
-export * from "./http402/index.js";
