@@ -298,6 +298,54 @@ export async function signERC3009Authorization(
  * const paymentInfo = parsePaymentInfo(responseBody);
  * ```
  */
+/**
+ * Shape of an EscrowPayload — uses structural typing so we don't depend on @x402r/evm.
+ * Matches the EscrowPayload interface from @x402r/evm/escrow/types.
+ */
+export interface EscrowPayloadLike {
+  authorization: { from: `0x${string}` };
+  paymentInfo: {
+    operator: `0x${string}`;
+    receiver: `0x${string}`;
+    token: `0x${string}`;
+    maxAmount: string | bigint;
+    preApprovalExpiry: string | number | bigint;
+    authorizationExpiry: string | number | bigint;
+    refundExpiry: string | number | bigint;
+    minFeeBps: number;
+    maxFeeBps: number;
+    feeReceiver: `0x${string}`;
+    salt: string | bigint;
+  };
+}
+
+/**
+ * Convert an EscrowPayload (from verified x402 payment) to a PaymentInfo struct.
+ *
+ * The EscrowPayload uses string/number types for on-wire JSON compatibility,
+ * while PaymentInfo uses bigint for contract interaction. This bridges the two.
+ *
+ * @param escrowPayload - The EscrowPayload from a verified x402 payment (e.g. `verifiedPayload.payload`)
+ * @returns A fully-typed PaymentInfo ready for SDK methods like `requestRefund`, `getPaymentState`, etc.
+ */
+export function toPaymentInfo(escrowPayload: EscrowPayloadLike): PaymentInfo {
+  const pi = escrowPayload.paymentInfo;
+  return {
+    operator: pi.operator,
+    payer: escrowPayload.authorization.from,
+    receiver: pi.receiver,
+    token: pi.token,
+    maxAmount: BigInt(pi.maxAmount),
+    preApprovalExpiry: BigInt(pi.preApprovalExpiry),
+    authorizationExpiry: BigInt(pi.authorizationExpiry),
+    refundExpiry: BigInt(pi.refundExpiry),
+    minFeeBps: pi.minFeeBps,
+    maxFeeBps: pi.maxFeeBps,
+    feeReceiver: pi.feeReceiver,
+    salt: BigInt(pi.salt),
+  };
+}
+
 export function parsePaymentInfo(input: string | Record<string, unknown>): PaymentInfo {
   const parsed = typeof input === "string" ? JSON.parse(input) : input;
 

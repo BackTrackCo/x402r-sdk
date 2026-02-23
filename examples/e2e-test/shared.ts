@@ -28,15 +28,13 @@ import {
   resolveAddresses,
   computePaymentInfoHash,
   toPaymentInfo,
-  toFacilitatorEvmSigner,
-  createInProcessFacilitator,
   type PaymentInfo,
-  type FacilitatorClientLike,
 } from "@x402r/core";
 import { X402rClient } from "@x402r/client";
 import { X402rMerchant } from "@x402r/merchant";
 import { X402rArbiter } from "@x402r/arbiter";
 import { refundable } from "@x402r/helpers";
+import { toFacilitatorEvmSigner } from "@x402/evm";
 import { x402Client } from "@x402/core/client";
 import { x402Facilitator } from "@x402/core/facilitator";
 import {
@@ -310,6 +308,31 @@ export async function deployTestOperator(
 
 // ============ HTTP 402 Infrastructure ============
 
+interface FacilitatorClientLike {
+  verify(paymentPayload: unknown, paymentRequirements: unknown): Promise<unknown>;
+  settle(paymentPayload: unknown, paymentRequirements: unknown): Promise<unknown>;
+  getSupported(): Promise<unknown>;
+}
+
+function createInProcessFacilitator<
+  T extends {
+    verify(paymentPayload: unknown, paymentRequirements: unknown): Promise<unknown>;
+    settle(paymentPayload: unknown, paymentRequirements: unknown): Promise<unknown>;
+    getSupported(): unknown;
+  },
+>(
+  facilitator: T,
+  registerSchemes: (fac: T) => void,
+): { facilitator: T; client: FacilitatorClientLike } {
+  registerSchemes(facilitator);
+  const client: FacilitatorClientLike = {
+    verify: (p: unknown, r: unknown) => facilitator.verify(p, r),
+    settle: (p: unknown, r: unknown) => facilitator.settle(p, r),
+    getSupported: () => Promise.resolve(facilitator.getSupported()),
+  };
+  return { facilitator, client };
+}
+
 export interface HTTP402Infrastructure {
   httpServer: x402HTTPResourceServer;
   httpClient: x402HTTPClient;
@@ -329,10 +352,31 @@ export async function setupHTTP402(
     transport: http(RPC_URL),
   }).extend(publicActions);
 
-  const signer = toFacilitatorEvmSigner(facilitatorViemClient);
+  const signer = toFacilitatorEvmSigner({
+    address: payerAccount.address,
+    getCode: (args: { address: `0x${string}` }) => facilitatorViemClient.getCode(args),
+    readContract: (args: {
+      address: `0x${string}`;
+      abi: readonly unknown[];
+      functionName: string;
+      args?: readonly unknown[];
+    }) => facilitatorViemClient.readContract({ ...args, args: args.args || [] }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    verifyTypedData: (args: any) => facilitatorViemClient.verifyTypedData(args),
+    writeContract: (args: {
+      address: `0x${string}`;
+      abi: readonly unknown[];
+      functionName: string;
+      args: readonly unknown[];
+    }) => facilitatorViemClient.writeContract({ ...args, args: args.args || [] }),
+    sendTransaction: (args: { to: `0x${string}`; data: `0x${string}` }) =>
+      facilitatorViemClient.sendTransaction(args),
+    waitForTransactionReceipt: (args: { hash: `0x${string}` }) =>
+      facilitatorViemClient.waitForTransactionReceipt(args),
+  });
   const { client: facilitatorClient } = createInProcessFacilitator(new x402Facilitator(), fac =>
     registerEscrowFacilitatorScheme(fac, {
-      signer: signer as Parameters<typeof registerEscrowFacilitatorScheme>[1]["signer"],
+      signer,
       networks: NETWORK_ID,
     }),
   );
