@@ -56,3 +56,7 @@ export {
   createRefundBudgetWriteCtx,
   createOperatorWriteCtx,
 } from "./context-helpers.js";
+
+export { requireAddress } from "./require-address.js";
+export { assertValidPaymentInfo } from "./assert-valid-payment-info.js";
+export { wrapContractWrite } from "./error-wrapping.js";

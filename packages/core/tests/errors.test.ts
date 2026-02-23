@@ -5,6 +5,8 @@ import {
   decodeContractError,
   isX402rError,
   CONTRACT_ERRORS,
+  type SdkErrorCode,
+  type X402rErrorCode,
 } from "../src/errors/index.js";
 
 describe("CONTRACT_ERRORS", () => {
@@ -162,5 +164,51 @@ describe("ContractErrorName type", () => {
     errorNames.forEach(name => {
       expect(CONTRACT_ERRORS[name]).toBeDefined();
     });
+  });
+});
+
+describe("SdkErrorCode and X402rErrorCode types", () => {
+  it("should accept SDK error codes in X402rError", () => {
+    const sdkCodes: SdkErrorCode[] = ["MissingAddress", "InvalidPaymentInfo", "ContractCallFailed"];
+    for (const code of sdkCodes) {
+      const error = new X402rError(code, `test ${code}`);
+      expect(error.name).toBe(code);
+      expect(isX402rError(error)).toBe(true);
+    }
+  });
+
+  it("should accept ContractErrorName codes in X402rError (backward compat)", () => {
+    const error = new X402rError("InvalidOperator", "test");
+    expect(error.name).toBe("InvalidOperator");
+  });
+
+  it("X402rErrorCode is the union of ContractErrorName and SdkErrorCode", () => {
+    // Compile-time check: both types are assignable to X402rErrorCode
+    const contractCode: X402rErrorCode = "EscrowPeriodExpired" as ContractErrorName;
+    const sdkCode: X402rErrorCode = "MissingAddress" as SdkErrorCode;
+    expect(contractCode).toBe("EscrowPeriodExpired");
+    expect(sdkCode).toBe("MissingAddress");
+  });
+});
+
+describe("decodeContractError (inline lookup)", () => {
+  it("should decode all 17 known errors without selectorMap cache", () => {
+    const errorNames = Object.keys(CONTRACT_ERRORS) as ContractErrorName[];
+    expect(errorNames).toHaveLength(17);
+
+    for (const name of errorNames) {
+      const selector = CONTRACT_ERRORS[name].selector;
+      const result = decodeContractError(selector);
+      expect(result).not.toBeNull();
+      expect(result?.name).toBe(name);
+    }
+  });
+
+  it("should handle case-insensitive selectors", () => {
+    const selector = CONTRACT_ERRORS.InvalidOperator.selector;
+    const upper = selector.slice(0, 2) + selector.slice(2).toUpperCase();
+    const result = decodeContractError(upper);
+    expect(result).not.toBeNull();
+    expect(result?.name).toBe("InvalidOperator");
   });
 });

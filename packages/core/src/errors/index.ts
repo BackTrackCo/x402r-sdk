@@ -31,6 +31,16 @@ export type ContractErrorName =
   | "UnauthorizedFreeze";
 
 /**
+ * SDK-level error codes for non-contract errors
+ */
+export type SdkErrorCode = "MissingAddress" | "InvalidPaymentInfo" | "ContractCallFailed";
+
+/**
+ * All error codes that X402rError can represent
+ */
+export type X402rErrorCode = ContractErrorName | SdkErrorCode;
+
+/**
  * Error definition with selector and human-readable message
  */
 export interface ContractErrorDefinition {
@@ -159,12 +169,6 @@ export const CONTRACT_ERRORS: Record<ContractErrorName, ContractErrorDefinition>
   ),
 };
 
-// Build selector-to-error lookup map
-const selectorMap = new Map<string, ContractErrorDefinition>();
-for (const error of Object.values(CONTRACT_ERRORS)) {
-  selectorMap.set(error.selector.toLowerCase(), error);
-}
-
 /**
  * Custom error class for X402r protocol errors
  *
@@ -174,12 +178,12 @@ for (const error of Object.values(CONTRACT_ERRORS)) {
  * ```
  */
 export class X402rError extends Error {
-  /** Error name from ContractErrorName */
-  override name: ContractErrorName;
-  /** Optional error arguments from contract */
+  /** Error code (contract error name or SDK error code) */
+  override name: X402rErrorCode;
+  /** Optional error arguments */
   args?: Record<string, unknown>;
 
-  constructor(name: ContractErrorName, message: string, args?: Record<string, unknown>) {
+  constructor(name: X402rErrorCode, message: string, args?: Record<string, unknown>) {
     super(message);
     this.name = name;
     this.args = args;
@@ -277,9 +281,9 @@ export function decodeContractError(data: string): DecodedContractError | null {
     return null;
   }
 
-  // Extract first 4 bytes (selector)
+  // Extract first 4 bytes (selector) and find matching error definition
   const selector = data.slice(0, 10).toLowerCase();
-  const errorDef = selectorMap.get(selector);
+  const errorDef = Object.values(CONTRACT_ERRORS).find(e => e.selector.toLowerCase() === selector);
 
   if (!errorDef) {
     return null;
