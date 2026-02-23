@@ -33,7 +33,7 @@ export async function isFrozen(
     args: [toAbiPaymentInfo(paymentInfo)],
   });
 
-  return frozen as boolean;
+  return frozen;
 }
 
 /**

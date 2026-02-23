@@ -69,32 +69,32 @@ export async function getOperatorDeployment(
       address: operatorAddress,
       abi: paymentOperatorAbi,
       functionName: "ESCROW",
-    }) as Promise<`0x${string}`>,
+    }),
     publicClient.readContract({
       address: operatorAddress,
       abi: paymentOperatorAbi,
       functionName: "FEE_RECIPIENT",
-    }) as Promise<`0x${string}`>,
+    }),
     publicClient.readContract({
       address: operatorAddress,
       abi: paymentOperatorAbi,
       functionName: "FEE_CALCULATOR",
-    }) as Promise<`0x${string}`>,
+    }),
     publicClient.readContract({
       address: operatorAddress,
       abi: paymentOperatorAbi,
       functionName: "PROTOCOL_FEE_CONFIG",
-    }) as Promise<`0x${string}`>,
+    }),
     publicClient.readContract({
       address: operatorAddress,
       abi: paymentOperatorAbi,
       functionName: "AUTHORIZE_CONDITION",
-    }) as Promise<`0x${string}`>,
+    }),
     publicClient.readContract({
       address: operatorAddress,
       abi: paymentOperatorAbi,
       functionName: "RELEASE_CONDITION",
-    }) as Promise<`0x${string}`>,
+    }),
   ]);
 
   return {

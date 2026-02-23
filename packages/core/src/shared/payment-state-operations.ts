@@ -6,7 +6,7 @@
 import type { PublicClient } from "viem";
 import { authCaptureEscrowAbi, refundRequestAbi } from "../abis/index.js";
 import { PaymentState, type PaymentInfo, type PaymentStore } from "../types/index.js";
-import { computePaymentInfoHash } from "../utils/index.js";
+import { computePaymentInfoHash, fromAbiPaymentInfo, type AbiPaymentInfo } from "../utils/index.js";
 
 /** Read-only context for payment state operations */
 export interface PaymentStateReadContext {
@@ -49,11 +49,7 @@ export async function getPaymentState(
     args: [paymentInfoHash],
   });
 
-  const [hasCollectedPayment, capturableAmount, refundableAmount] = state as [
-    boolean,
-    bigint,
-    bigint,
-  ];
+  const [hasCollectedPayment, capturableAmount, refundableAmount] = state;
 
   if (!hasCollectedPayment) {
     return PaymentState.NonExistent;
@@ -122,41 +118,13 @@ export async function getPaymentDetails(
     );
   }
 
-  const eventArgs = logs[0].args as {
-    paymentInfo?: {
-      operator: `0x${string}`;
-      payer: `0x${string}`;
-      receiver: `0x${string}`;
-      token: `0x${string}`;
-      maxAmount: bigint;
-      preApprovalExpiry: bigint;
-      authorizationExpiry: bigint;
-      refundExpiry: bigint;
-      minFeeBps: number;
-      maxFeeBps: number;
-      feeReceiver: `0x${string}`;
-      salt: bigint;
-    };
-  };
+  const abiPaymentInfo = logs[0].args.paymentInfo as AbiPaymentInfo | undefined;
 
-  if (!eventArgs.paymentInfo) {
+  if (!abiPaymentInfo) {
     throw new Error(`PaymentAuthorized event missing paymentInfo for hash ${paymentInfoHash}`);
   }
 
-  const paymentInfo: PaymentInfo = {
-    operator: eventArgs.paymentInfo.operator,
-    payer: eventArgs.paymentInfo.payer,
-    receiver: eventArgs.paymentInfo.receiver,
-    token: eventArgs.paymentInfo.token,
-    maxAmount: eventArgs.paymentInfo.maxAmount,
-    preApprovalExpiry: eventArgs.paymentInfo.preApprovalExpiry,
-    authorizationExpiry: eventArgs.paymentInfo.authorizationExpiry,
-    refundExpiry: eventArgs.paymentInfo.refundExpiry,
-    minFeeBps: Number(eventArgs.paymentInfo.minFeeBps),
-    maxFeeBps: Number(eventArgs.paymentInfo.maxFeeBps),
-    feeReceiver: eventArgs.paymentInfo.feeReceiver,
-    salt: eventArgs.paymentInfo.salt,
-  };
+  const paymentInfo = fromAbiPaymentInfo(abiPaymentInfo);
 
   // 3. Cache-fill: save to store for future lookups
   if (ctx.paymentStore) {
@@ -199,40 +167,10 @@ export async function indexPaymentInfoFromEvents(
   const result = new Map<`0x${string}`, PaymentInfo>();
 
   for (const log of logs) {
-    const args = log.args as {
-      paymentInfo?: {
-        operator: `0x${string}`;
-        payer: `0x${string}`;
-        receiver: `0x${string}`;
-        token: `0x${string}`;
-        maxAmount: bigint;
-        preApprovalExpiry: bigint;
-        authorizationExpiry: bigint;
-        refundExpiry: bigint;
-        minFeeBps: number;
-        maxFeeBps: number;
-        feeReceiver: `0x${string}`;
-        salt: bigint;
-      };
-    };
+    const abiPaymentInfo = log.args.paymentInfo as AbiPaymentInfo | undefined;
+    if (!abiPaymentInfo) continue;
 
-    if (!args.paymentInfo) continue;
-
-    const paymentInfo: PaymentInfo = {
-      operator: args.paymentInfo.operator,
-      payer: args.paymentInfo.payer,
-      receiver: args.paymentInfo.receiver,
-      token: args.paymentInfo.token,
-      maxAmount: args.paymentInfo.maxAmount,
-      preApprovalExpiry: args.paymentInfo.preApprovalExpiry,
-      authorizationExpiry: args.paymentInfo.authorizationExpiry,
-      refundExpiry: args.paymentInfo.refundExpiry,
-      minFeeBps: Number(args.paymentInfo.minFeeBps),
-      maxFeeBps: Number(args.paymentInfo.maxFeeBps),
-      feeReceiver: args.paymentInfo.feeReceiver,
-      salt: args.paymentInfo.salt,
-    };
-
+    const paymentInfo = fromAbiPaymentInfo(abiPaymentInfo);
     const hash = computePaymentInfoHash(ctx.chainId, ctx.escrowAddress, paymentInfo);
     result.set(hash, paymentInfo);
   }

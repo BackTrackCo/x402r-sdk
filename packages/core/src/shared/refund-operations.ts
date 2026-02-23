@@ -40,7 +40,7 @@ export async function hasRefundRequest(
     args: [toAbiPaymentInfo(paymentInfo), nonce],
   });
 
-  return exists as boolean;
+  return exists;
 }
 
 /**
@@ -56,16 +56,19 @@ export async function getRefundRequest(
   paymentInfo: PaymentInfo,
   nonce: bigint,
 ): Promise<RefundRequestData> {
-  const request = await ctx.publicClient.readContract({
+  const result = await ctx.publicClient.readContract({
     address: ctx.refundRequestAddress,
     abi: refundRequestAbi,
     functionName: "getRefundRequest",
     args: [toAbiPaymentInfo(paymentInfo), nonce],
   });
 
-  // The contract returns a tuple that matches RefundRequestData fields.
-  // viem infers the return as a generic tuple type, so we cast through unknown.
-  return request as unknown as RefundRequestData;
+  return {
+    paymentInfoHash: result.paymentInfoHash,
+    nonce: result.nonce,
+    amount: result.amount,
+    status: result.status as RequestStatus,
+  };
 }
 
 /**
@@ -102,14 +105,19 @@ export async function getRefundRequestByKey(
   ctx: RefundReadContext,
   compositeKey: `0x${string}`,
 ): Promise<RefundRequestData> {
-  const request = await ctx.publicClient.readContract({
+  const result = await ctx.publicClient.readContract({
     address: ctx.refundRequestAddress,
     abi: refundRequestAbi,
     functionName: "getRefundRequestByKey",
     args: [compositeKey],
   });
 
-  return request as unknown as RefundRequestData;
+  return {
+    paymentInfoHash: result.paymentInfoHash,
+    nonce: result.nonce,
+    amount: result.amount,
+    status: result.status as RequestStatus,
+  };
 }
 
 /**
@@ -175,7 +183,7 @@ export async function approveRefundRequest(
     args: [toAbiPaymentInfo(paymentInfo), nonce, RequestStatus.Approved],
   });
 
-  return { txHash: txHash as `0x${string}` };
+  return { txHash };
 }
 
 /**
@@ -202,5 +210,5 @@ export async function denyRefundRequest(
     args: [toAbiPaymentInfo(paymentInfo), nonce, RequestStatus.Denied],
   });
 
-  return { txHash: txHash as `0x${string}` };
+  return { txHash };
 }

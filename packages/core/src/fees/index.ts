@@ -62,17 +62,17 @@ export async function getFeeAddresses(
       address: operatorAddress,
       abi: paymentOperatorAbi,
       functionName: "FEE_CALCULATOR",
-    }) as Promise<Address>,
+    }),
     publicClient.readContract({
       address: operatorAddress,
       abi: paymentOperatorAbi,
       functionName: "PROTOCOL_FEE_CONFIG",
-    }) as Promise<Address>,
+    }),
     publicClient.readContract({
       address: operatorAddress,
       abi: paymentOperatorAbi,
       functionName: "FEE_RECIPIENT",
-    }) as Promise<Address>,
+    }),
   ]);
 
   // Get protocol fee config details
@@ -85,12 +85,12 @@ export async function getFeeAddresses(
         address: protocolFeeConfig,
         abi: protocolFeeConfigAbi,
         functionName: "calculator",
-      }) as Promise<Address>,
+      }),
       publicClient.readContract({
         address: protocolFeeConfig,
         abi: protocolFeeConfigAbi,
         functionName: "protocolFeeRecipient",
-      }) as Promise<Address>,
+      }),
     ]);
   }
 
@@ -121,25 +121,23 @@ export async function calculateOperatorFeeBps(
   caller: Address,
 ): Promise<bigint> {
   // Get the fee calculator address
-  const feeCalculator = (await publicClient.readContract({
+  const feeCalculator = await publicClient.readContract({
     address: operatorAddress,
     abi: paymentOperatorAbi,
     functionName: "FEE_CALCULATOR",
-  })) as Address;
+  });
 
   // If no fee calculator, return 0
   if (feeCalculator === ZERO_ADDRESS) {
     return 0n;
   }
 
-  const feeBps = (await publicClient.readContract({
+  return publicClient.readContract({
     address: feeCalculator,
     abi: iFeeCalculatorAbi,
     functionName: "calculateFee",
     args: [toAbiPaymentInfo(paymentInfo), amount, caller],
-  })) as bigint;
-
-  return feeBps;
+  });
 }
 
 /**
@@ -160,25 +158,23 @@ export async function calculateProtocolFeeBps(
   caller: Address,
 ): Promise<bigint> {
   // Get the protocol fee config address
-  const protocolFeeConfig = (await publicClient.readContract({
+  const protocolFeeConfig = await publicClient.readContract({
     address: operatorAddress,
     abi: paymentOperatorAbi,
     functionName: "PROTOCOL_FEE_CONFIG",
-  })) as Address;
+  });
 
   // If no protocol fee config, return 0
   if (protocolFeeConfig === ZERO_ADDRESS) {
     return 0n;
   }
 
-  const feeBps = (await publicClient.readContract({
+  return publicClient.readContract({
     address: protocolFeeConfig,
     abi: protocolFeeConfigAbi,
     functionName: "getProtocolFeeBps",
     args: [toAbiPaymentInfo(paymentInfo), amount, caller],
-  })) as bigint;
-
-  return feeBps;
+  });
 }
 
 /**
@@ -307,5 +303,5 @@ export async function distributeFees(
     functionName: "distributeFees",
     args: [token],
   });
-  return txHash as `0x${string}`;
+  return txHash;
 }
