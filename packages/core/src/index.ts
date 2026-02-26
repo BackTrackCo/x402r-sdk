@@ -1,1 +1,1 @@
-export {}
+export * from './abis/generated.js'
