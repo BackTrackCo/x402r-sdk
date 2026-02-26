@@ -1,9 +1,0 @@
-dist/
-.turbo/
-coverage/
-node_modules/
-docs-generated/
-pnpm-lock.yaml
-**/*.json
-*.md
-packages/core/src/abis/generated.ts

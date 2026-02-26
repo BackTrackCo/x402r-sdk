@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-set -euo pipefail
-
-echo "x402r-sdk pre-commit: typecheck + lint + format:check + docs:generate"
-
-pnpm typecheck
-pnpm lint:check
-pnpm format:check
-pnpm docs:generate

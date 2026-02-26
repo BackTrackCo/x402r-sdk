@@ -37,3 +37,6 @@ pnpm-debug.log*
 
 # Generated docs (built by CI)
 docs-generated/
+
+# Git worktrees
+.worktrees/
