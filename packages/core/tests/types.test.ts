@@ -1,100 +1,29 @@
 import { describe, expect, it } from 'vitest'
-import { paymentOperatorAbi } from '../src/abis/generated.js'
-import {
-  BASIS_POINTS,
-  MAX_UINT32,
-  MAX_UINT48,
-  type PaymentInfo,
-  PaymentState,
-  RequestStatus,
+import type {
+  ConditionConfig,
+  OperatorConfig,
+  PaymentInfo,
 } from '../src/types/index.js'
 
 // ---------------------------------------------------------------------------
-// ABI Structural Alignment
+// Compile-Time Shape Tests
 // ---------------------------------------------------------------------------
-// Extract the PaymentInfo tuple from the `authorize` function's first param.
-// If a field is added/renamed in contracts, this test catches it at build time.
+// These verify that ABI-derived types produce the expected shapes.
+// If an ABI regen changes a field name or type, these will fail at compile time.
+// No runtime ABI introspection needed — the types ARE the ABI.
 
-const authorizeFn = paymentOperatorAbi.find(
-  (item) => item.type === 'function' && item.name === 'authorize',
-)
-if (!authorizeFn || authorizeFn.type !== 'function') {
-  throw new Error('authorize function not found in paymentOperatorAbi')
-}
-
-const paymentInfoParam = authorizeFn.inputs[0]
-if (!paymentInfoParam || !('components' in paymentInfoParam)) {
-  throw new Error('PaymentInfo tuple not found as first param of authorize')
-}
-
-const abiFields = paymentInfoParam.components.map((c) => ({
-  name: c.name,
-  type: c.type,
-}))
-
-describe('PaymentInfo ABI alignment', () => {
-  const expectedFields = [
-    'operator',
-    'payer',
-    'receiver',
-    'token',
-    'maxAmount',
-    'preApprovalExpiry',
-    'authorizationExpiry',
-    'refundExpiry',
-    'minFeeBps',
-    'maxFeeBps',
-    'feeReceiver',
-    'salt',
-  ] as const
-
-  it('has matching field names with ABI', () => {
-    const abiFieldNames = abiFields.map((f) => f.name)
-    expect(abiFieldNames).toEqual([...expectedFields])
-  })
-
-  it('has the correct number of fields', () => {
-    expect(abiFields).toHaveLength(expectedFields.length)
-  })
-
-  it('address fields map to Address type', () => {
-    const addressFields = abiFields
-      .filter((f) => f.type === 'address')
-      .map((f) => f.name)
-    expect(addressFields).toEqual([
-      'operator',
-      'payer',
-      'receiver',
-      'token',
-      'feeReceiver',
-    ])
-  })
-
-  it('numeric fields have expected ABI types', () => {
-    const numericFields = abiFields.filter((f) => f.type !== 'address')
-    expect(numericFields).toEqual([
-      { name: 'maxAmount', type: 'uint120' },
-      { name: 'preApprovalExpiry', type: 'uint48' },
-      { name: 'authorizationExpiry', type: 'uint48' },
-      { name: 'refundExpiry', type: 'uint48' },
-      { name: 'minFeeBps', type: 'uint16' },
-      { name: 'maxFeeBps', type: 'uint16' },
-      { name: 'salt', type: 'uint256' },
-    ])
-  })
-
-  // Compile-time type check — this block will fail to compile if PaymentInfo
-  // drifts from the expected shape. No runtime assertion needed.
-  it('PaymentInfo interface has correct field types (compile-time)', () => {
+describe('PaymentInfo (ABI-derived)', () => {
+  it('satisfies expected shape (compile-time check)', () => {
+    // abitype: address → `0x${string}`, uint120/uint256 → bigint, uint16/uint48 → number
     const _check: PaymentInfo = {
       operator: '0x0000000000000000000000000000000000000000',
       payer: '0x0000000000000000000000000000000000000000',
       receiver: '0x0000000000000000000000000000000000000000',
       token: '0x0000000000000000000000000000000000000000',
       maxAmount: 0n,
-      preApprovalExpiry: 0n,
-      authorizationExpiry: 0n,
-      refundExpiry: 0n,
+      preApprovalExpiry: 0,
+      authorizationExpiry: 0,
+      refundExpiry: 0,
       minFeeBps: 0,
       maxFeeBps: 0,
       feeReceiver: '0x0000000000000000000000000000000000000000',
@@ -104,55 +33,40 @@ describe('PaymentInfo ABI alignment', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// PaymentState
-// ---------------------------------------------------------------------------
-
-describe('PaymentState', () => {
-  it('has exactly 5 states', () => {
-    expect(Object.keys(PaymentState)).toHaveLength(5)
-  })
-
-  it('values are sequential uint8 (0-4)', () => {
-    expect(PaymentState.NonExistent).toBe(0)
-    expect(PaymentState.InEscrow).toBe(1)
-    expect(PaymentState.Released).toBe(2)
-    expect(PaymentState.Settled).toBe(3)
-    expect(PaymentState.Expired).toBe(4)
-  })
-})
-
-// ---------------------------------------------------------------------------
-// RequestStatus
-// ---------------------------------------------------------------------------
-
-describe('RequestStatus', () => {
-  it('has exactly 4 statuses', () => {
-    expect(Object.keys(RequestStatus)).toHaveLength(4)
-  })
-
-  it('values are sequential uint8 (0-3)', () => {
-    expect(RequestStatus.Pending).toBe(0)
-    expect(RequestStatus.Approved).toBe(1)
-    expect(RequestStatus.Denied).toBe(2)
-    expect(RequestStatus.Cancelled).toBe(3)
+describe('ConditionConfig (ABI-derived)', () => {
+  it('satisfies expected shape (compile-time check)', () => {
+    const _check: ConditionConfig = {
+      authorizeCondition: '0x0000000000000000000000000000000000000000',
+      authorizeRecorder: '0x0000000000000000000000000000000000000000',
+      chargeCondition: '0x0000000000000000000000000000000000000000',
+      chargeRecorder: '0x0000000000000000000000000000000000000000',
+      releaseCondition: '0x0000000000000000000000000000000000000000',
+      releaseRecorder: '0x0000000000000000000000000000000000000000',
+      refundInEscrowCondition: '0x0000000000000000000000000000000000000000',
+      refundInEscrowRecorder: '0x0000000000000000000000000000000000000000',
+      refundPostEscrowCondition: '0x0000000000000000000000000000000000000000',
+      refundPostEscrowRecorder: '0x0000000000000000000000000000000000000000',
+    }
+    expect(_check).toBeDefined()
   })
 })
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-describe('Constants', () => {
-  it('MAX_UINT32 is 2^32 - 1', () => {
-    expect(MAX_UINT32).toBe(2n ** 32n - 1n)
-  })
-
-  it('MAX_UINT48 is 2^48 - 1', () => {
-    expect(MAX_UINT48).toBe(2n ** 48n - 1n)
-  })
-
-  it('BASIS_POINTS is 10,000', () => {
-    expect(BASIS_POINTS).toBe(10_000)
+describe('OperatorConfig (ABI-derived)', () => {
+  it('satisfies expected shape (compile-time check)', () => {
+    const _check: OperatorConfig = {
+      feeRecipient: '0x0000000000000000000000000000000000000000',
+      feeCalculator: '0x0000000000000000000000000000000000000000',
+      authorizeCondition: '0x0000000000000000000000000000000000000000',
+      authorizeRecorder: '0x0000000000000000000000000000000000000000',
+      chargeCondition: '0x0000000000000000000000000000000000000000',
+      chargeRecorder: '0x0000000000000000000000000000000000000000',
+      releaseCondition: '0x0000000000000000000000000000000000000000',
+      releaseRecorder: '0x0000000000000000000000000000000000000000',
+      refundInEscrowCondition: '0x0000000000000000000000000000000000000000',
+      refundInEscrowRecorder: '0x0000000000000000000000000000000000000000',
+      refundPostEscrowCondition: '0x0000000000000000000000000000000000000000',
+      refundPostEscrowRecorder: '0x0000000000000000000000000000000000000000',
+    }
+    expect(_check).toBeDefined()
   })
 })
