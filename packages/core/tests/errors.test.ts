@@ -4,6 +4,7 @@ import {
   ConfigError,
   ContractCallError,
   NotImplementedError,
+  ValidationError,
 } from '../src/errors/index.js'
 
 describe('X402rError message composition', () => {
@@ -84,6 +85,10 @@ describe('NotImplementedError', () => {
 describe('subclass docsPath defaults', () => {
   it('ConfigError defaults to /sdk/config', () => {
     expect(new ConfigError('bad').message).toContain('/sdk/config')
+  })
+
+  it('ValidationError defaults to /sdk/validation', () => {
+    expect(new ValidationError('bad').message).toContain('/sdk/validation')
   })
 
   it('docsPath can be overridden', () => {

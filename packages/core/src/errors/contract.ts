@@ -7,7 +7,7 @@ export class ContractCallError extends X402rError {
     operation: string,
     args: X402rErrorArgs & { contractAddress?: string | undefined } = {},
   ) {
-    const metaMessages = args.metaMessages ?? []
+    const metaMessages = [...(args.metaMessages ?? [])]
     if (args.contractAddress) {
       metaMessages.push(`Contract: ${args.contractAddress}`)
     }

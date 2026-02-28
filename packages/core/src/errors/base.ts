@@ -52,8 +52,8 @@ export class X402rError extends Error {
 function walk(err: Error, fn?: (err: Error) => boolean): Error | null {
   if (fn?.(err)) return err
 
-  if ((err as { cause?: Error }).cause) {
-    return walk((err as { cause: Error }).cause, fn)
+  if (err.cause instanceof Error) {
+    return walk(err.cause, fn)
   }
 
   return fn ? null : err
