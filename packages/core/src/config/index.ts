@@ -1,4 +1,4 @@
-import type { Address } from 'viem'
+import { type Address, zeroAddress } from 'viem'
 import { ConfigError } from '../errors/index.js'
 
 // ---------------------------------------------------------------------------
@@ -359,8 +359,6 @@ export const supportedChainIds = Object.keys(x402rChains).map(
 // Getters
 // ---------------------------------------------------------------------------
 
-const zeroAddress = '0x0000000000000000000000000000000000000000'
-
 export function getChainConfig(chainId: number): X402rChainConfig {
   const config = x402rChains[chainId as keyof typeof x402rChains] as
     | X402rChainConfig
@@ -389,11 +387,14 @@ export function getFactoryAddress(
   chainId: number,
   factory: keyof FactoryAddresses,
 ): Address {
-  const factories = getFactoryAddresses(chainId)
-  const address = factories[factory]
+  const config = getChainConfig(chainId)
+  if (!config.factories) {
+    throw new ConfigError(`Factories are not deployed on ${config.name}`)
+  }
+  const address = config.factories[factory]
   if (address === zeroAddress) {
     throw new ConfigError(
-      `${factory} factory is not deployed on ${getChainConfig(chainId).name}`,
+      `${factory} factory is not deployed on ${config.name}`,
     )
   }
   return address
