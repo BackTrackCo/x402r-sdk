@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
-  X402rError,
   ConfigError,
   ContractCallError,
   NotImplementedError,
   ValidationError,
+  X402rError,
 } from '../src/errors/index.js'
 
 describe('X402rError message composition', () => {
