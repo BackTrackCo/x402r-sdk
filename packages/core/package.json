@@ -24,5 +24,13 @@
   },
   "dependencies": {
     "viem": "^2.46.3"
+  },
+  "peerDependencies": {
+    "@x402r/evm": ">=0.0.2"
+  },
+  "peerDependenciesMeta": {
+    "@x402r/evm": {
+      "optional": true
+    }
   }
 }

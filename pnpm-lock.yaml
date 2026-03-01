@@ -35,6 +35,9 @@ importers:
 
   packages/core:
     dependencies:
+      '@x402r/evm':
+        specifier: '>=0.0.2'
+        version: link:../../../x402r-scheme/packages/evm
       viem:
         specifier: ^2.46.3
         version: 2.46.3(typescript@5.9.3)(zod@4.3.6)
