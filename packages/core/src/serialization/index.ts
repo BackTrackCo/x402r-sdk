@@ -6,7 +6,7 @@ import type { PaymentInfo } from '../types/index.js'
 // Wire-format → PaymentInfo
 // ---------------------------------------------------------------------------
 
-// Expiry and fee fields are omitted — they default to 0 when absent.
+// Expiry timestamps and fee basis-point fields are omitted — they default to 0 when absent.
 const REQUIRED_FIELDS = [
   'operator',
   'payer',
@@ -16,6 +16,26 @@ const REQUIRED_FIELDS = [
   'feeReceiver',
   'salt',
 ] as const
+
+function toBigInt(value: unknown, field: string): bigint {
+  try {
+    return BigInt(value as string | number | bigint)
+  } catch {
+    throw new ValidationError(
+      `Invalid ${field}: cannot convert ${JSON.stringify(value)} to bigint`,
+    )
+  }
+}
+
+function toUint(value: unknown, field: string): number {
+  const n = Number(value)
+  if (Number.isNaN(n)) {
+    throw new ValidationError(
+      `Invalid ${field}: cannot convert ${JSON.stringify(value)} to number`,
+    )
+  }
+  return n
+}
 
 /**
  * Parse a JSON string or plain object into a typed PaymentInfo.
@@ -53,14 +73,20 @@ export function parsePaymentInfo(
     payer: parsed.payer as `0x${string}`,
     receiver: parsed.receiver as `0x${string}`,
     token: parsed.token as `0x${string}`,
-    maxAmount: BigInt(parsed.maxAmount),
-    preApprovalExpiry: Number(parsed.preApprovalExpiry ?? 0),
-    authorizationExpiry: Number(parsed.authorizationExpiry ?? 0),
-    refundExpiry: Number(parsed.refundExpiry ?? 0),
-    minFeeBps: Number(parsed.minFeeBps ?? 0),
-    maxFeeBps: Number(parsed.maxFeeBps ?? 0),
+    maxAmount: toBigInt(parsed.maxAmount, 'maxAmount'),
+    preApprovalExpiry: toUint(
+      parsed.preApprovalExpiry ?? 0,
+      'preApprovalExpiry',
+    ),
+    authorizationExpiry: toUint(
+      parsed.authorizationExpiry ?? 0,
+      'authorizationExpiry',
+    ),
+    refundExpiry: toUint(parsed.refundExpiry ?? 0, 'refundExpiry'),
+    minFeeBps: toUint(parsed.minFeeBps ?? 0, 'minFeeBps'),
+    maxFeeBps: toUint(parsed.maxFeeBps ?? 0, 'maxFeeBps'),
     feeReceiver: parsed.feeReceiver as `0x${string}`,
-    salt: BigInt(parsed.salt),
+    salt: toBigInt(parsed.salt, 'salt'),
   }
 }
 

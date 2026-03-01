@@ -126,6 +126,39 @@ describe('parsePaymentInfo', () => {
       'Invalid JSON in PaymentInfo input',
     )
   })
+
+  it('throws ValidationError for non-numeric maxAmount', () => {
+    expect(() =>
+      parsePaymentInfo({ ...validPaymentInfoObj, maxAmount: 'abc' }),
+    ).toThrow(ValidationError)
+    expect(() =>
+      parsePaymentInfo({ ...validPaymentInfoObj, maxAmount: 'abc' }),
+    ).toThrow('Invalid maxAmount')
+  })
+
+  it('throws ValidationError for non-numeric salt', () => {
+    expect(() =>
+      parsePaymentInfo({ ...validPaymentInfoObj, salt: 'not-a-number' }),
+    ).toThrow(ValidationError)
+    expect(() =>
+      parsePaymentInfo({ ...validPaymentInfoObj, salt: 'not-a-number' }),
+    ).toThrow('Invalid salt')
+  })
+
+  it('throws ValidationError for non-numeric expiry field', () => {
+    expect(() =>
+      parsePaymentInfo({
+        ...validPaymentInfoObj,
+        authorizationExpiry: 'xyz',
+      }),
+    ).toThrow(ValidationError)
+    expect(() =>
+      parsePaymentInfo({
+        ...validPaymentInfoObj,
+        authorizationExpiry: 'xyz',
+      }),
+    ).toThrow('Invalid authorizationExpiry')
+  })
 })
 
 // ---------------------------------------------------------------------------
