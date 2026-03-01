@@ -7,6 +7,9 @@ export const TEST_CHAIN_ID = 84532
 export const TEST_ESCROW_ADDRESS =
   '0xb9488351E48b23D798f24e8174514F28B741Eb4f' as const
 
+export const FUTURE_TIMESTAMP = Math.floor(Date.now() / 1000) + 3600
+export const PAST_TIMESTAMP = Math.floor(Date.now() / 1000) - 3600
+
 export const TEST_ADDRESSES = {
   operator: '0x1234567890123456789012345678901234567890',
   payer: '0x2345678901234567890123456789012345678901',
