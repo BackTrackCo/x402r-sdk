@@ -4,25 +4,14 @@ import {
   computePaymentInfoHash,
   PAYMENT_INFO_TYPEHASH,
 } from '../src/hashing/index.js'
-import type { PaymentInfo } from '../src/types/index.js'
+import {
+  makePaymentInfo,
+  TEST_CHAIN_ID,
+  TEST_ESCROW_ADDRESS,
+  zeroAddress,
+} from './fixtures.js'
 
-const samplePaymentInfo: PaymentInfo = {
-  operator: '0x1234567890123456789012345678901234567890',
-  payer: '0x2345678901234567890123456789012345678901',
-  receiver: '0x3456789012345678901234567890123456789012',
-  token: '0x4567890123456789012345678901234567890123',
-  maxAmount: 1000000n,
-  preApprovalExpiry: 0,
-  authorizationExpiry: 1735689600,
-  refundExpiry: 1738368000,
-  minFeeBps: 0,
-  maxFeeBps: 500,
-  feeReceiver: '0x5678901234567890123456789012345678901234',
-  salt: 0x123456789abcdefn,
-}
-
-const escrowAddress = '0xb9488351E48b23D798f24e8174514F28B741Eb4f' as const
-const chainId = 84532
+const samplePaymentInfo = makePaymentInfo()
 
 // ---------------------------------------------------------------------------
 // PAYMENT_INFO_TYPEHASH
@@ -44,11 +33,11 @@ describe('PAYMENT_INFO_TYPEHASH', () => {
 describe('computePaymentInfoHash', () => {
   it('produces different hashes for different payment info', () => {
     const hash1 = computePaymentInfoHash(
-      chainId,
-      escrowAddress,
+      TEST_CHAIN_ID,
+      TEST_ESCROW_ADDRESS,
       samplePaymentInfo,
     )
-    const hash2 = computePaymentInfoHash(chainId, escrowAddress, {
+    const hash2 = computePaymentInfoHash(TEST_CHAIN_ID, TEST_ESCROW_ADDRESS, {
       ...samplePaymentInfo,
       maxAmount: 2000000n,
     })
@@ -57,12 +46,12 @@ describe('computePaymentInfoHash', () => {
 
   it('produces different hashes for different escrow addresses', () => {
     const hash1 = computePaymentInfoHash(
-      chainId,
-      escrowAddress,
+      TEST_CHAIN_ID,
+      TEST_ESCROW_ADDRESS,
       samplePaymentInfo,
     )
     const hash2 = computePaymentInfoHash(
-      chainId,
+      TEST_CHAIN_ID,
       '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
       samplePaymentInfo,
     )
@@ -71,11 +60,15 @@ describe('computePaymentInfoHash', () => {
 
   it('produces different hashes for different chain IDs', () => {
     const hash1 = computePaymentInfoHash(
-      chainId,
-      escrowAddress,
+      TEST_CHAIN_ID,
+      TEST_ESCROW_ADDRESS,
       samplePaymentInfo,
     )
-    const hash2 = computePaymentInfoHash(1, escrowAddress, samplePaymentInfo)
+    const hash2 = computePaymentInfoHash(
+      1,
+      TEST_ESCROW_ADDRESS,
+      samplePaymentInfo,
+    )
     expect(hash1).not.toBe(hash2)
   })
 })
@@ -86,8 +79,12 @@ describe('computePaymentInfoHash', () => {
 
 describe('computeEscrowNonce', () => {
   it('is payer-agnostic (ignores payer field)', () => {
-    const n1 = computeEscrowNonce(chainId, escrowAddress, samplePaymentInfo)
-    const n2 = computeEscrowNonce(chainId, escrowAddress, {
+    const n1 = computeEscrowNonce(
+      TEST_CHAIN_ID,
+      TEST_ESCROW_ADDRESS,
+      samplePaymentInfo,
+    )
+    const n2 = computeEscrowNonce(TEST_CHAIN_ID, TEST_ESCROW_ADDRESS, {
       ...samplePaymentInfo,
       payer: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
     })
@@ -95,17 +92,25 @@ describe('computeEscrowNonce', () => {
   })
 
   it('matches computePaymentInfoHash with zero payer', () => {
-    const nonce = computeEscrowNonce(chainId, escrowAddress, samplePaymentInfo)
-    const hash = computePaymentInfoHash(chainId, escrowAddress, {
+    const nonce = computeEscrowNonce(
+      TEST_CHAIN_ID,
+      TEST_ESCROW_ADDRESS,
+      samplePaymentInfo,
+    )
+    const hash = computePaymentInfoHash(TEST_CHAIN_ID, TEST_ESCROW_ADDRESS, {
       ...samplePaymentInfo,
-      payer: '0x0000000000000000000000000000000000000000',
+      payer: zeroAddress,
     })
     expect(nonce).toBe(hash)
   })
 
   it('produces different nonces for different maxAmount', () => {
-    const n1 = computeEscrowNonce(chainId, escrowAddress, samplePaymentInfo)
-    const n2 = computeEscrowNonce(chainId, escrowAddress, {
+    const n1 = computeEscrowNonce(
+      TEST_CHAIN_ID,
+      TEST_ESCROW_ADDRESS,
+      samplePaymentInfo,
+    )
+    const n2 = computeEscrowNonce(TEST_CHAIN_ID, TEST_ESCROW_ADDRESS, {
       ...samplePaymentInfo,
       maxAmount: 2000000n,
     })

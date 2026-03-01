@@ -1,11 +1,12 @@
 import type { EscrowPayload } from '@x402r/evm'
 import { describe, expect, it } from 'vitest'
 import { toPaymentInfo } from '../src/serialization/index.js'
+import { TEST_ADDRESSES } from './fixtures.js'
 
 const basePayload: EscrowPayload = {
   authorization: {
-    from: '0xPayerAddress0000000000000000000000000001',
-    to: '0xReceiverAddr000000000000000000000000001',
+    from: TEST_ADDRESSES.payer,
+    to: TEST_ADDRESSES.receiver,
     value: '1000000',
     validAfter: '0',
     validBefore: '1700000000',
@@ -13,16 +14,16 @@ const basePayload: EscrowPayload = {
   },
   signature: '0xdeadbeef',
   paymentInfo: {
-    operator: '0xOperatorAddr000000000000000000000000001',
-    receiver: '0xReceiverAddr000000000000000000000000001',
-    token: '0xTokenAddress00000000000000000000000000001',
+    operator: TEST_ADDRESSES.operator,
+    receiver: TEST_ADDRESSES.receiver,
+    token: TEST_ADDRESSES.token,
     maxAmount: '1000000',
     preApprovalExpiry: 1700000000,
     authorizationExpiry: 1700001000,
     refundExpiry: 1700002000,
     minFeeBps: 50,
     maxFeeBps: 500,
-    feeReceiver: '0xFeeReceiverA000000000000000000000000001',
+    feeReceiver: TEST_ADDRESSES.feeReceiver,
     salt: '0x3039',
   },
 }
@@ -36,15 +37,15 @@ describe('toPaymentInfo', () => {
 
   it('extracts payer from authorization.from', () => {
     const result = toPaymentInfo(basePayload)
-    expect(result.payer).toBe('0xPayerAddress0000000000000000000000000001')
+    expect(result.payer).toBe(TEST_ADDRESSES.payer)
   })
 
   it('passes through address and number fields unchanged', () => {
     const result = toPaymentInfo(basePayload)
-    expect(result.operator).toBe('0xOperatorAddr000000000000000000000000001')
-    expect(result.receiver).toBe('0xReceiverAddr000000000000000000000000001')
-    expect(result.token).toBe('0xTokenAddress00000000000000000000000000001')
-    expect(result.feeReceiver).toBe('0xFeeReceiverA000000000000000000000000001')
+    expect(result.operator).toBe(TEST_ADDRESSES.operator)
+    expect(result.receiver).toBe(TEST_ADDRESSES.receiver)
+    expect(result.token).toBe(TEST_ADDRESSES.token)
+    expect(result.feeReceiver).toBe(TEST_ADDRESSES.feeReceiver)
     expect(result.minFeeBps).toBe(50)
     expect(result.maxFeeBps).toBe(500)
   })

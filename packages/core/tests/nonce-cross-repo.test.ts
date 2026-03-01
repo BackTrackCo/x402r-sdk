@@ -6,6 +6,7 @@ import {
   PAYMENT_INFO_TYPEHASH,
 } from '../src/hashing/index.js'
 import type { PaymentInfo } from '../src/types/index.js'
+import { TEST_CHAIN_ID, TEST_ESCROW_ADDRESS, zeroAddress } from './fixtures.js'
 
 // --- Scheme-style nonce (inline reimplementation) ---
 
@@ -16,8 +17,6 @@ const SCHEME_PAYMENT_INFO_TYPEHASH = keccak256(
     'PaymentInfo(address operator,address payer,address receiver,address token,uint120 maxAmount,uint48 preApprovalExpiry,uint48 authorizationExpiry,uint48 refundExpiry,uint16 minFeeBps,uint16 maxFeeBps,address feeReceiver,uint256 salt)',
   ),
 )
-
-const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const
 
 function schemeComputeEscrowNonce(
   chainId: number,
@@ -55,7 +54,7 @@ function schemeComputeEscrowNonce(
     [
       SCHEME_PAYMENT_INFO_TYPEHASH,
       paymentInfo.operator,
-      ZERO_ADDRESS,
+      zeroAddress,
       paymentInfo.receiver,
       paymentInfo.token,
       BigInt(paymentInfo.maxAmount),
@@ -82,10 +81,7 @@ function schemeComputeEscrowNonce(
   return keccak256(outerEncoded)
 }
 
-// --- Test fixtures ---
-
-const escrowAddress = '0xb9488351E48b23D798f24e8174514F28B741Eb4f' as const
-const chainId = 84532
+// --- Test fixtures (local — scheme uses string-typed fields) ---
 
 const sdkPaymentInfo: PaymentInfo = {
   operator: '0x1234567890123456789012345678901234567890',
@@ -124,10 +120,14 @@ describe('Cross-repo nonce consistency', () => {
   })
 
   it('computeEscrowNonce matches scheme nonce for identical inputs', () => {
-    const sdkNonce = computeEscrowNonce(chainId, escrowAddress, sdkPaymentInfo)
+    const sdkNonce = computeEscrowNonce(
+      TEST_CHAIN_ID,
+      TEST_ESCROW_ADDRESS,
+      sdkPaymentInfo,
+    )
     const schemeNonce = schemeComputeEscrowNonce(
-      chainId,
-      escrowAddress,
+      TEST_CHAIN_ID,
+      TEST_ESCROW_ADDRESS,
       schemePaymentInfo,
     )
     expect(sdkNonce).toBe(schemeNonce)
@@ -136,12 +136,16 @@ describe('Cross-repo nonce consistency', () => {
   it('computePaymentInfoHash with zero payer matches scheme nonce', () => {
     const zeroPayer: PaymentInfo = {
       ...sdkPaymentInfo,
-      payer: ZERO_ADDRESS,
+      payer: zeroAddress,
     }
-    const sdkHash = computePaymentInfoHash(chainId, escrowAddress, zeroPayer)
+    const sdkHash = computePaymentInfoHash(
+      TEST_CHAIN_ID,
+      TEST_ESCROW_ADDRESS,
+      zeroPayer,
+    )
     const schemeNonce = schemeComputeEscrowNonce(
-      chainId,
-      escrowAddress,
+      TEST_CHAIN_ID,
+      TEST_ESCROW_ADDRESS,
       schemePaymentInfo,
     )
     expect(sdkHash).toBe(schemeNonce)

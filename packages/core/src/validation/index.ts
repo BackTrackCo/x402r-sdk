@@ -57,4 +57,8 @@ export function validatePaymentInfo(paymentInfo: PaymentInfo): void {
         'an expired value will cause the authorization signature to be rejected',
     )
   }
+
+  if (paymentInfo.refundExpiry > 0 && paymentInfo.refundExpiry <= nowSeconds) {
+    throw new ValidationError('refundExpiry is in the past')
+  }
 }
