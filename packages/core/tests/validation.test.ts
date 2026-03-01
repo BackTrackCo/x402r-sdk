@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { ValidationError } from '../src/errors/index.js'
 import { validatePaymentInfo } from '../src/validation/index.js'
-import { FUTURE_TIMESTAMP, PAST_TIMESTAMP, makePaymentInfo, zeroAddress } from './fixtures.js'
+import {
+  FUTURE_TIMESTAMP,
+  makePaymentInfo,
+  PAST_TIMESTAMP,
+  zeroAddress,
+} from './fixtures.js'
 
 const validOverrides = {
   preApprovalExpiry: FUTURE_TIMESTAMP,

@@ -1,4 +1,10 @@
-import { type Address, type PublicClient, type WalletClient, formatUnits, zeroAddress } from 'viem'
+import {
+  type Address,
+  formatUnits,
+  type PublicClient,
+  type WalletClient,
+  zeroAddress,
+} from 'viem'
 import {
   iFeeCalculatorAbi,
   paymentOperatorAbi,
@@ -186,8 +192,20 @@ export async function calculateTotalFees(
   caller: Address,
 ): Promise<FeeCalculationResult> {
   const [operatorFeeBps, protocolFeeBps] = await Promise.all([
-    calculateOperatorFeeBps(publicClient, operatorAddress, paymentInfo, amount, caller),
-    calculateProtocolFeeBps(publicClient, operatorAddress, paymentInfo, amount, caller),
+    calculateOperatorFeeBps(
+      publicClient,
+      operatorAddress,
+      paymentInfo,
+      amount,
+      caller,
+    ),
+    calculateProtocolFeeBps(
+      publicClient,
+      operatorAddress,
+      paymentInfo,
+      amount,
+      caller,
+    ),
   ])
 
   const totalFeeBps = operatorFeeBps + protocolFeeBps

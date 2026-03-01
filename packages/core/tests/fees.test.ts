@@ -6,10 +6,10 @@ import {
   calculateProtocolFeeBps,
   calculateTotalFees,
   distributeFees,
-  formatFeeBreakdown,
-  validateFeeBounds,
   type FeeCalculationResult,
+  formatFeeBreakdown,
   getFeeAddresses,
+  validateFeeBounds,
 } from '../src/fees/index.js'
 import { makePaymentInfo } from './fixtures.js'
 
@@ -18,11 +18,15 @@ import { makePaymentInfo } from './fixtures.js'
 // ---------------------------------------------------------------------------
 
 const MOCK_OPERATOR = '0x1111111111111111111111111111111111111111' as const
-const MOCK_FEE_CALCULATOR = '0x2222222222222222222222222222222222222222' as const
-const MOCK_PROTOCOL_FEE_CONFIG = '0x3333333333333333333333333333333333333333' as const
+const MOCK_FEE_CALCULATOR =
+  '0x2222222222222222222222222222222222222222' as const
+const MOCK_PROTOCOL_FEE_CONFIG =
+  '0x3333333333333333333333333333333333333333' as const
 const MOCK_FEE_RECIPIENT = '0x4444444444444444444444444444444444444444' as const
-const MOCK_PROTOCOL_CALCULATOR = '0x5555555555555555555555555555555555555555' as const
-const MOCK_PROTOCOL_RECIPIENT = '0x6666666666666666666666666666666666666666' as const
+const MOCK_PROTOCOL_CALCULATOR =
+  '0x5555555555555555555555555555555555555555' as const
+const MOCK_PROTOCOL_RECIPIENT =
+  '0x6666666666666666666666666666666666666666' as const
 const MOCK_CALLER = '0x7777777777777777777777777777777777777777' as const
 const MOCK_TOKEN = '0x8888888888888888888888888888888888888888' as const
 
@@ -45,7 +49,8 @@ describe('getFeeAddresses', () => {
       [`${MOCK_OPERATOR}:PROTOCOL_FEE_CONFIG`]: MOCK_PROTOCOL_FEE_CONFIG,
       [`${MOCK_OPERATOR}:FEE_RECIPIENT`]: MOCK_FEE_RECIPIENT,
       [`${MOCK_PROTOCOL_FEE_CONFIG}:calculator`]: MOCK_PROTOCOL_CALCULATOR,
-      [`${MOCK_PROTOCOL_FEE_CONFIG}:getProtocolFeeRecipient`]: MOCK_PROTOCOL_RECIPIENT,
+      [`${MOCK_PROTOCOL_FEE_CONFIG}:getProtocolFeeRecipient`]:
+        MOCK_PROTOCOL_RECIPIENT,
     })
 
     const result = await getFeeAddresses(client, MOCK_OPERATOR)
@@ -88,7 +93,11 @@ describe('calculateOperatorFeeBps', () => {
     })
 
     const result = await calculateOperatorFeeBps(
-      client, MOCK_OPERATOR, paymentInfo, 1000000n, MOCK_CALLER,
+      client,
+      MOCK_OPERATOR,
+      paymentInfo,
+      1000000n,
+      MOCK_CALLER,
     )
 
     expect(result).toBe(0n)
@@ -101,7 +110,11 @@ describe('calculateOperatorFeeBps', () => {
     })
 
     const result = await calculateOperatorFeeBps(
-      client, MOCK_OPERATOR, paymentInfo, 1000000n, MOCK_CALLER,
+      client,
+      MOCK_OPERATOR,
+      paymentInfo,
+      1000000n,
+      MOCK_CALLER,
     )
 
     expect(result).toBe(250n)
@@ -121,7 +134,11 @@ describe('calculateProtocolFeeBps', () => {
     })
 
     const result = await calculateProtocolFeeBps(
-      client, MOCK_OPERATOR, paymentInfo, 1000000n, MOCK_CALLER,
+      client,
+      MOCK_OPERATOR,
+      paymentInfo,
+      1000000n,
+      MOCK_CALLER,
     )
 
     expect(result).toBe(0n)
@@ -134,7 +151,11 @@ describe('calculateProtocolFeeBps', () => {
     })
 
     const result = await calculateProtocolFeeBps(
-      client, MOCK_OPERATOR, paymentInfo, 1000000n, MOCK_CALLER,
+      client,
+      MOCK_OPERATOR,
+      paymentInfo,
+      1000000n,
+      MOCK_CALLER,
     )
 
     expect(result).toBe(100n)
@@ -157,7 +178,11 @@ describe('calculateTotalFees', () => {
     })
 
     const result = await calculateTotalFees(
-      client, MOCK_OPERATOR, paymentInfo, 1000000n, MOCK_CALLER,
+      client,
+      MOCK_OPERATOR,
+      paymentInfo,
+      1000000n,
+      MOCK_CALLER,
     )
 
     expect(result.operatorFeeBps).toBe(250n)
@@ -172,7 +197,11 @@ describe('calculateTotalFees', () => {
     })
 
     const result = await calculateTotalFees(
-      client, MOCK_OPERATOR, paymentInfo, 1000000n, MOCK_CALLER,
+      client,
+      MOCK_OPERATOR,
+      paymentInfo,
+      1000000n,
+      MOCK_CALLER,
     )
 
     expect(result.totalFeeBps).toBe(0n)
@@ -191,7 +220,11 @@ describe('calculateTotalFees', () => {
 
     const amount = 1000000n
     const result = await calculateTotalFees(
-      client, MOCK_OPERATOR, paymentInfo, amount, MOCK_CALLER,
+      client,
+      MOCK_OPERATOR,
+      paymentInfo,
+      amount,
+      MOCK_CALLER,
     )
 
     // 250 bps = 2.5% → 25000
@@ -300,7 +333,8 @@ describe('formatFeeBreakdown', () => {
 
 describe('distributeFees', () => {
   it('returns transaction hash', async () => {
-    const mockHash = '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890'
+    const mockHash =
+      '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890'
     const walletClient = {
       writeContract: vi.fn().mockResolvedValue(mockHash),
       chain: { id: 84532 },
