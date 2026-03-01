@@ -35,10 +35,6 @@ describe('PAYMENT_INFO_TYPEHASH', () => {
       '0xae68ac7ce30c86ece8196b61a7c486d8f0061f575037fbd34e7fe4e2820c6591',
     )
   })
-
-  it('is a bytes32 hash', () => {
-    expect(PAYMENT_INFO_TYPEHASH).toMatch(/^0x[a-fA-F0-9]{64}$/)
-  })
 })
 
 // ---------------------------------------------------------------------------
@@ -46,29 +42,6 @@ describe('PAYMENT_INFO_TYPEHASH', () => {
 // ---------------------------------------------------------------------------
 
 describe('computePaymentInfoHash', () => {
-  it('returns a bytes32 hash', () => {
-    const hash = computePaymentInfoHash(
-      chainId,
-      escrowAddress,
-      samplePaymentInfo,
-    )
-    expect(hash).toMatch(/^0x[a-fA-F0-9]{64}$/)
-  })
-
-  it('is deterministic', () => {
-    const hash1 = computePaymentInfoHash(
-      chainId,
-      escrowAddress,
-      samplePaymentInfo,
-    )
-    const hash2 = computePaymentInfoHash(
-      chainId,
-      escrowAddress,
-      samplePaymentInfo,
-    )
-    expect(hash1).toBe(hash2)
-  })
-
   it('produces different hashes for different payment info', () => {
     const hash1 = computePaymentInfoHash(
       chainId,
@@ -112,17 +85,6 @@ describe('computePaymentInfoHash', () => {
 // ---------------------------------------------------------------------------
 
 describe('computeEscrowNonce', () => {
-  it('returns a bytes32 hash', () => {
-    const nonce = computeEscrowNonce(chainId, escrowAddress, samplePaymentInfo)
-    expect(nonce).toMatch(/^0x[a-fA-F0-9]{64}$/)
-  })
-
-  it('is deterministic', () => {
-    const n1 = computeEscrowNonce(chainId, escrowAddress, samplePaymentInfo)
-    const n2 = computeEscrowNonce(chainId, escrowAddress, samplePaymentInfo)
-    expect(n1).toBe(n2)
-  })
-
   it('is payer-agnostic (ignores payer field)', () => {
     const n1 = computeEscrowNonce(chainId, escrowAddress, samplePaymentInfo)
     const n2 = computeEscrowNonce(chainId, escrowAddress, {

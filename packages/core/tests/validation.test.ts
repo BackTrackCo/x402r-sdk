@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { ValidationError } from '../src/errors/index.js'
 import type { PaymentInfo } from '../src/types/index.js'
 import { validatePaymentInfo } from '../src/validation/index.js'
 
@@ -27,149 +28,81 @@ function makeValidPaymentInfo(
 const ZERO = '0x0000000000000000000000000000000000000000' as const
 
 describe('validatePaymentInfo', () => {
-  it('returns empty array for valid PaymentInfo', () => {
-    const issues = validatePaymentInfo(makeValidPaymentInfo())
-    expect(issues).toEqual([])
+  it('does not throw for valid PaymentInfo', () => {
+    expect(() => validatePaymentInfo(makeValidPaymentInfo())).not.toThrow()
   })
 
-  it('catches zero operator address', () => {
-    const issues = validatePaymentInfo(makeValidPaymentInfo({ operator: ZERO }))
-    const opError = issues.find((i) => i.field === 'operator')
-    expect(opError).toBeDefined()
-    expect(opError?.severity).toBe('error')
+  it('throws for zero operator', () => {
+    expect(() =>
+      validatePaymentInfo(makeValidPaymentInfo({ operator: ZERO })),
+    ).toThrow(ValidationError)
   })
 
-  it('catches zero receiver address', () => {
-    const issues = validatePaymentInfo(makeValidPaymentInfo({ receiver: ZERO }))
-    expect(issues.find((i) => i.field === 'receiver')).toBeDefined()
+  it('throws for zero receiver', () => {
+    expect(() =>
+      validatePaymentInfo(makeValidPaymentInfo({ receiver: ZERO })),
+    ).toThrow(ValidationError)
   })
 
-  it('catches zero token address', () => {
-    const issues = validatePaymentInfo(makeValidPaymentInfo({ token: ZERO }))
-    expect(issues.find((i) => i.field === 'token')).toBeDefined()
+  it('throws for zero token', () => {
+    expect(() =>
+      validatePaymentInfo(makeValidPaymentInfo({ token: ZERO })),
+    ).toThrow(ValidationError)
   })
 
-  it('catches zero feeReceiver address', () => {
-    const issues = validatePaymentInfo(
-      makeValidPaymentInfo({ operator: ZERO, feeReceiver: ZERO }),
-    )
-    expect(
-      issues.find((i) => i.field === 'feeReceiver' && i.severity === 'error'),
-    ).toBeDefined()
+  it('throws for zero feeReceiver', () => {
+    expect(() =>
+      validatePaymentInfo(makeValidPaymentInfo({ feeReceiver: ZERO })),
+    ).toThrow(ValidationError)
   })
 
-  it('catches zero maxAmount', () => {
-    const issues = validatePaymentInfo(makeValidPaymentInfo({ maxAmount: 0n }))
-    const amtError = issues.find((i) => i.field === 'maxAmount')
-    expect(amtError).toBeDefined()
-    expect(amtError?.severity).toBe('error')
+  it('throws for zero maxAmount', () => {
+    expect(() =>
+      validatePaymentInfo(makeValidPaymentInfo({ maxAmount: 0n })),
+    ).toThrow(ValidationError)
   })
 
-  it('catches minFeeBps > maxFeeBps', () => {
-    const issues = validatePaymentInfo(
-      makeValidPaymentInfo({ minFeeBps: 500, maxFeeBps: 100 }),
-    )
-    const feeError = issues.find((i) => i.field === 'minFeeBps')
-    expect(feeError).toBeDefined()
-    expect(feeError?.severity).toBe('error')
-  })
-
-  it('catches maxFeeBps > 10000', () => {
-    const issues = validatePaymentInfo(
-      makeValidPaymentInfo({ maxFeeBps: 15000 }),
-    )
-    const feeError = issues.find((i) => i.field === 'maxFeeBps')
-    expect(feeError).toBeDefined()
-    expect(feeError?.severity).toBe('error')
-  })
-
-  it('catches expired authorizationExpiry', () => {
-    const pastTimestamp = Math.floor(Date.now() / 1000) - 3600
-    const issues = validatePaymentInfo(
-      makeValidPaymentInfo({ authorizationExpiry: pastTimestamp }),
-    )
-    expect(issues.find((i) => i.field === 'authorizationExpiry')).toBeDefined()
-  })
-
-  it('catches expired preApprovalExpiry', () => {
-    const pastTimestamp = Math.floor(Date.now() / 1000) - 3600
-    const issues = validatePaymentInfo(
-      makeValidPaymentInfo({ preApprovalExpiry: pastTimestamp }),
-    )
-    const issue = issues.find((i) => i.field === 'preApprovalExpiry')
-    expect(issue).toBeDefined()
-    expect(issue?.message).toContain('ERC-3009')
-  })
-
-  it('skips preApprovalExpiry check when zero', () => {
-    const issues = validatePaymentInfo(
-      makeValidPaymentInfo({ preApprovalExpiry: 0 }),
-    )
-    expect(issues.find((i) => i.field === 'preApprovalExpiry')).toBeUndefined()
-  })
-
-  it('warns when feeReceiver != operator', () => {
-    const issues = validatePaymentInfo(
-      makeValidPaymentInfo({
-        feeReceiver: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-      }),
-    )
-    const warning = issues.find(
-      (i) => i.field === 'feeReceiver' && i.severity === 'warning',
-    )
-    expect(warning).toBeDefined()
-    expect(warning?.message).toContain('InvalidFeeReceiver')
-  })
-
-  it('warns when refundExpiry is in the past', () => {
-    const pastTimestamp = Math.floor(Date.now() / 1000) - 3600
-    const issues = validatePaymentInfo(
-      makeValidPaymentInfo({ refundExpiry: pastTimestamp }),
-    )
-    const issue = issues.find((i) => i.field === 'refundExpiry')
-    expect(issue).toBeDefined()
-    expect(issue?.severity).toBe('warning')
-    expect(issue?.message).toContain('past')
-  })
-
-  it('skips refundExpiry check when zero', () => {
-    const issues = validatePaymentInfo(
-      makeValidPaymentInfo({ refundExpiry: 0 }),
-    )
-    expect(
-      issues.find(
-        (i) => i.field === 'refundExpiry' && i.message.includes('past'),
+  it('throws when minFeeBps > maxFeeBps', () => {
+    expect(() =>
+      validatePaymentInfo(
+        makeValidPaymentInfo({ minFeeBps: 500, maxFeeBps: 100 }),
       ),
-    ).toBeUndefined()
+    ).toThrow(ValidationError)
   })
 
-  it('warns when refundExpiry <= authorizationExpiry', () => {
-    const issues = validatePaymentInfo(
-      makeValidPaymentInfo({
-        authorizationExpiry: futureTimestamp + 7200,
-        refundExpiry: futureTimestamp + 3600,
-      }),
-    )
-    const issue = issues.find(
-      (i) => i.field === 'refundExpiry' && i.message.includes('after'),
-    )
-    expect(issue).toBeDefined()
-    expect(issue?.severity).toBe('warning')
+  it('throws when maxFeeBps > 10000', () => {
+    expect(() =>
+      validatePaymentInfo(makeValidPaymentInfo({ maxFeeBps: 15000 })),
+    ).toThrow(ValidationError)
+  })
+
+  it('throws for expired authorizationExpiry', () => {
+    const pastTimestamp = Math.floor(Date.now() / 1000) - 3600
+    expect(() =>
+      validatePaymentInfo(
+        makeValidPaymentInfo({ authorizationExpiry: pastTimestamp }),
+      ),
+    ).toThrow(ValidationError)
+  })
+
+  it('throws for expired preApprovalExpiry', () => {
+    const pastTimestamp = Math.floor(Date.now() / 1000) - 3600
+    expect(() =>
+      validatePaymentInfo(
+        makeValidPaymentInfo({ preApprovalExpiry: pastTimestamp }),
+      ),
+    ).toThrow(ValidationError)
+  })
+
+  it('does not throw when preApprovalExpiry is zero', () => {
+    expect(() =>
+      validatePaymentInfo(makeValidPaymentInfo({ preApprovalExpiry: 0 })),
+    ).not.toThrow()
   })
 
   it('allows payer to be zero address (payer-agnostic)', () => {
-    const issues = validatePaymentInfo(makeValidPaymentInfo({ payer: ZERO }))
-    expect(issues.find((i) => i.field === 'payer')).toBeUndefined()
-  })
-
-  it('returns multiple errors for multiple issues', () => {
-    const issues = validatePaymentInfo(
-      makeValidPaymentInfo({
-        operator: ZERO,
-        receiver: ZERO,
-        maxAmount: 0n,
-      }),
-    )
-    expect(issues.length).toBeGreaterThanOrEqual(3)
+    expect(() =>
+      validatePaymentInfo(makeValidPaymentInfo({ payer: ZERO })),
+    ).not.toThrow()
   })
 })

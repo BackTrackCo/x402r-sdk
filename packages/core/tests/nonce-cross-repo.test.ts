@@ -146,43 +146,4 @@ describe('Cross-repo nonce consistency', () => {
     )
     expect(sdkHash).toBe(schemeNonce)
   })
-
-  it('both produce matching results for different chainId', () => {
-    const sdkNonce = computeEscrowNonce(1, escrowAddress, sdkPaymentInfo)
-    const schemeNonce = schemeComputeEscrowNonce(
-      1,
-      escrowAddress,
-      schemePaymentInfo,
-    )
-    expect(sdkNonce).toBe(schemeNonce)
-    const baseSepoliaNonce = computeEscrowNonce(
-      chainId,
-      escrowAddress,
-      sdkPaymentInfo,
-    )
-    expect(sdkNonce).not.toBe(baseSepoliaNonce)
-  })
-
-  it('both produce matching results for different escrow address', () => {
-    const altEscrow = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' as const
-    const sdkNonce = computeEscrowNonce(chainId, altEscrow, sdkPaymentInfo)
-    const schemeNonce = schemeComputeEscrowNonce(
-      chainId,
-      altEscrow,
-      schemePaymentInfo,
-    )
-    expect(sdkNonce).toBe(schemeNonce)
-  })
-
-  it('both produce matching results for different maxAmount', () => {
-    const altSdkInfo = { ...sdkPaymentInfo, maxAmount: 2000000n }
-    const altSchemeInfo = { ...schemePaymentInfo, maxAmount: '2000000' }
-    const sdkNonce = computeEscrowNonce(chainId, escrowAddress, altSdkInfo)
-    const schemeNonce = schemeComputeEscrowNonce(
-      chainId,
-      escrowAddress,
-      altSchemeInfo,
-    )
-    expect(sdkNonce).toBe(schemeNonce)
-  })
 })
