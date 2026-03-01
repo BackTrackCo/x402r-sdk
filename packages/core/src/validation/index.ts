@@ -107,6 +107,27 @@ export function validatePaymentInfo(
     })
   }
 
+  if (paymentInfo.refundExpiry > 0 && paymentInfo.refundExpiry <= nowSeconds) {
+    issues.push({
+      field: 'refundExpiry',
+      message: 'refundExpiry is in the past — refund window has already closed',
+      severity: 'warning',
+    })
+  }
+
+  // refundExpiry should be after authorizationExpiry to allow escrow settlement
+  if (
+    paymentInfo.refundExpiry > 0 &&
+    paymentInfo.authorizationExpiry > 0 &&
+    paymentInfo.refundExpiry <= paymentInfo.authorizationExpiry
+  ) {
+    issues.push({
+      field: 'refundExpiry',
+      message: `refundExpiry (${paymentInfo.refundExpiry}) should be after authorizationExpiry (${paymentInfo.authorizationExpiry})`,
+      severity: 'warning',
+    })
+  }
+
   // feeReceiver should match operator (contract enforces this)
   if (
     paymentInfo.operator !== zeroAddress &&

@@ -6,6 +6,7 @@ import type { PaymentInfo } from '../types/index.js'
 // Wire-format → PaymentInfo
 // ---------------------------------------------------------------------------
 
+// Expiry and fee fields are omitted — they default to 0 when absent.
 const REQUIRED_FIELDS = [
   'operator',
   'payer',
@@ -16,11 +17,23 @@ const REQUIRED_FIELDS = [
   'salt',
 ] as const
 
-/** Parse a JSON string or plain object into a typed PaymentInfo. */
+/**
+ * Parse a JSON string or plain object into a typed PaymentInfo.
+ * This does type coercion only — call `validatePaymentInfo` for business-rule checks.
+ */
 export function parsePaymentInfo(
   input: string | Record<string, unknown>,
 ): PaymentInfo {
-  const parsed = typeof input === 'string' ? JSON.parse(input) : input
+  let parsed: Record<string, unknown>
+  if (typeof input === 'string') {
+    try {
+      parsed = JSON.parse(input)
+    } catch {
+      throw new ValidationError('Invalid JSON in PaymentInfo input')
+    }
+  } else {
+    parsed = input
+  }
 
   for (const field of REQUIRED_FIELDS) {
     if (parsed[field] === undefined || parsed[field] === null) {

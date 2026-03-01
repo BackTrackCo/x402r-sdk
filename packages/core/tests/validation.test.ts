@@ -121,6 +121,42 @@ describe('validatePaymentInfo', () => {
     expect(warning?.message).toContain('InvalidFeeReceiver')
   })
 
+  it('warns when refundExpiry is in the past', () => {
+    const pastTimestamp = Math.floor(Date.now() / 1000) - 3600
+    const issues = validatePaymentInfo(
+      makeValidPaymentInfo({ refundExpiry: pastTimestamp }),
+    )
+    const issue = issues.find((i) => i.field === 'refundExpiry')
+    expect(issue).toBeDefined()
+    expect(issue?.severity).toBe('warning')
+    expect(issue?.message).toContain('past')
+  })
+
+  it('skips refundExpiry check when zero', () => {
+    const issues = validatePaymentInfo(
+      makeValidPaymentInfo({ refundExpiry: 0 }),
+    )
+    expect(
+      issues.find(
+        (i) => i.field === 'refundExpiry' && i.message.includes('past'),
+      ),
+    ).toBeUndefined()
+  })
+
+  it('warns when refundExpiry <= authorizationExpiry', () => {
+    const issues = validatePaymentInfo(
+      makeValidPaymentInfo({
+        authorizationExpiry: futureTimestamp + 7200,
+        refundExpiry: futureTimestamp + 3600,
+      }),
+    )
+    const issue = issues.find(
+      (i) => i.field === 'refundExpiry' && i.message.includes('after'),
+    )
+    expect(issue).toBeDefined()
+    expect(issue?.severity).toBe('warning')
+  })
+
   it('allows payer to be zero address (payer-agnostic)', () => {
     const issues = validatePaymentInfo(makeValidPaymentInfo({ payer: ZERO }))
     expect(issues.find((i) => i.field === 'payer')).toBeUndefined()

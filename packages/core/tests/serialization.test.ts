@@ -119,6 +119,13 @@ describe('parsePaymentInfo', () => {
     expect(typeof result.authorizationExpiry).toBe('number')
     expect(typeof result.refundExpiry).toBe('number')
   })
+
+  it('throws ValidationError for invalid JSON string', () => {
+    expect(() => parsePaymentInfo('not-valid-json{')).toThrow(ValidationError)
+    expect(() => parsePaymentInfo('not-valid-json{')).toThrow(
+      'Invalid JSON in PaymentInfo input',
+    )
+  })
 })
 
 // ---------------------------------------------------------------------------
