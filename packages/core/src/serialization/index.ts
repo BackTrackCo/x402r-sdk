@@ -1,4 +1,4 @@
-import type { EscrowPayload } from '@x402r/evm/escrow/types'
+import type { EscrowPayload } from '@x402r/evm'
 import { ValidationError } from '../errors/index.js'
 import type { PaymentInfo } from '../types/index.js'
 
