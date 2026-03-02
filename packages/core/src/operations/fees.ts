@@ -13,7 +13,6 @@ import {
 } from '../abis/generated.js'
 import { ContractCallError } from '../errors/index.js'
 import type { PaymentInfo } from '../types/index.js'
-import { wrapContractCall } from './error-wrapping.js'
 
 const BASIS_POINTS = 10_000n
 
@@ -327,14 +326,12 @@ export async function distributeFees(
     })
   }
 
-  return wrapContractCall('distributeFees', () =>
-    walletClient.writeContract({
-      address: operatorAddress,
-      abi: paymentOperatorAbi,
-      functionName: 'distributeFees',
-      args: [token],
-      chain: walletClient.chain,
-      account,
-    }),
-  )
+  return walletClient.writeContract({
+    address: operatorAddress,
+    abi: paymentOperatorAbi,
+    functionName: 'distributeFees',
+    args: [token],
+    chain: walletClient.chain,
+    account,
+  })
 }
