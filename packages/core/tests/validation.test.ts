@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ValidationError } from '../src/errors/index.js'
-import { validatePaymentInfo } from '../src/validation/index.js'
+import { validatePaymentInfo } from '../src/payment/validation.js'
 import {
   FUTURE_TIMESTAMP,
   makePaymentInfo,

@@ -3,7 +3,7 @@ import {
   computeEscrowNonce,
   computePaymentInfoHash,
   PAYMENT_INFO_TYPEHASH,
-} from '../src/hashing/index.js'
+} from '../src/payment/hashing.js'
 import {
   makePaymentInfo,
   TEST_CHAIN_ID,
