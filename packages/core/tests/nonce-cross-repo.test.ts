@@ -4,7 +4,7 @@ import {
   computeEscrowNonce,
   computePaymentInfoHash,
   PAYMENT_INFO_TYPEHASH,
-} from '../src/hashing/index.js'
+} from '../src/payment/hashing.js'
 import type { PaymentInfo } from '../src/types/index.js'
 import { TEST_CHAIN_ID, TEST_ESCROW_ADDRESS, zeroAddress } from './fixtures.js'
 

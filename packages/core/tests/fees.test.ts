@@ -10,7 +10,7 @@ import {
   formatFeeBreakdown,
   getFeeAddresses,
   validateFeeBounds,
-} from '../src/fees/index.js'
+} from '../src/operations/fees.js'
 import { makePaymentInfo } from './fixtures.js'
 
 // ---------------------------------------------------------------------------

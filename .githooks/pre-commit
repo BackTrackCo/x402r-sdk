@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "x402r-sdk pre-commit: check + build + typecheck"
+
+pnpm check      # biome check . (lint + format)
+pnpm build      # tsup build
+pnpm typecheck  # tsc --noEmit

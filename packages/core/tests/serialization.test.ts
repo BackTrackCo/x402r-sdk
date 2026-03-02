@@ -1,6 +1,6 @@
 import type { EscrowPayload } from '@x402r/evm'
 import { describe, expect, it } from 'vitest'
-import { toPaymentInfo } from '../src/serialization/index.js'
+import { toPaymentInfo } from '../src/payment/serialization.js'
 import { TEST_ADDRESSES } from './fixtures.js'
 
 const basePayload: EscrowPayload = {
