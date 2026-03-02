@@ -1,6 +1,7 @@
 import {
   type Address,
   formatUnits,
+  type Hash,
   type PublicClient,
   type WalletClient,
   zeroAddress,
@@ -10,7 +11,10 @@ import {
   paymentOperatorAbi,
   protocolFeeConfigAbi,
 } from '../abis/generated.js'
+import { ContractCallError } from '../errors/index.js'
 import type { PaymentInfo } from '../types/index.js'
+
+const BASIS_POINTS = 10_000n
 
 // ---------------------------------------------------------------------------
 // Types
@@ -191,26 +195,41 @@ export async function calculateTotalFees(
   amount: bigint,
   caller: Address,
 ): Promise<FeeCalculationResult> {
+  const [feeCalculator, protocolFeeConfig] = await Promise.all([
+    publicClient.readContract({
+      address: operatorAddress,
+      abi: paymentOperatorAbi,
+      functionName: 'FEE_CALCULATOR',
+    }),
+    publicClient.readContract({
+      address: operatorAddress,
+      abi: paymentOperatorAbi,
+      functionName: 'PROTOCOL_FEE_CONFIG',
+    }),
+  ])
+
   const [operatorFeeBps, protocolFeeBps] = await Promise.all([
-    calculateOperatorFeeBps(
-      publicClient,
-      operatorAddress,
-      paymentInfo,
-      amount,
-      caller,
-    ),
-    calculateProtocolFeeBps(
-      publicClient,
-      operatorAddress,
-      paymentInfo,
-      amount,
-      caller,
-    ),
+    feeCalculator === zeroAddress
+      ? 0n
+      : publicClient.readContract({
+          address: feeCalculator,
+          abi: iFeeCalculatorAbi,
+          functionName: 'calculateFee',
+          args: [paymentInfo, amount, caller],
+        }),
+    protocolFeeConfig === zeroAddress
+      ? 0n
+      : publicClient.readContract({
+          address: protocolFeeConfig,
+          abi: protocolFeeConfigAbi,
+          functionName: 'getProtocolFeeBps',
+          args: [paymentInfo, amount, caller],
+        }),
   ])
 
   const totalFeeBps = operatorFeeBps + protocolFeeBps
-  const operatorFeeAmount = (amount * operatorFeeBps) / 10000n
-  const protocolFeeAmount = (amount * protocolFeeBps) / 10000n
+  const operatorFeeAmount = (amount * operatorFeeBps) / BASIS_POINTS
+  const protocolFeeAmount = (amount * protocolFeeBps) / BASIS_POINTS
   const totalFeeAmount = operatorFeeAmount + protocolFeeAmount
   const netAmount = amount - totalFeeAmount
 
@@ -263,7 +282,7 @@ export function validateFeeBounds(
  *
  * @example
  * console.log(formatFeeBreakdown(fees))
- * // "Operator: 25.00 bps (0.25 USDC) | Protocol: 10.00 bps (0.1 USDC) | Total: 35.00 bps (0.35 USDC)"
+ * // "Operator: 250 bps (2.5%) (0.025 USDC) | Protocol: 100 bps (1%) (0.01 USDC) | Total: 350 bps (3.5%) (0.035 USDC)"
  */
 export function formatFeeBreakdown(
   fees: FeeCalculationResult,
@@ -271,7 +290,7 @@ export function formatFeeBreakdown(
   symbol: string = 'USDC',
 ): string {
   const fmt = (bps: bigint, amount: bigint) =>
-    `${Number(bps) / 100} bps (${formatUnits(amount, decimals)} ${symbol})`
+    `${bps} bps (${Number(bps) / 100}%) (${formatUnits(amount, decimals)} ${symbol})`
 
   return [
     `Operator: ${fmt(fees.operatorFeeBps, fees.operatorFeeAmount)}`,
@@ -299,13 +318,19 @@ export async function distributeFees(
   walletClient: WalletClient,
   operatorAddress: Address,
   token: Address,
-): Promise<Address> {
+): Promise<Hash> {
+  if (!walletClient.account) {
+    throw new ContractCallError('distributeFees', {
+      details: 'walletClient must have an account attached',
+    })
+  }
+
   return walletClient.writeContract({
     address: operatorAddress,
     abi: paymentOperatorAbi,
     functionName: 'distributeFees',
     args: [token],
     chain: walletClient.chain,
-    account: walletClient.account!,
+    account: walletClient.account,
   })
 }

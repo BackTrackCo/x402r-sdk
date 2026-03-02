@@ -190,6 +190,44 @@ describe('calculateTotalFees', () => {
     expect(result.totalFeeBps).toBe(350n)
   })
 
+  it('makes at most 4 RPC calls', async () => {
+    const client = mockPublicClient({
+      [`${MOCK_OPERATOR}:FEE_CALCULATOR`]: MOCK_FEE_CALCULATOR,
+      [`${MOCK_OPERATOR}:PROTOCOL_FEE_CONFIG`]: MOCK_PROTOCOL_FEE_CONFIG,
+      [`${MOCK_FEE_CALCULATOR}:calculateFee`]: 250n,
+      [`${MOCK_PROTOCOL_FEE_CONFIG}:getProtocolFeeBps`]: 100n,
+    })
+
+    await calculateTotalFees(
+      client,
+      MOCK_OPERATOR,
+      paymentInfo,
+      1000000n,
+      MOCK_CALLER,
+    )
+
+    // 2 config reads + 2 calculator reads = 4 total (no redundant calls)
+    expect(client.readContract).toHaveBeenCalledTimes(4)
+  })
+
+  it('skips calculator calls when addresses are zero', async () => {
+    const client = mockPublicClient({
+      [`${MOCK_OPERATOR}:FEE_CALCULATOR`]: zeroAddress,
+      [`${MOCK_OPERATOR}:PROTOCOL_FEE_CONFIG`]: zeroAddress,
+    })
+
+    await calculateTotalFees(
+      client,
+      MOCK_OPERATOR,
+      paymentInfo,
+      1000000n,
+      MOCK_CALLER,
+    )
+
+    // Only 2 config reads, no calculator calls needed
+    expect(client.readContract).toHaveBeenCalledTimes(2)
+  })
+
   it('returns zeros when both fees are zero', async () => {
     const client = mockPublicClient({
       [`${MOCK_OPERATOR}:FEE_CALCULATOR`]: zeroAddress,
@@ -288,9 +326,9 @@ describe('formatFeeBreakdown', () => {
 
     const result = formatFeeBreakdown(fees)
 
-    expect(result).toContain('Operator: 2.5 bps (0.025 USDC)')
-    expect(result).toContain('Protocol: 1 bps (0.01 USDC)')
-    expect(result).toContain('Total: 3.5 bps (0.035 USDC)')
+    expect(result).toContain('Operator: 250 bps (2.5%) (0.025 USDC)')
+    expect(result).toContain('Protocol: 100 bps (1%) (0.01 USDC)')
+    expect(result).toContain('Total: 350 bps (3.5%) (0.035 USDC)')
   })
 
   it('uses custom symbol and decimals', () => {
@@ -307,7 +345,7 @@ describe('formatFeeBreakdown', () => {
     const result = formatFeeBreakdown(fees, 18, 'WETH')
 
     expect(result).toContain('WETH')
-    expect(result).toContain('Operator: 5 bps')
+    expect(result).toContain('Operator: 500 bps (5%)')
   })
 
   it('handles zero fees', () => {
@@ -323,7 +361,7 @@ describe('formatFeeBreakdown', () => {
 
     const result = formatFeeBreakdown(fees)
 
-    expect(result).toContain('Total: 0 bps (0 USDC)')
+    expect(result).toContain('Total: 0 bps (0%) (0 USDC)')
   })
 })
 
@@ -332,6 +370,18 @@ describe('formatFeeBreakdown', () => {
 // ---------------------------------------------------------------------------
 
 describe('distributeFees', () => {
+  it('throws ContractCallError when account is missing', async () => {
+    const walletClient = {
+      writeContract: vi.fn(),
+      chain: { id: 84532 },
+      account: undefined,
+    } as unknown as WalletClient
+
+    await expect(
+      distributeFees(walletClient, MOCK_OPERATOR, MOCK_TOKEN),
+    ).rejects.toThrow('distributeFees failed')
+  })
+
   it('returns transaction hash', async () => {
     const mockHash =
       '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890'
