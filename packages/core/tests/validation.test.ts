@@ -1,13 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import { ValidationError } from '../src/errors/index.js'
 import { validatePaymentInfo } from '../src/validation/index.js'
-import { makePaymentInfo, zeroAddress } from './fixtures.js'
+import {
+  FUTURE_TIMESTAMP,
+  makePaymentInfo,
+  PAST_TIMESTAMP,
+  zeroAddress,
+} from './fixtures.js'
 
-const futureTimestamp = Math.floor(Date.now() / 1000) + 3600
 const validOverrides = {
-  preApprovalExpiry: futureTimestamp,
-  authorizationExpiry: futureTimestamp,
-  refundExpiry: futureTimestamp + 86400,
+  preApprovalExpiry: FUTURE_TIMESTAMP,
+  authorizationExpiry: FUTURE_TIMESTAMP,
+  refundExpiry: FUTURE_TIMESTAMP + 86400,
 }
 
 describe('validatePaymentInfo', () => {
@@ -78,24 +82,22 @@ describe('validatePaymentInfo', () => {
   })
 
   it('throws for expired authorizationExpiry', () => {
-    const pastTimestamp = Math.floor(Date.now() / 1000) - 3600
     expect(() =>
       validatePaymentInfo(
         makePaymentInfo({
           ...validOverrides,
-          authorizationExpiry: pastTimestamp,
+          authorizationExpiry: PAST_TIMESTAMP,
         }),
       ),
     ).toThrow(ValidationError)
   })
 
   it('throws for expired preApprovalExpiry', () => {
-    const pastTimestamp = Math.floor(Date.now() / 1000) - 3600
     expect(() =>
       validatePaymentInfo(
         makePaymentInfo({
           ...validOverrides,
-          preApprovalExpiry: pastTimestamp,
+          preApprovalExpiry: PAST_TIMESTAMP,
         }),
       ),
     ).toThrow(ValidationError)
@@ -118,10 +120,9 @@ describe('validatePaymentInfo', () => {
   })
 
   it('throws for expired refundExpiry', () => {
-    const pastTimestamp = Math.floor(Date.now() / 1000) - 3600
     expect(() =>
       validatePaymentInfo(
-        makePaymentInfo({ ...validOverrides, refundExpiry: pastTimestamp }),
+        makePaymentInfo({ ...validOverrides, refundExpiry: PAST_TIMESTAMP }),
       ),
     ).toThrow(ValidationError)
   })
