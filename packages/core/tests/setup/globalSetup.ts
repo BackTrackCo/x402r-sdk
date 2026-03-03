@@ -1,7 +1,8 @@
 import { anvilBaseSepolia } from './anvil.js'
 
 export default async function globalSetup() {
-  if (process.env.SKIP_GLOBAL_SETUP) {
+  const [major] = process.versions.node.split('.').map(Number)
+  if (major < 22 || process.env.SKIP_GLOBAL_SETUP) {
     return () => {}
   }
 
