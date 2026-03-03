@@ -22,7 +22,7 @@
     "test": "vitest run",
     "test:unit": "vitest run --project core",
     "test:fork": "vitest run --project core:fork",
-    "test:cov": "vitest run --coverage",
+    "test:cov": "vitest run --coverage --project core",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

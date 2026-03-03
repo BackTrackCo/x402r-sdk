@@ -56,7 +56,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - run: pnpm --filter=@x402r/core test:cov -- --project core
+      - run: pnpm --filter=@x402r/core test:cov
       - name: Upload coverage
         if: matrix.node-version == 22
         uses: codecov/codecov-action@v5
