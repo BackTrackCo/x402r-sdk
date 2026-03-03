@@ -1,7 +1,39 @@
+import type { Address, Chain, PublicClient, WalletClient } from 'viem'
 import { zeroAddress } from 'viem'
 import type { PaymentInfo } from '../src/types/index.js'
 
 export { zeroAddress }
+
+// ---------------------------------------------------------------------------
+// Mock clients for unit tests
+// ---------------------------------------------------------------------------
+
+export function createMockPublicClient(
+  responses: Record<string, unknown> = {},
+): PublicClient {
+  return {
+    readContract: async ({ functionName }: { functionName: string }) => {
+      if (functionName in responses) return responses[functionName]
+      throw new Error(`No mock response for readContract(${functionName})`)
+    },
+  } as unknown as PublicClient
+}
+
+export function createMockWalletClient(
+  options: {
+    writeContract?: (args: unknown) => Promise<`0x${string}`>
+    chain?: Chain
+    account?: Address
+  } = {},
+): WalletClient {
+  return {
+    writeContract:
+      options.writeContract ??
+      (async () => `0x${'0'.repeat(64)}` as `0x${string}`),
+    chain: options.chain ?? { id: 84532, name: 'Base Sepolia' },
+    account: options.account ?? '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
+  } as unknown as WalletClient
+}
 
 export const TEST_CHAIN_ID = 84532
 export const TEST_ESCROW_ADDRESS =

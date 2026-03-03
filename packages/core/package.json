@@ -20,6 +20,8 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "vitest run",
+    "test:unit": "vitest run --project core",
+    "test:fork": "vitest run --project core:fork",
     "test:cov": "vitest run --coverage",
     "typecheck": "tsc --noEmit"
   },

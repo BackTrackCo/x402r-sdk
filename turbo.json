@@ -13,6 +13,14 @@
       "dependsOn": ["build"],
       "outputs": []
     },
+    "test:unit": {
+      "dependsOn": ["build"],
+      "outputs": []
+    },
+    "test:fork": {
+      "dependsOn": ["build"],
+      "outputs": []
+    },
     "test:cov": {
       "dependsOn": ["build"],
       "outputs": ["coverage/**"]
