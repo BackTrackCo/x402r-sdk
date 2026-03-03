@@ -1,0 +1,17 @@
+{
+  "workspaces": {
+    ".": {
+      "vitest": false,
+      "entry": ["wagmi.config.ts", "vitest.workspace.ts"],
+      "ignoreDependencies": ["@vitest/coverage-v8"]
+    },
+    "packages/core": {
+      "entry": ["tests/**/*.test.ts", "tests/**/*.ts", "vitest.config.ts"],
+      "ignoreDependencies": ["@x402r/evm"]
+    },
+    "packages/sdk": {
+      "entry": ["vitest.config.ts"],
+      "ignoreDependencies": ["viem"]
+    }
+  }
+}
