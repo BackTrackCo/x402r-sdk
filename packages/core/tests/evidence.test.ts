@@ -40,35 +40,45 @@ describe('SubmitterRole', () => {
 })
 
 // ---------------------------------------------------------------------------
-// submitEvidence
+// Write functions — table-driven
 // ---------------------------------------------------------------------------
 
-describe('submitEvidence', () => {
-  it('throws ContractCallError without account', async () => {
-    const paymentInfo = makePaymentInfo()
+const paymentInfo = makePaymentInfo()
+const MOCK_CID = 'QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco'
+
+const writeCases = [
+  {
+    name: 'submitEvidence',
+    fn: submitEvidence as (...args: any[]) => Promise<any>,
+    functionName: 'submitEvidence',
+    extraArgs: [1n, MOCK_CID],
+    expectedArgs: [paymentInfo, 1n, MOCK_CID],
+  },
+]
+
+describe('evidence write functions', () => {
+  it.each(writeCases)('$name throws without account', async ({
+    fn,
+    extraArgs,
+  }) => {
     await expect(
-      submitEvidence(
-        mockWalletWithoutAccount(),
-        MOCK_CONTRACT,
-        paymentInfo,
-        0n,
-        'QmTest',
-      ),
+      fn(mockWalletWithoutAccount(), MOCK_CONTRACT, paymentInfo, ...extraArgs),
     ).rejects.toThrow(ContractCallError)
   })
 
-  it('passes (paymentInfo, nonce, cid) correctly', async () => {
-    const paymentInfo = makePaymentInfo()
+  it.each(writeCases)('$name forwards to writeContract', async ({
+    fn,
+    functionName,
+    extraArgs,
+    expectedArgs,
+  }) => {
     const wallet = mockWalletWithAccount()
-    const cid = 'QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco'
-
-    await submitEvidence(wallet, MOCK_CONTRACT, paymentInfo, 1n, cid)
-
+    await fn(wallet, MOCK_CONTRACT, paymentInfo, ...extraArgs)
     expect(wallet.writeContract).toHaveBeenCalledWith(
       expect.objectContaining({
         address: MOCK_CONTRACT,
-        functionName: 'submitEvidence',
-        args: [paymentInfo, 1n, cid],
+        functionName,
+        args: expectedArgs,
       }),
     )
   })

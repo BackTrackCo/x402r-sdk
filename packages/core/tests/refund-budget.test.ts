@@ -32,78 +32,51 @@ const mockWalletWithoutAccount = () =>
   }) as unknown as WalletClient
 
 // ---------------------------------------------------------------------------
-// Account checks
+// Write functions — table-driven
 // ---------------------------------------------------------------------------
 
-describe('refund-budget write functions throw without account', () => {
-  const paymentInfo = makePaymentInfo()
+const paymentInfo = makePaymentInfo()
 
-  it('refundInEscrow throws ContractCallError', async () => {
+const writeCases = [
+  {
+    name: 'refundInEscrow',
+    fn: refundInEscrow as (...args: any[]) => Promise<any>,
+    functionName: 'refundInEscrow',
+    extraArgs: [500000n],
+    expectedArgs: [paymentInfo, 500000n],
+  },
+  {
+    name: 'refundPostEscrow',
+    fn: refundPostEscrow as (...args: any[]) => Promise<any>,
+    functionName: 'refundPostEscrow',
+    extraArgs: [1000000n, MOCK_COLLECTOR, '0xdeadbeef'],
+    expectedArgs: [paymentInfo, 1000000n, MOCK_COLLECTOR, '0xdeadbeef'],
+  },
+]
+
+describe('refund-budget write functions', () => {
+  it.each(writeCases)('$name throws without account', async ({
+    fn,
+    extraArgs,
+  }) => {
     await expect(
-      refundInEscrow(
-        mockWalletWithoutAccount(),
-        MOCK_OPERATOR,
-        paymentInfo,
-        100n,
-      ),
+      fn(mockWalletWithoutAccount(), MOCK_OPERATOR, paymentInfo, ...extraArgs),
     ).rejects.toThrow(ContractCallError)
   })
 
-  it('refundPostEscrow throws ContractCallError', async () => {
-    await expect(
-      refundPostEscrow(
-        mockWalletWithoutAccount(),
-        MOCK_OPERATOR,
-        paymentInfo,
-        100n,
-        MOCK_COLLECTOR,
-        '0x',
-      ),
-    ).rejects.toThrow(ContractCallError)
-  })
-})
-
-// ---------------------------------------------------------------------------
-// Correct args
-// ---------------------------------------------------------------------------
-
-describe('refundInEscrow', () => {
-  it('passes paymentInfo and amount correctly', async () => {
-    const paymentInfo = makePaymentInfo()
+  it.each(writeCases)('$name forwards to writeContract', async ({
+    fn,
+    functionName,
+    extraArgs,
+    expectedArgs,
+  }) => {
     const wallet = mockWalletWithAccount()
-
-    await refundInEscrow(wallet, MOCK_OPERATOR, paymentInfo, 500000n)
-
+    await fn(wallet, MOCK_OPERATOR, paymentInfo, ...extraArgs)
     expect(wallet.writeContract).toHaveBeenCalledWith(
       expect.objectContaining({
         address: MOCK_OPERATOR,
-        functionName: 'refundInEscrow',
-        args: [paymentInfo, 500000n],
-      }),
-    )
-  })
-})
-
-describe('refundPostEscrow', () => {
-  it('passes all 4 args (paymentInfo, amount, tokenCollector, collectorData)', async () => {
-    const paymentInfo = makePaymentInfo()
-    const wallet = mockWalletWithAccount()
-    const data = '0xdeadbeef' as const
-
-    await refundPostEscrow(
-      wallet,
-      MOCK_OPERATOR,
-      paymentInfo,
-      1000000n,
-      MOCK_COLLECTOR,
-      data,
-    )
-
-    expect(wallet.writeContract).toHaveBeenCalledWith(
-      expect.objectContaining({
-        address: MOCK_OPERATOR,
-        functionName: 'refundPostEscrow',
-        args: [paymentInfo, 1000000n, MOCK_COLLECTOR, data],
+        functionName,
+        args: expectedArgs,
       }),
     )
   })

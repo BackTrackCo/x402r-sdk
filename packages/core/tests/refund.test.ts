@@ -3,8 +3,10 @@ import { describe, expect, it, vi } from 'vitest'
 import { ContractCallError } from '../src/errors/index.js'
 import {
   approveRefundWithSignature,
+  cancelRefundRequest,
   denyRefundRequest,
   RefundRequestStatus,
+  refuseRefundRequest,
   requestRefund,
 } from '../src/operations/refund.js'
 import { makePaymentInfo } from './fixtures.js'
@@ -47,85 +49,91 @@ describe('RefundRequestStatus', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Write functions — account check
+// Write functions — table-driven
 // ---------------------------------------------------------------------------
 
-describe('refund write functions throw without account', () => {
-  const paymentInfo = makePaymentInfo()
+const paymentInfo = makePaymentInfo()
 
-  it('requestRefund throws ContractCallError', async () => {
+const writeCases = [
+  {
+    name: 'requestRefund',
+    fn: requestRefund as (...args: any[]) => Promise<any>,
+    functionName: 'requestRefund',
+    extraArgs: [100n, 0n],
+    expectedArgs: [paymentInfo, 100n, 0n],
+  },
+  {
+    name: 'approveRefundWithSignature',
+    fn: approveRefundWithSignature as (...args: any[]) => Promise<any>,
+    functionName: 'approveWithSignature',
+    extraArgs: [1n, 200n, 2000000000, '0xdeadbeef'],
+    expectedArgs: [paymentInfo, 1n, 200n, 2000000000, '0xdeadbeef'],
+  },
+  {
+    name: 'denyRefundRequest',
+    fn: denyRefundRequest as (...args: any[]) => Promise<any>,
+    functionName: 'deny',
+    extraArgs: [0n],
+    expectedArgs: [paymentInfo, 0n],
+  },
+  {
+    name: 'refuseRefundRequest',
+    fn: refuseRefundRequest as (...args: any[]) => Promise<any>,
+    functionName: 'refuse',
+    extraArgs: [0n],
+    expectedArgs: [paymentInfo, 0n],
+  },
+  {
+    name: 'cancelRefundRequest',
+    fn: cancelRefundRequest as (...args: any[]) => Promise<any>,
+    functionName: 'cancelRefundRequest',
+    extraArgs: [0n],
+    expectedArgs: [paymentInfo, 0n],
+  },
+]
+
+describe('refund write functions', () => {
+  it.each(writeCases)('$name throws without account', async ({
+    fn,
+    extraArgs,
+  }) => {
     await expect(
-      requestRefund(
-        mockWalletWithoutAccount(),
-        MOCK_CONTRACT,
-        paymentInfo,
-        100n,
-        0n,
-      ),
+      fn(mockWalletWithoutAccount(), MOCK_CONTRACT, paymentInfo, ...extraArgs),
     ).rejects.toThrow(ContractCallError)
   })
 
-  it('approveRefundWithSignature throws ContractCallError', async () => {
-    await expect(
-      approveRefundWithSignature(
-        mockWalletWithoutAccount(),
-        MOCK_CONTRACT,
-        paymentInfo,
-        0n,
-        100n,
-        2000000000,
-        '0xabcd',
-      ),
-    ).rejects.toThrow(ContractCallError)
-  })
-
-  it('denyRefundRequest throws ContractCallError', async () => {
-    await expect(
-      denyRefundRequest(
-        mockWalletWithoutAccount(),
-        MOCK_CONTRACT,
-        paymentInfo,
-        0n,
-      ),
-    ).rejects.toThrow(ContractCallError)
-  })
-})
-
-// ---------------------------------------------------------------------------
-// requestRefund — arg ordering
-// ---------------------------------------------------------------------------
-
-describe('requestRefund', () => {
-  it('passes args in correct order (paymentInfo, amount, nonce)', async () => {
-    const paymentInfo = makePaymentInfo()
+  it.each(writeCases)('$name forwards to writeContract', async ({
+    fn,
+    functionName,
+    extraArgs,
+    expectedArgs,
+  }) => {
     const wallet = mockWalletWithAccount()
-
-    await requestRefund(wallet, MOCK_CONTRACT, paymentInfo, 500n, 1n)
-
+    await fn(wallet, MOCK_CONTRACT, paymentInfo, ...extraArgs)
     expect(wallet.writeContract).toHaveBeenCalledWith(
       expect.objectContaining({
         address: MOCK_CONTRACT,
-        functionName: 'requestRefund',
-        args: [paymentInfo, 500n, 1n],
+        functionName,
+        args: expectedArgs,
       }),
     )
   })
 })
 
 // ---------------------------------------------------------------------------
-// approveRefundWithSignature — arg ordering
+// approveRefundWithSignature — explicit arg-order documentation
 // ---------------------------------------------------------------------------
 
 describe('approveRefundWithSignature', () => {
-  it('passes all 5 args in correct order', async () => {
-    const paymentInfo = makePaymentInfo()
+  it('maps SDK params (paymentInfo, nonce, amount, expiry, sig) to ABI approveWithSignature', async () => {
+    const pi = makePaymentInfo()
     const wallet = mockWalletWithAccount()
     const sig = '0xdeadbeef' as const
 
     await approveRefundWithSignature(
       wallet,
       MOCK_CONTRACT,
-      paymentInfo,
+      pi,
       1n,
       200n,
       2000000000,
@@ -135,7 +143,7 @@ describe('approveRefundWithSignature', () => {
     expect(wallet.writeContract).toHaveBeenCalledWith(
       expect.objectContaining({
         functionName: 'approveWithSignature',
-        args: [paymentInfo, 1n, 200n, 2000000000, sig],
+        args: [pi, 1n, 200n, 2000000000, sig],
       }),
     )
   })

@@ -28,41 +28,51 @@ const mockWalletWithoutAccount = () =>
   }) as unknown as WalletClient
 
 // ---------------------------------------------------------------------------
-// Account checks
+// Write functions — table-driven
 // ---------------------------------------------------------------------------
 
-describe('freeze write functions throw without account', () => {
-  const paymentInfo = makePaymentInfo()
+const paymentInfo = makePaymentInfo()
 
-  it('freezePayment throws ContractCallError', async () => {
+const writeCases = [
+  {
+    name: 'freezePayment',
+    fn: freezePayment as (...args: any[]) => Promise<any>,
+    functionName: 'freeze',
+    extraArgs: [] as unknown[],
+    expectedArgs: [paymentInfo],
+  },
+  {
+    name: 'unfreezePayment',
+    fn: unfreezePayment as (...args: any[]) => Promise<any>,
+    functionName: 'unfreeze',
+    extraArgs: [] as unknown[],
+    expectedArgs: [paymentInfo],
+  },
+]
+
+describe('freeze write functions', () => {
+  it.each(writeCases)('$name throws without account', async ({
+    fn,
+    extraArgs,
+  }) => {
     await expect(
-      freezePayment(mockWalletWithoutAccount(), MOCK_FREEZE, paymentInfo),
+      fn(mockWalletWithoutAccount(), MOCK_FREEZE, paymentInfo, ...extraArgs),
     ).rejects.toThrow(ContractCallError)
   })
 
-  it('unfreezePayment throws ContractCallError', async () => {
-    await expect(
-      unfreezePayment(mockWalletWithoutAccount(), MOCK_FREEZE, paymentInfo),
-    ).rejects.toThrow(ContractCallError)
-  })
-})
-
-// ---------------------------------------------------------------------------
-// Correct args
-// ---------------------------------------------------------------------------
-
-describe('freezePayment', () => {
-  it('passes paymentInfo to freeze function', async () => {
-    const paymentInfo = makePaymentInfo()
+  it.each(writeCases)('$name forwards to writeContract', async ({
+    fn,
+    functionName,
+    extraArgs,
+    expectedArgs,
+  }) => {
     const wallet = mockWalletWithAccount()
-
-    await freezePayment(wallet, MOCK_FREEZE, paymentInfo)
-
+    await fn(wallet, MOCK_FREEZE, paymentInfo, ...extraArgs)
     expect(wallet.writeContract).toHaveBeenCalledWith(
       expect.objectContaining({
         address: MOCK_FREEZE,
-        functionName: 'freeze',
-        args: [paymentInfo],
+        functionName,
+        args: expectedArgs,
       }),
     )
   })
