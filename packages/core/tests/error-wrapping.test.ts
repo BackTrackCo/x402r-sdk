@@ -29,21 +29,13 @@ const testAbi = [
 ] as const
 
 function makeRevertError(
-  errorName: 'ConditionNotMet',
-  args: [string],
-): ContractFunctionExecutionError
-function makeRevertError(
-  errorName: 'Unauthorized',
-  args?: [],
-): ContractFunctionExecutionError
-function makeRevertError(
   errorName: string,
   args?: readonly unknown[],
 ): ContractFunctionExecutionError {
   const data = encodeErrorResult({
     abi: testAbi,
-    errorName: errorName as 'ConditionNotMet',
-    args: args as [string],
+    errorName: errorName as any,
+    args: args as any,
   })
   const revert = new ContractFunctionRevertedError({
     abi: testAbi,
@@ -101,7 +93,28 @@ describe('wrapContractCall', () => {
     expect(thrown).toBeInstanceOf(ContractCallError)
     const err = thrown as ContractCallError
     expect(err.revertName).toBeUndefined()
-    expect(err.details).toBe('could not estimate gas')
+    expect(err.details).toBe('execution reverted')
+  })
+
+  it('non-revert execution error → contractAddress extracted', async () => {
+    const inner = new BaseError('out of gas')
+    const viemError = new ContractFunctionExecutionError(inner, {
+      abi: testAbi,
+      functionName: 'release',
+      contractAddress: '0x1234567890123456789012345678901234567890',
+    })
+
+    const thrown = await wrapContractCall('release', async () => {
+      throw viemError
+    }).catch((e: unknown) => e)
+
+    expect(thrown).toBeInstanceOf(ContractCallError)
+    const err = thrown as ContractCallError
+    expect(err.revertName).toBeUndefined()
+    expect(err.message).toContain(
+      'Contract: 0x1234567890123456789012345678901234567890',
+    )
+    expect(err.details).toBe('out of gas')
   })
 
   it('non-viem Error passes through unchanged', async () => {

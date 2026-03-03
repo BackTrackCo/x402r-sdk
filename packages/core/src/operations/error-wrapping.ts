@@ -14,26 +14,28 @@ export async function wrapContractCall<T>(
   } catch (error) {
     if (!(error instanceof BaseError)) throw error
 
-    const revert = error.walk((e) => e instanceof ContractFunctionRevertedError)
-    const execError = error.walk(
-      (e) => e instanceof ContractFunctionExecutionError,
-    ) as ContractFunctionExecutionError | null
-    const contractAddress = execError?.contractAddress
+    const revert = error.walk(
+      (e) => e instanceof ContractFunctionRevertedError,
+    ) as ContractFunctionRevertedError | null
+    const contractAddress =
+      error instanceof ContractFunctionExecutionError
+        ? error.contractAddress
+        : undefined
 
-    if (revert instanceof ContractFunctionRevertedError) {
+    if (revert) {
       throw new ContractCallError(opName, {
         cause: revert,
-        details: revert.shortMessage,
+        details: revert.reason ?? revert.shortMessage,
         revertName: revert.data?.errorName,
         revertArgs: revert.data?.args as readonly unknown[] | undefined,
-        ...(contractAddress && { contractAddress }),
+        contractAddress,
       })
     }
 
     throw new ContractCallError(opName, {
       cause: error,
-      details: error.shortMessage,
-      ...(contractAddress && { contractAddress }),
+      details: error.details || error.shortMessage,
+      contractAddress,
     })
   }
 }
