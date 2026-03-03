@@ -1,6 +1,4 @@
-import type { PublicClient, WalletClient } from 'viem'
-import { zeroAddress } from 'viem'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
   calculateOperatorFeeBps,
   calculateProtocolFeeBps,
@@ -11,7 +9,14 @@ import {
   getFeeAddresses,
   validateFeeBounds,
 } from '../src/operations/fees.js'
-import { makePaymentInfo } from './fixtures.js'
+import {
+  createMockPublicClient,
+  createMockWalletClient,
+  createMockWalletWithoutAccount,
+  MOCK_TX_HASH,
+  makePaymentInfo,
+  zeroAddress,
+} from './fixtures.js'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -30,21 +35,13 @@ const MOCK_PROTOCOL_RECIPIENT =
 const MOCK_CALLER = '0x7777777777777777777777777777777777777777' as const
 const MOCK_TOKEN = '0x8888888888888888888888888888888888888888' as const
 
-const mockPublicClient = (responses: Record<string, unknown>) =>
-  ({
-    readContract: vi.fn(({ address, functionName }: any) => {
-      const key = `${address}:${functionName}`
-      return Promise.resolve(responses[key] ?? responses[functionName])
-    }),
-  }) as unknown as PublicClient
-
 // ---------------------------------------------------------------------------
 // getFeeAddresses
 // ---------------------------------------------------------------------------
 
 describe('getFeeAddresses', () => {
   it('returns all addresses when protocolFeeConfig is set', async () => {
-    const client = mockPublicClient({
+    const client = createMockPublicClient({
       [`${MOCK_OPERATOR}:FEE_CALCULATOR`]: MOCK_FEE_CALCULATOR,
       [`${MOCK_OPERATOR}:PROTOCOL_FEE_CONFIG`]: MOCK_PROTOCOL_FEE_CONFIG,
       [`${MOCK_OPERATOR}:FEE_RECIPIENT`]: MOCK_FEE_RECIPIENT,
@@ -65,7 +62,7 @@ describe('getFeeAddresses', () => {
   })
 
   it('skips protocol reads when protocolFeeConfig is zero', async () => {
-    const client = mockPublicClient({
+    const client = createMockPublicClient({
       [`${MOCK_OPERATOR}:FEE_CALCULATOR`]: MOCK_FEE_CALCULATOR,
       [`${MOCK_OPERATOR}:PROTOCOL_FEE_CONFIG`]: zeroAddress,
       [`${MOCK_OPERATOR}:FEE_RECIPIENT`]: MOCK_FEE_RECIPIENT,
@@ -88,7 +85,7 @@ describe('calculateOperatorFeeBps', () => {
   const paymentInfo = makePaymentInfo()
 
   it('returns 0n when no calculator is set', async () => {
-    const client = mockPublicClient({
+    const client = createMockPublicClient({
       [`${MOCK_OPERATOR}:FEE_CALCULATOR`]: zeroAddress,
     })
 
@@ -104,7 +101,7 @@ describe('calculateOperatorFeeBps', () => {
   })
 
   it('returns bps from calculator', async () => {
-    const client = mockPublicClient({
+    const client = createMockPublicClient({
       [`${MOCK_OPERATOR}:FEE_CALCULATOR`]: MOCK_FEE_CALCULATOR,
       [`${MOCK_FEE_CALCULATOR}:calculateFee`]: 250n,
     })
@@ -129,7 +126,7 @@ describe('calculateProtocolFeeBps', () => {
   const paymentInfo = makePaymentInfo()
 
   it('returns 0n when no config is set', async () => {
-    const client = mockPublicClient({
+    const client = createMockPublicClient({
       [`${MOCK_OPERATOR}:PROTOCOL_FEE_CONFIG`]: zeroAddress,
     })
 
@@ -145,7 +142,7 @@ describe('calculateProtocolFeeBps', () => {
   })
 
   it('returns bps from config', async () => {
-    const client = mockPublicClient({
+    const client = createMockPublicClient({
       [`${MOCK_OPERATOR}:PROTOCOL_FEE_CONFIG`]: MOCK_PROTOCOL_FEE_CONFIG,
       [`${MOCK_PROTOCOL_FEE_CONFIG}:getProtocolFeeBps`]: 100n,
     })
@@ -170,7 +167,7 @@ describe('calculateTotalFees', () => {
   const paymentInfo = makePaymentInfo()
 
   it('returns correct breakdown with both fees', async () => {
-    const client = mockPublicClient({
+    const client = createMockPublicClient({
       [`${MOCK_OPERATOR}:FEE_CALCULATOR`]: MOCK_FEE_CALCULATOR,
       [`${MOCK_OPERATOR}:PROTOCOL_FEE_CONFIG`]: MOCK_PROTOCOL_FEE_CONFIG,
       [`${MOCK_FEE_CALCULATOR}:calculateFee`]: 250n,
@@ -191,7 +188,7 @@ describe('calculateTotalFees', () => {
   })
 
   it('makes at most 4 RPC calls', async () => {
-    const client = mockPublicClient({
+    const client = createMockPublicClient({
       [`${MOCK_OPERATOR}:FEE_CALCULATOR`]: MOCK_FEE_CALCULATOR,
       [`${MOCK_OPERATOR}:PROTOCOL_FEE_CONFIG`]: MOCK_PROTOCOL_FEE_CONFIG,
       [`${MOCK_FEE_CALCULATOR}:calculateFee`]: 250n,
@@ -211,7 +208,7 @@ describe('calculateTotalFees', () => {
   })
 
   it('skips calculator calls when addresses are zero', async () => {
-    const client = mockPublicClient({
+    const client = createMockPublicClient({
       [`${MOCK_OPERATOR}:FEE_CALCULATOR`]: zeroAddress,
       [`${MOCK_OPERATOR}:PROTOCOL_FEE_CONFIG`]: zeroAddress,
     })
@@ -229,7 +226,7 @@ describe('calculateTotalFees', () => {
   })
 
   it('returns zeros when both fees are zero', async () => {
-    const client = mockPublicClient({
+    const client = createMockPublicClient({
       [`${MOCK_OPERATOR}:FEE_CALCULATOR`]: zeroAddress,
       [`${MOCK_OPERATOR}:PROTOCOL_FEE_CONFIG`]: zeroAddress,
     })
@@ -249,7 +246,7 @@ describe('calculateTotalFees', () => {
 
   it('computes amounts correctly', async () => {
     // 250 bps operator + 100 bps protocol on 1,000,000 (1 USDC)
-    const client = mockPublicClient({
+    const client = createMockPublicClient({
       [`${MOCK_OPERATOR}:FEE_CALCULATOR`]: MOCK_FEE_CALCULATOR,
       [`${MOCK_OPERATOR}:PROTOCOL_FEE_CONFIG`]: MOCK_PROTOCOL_FEE_CONFIG,
       [`${MOCK_FEE_CALCULATOR}:calculateFee`]: 250n,
@@ -371,30 +368,22 @@ describe('formatFeeBreakdown', () => {
 
 describe('distributeFees', () => {
   it('throws ContractCallError when account is missing', async () => {
-    const walletClient = {
-      writeContract: vi.fn(),
-      chain: { id: 84532 },
-      account: undefined,
-    } as unknown as WalletClient
-
     await expect(
-      distributeFees(walletClient, MOCK_OPERATOR, MOCK_TOKEN),
+      distributeFees(
+        createMockWalletWithoutAccount(),
+        MOCK_OPERATOR,
+        MOCK_TOKEN,
+      ),
     ).rejects.toThrow('distributeFees failed')
   })
 
   it('returns transaction hash', async () => {
-    const mockHash =
-      '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890'
-    const walletClient = {
-      writeContract: vi.fn().mockResolvedValue(mockHash),
-      chain: { id: 84532 },
-      account: { address: MOCK_CALLER },
-    } as unknown as WalletClient
+    const wallet = createMockWalletClient()
 
-    const result = await distributeFees(walletClient, MOCK_OPERATOR, MOCK_TOKEN)
+    const result = await distributeFees(wallet, MOCK_OPERATOR, MOCK_TOKEN)
 
-    expect(result).toBe(mockHash)
-    expect(walletClient.writeContract).toHaveBeenCalledWith(
+    expect(result).toBe(MOCK_TX_HASH)
+    expect(wallet.writeContract).toHaveBeenCalledWith(
       expect.objectContaining({
         address: MOCK_OPERATOR,
         functionName: 'distributeFees',

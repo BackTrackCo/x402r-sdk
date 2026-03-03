@@ -1,39 +1,16 @@
 import type { Address, Chain, PublicClient, WalletClient } from 'viem'
 import { zeroAddress } from 'viem'
+import { vi } from 'vitest'
 import type { PaymentInfo } from '../src/types/index.js'
 
 export { zeroAddress }
 
 // ---------------------------------------------------------------------------
-// Mock clients for unit tests
+// Constants
 // ---------------------------------------------------------------------------
 
-export function createMockPublicClient(
-  responses: Record<string, unknown> = {},
-): PublicClient {
-  return {
-    readContract: async ({ functionName }: { functionName: string }) => {
-      if (functionName in responses) return responses[functionName]
-      throw new Error(`No mock response for readContract(${functionName})`)
-    },
-  } as unknown as PublicClient
-}
-
-export function createMockWalletClient(
-  options: {
-    writeContract?: (args: unknown) => Promise<`0x${string}`>
-    chain?: Chain
-    account?: Address
-  } = {},
-): WalletClient {
-  return {
-    writeContract:
-      options.writeContract ??
-      (async () => `0x${'0'.repeat(64)}` as `0x${string}`),
-    chain: options.chain ?? { id: 84532, name: 'Base Sepolia' },
-    account: options.account ?? '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
-  } as unknown as WalletClient
-}
+export const MOCK_TX_HASH =
+  '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890' as const
 
 export const TEST_CHAIN_ID = 84532
 export const TEST_ESCROW_ADDRESS =
@@ -49,6 +26,70 @@ export const TEST_ADDRESSES = {
   token: '0x4567890123456789012345678901234567890123',
   feeReceiver: '0x5678901234567890123456789012345678901234',
 } as const
+
+// ---------------------------------------------------------------------------
+// Mock clients for unit tests
+// ---------------------------------------------------------------------------
+
+/**
+ * Creates a mock public client whose `readContract` resolves from a response map.
+ * Supports both `functionName` and `${address}:${functionName}` composite keys.
+ */
+export function createMockPublicClient(
+  responses: Record<string, unknown> = {},
+): PublicClient {
+  return {
+    readContract: vi.fn(
+      ({
+        address,
+        functionName,
+      }: {
+        address?: string
+        functionName: string
+      }) => {
+        const compositeKey = address
+          ? `${address}:${functionName}`
+          : functionName
+        if (compositeKey in responses)
+          return Promise.resolve(responses[compositeKey])
+        if (functionName in responses)
+          return Promise.resolve(responses[functionName])
+        return Promise.reject(
+          new Error(`No mock response for readContract(${compositeKey})`),
+        )
+      },
+    ),
+  } as unknown as PublicClient
+}
+
+export function createMockWalletClient(
+  options: {
+    writeContract?: (...args: unknown[]) => Promise<`0x${string}`>
+    chain?: Chain
+    account?: Address
+  } = {},
+): WalletClient {
+  return {
+    writeContract:
+      options.writeContract ?? vi.fn().mockResolvedValue(MOCK_TX_HASH),
+    chain: options.chain ?? { id: 84532, name: 'Base Sepolia' },
+    account: options.account
+      ? { address: options.account }
+      : { address: TEST_ADDRESSES.payer },
+  } as unknown as WalletClient
+}
+
+export function createMockWalletWithoutAccount(): WalletClient {
+  return {
+    writeContract: vi.fn(),
+    chain: { id: 84532 },
+    account: undefined,
+  } as unknown as WalletClient
+}
+
+// ---------------------------------------------------------------------------
+// PaymentInfo factory
+// ---------------------------------------------------------------------------
 
 export function makePaymentInfo(
   overrides: Partial<PaymentInfo> = {},
