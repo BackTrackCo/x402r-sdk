@@ -1,4 +1,5 @@
 import type { PublicClient, TestClient, WalletClient } from 'viem'
+import { erc20Abi } from 'viem'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { paymentOperatorAbi } from '../../src/abis/generated.js'
 import { x402rChains } from '../../src/config/index.js'
@@ -8,7 +9,6 @@ import {
   type DeployedFixtures,
   deployTestFixtures,
 } from '../setup/deploy-fixtures.js'
-import { erc20Abi } from '../setup/fork-abis.js'
 
 const baseSepolia = x402rChains[84532]
 

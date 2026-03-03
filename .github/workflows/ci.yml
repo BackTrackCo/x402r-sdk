@@ -67,6 +67,8 @@ jobs:
 
   test-fork:
     name: Fork Tests
+    # Fork tests do not contribute to code coverage (no --coverage flag).
+    # They validate on-chain integration via Anvil forks.
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

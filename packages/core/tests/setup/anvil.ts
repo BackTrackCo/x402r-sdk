@@ -35,8 +35,9 @@ export function defineAnvil(options: {
   chain: Chain
   forkUrl: string
   port: number
+  forkBlockNumber?: bigint
 }): AnvilInstance {
-  const { chain, forkUrl, port } = options
+  const { chain, forkUrl, port, forkBlockNumber } = options
 
   // Pool-isolated RPC URL — each vitest worker gets its own Anvil instance
   const rpcUrl = `http://127.0.0.1:${port}/${poolId}`
@@ -55,6 +56,7 @@ export function defineAnvil(options: {
         instance: Instance.anvil({
           chainId: chain.id,
           forkUrl,
+          forkBlockNumber,
         }),
         port,
       })
@@ -105,4 +107,5 @@ export const anvilBaseSepolia = defineAnvil({
   forkUrl:
     process.env.VITE_ANVIL_FORK_URL_BASE_SEPOLIA ?? 'https://sepolia.base.org',
   port: 8745,
+  forkBlockNumber: 38_381_873n,
 })

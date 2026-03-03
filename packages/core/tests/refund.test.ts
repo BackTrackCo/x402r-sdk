@@ -4,6 +4,7 @@ import {
   approveRefundWithSignature,
   cancelRefundRequest,
   denyRefundRequest,
+  RefundRequestStatus,
   refuseRefundRequest,
   requestRefund,
 } from '../src/operations/refund.js'
@@ -12,6 +13,20 @@ import {
   createMockWalletWithoutAccount,
   makePaymentInfo,
 } from './fixtures.js'
+
+// ---------------------------------------------------------------------------
+// Enum guard — must match Solidity values
+// ---------------------------------------------------------------------------
+
+describe('RefundRequestStatus', () => {
+  it('matches Solidity enum values', () => {
+    expect(RefundRequestStatus.Pending).toBe(0)
+    expect(RefundRequestStatus.Approved).toBe(1)
+    expect(RefundRequestStatus.Denied).toBe(2)
+    expect(RefundRequestStatus.Refused).toBe(3)
+    expect(RefundRequestStatus.Cancelled).toBe(4)
+  })
+})
 
 // ---------------------------------------------------------------------------
 // Helpers

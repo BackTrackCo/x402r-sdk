@@ -1,11 +1,23 @@
 import { describe, expect, it } from 'vitest'
 import { ContractCallError } from '../src/errors/index.js'
-import { submitEvidence } from '../src/operations/evidence.js'
+import { SubmitterRole, submitEvidence } from '../src/operations/evidence.js'
 import {
   createMockWalletClient,
   createMockWalletWithoutAccount,
   makePaymentInfo,
 } from './fixtures.js'
+
+// ---------------------------------------------------------------------------
+// Enum guard — must match Solidity values
+// ---------------------------------------------------------------------------
+
+describe('SubmitterRole', () => {
+  it('matches Solidity enum values', () => {
+    expect(SubmitterRole.Payer).toBe(0)
+    expect(SubmitterRole.Receiver).toBe(1)
+    expect(SubmitterRole.Arbiter).toBe(2)
+  })
+})
 
 // ---------------------------------------------------------------------------
 // Helpers

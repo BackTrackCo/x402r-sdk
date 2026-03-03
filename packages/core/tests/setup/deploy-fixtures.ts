@@ -1,5 +1,11 @@
 import type { Address, PublicClient, TestClient, WalletClient } from 'viem'
-import { encodePacked, keccak256, pad, zeroAddress } from 'viem'
+import {
+  encodeAbiParameters,
+  erc20Abi,
+  keccak256,
+  pad,
+  zeroAddress,
+} from 'viem'
 import {
   escrowPeriodFactoryAbi,
   paymentOperatorFactoryAbi,
@@ -7,7 +13,6 @@ import {
 } from '../../src/abis/generated.js'
 import { x402rChains } from '../../src/config/index.js'
 import { testRoles } from './constants.js'
-import { erc20Abi } from './fork-abis.js'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -44,9 +49,9 @@ const USDC_BALANCE_SLOT = 9n
  */
 function getBalanceSlot(account: Address, baseSlot: bigint): `0x${string}` {
   return keccak256(
-    encodePacked(
-      ['bytes32', 'bytes32'],
-      [pad(account), pad(`0x${baseSlot.toString(16)}` as `0x${string}`)],
+    encodeAbiParameters(
+      [{ type: 'address' }, { type: 'uint256' }],
+      [account, baseSlot],
     ),
   )
 }
@@ -157,6 +162,18 @@ export async function deployTestFixtures(
       index: fallbackSlot,
       value: pad(`0x${payerUsdcAmount.toString(16)}` as `0x${string}`),
     })
+
+    const retryBalance = await publicClient.readContract({
+      address: USDC,
+      abi: erc20Abi,
+      functionName: 'balanceOf',
+      args: [testRoles.payer.address],
+    })
+    if (retryBalance === 0n) {
+      throw new Error(
+        'Failed to fund payer — USDC storage slot unknown (tried slots 9 and 0)',
+      )
+    }
   }
 
   return {
