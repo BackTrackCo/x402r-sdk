@@ -72,6 +72,25 @@ describe('ContractCallError', () => {
     })
     expect(err.message).toContain('Contract: 0x1234')
   })
+
+  it('revertName renders in metaMessages', () => {
+    const err = new ContractCallError('release', {
+      revertName: 'ConditionNotMet',
+    })
+    expect(err.message).toContain('Revert: ConditionNotMet')
+    expect(err.revertName).toBe('ConditionNotMet')
+  })
+
+  it('revertName + contractAddress both render', () => {
+    const err = new ContractCallError('charge', {
+      contractAddress: '0xABCD',
+      revertName: 'Unauthorized',
+      revertArgs: ['bad caller'],
+    })
+    expect(err.message).toContain('Contract: 0xABCD')
+    expect(err.message).toContain('Revert: Unauthorized')
+    expect(err.revertArgs).toEqual(['bad caller'])
+  })
 })
 
 describe('NotImplementedError', () => {
