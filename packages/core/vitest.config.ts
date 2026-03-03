@@ -2,13 +2,11 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   test: {
-    name: 'core',
-    passWithNoTests: true,
     coverage: {
       provider: 'v8',
       reporter: process.env.CI ? ['lcov'] : ['text', 'json', 'html'],
       include: ['src/**/*.ts'],
-      exclude: ['src/**/index.ts', 'src/abis/**', 'src/types/**'],
+      exclude: ['src/**/index.ts', 'src/abis/**', 'src/types/**', 'tests/**'],
       thresholds: {
         lines: 80,
         functions: 80,
@@ -16,5 +14,25 @@ export default defineConfig({
         statements: 80,
       },
     },
+    projects: [
+      {
+        test: {
+          name: 'core',
+          include: ['tests/**/*.test.ts'],
+          exclude: ['tests/integration/**'],
+          passWithNoTests: true,
+        },
+      },
+      {
+        test: {
+          name: 'core:fork',
+          include: ['tests/integration/**/*.fork.test.ts'],
+          globalSetup: ['tests/setup/globalSetup.ts'],
+          testTimeout: 60_000,
+          hookTimeout: 60_000,
+          passWithNoTests: true,
+        },
+      },
+    ],
   },
 })

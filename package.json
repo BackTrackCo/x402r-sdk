@@ -8,6 +8,8 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "test": "turbo run test",
+    "test:unit": "turbo run test:unit",
+    "test:fork": "turbo run test:fork",
     "typecheck": "turbo run typecheck",
     "check": "biome check .",
     "format": "biome check --write .",
@@ -18,18 +20,24 @@
     "version": "changeset version"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "packageManager": "pnpm@10.23.0",
+  "pnpm": {
+    "overrides": {
+      "tar": ">=7.5.8"
+    }
+  },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.4",
+    "@biomejs/biome": "^2.4.5",
     "@changesets/changelog-github": "^0.5.1",
     "@changesets/cli": "^2.29.4",
-    "@wagmi/cli": "^2.10.0",
-    "tsup": "^8.5.1",
-    "turbo": "^2.8.11",
-    "typescript": "^5.9.3",
     "@vitest/coverage-v8": "^4.0.18",
+    "@wagmi/cli": "^2.10.0",
+    "prool": "^0.2.3",
+    "tsup": "^8.5.1",
+    "turbo": "^2.8.12",
+    "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   }
 }

@@ -1,34 +1,14 @@
-import type { WalletClient } from 'viem'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { ContractCallError } from '../src/errors/index.js'
 import { SubmitterRole, submitEvidence } from '../src/operations/evidence.js'
-import { makePaymentInfo } from './fixtures.js'
+import {
+  createMockWalletClient,
+  createMockWalletWithoutAccount,
+  makePaymentInfo,
+} from './fixtures.js'
 
 // ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-const MOCK_CONTRACT = '0x1111111111111111111111111111111111111111' as const
-const MOCK_CALLER = '0x7777777777777777777777777777777777777777' as const
-const MOCK_HASH =
-  '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890' as const
-
-const mockWalletWithAccount = () =>
-  ({
-    writeContract: vi.fn().mockResolvedValue(MOCK_HASH),
-    chain: { id: 84532 },
-    account: { address: MOCK_CALLER },
-  }) as unknown as WalletClient
-
-const mockWalletWithoutAccount = () =>
-  ({
-    writeContract: vi.fn(),
-    chain: { id: 84532 },
-    account: undefined,
-  }) as unknown as WalletClient
-
-// ---------------------------------------------------------------------------
-// SubmitterRole
+// Enum guard — must match Solidity values
 // ---------------------------------------------------------------------------
 
 describe('SubmitterRole', () => {
@@ -38,6 +18,12 @@ describe('SubmitterRole', () => {
     expect(SubmitterRole.Arbiter).toBe(2)
   })
 })
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+const MOCK_CONTRACT = '0x1111111111111111111111111111111111111111' as const
 
 // ---------------------------------------------------------------------------
 // Write functions — table-driven
@@ -62,7 +48,12 @@ describe('evidence write functions', () => {
     extraArgs,
   }) => {
     await expect(
-      fn(mockWalletWithoutAccount(), MOCK_CONTRACT, paymentInfo, ...extraArgs),
+      fn(
+        createMockWalletWithoutAccount(),
+        MOCK_CONTRACT,
+        paymentInfo,
+        ...extraArgs,
+      ),
     ).rejects.toThrow(ContractCallError)
   })
 
@@ -72,7 +63,7 @@ describe('evidence write functions', () => {
     extraArgs,
     expectedArgs,
   }) => {
-    const wallet = mockWalletWithAccount()
+    const wallet = createMockWalletClient()
     await fn(wallet, MOCK_CONTRACT, paymentInfo, ...extraArgs)
     expect(wallet.writeContract).toHaveBeenCalledWith(
       expect.objectContaining({

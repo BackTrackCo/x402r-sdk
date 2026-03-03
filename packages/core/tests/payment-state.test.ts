@@ -2,7 +2,11 @@ import type { PublicClient } from 'viem'
 import { describe, expect, it, vi } from 'vitest'
 import { ContractCallError } from '../src/errors/index.js'
 import { getPaymentState } from '../src/operations/payment-state.js'
-import { makePaymentInfo, TEST_CHAIN_ID } from './fixtures.js'
+import {
+  createMockPublicClient,
+  makePaymentInfo,
+  TEST_CHAIN_ID,
+} from './fixtures.js'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -10,18 +14,6 @@ import { makePaymentInfo, TEST_CHAIN_ID } from './fixtures.js'
 
 const MOCK_OPERATOR = '0x1111111111111111111111111111111111111111' as const
 const MOCK_ESCROW = '0x2222222222222222222222222222222222222222' as const
-
-function mockPublicClient(responses: Record<string, unknown>) {
-  return {
-    readContract: vi.fn(({ address, functionName }: any) => {
-      const key = `${address}:${functionName}`
-      if (key in responses) return Promise.resolve(responses[key])
-      if (functionName in responses)
-        return Promise.resolve(responses[functionName])
-      return Promise.reject(new Error(`Unmocked call: ${key}`))
-    }),
-  } as unknown as PublicClient
-}
 
 // ---------------------------------------------------------------------------
 // getPaymentState
@@ -31,7 +23,7 @@ describe('getPaymentState', () => {
   const paymentInfo = makePaymentInfo()
 
   it('chains ESCROW lookup → hash computation → escrow read', async () => {
-    const client = mockPublicClient({
+    const client = createMockPublicClient({
       [`${MOCK_OPERATOR}:ESCROW`]: MOCK_ESCROW,
       [`${MOCK_ESCROW}:paymentState`]: [true, 500000n, 500000n],
     })
@@ -87,7 +79,7 @@ describe('getPaymentState', () => {
   })
 
   it('returns correct tuple values from escrow response', async () => {
-    const client = mockPublicClient({
+    const client = createMockPublicClient({
       [`${MOCK_OPERATOR}:ESCROW`]: MOCK_ESCROW,
       [`${MOCK_ESCROW}:paymentState`]: [true, 750000n, 250000n],
     })
