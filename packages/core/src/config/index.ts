@@ -1,6 +1,8 @@
 import { type Address, zeroAddress } from 'viem'
 import { ConfigError } from '../errors/index.js'
 
+export { getTokenInfo, KNOWN_TOKEN_INFO, type TokenInfo } from './tokens.js'
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------

@@ -1,4 +1,5 @@
-const version = '0.0.0'
+declare const __VERSION__: string
+const version = typeof __VERSION__ !== 'undefined' ? __VERSION__ : '0.0.0'
 const docsBaseUrl = 'https://docs.x402r.org'
 
 export type X402rErrorArgs = {

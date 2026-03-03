@@ -3,12 +3,34 @@
   "version": "0.0.0",
   "type": "module",
   "license": "Apache-2.0",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "default": "./dist/types.js"
+    },
+    "./config": {
+      "types": "./dist/config.d.ts",
+      "default": "./dist/config.js"
+    },
+    "./errors": {
+      "types": "./dist/errors.d.ts",
+      "default": "./dist/errors.js"
+    },
+    "./payment": {
+      "types": "./dist/payment.d.ts",
+      "default": "./dist/payment.js"
+    },
+    "./operations": {
+      "types": "./dist/operations.d.ts",
+      "default": "./dist/operations.js"
+    },
+    "./helpers": {
+      "types": "./dist/helpers.d.ts",
+      "default": "./dist/helpers.js"
     }
   },
   "files": [
@@ -23,7 +45,8 @@
     "test:unit": "vitest run --project core",
     "test:fork": "vitest run --project core:fork",
     "test:cov": "vitest run --coverage --project core",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "publint --strict && attw --pack --ignore-rules no-resolution cjs-resolves-to-esm"
   },
   "dependencies": {
     "viem": "^2.46.3"
@@ -38,5 +61,19 @@
   },
   "devDependencies": {
     "@x402r/evm": "0.0.3"
-  }
+  },
+  "size-limit": [
+    {
+      "path": "dist/index.js",
+      "limit": "150 kB"
+    },
+    {
+      "path": "dist/config.js",
+      "limit": "15 kB"
+    },
+    {
+      "path": "dist/helpers.js",
+      "limit": "20 kB"
+    }
+  ]
 }
