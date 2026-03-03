@@ -1,2 +1,7 @@
 export { wrapContractCall } from './error-wrapping.js'
+export * from './evidence.js'
 export * from './fees.js'
+export * from './freeze.js'
+export * from './payment-state.js'
+export * from './refund.js'
+export * from './refund-budget.js'
