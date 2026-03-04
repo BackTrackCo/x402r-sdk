@@ -4,26 +4,28 @@ import { ConfigError, ValidationError } from '../src/errors/index.js'
 import { refundable } from '../src/helpers/index.js'
 
 const OPERATOR: Address = '0x1111111111111111111111111111111111111111'
-const BASE_SEPOLIA_USDC: Address = '0x036CbD53842c5426634e7929541eC2318f3dCF7e'
 const CUSTOM_FEE_RECEIVER: Address =
   '0x2222222222222222222222222222222222222222'
+const CUSTOM_ESCROW: Address = '0x3333333333333333333333333333333333333333'
+const CUSTOM_TOKEN_COLLECTOR: Address =
+  '0x4444444444444444444444444444444444444444'
+
+const BASE_OPTION = {
+  scheme: 'escrow' as const,
+  price: '$0.01',
+  network: 'eip155:84532',
+  payTo: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' as Address,
+}
 
 describe('refundable', () => {
   it('defaults feeReceiver to operator address', () => {
-    const result = refundable({
-      operatorAddress: OPERATOR,
-      network: 'eip155:84532',
-      token: BASE_SEPOLIA_USDC,
-    })
+    const result = refundable(BASE_OPTION, OPERATOR)
 
     expect(result.extra.feeReceiver).toBe(OPERATOR)
   })
 
   it('allows override for feeReceiver', () => {
-    const result = refundable({
-      operatorAddress: OPERATOR,
-      network: 'eip155:84532',
-      token: BASE_SEPOLIA_USDC,
+    const result = refundable(BASE_OPTION, OPERATOR, {
       feeReceiver: CUSTOM_FEE_RECEIVER,
     })
 
@@ -32,10 +34,7 @@ describe('refundable', () => {
 
   it('throws ValidationError when minFeeBps > maxFeeBps', () => {
     expect(() =>
-      refundable({
-        operatorAddress: OPERATOR,
-        network: 'eip155:84532',
-        token: BASE_SEPOLIA_USDC,
+      refundable(BASE_OPTION, OPERATOR, {
         minFeeBps: 500,
         maxFeeBps: 100,
       }),
@@ -44,32 +43,18 @@ describe('refundable', () => {
 
   it('throws ValidationError when maxFeeBps > 10000', () => {
     expect(() =>
-      refundable({
-        operatorAddress: OPERATOR,
-        network: 'eip155:84532',
-        token: BASE_SEPOLIA_USDC,
-        maxFeeBps: 10001,
-      }),
+      refundable(BASE_OPTION, OPERATOR, { maxFeeBps: 10001 }),
     ).toThrow(ValidationError)
   })
 
   it('throws ValidationError when minFeeBps < 0', () => {
-    expect(() =>
-      refundable({
-        operatorAddress: OPERATOR,
-        network: 'eip155:84532',
-        token: BASE_SEPOLIA_USDC,
-        minFeeBps: -1,
-      }),
-    ).toThrow(ValidationError)
+    expect(() => refundable(BASE_OPTION, OPERATOR, { minFeeBps: -1 })).toThrow(
+      ValidationError,
+    )
   })
 
   it('populates escrowAddress and tokenCollector from chain config', () => {
-    const result = refundable({
-      operatorAddress: OPERATOR,
-      network: 'eip155:84532',
-      token: BASE_SEPOLIA_USDC,
-    })
+    const result = refundable(BASE_OPTION, OPERATOR)
 
     expect(result.extra.escrowAddress).toBe(
       '0x29025c0E9D4239d438e169570818dB9FE0A80873',
@@ -79,11 +64,8 @@ describe('refundable', () => {
     )
   })
 
-  it('preserves existing extra fields', () => {
-    const result = refundable({
-      operatorAddress: OPERATOR,
-      network: 'eip155:84532',
-      token: BASE_SEPOLIA_USDC,
+  it('preserves existing extra fields via overrides', () => {
+    const result = refundable(BASE_OPTION, OPERATOR, {
       extra: { customField: 'hello', anotherField: 42 },
     })
 
@@ -94,22 +76,26 @@ describe('refundable', () => {
 
   it('throws ConfigError on unsupported network', () => {
     expect(() =>
-      refundable({
-        operatorAddress: OPERATOR,
-        network: 'eip155:999999',
-        token: BASE_SEPOLIA_USDC,
-      }),
+      refundable({ ...BASE_OPTION, network: 'eip155:999999' }, OPERATOR),
     ).toThrow(ConfigError)
   })
 
-  it('sets network and token on the returned PaymentOption', () => {
-    const result = refundable({
-      operatorAddress: OPERATOR,
-      network: 'eip155:84532',
-      token: BASE_SEPOLIA_USDC,
+  it('passes through all input fields unchanged', () => {
+    const result = refundable(BASE_OPTION, OPERATOR)
+
+    expect(result.scheme).toBe('escrow')
+    expect(result.price).toBe('$0.01')
+    expect(result.network).toBe('eip155:84532')
+    expect(result.payTo).toBe(BASE_OPTION.payTo)
+  })
+
+  it('allows escrowAddress and tokenCollector overrides', () => {
+    const result = refundable(BASE_OPTION, OPERATOR, {
+      escrowAddress: CUSTOM_ESCROW,
+      tokenCollector: CUSTOM_TOKEN_COLLECTOR,
     })
 
-    expect(result.network).toBe('eip155:84532')
-    expect(result.token).toBe(BASE_SEPOLIA_USDC)
+    expect(result.extra.escrowAddress).toBe(CUSTOM_ESCROW)
+    expect(result.extra.tokenCollector).toBe(CUSTOM_TOKEN_COLLECTOR)
   })
 })

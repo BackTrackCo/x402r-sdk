@@ -1,21 +1,24 @@
+import type { Address } from 'viem'
 import { fromNetworkId, getChainConfig } from '../config/index.js'
 import { ValidationError } from '../errors/validation.js'
-import type { EscrowExtra, PaymentOption, RefundableOptions } from './types.js'
+import type { EscrowExtra, RefundableOverrides } from './types.js'
 
-export type { EscrowExtra, PaymentOption, RefundableOptions } from './types.js'
+export type { EscrowExtra, RefundableOverrides } from './types.js'
 
-export function refundable(options: RefundableOptions): PaymentOption {
+export function refundable<T extends { network: string }>(
+  option: T,
+  operatorAddress: Address,
+  overrides?: RefundableOverrides,
+): T & { extra: EscrowExtra & Record<string, unknown> } {
   const {
-    operatorAddress,
-    network,
-    token,
     minFeeBps = 0,
     maxFeeBps = 0,
     feeReceiver: feeReceiverOverride,
+    escrowAddress: escrowOverride,
+    tokenCollector: tokenCollectorOverride,
     extra: extraFields,
-  } = options
+  } = overrides ?? {}
 
-  // Validate fee bounds (mirrors AuthCaptureEscrow contract constraints)
   if (minFeeBps < 0 || minFeeBps > 10000) {
     throw new ValidationError('minFeeBps must be between 0 and 10000', {
       details: `Got ${minFeeBps}`,
@@ -32,23 +35,21 @@ export function refundable(options: RefundableOptions): PaymentOption {
     })
   }
 
-  const chainId = fromNetworkId(network)
+  const chainId = fromNetworkId(option.network)
   const chainConfig = getChainConfig(chainId)
-
   const feeReceiver = feeReceiverOverride ?? operatorAddress
 
   const escrowExtra: EscrowExtra = {
-    escrowAddress: chainConfig.authCaptureEscrow,
+    escrowAddress: escrowOverride ?? chainConfig.authCaptureEscrow,
     operatorAddress,
-    tokenCollector: chainConfig.tokenCollector,
+    tokenCollector: tokenCollectorOverride ?? chainConfig.tokenCollector,
     minFeeBps,
     maxFeeBps,
     feeReceiver,
   }
 
   return {
-    network,
-    token,
+    ...option,
     extra: { ...escrowExtra, ...extraFields },
   }
 }

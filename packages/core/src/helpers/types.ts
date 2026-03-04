@@ -17,17 +17,9 @@ export interface EscrowExtra {
   version?: string
 }
 
-export interface PaymentOption {
-  network: string
-  token: Address
-  extra: EscrowExtra & Record<string, unknown>
-  [key: string]: unknown
-}
-
-export interface RefundableOptions {
-  operatorAddress: Address
-  network: string
-  token: Address
+export interface RefundableOverrides {
+  escrowAddress?: Address
+  tokenCollector?: Address
   minFeeBps?: number
   maxFeeBps?: number
   feeReceiver?: Address

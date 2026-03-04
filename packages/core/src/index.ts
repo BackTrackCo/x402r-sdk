@@ -39,8 +39,7 @@ export {
 } from './errors/index.js'
 export type {
   EscrowExtra,
-  PaymentOption,
-  RefundableOptions,
+  RefundableOverrides,
 } from './helpers/index.js'
 // ---------------------------------------------------------------------------
 // Helpers
