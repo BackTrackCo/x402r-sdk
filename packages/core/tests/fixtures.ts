@@ -59,6 +59,7 @@ export function createMockPublicClient(
         )
       },
     ),
+    waitForTransactionReceipt: vi.fn().mockResolvedValue({ status: 'success' }),
   } as unknown as PublicClient
 }
 

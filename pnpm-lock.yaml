@@ -51,6 +51,9 @@ importers:
       '@x402r/evm':
         specifier: 0.0.3
         version: 0.0.3(@x402/core@2.5.0)(@x402/evm@2.5.0(ethers@6.16.0)(typescript@5.9.3))(viem@2.46.3(typescript@5.9.3)(zod@3.25.76))
+      prool:
+        specifier: ^0.2.3
+        version: 0.2.3
 
   packages/sdk:
     dependencies:

@@ -1,5 +1,6 @@
 export * from './abis/generated.js'
 export * from './config/index.js'
+export * from './deploy/index.js'
 export * from './errors/index.js'
 export * from './operations/index.js'
 export * from './payment/index.js'
