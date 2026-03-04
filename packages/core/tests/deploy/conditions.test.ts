@@ -7,6 +7,7 @@ import type {
 } from '../../src/config/index.js'
 import {
   createConditionHelpers,
+  previewConditionAddress,
   resolveCondition,
 } from '../../src/deploy/conditions.js'
 import { createMockPublicClient, createMockWalletClient } from '../fixtures.js'
@@ -117,6 +118,39 @@ describe('resolveCondition', () => {
     expect(result.deployments[2].address).toBe(andAddr)
   })
 
+  it('resolves NOT(staticAddress) with child + parent deployments', async () => {
+    const staticAddr = '0xBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB' as Address
+    const notAddr = '0xEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE' as Address
+
+    const publicClient = createMockPublicClient({
+      getDeployed: zeroAddress,
+      [`${FACTORY_ADDRESSES.staticAddressCondition}:getDeployed`]: zeroAddress,
+      [`${FACTORY_ADDRESSES.staticAddressCondition}:computeAddress`]:
+        staticAddr,
+      [`${FACTORY_ADDRESSES.notCondition}:getDeployed`]: zeroAddress,
+      [`${FACTORY_ADDRESSES.notCondition}:computeAddress`]: notAddr,
+    })
+    const walletClient = createMockWalletClient()
+
+    const c = createConditionHelpers(SINGLETONS)
+    const tree = c.not(
+      c.staticAddress('0x5555555555555555555555555555555555555555'),
+    )
+
+    const result = await resolveCondition(
+      walletClient,
+      publicClient,
+      FACTORY_ADDRESSES,
+      tree,
+    )
+
+    // staticAddress(1) + not(1) = 2 deployments
+    expect(result.deployments).toHaveLength(2)
+    expect(result.address).toBe(notAddr)
+    expect(result.deployments[0].address).toBe(staticAddr)
+    expect(result.deployments[1].address).toBe(notAddr)
+  })
+
   it('throws on unknown condition type', async () => {
     const publicClient = createMockPublicClient()
     const walletClient = createMockWalletClient()
@@ -125,6 +159,82 @@ describe('resolveCondition', () => {
 
     await expect(
       resolveCondition(walletClient, publicClient, FACTORY_ADDRESSES, badInput),
+    ).rejects.toThrow('Unknown condition type')
+  })
+})
+
+describe('previewConditionAddress', () => {
+  it('returns plain address as-is', async () => {
+    const addr = '0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' as Address
+    const publicClient = createMockPublicClient()
+
+    const result = await previewConditionAddress(
+      publicClient,
+      FACTORY_ADDRESSES,
+      addr,
+    )
+    expect(result).toBe(addr)
+  })
+
+  it('computes staticAddress via factory', async () => {
+    const computedAddr = '0xBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB' as Address
+    const publicClient = createMockPublicClient({
+      computeAddress: computedAddr,
+    })
+
+    const c = createConditionHelpers(SINGLETONS)
+    const result = await previewConditionAddress(
+      publicClient,
+      FACTORY_ADDRESSES,
+      c.staticAddress('0x5555555555555555555555555555555555555555'),
+    )
+    expect(result).toBe(computedAddr)
+  })
+
+  it('computes nested NOT(OR(addr, addr)) recursively', async () => {
+    const orAddr = '0xCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC' as Address
+    const notAddr = '0xEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE' as Address
+
+    const publicClient = createMockPublicClient({
+      [`${FACTORY_ADDRESSES.orCondition}:computeAddress`]: orAddr,
+      [`${FACTORY_ADDRESSES.notCondition}:computeAddress`]: notAddr,
+    })
+
+    const c = createConditionHelpers(SINGLETONS)
+    const tree = c.not(c.or(SINGLETONS.payer, SINGLETONS.receiver))
+
+    const result = await previewConditionAddress(
+      publicClient,
+      FACTORY_ADDRESSES,
+      tree,
+    )
+    expect(result).toBe(notAddr)
+  })
+
+  it('computes AND with children resolved via Promise.all', async () => {
+    const andAddr = '0xDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD' as Address
+
+    const publicClient = createMockPublicClient({
+      computeAddress: andAddr,
+    })
+
+    const c = createConditionHelpers(SINGLETONS)
+    const tree = c.and(SINGLETONS.payer, SINGLETONS.receiver)
+
+    const result = await previewConditionAddress(
+      publicClient,
+      FACTORY_ADDRESSES,
+      tree,
+    )
+    expect(result).toBe(andAddr)
+  })
+
+  it('throws on unknown condition type', async () => {
+    const publicClient = createMockPublicClient()
+    const badInput = { type: 'xor', conditions: [] } as any
+
+    await expect(
+      previewConditionAddress(publicClient, FACTORY_ADDRESSES, badInput),
     ).rejects.toThrow('Unknown condition type')
   })
 })
