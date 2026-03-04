@@ -25,12 +25,11 @@ export {
   toNetworkId,
   x402rChains,
 } from './config/index.js'
-export type { X402rErrorArgs } from './errors/index.js'
-
 // ---------------------------------------------------------------------------
 // Deploy
 // ---------------------------------------------------------------------------
 export * from './deploy/index.js'
+export type { X402rErrorArgs } from './errors/index.js'
 
 // ---------------------------------------------------------------------------
 // Errors

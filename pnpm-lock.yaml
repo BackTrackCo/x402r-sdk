@@ -35,9 +35,6 @@ importers:
       knip:
         specifier: ^5.85.0
         version: 5.85.0(@types/node@22.7.5)(typescript@5.9.3)
-      prool:
-        specifier: ^0.2.3
-        version: 0.2.3
       publint:
         specifier: ^0.3.18
         version: 0.3.18
