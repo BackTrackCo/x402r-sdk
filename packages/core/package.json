@@ -31,10 +31,6 @@
     "./deploy": {
       "types": "./dist/deploy.d.ts",
       "default": "./dist/deploy.js"
-    },
-    "./helpers": {
-      "types": "./dist/helpers.d.ts",
-      "default": "./dist/helpers.js"
     }
   },
   "files": [
@@ -78,10 +74,6 @@
     },
     {
       "path": "dist/deploy.js",
-      "limit": "20 kB"
-    },
-    {
-      "path": "dist/helpers.js",
       "limit": "20 kB"
     }
   ]

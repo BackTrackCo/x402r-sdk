@@ -12,7 +12,6 @@ export default defineConfig({
     payment: 'src/payment/index.ts',
     operations: 'src/operations/index.ts',
     deploy: 'src/deploy/index.ts',
-    helpers: 'src/helpers/index.ts',
   },
   format: ['esm'],
   dts: true,
