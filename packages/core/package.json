@@ -66,15 +66,15 @@
   "size-limit": [
     {
       "path": "dist/index.js",
-      "limit": "150 kB"
+      "limit": "10 kB"
     },
     {
       "path": "dist/config.js",
-      "limit": "15 kB"
+      "limit": "2 kB"
     },
     {
       "path": "dist/deploy.js",
-      "limit": "20 kB"
+      "limit": "3 kB"
     }
   ]
 }
