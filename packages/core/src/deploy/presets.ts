@@ -123,8 +123,6 @@ export async function previewMarketplaceOperator(
   )
 
   // 2. Freeze (payer freezes, receiver unfreezes)
-  // Freeze is a standalone ICondition — not in OperatorConfig. Operators compose
-  // it manually via AndCondition([escrowPeriod, freeze]) when needed.
   const freezeAddress = await computeFreezeAddress(
     publicClient,
     factories.freeze,
@@ -224,8 +222,6 @@ export async function deployMarketplaceOperator(
   const escrowPeriodAddress = escrowResult.address
 
   // 2. Freeze (payer freezes, receiver unfreezes)
-  // Freeze is a standalone ICondition — not in OperatorConfig. Operators compose
-  // it manually via AndCondition([escrowPeriod, freeze]) when needed.
   const freezeResult = await deployFreeze(
     walletClient,
     publicClient,
