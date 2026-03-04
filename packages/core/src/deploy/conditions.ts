@@ -114,7 +114,7 @@ export async function resolveCondition(
     }
 
     case 'and': {
-      // Resolve children sequentially (children may depend on each other)
+      // Resolve children sequentially for deterministic transaction ordering
       const childAddresses: Address[] = []
       const allDeployments: DeployResult[] = []
       for (const child of node.conditions) {

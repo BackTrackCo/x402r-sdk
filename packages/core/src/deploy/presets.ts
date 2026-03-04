@@ -1,4 +1,4 @@
-import type { Address, Hex, PublicClient, WalletClient } from 'viem'
+import type { Address, Hash, Hex, PublicClient, WalletClient } from 'viem'
 import { pad, zeroAddress } from 'viem'
 import {
   getChainConfig,
@@ -82,6 +82,7 @@ function resolveOptions(options: MarketplaceOperatorOptions) {
 
   const factories = getFactoryAddresses(options.chainId)
   const singletons = getConditionSingletons(options.chainId)
+  // bytes32(0) = no authorized codehash restriction (operator-only recording)
   const authorizedCodehash = options.authorizedCodehash ?? pad('0x00')
   const freezeDurationSeconds = options.freezeDurationSeconds ?? 0n
   const operatorFeeBps = options.operatorFeeBps ?? 0n
@@ -122,6 +123,8 @@ export async function previewMarketplaceOperator(
   )
 
   // 2. Freeze (payer freezes, receiver unfreezes)
+  // Freeze is a standalone ICondition — not in OperatorConfig. Operators compose
+  // it manually via AndCondition([escrowPeriod, freeze]) when needed.
   const freezeAddress = await computeFreezeAddress(
     publicClient,
     factories.freeze,
@@ -221,6 +224,8 @@ export async function deployMarketplaceOperator(
   const escrowPeriodAddress = escrowResult.address
 
   // 2. Freeze (payer freezes, receiver unfreezes)
+  // Freeze is a standalone ICondition — not in OperatorConfig. Operators compose
+  // it manually via AndCondition([escrowPeriod, freeze]) when needed.
   const freezeResult = await deployFreeze(
     walletClient,
     publicClient,
@@ -296,8 +301,8 @@ export async function deployMarketplaceOperator(
   const newCount = deployments.filter((d) => d.isNew).length
   const existingCount = deployments.filter((d) => !d.isNew).length
   const txHashes = deployments
-    .filter((d) => d.hash !== null)
-    .map((d) => d.hash!)
+    .map((d) => d.hash)
+    .filter((h): h is Hash => h !== null)
 
   return {
     operatorAddress,
