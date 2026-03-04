@@ -17,7 +17,12 @@
     "clean": "turbo run clean",
     "generate:abis": "wagmi generate",
     "changeset": "changeset",
-    "version": "changeset version"
+    "version": "changeset version",
+    "publint": "pnpm --filter=@x402r/core exec publint --strict",
+    "attw": "pnpm --filter=@x402r/core exec attw --pack --ignore-rules no-resolution cjs-resolves-to-esm",
+    "knip": "knip",
+    "size-limit": "pnpm --filter=@x402r/core exec size-limit",
+    "test:pkg": "pnpm publint && pnpm attw"
   },
   "engines": {
     "node": ">=22"
@@ -29,12 +34,16 @@
     }
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.2",
     "@biomejs/biome": "^2.4.5",
     "@changesets/changelog-github": "^0.5.1",
     "@changesets/cli": "^2.29.4",
+    "@size-limit/file": "^12.0.0",
     "@vitest/coverage-v8": "^4.0.18",
     "@wagmi/cli": "^2.10.0",
-    "prool": "^0.2.3",
+    "knip": "^5.85.0",
+    "publint": "^0.3.18",
+    "size-limit": "^12.0.0",
     "tsup": "^8.5.1",
     "turbo": "^2.8.12",
     "typescript": "^5.9.3",
