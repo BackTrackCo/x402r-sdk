@@ -6,7 +6,6 @@ export type {
   ConditionSingletonAddresses,
   FactoryAddresses,
   SupportedChainId,
-  TokenInfo,
   X402rChainConfig,
 } from './config/index.js'
 
@@ -19,11 +18,9 @@ export {
   getConditionSingletons,
   getFactoryAddress,
   getFactoryAddresses,
-  getTokenInfo,
   hasConditionSingletons,
   hasFactories,
   isSupportedChain,
-  KNOWN_TOKEN_INFO,
   supportedChainIds,
   toNetworkId,
   x402rChains,

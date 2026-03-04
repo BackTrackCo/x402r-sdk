@@ -5,33 +5,10 @@ import { refundable } from '../src/helpers/index.js'
 
 const OPERATOR: Address = '0x1111111111111111111111111111111111111111'
 const BASE_SEPOLIA_USDC: Address = '0x036CbD53842c5426634e7929541eC2318f3dCF7e'
-const BASE_MAINNET_USDC: Address = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
 const CUSTOM_FEE_RECEIVER: Address =
   '0x2222222222222222222222222222222222222222'
 
 describe('refundable', () => {
-  it('populates name/version from USDC token info (Base Sepolia)', () => {
-    const result = refundable({
-      operatorAddress: OPERATOR,
-      network: 'eip155:84532',
-      token: BASE_SEPOLIA_USDC,
-    })
-
-    expect(result.extra.name).toBe('USDC')
-    expect(result.extra.version).toBe('2')
-  })
-
-  it('populates name/version from USDC token info (Base Mainnet)', () => {
-    const result = refundable({
-      operatorAddress: OPERATOR,
-      network: 'eip155:8453',
-      token: BASE_MAINNET_USDC,
-    })
-
-    expect(result.extra.name).toBe('USD Coin')
-    expect(result.extra.version).toBe('2')
-  })
-
   it('defaults feeReceiver to operator address', () => {
     const result = refundable({
       operatorAddress: OPERATOR,
@@ -51,19 +28,6 @@ describe('refundable', () => {
     })
 
     expect(result.extra.feeReceiver).toBe(CUSTOM_FEE_RECEIVER)
-  })
-
-  it('allows overrides for name and version', () => {
-    const result = refundable({
-      operatorAddress: OPERATOR,
-      network: 'eip155:84532',
-      token: BASE_SEPOLIA_USDC,
-      name: 'CustomToken',
-      version: '3',
-    })
-
-    expect(result.extra.name).toBe('CustomToken')
-    expect(result.extra.version).toBe('3')
   })
 
   it('throws ValidationError when minFeeBps > maxFeeBps', () => {
@@ -134,17 +98,6 @@ describe('refundable', () => {
         operatorAddress: OPERATOR,
         network: 'eip155:999999',
         token: BASE_SEPOLIA_USDC,
-      }),
-    ).toThrow(ConfigError)
-  })
-
-  it('throws ConfigError for unknown token without name/version overrides', () => {
-    const unknownToken: Address = '0x9999999999999999999999999999999999999999'
-    expect(() =>
-      refundable({
-        operatorAddress: OPERATOR,
-        network: 'eip155:84532',
-        token: unknownToken,
       }),
     ).toThrow(ConfigError)
   })

@@ -13,8 +13,8 @@ export interface EscrowExtra {
   minFeeBps?: number
   maxFeeBps?: number
   feeReceiver?: Address
-  name: string
-  version: string
+  name?: string
+  version?: string
 }
 
 export interface PaymentOption {
@@ -31,7 +31,5 @@ export interface RefundableOptions {
   minFeeBps?: number
   maxFeeBps?: number
   feeReceiver?: Address
-  name?: string
-  version?: string
   extra?: Record<string, unknown>
 }

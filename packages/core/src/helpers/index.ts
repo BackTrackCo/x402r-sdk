@@ -1,6 +1,4 @@
 import { fromNetworkId, getChainConfig } from '../config/index.js'
-import { getTokenInfo } from '../config/tokens.js'
-import { ConfigError } from '../errors/config.js'
 import { ValidationError } from '../errors/validation.js'
 import type { EscrowExtra, PaymentOption, RefundableOptions } from './types.js'
 
@@ -14,11 +12,10 @@ export function refundable(options: RefundableOptions): PaymentOption {
     minFeeBps = 0,
     maxFeeBps = 0,
     feeReceiver: feeReceiverOverride,
-    name: nameOverride,
-    version: versionOverride,
     extra: extraFields,
   } = options
 
+  // Validate fee bounds (mirrors AuthCaptureEscrow contract constraints)
   if (minFeeBps < 0 || minFeeBps > 10000) {
     throw new ValidationError('minFeeBps must be between 0 and 10000', {
       details: `Got ${minFeeBps}`,
@@ -38,21 +35,6 @@ export function refundable(options: RefundableOptions): PaymentOption {
   const chainId = fromNetworkId(network)
   const chainConfig = getChainConfig(chainId)
 
-  const tokenInfo = getTokenInfo(chainId, token)
-  const name = nameOverride ?? tokenInfo?.name
-  const version = versionOverride ?? tokenInfo?.version
-
-  if (!name || !version) {
-    throw new ConfigError(
-      `Could not resolve EIP-712 domain name/version for token ${token} on chain ${chainId}`,
-      {
-        metaMessages: [
-          'Provide explicit `name` and `version` options for non-USDC tokens.',
-        ],
-      },
-    )
-  }
-
   const feeReceiver = feeReceiverOverride ?? operatorAddress
 
   const escrowExtra: EscrowExtra = {
@@ -62,8 +44,6 @@ export function refundable(options: RefundableOptions): PaymentOption {
     minFeeBps,
     maxFeeBps,
     feeReceiver,
-    name,
-    version,
   }
 
   return {
