@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  tar: '>=7.5.8'
+  tar: '>=7.5.10'
 
 importers:
 
@@ -1872,8 +1872,8 @@ packages:
     resolution: {integrity: sha512-zFObLMyZeEwzAoKCyu1B91U79K2t7ApXuQfo8OuxwXLDgcKxuwM+YvcbIhm6QWqz7mHUH1TVytR1PwVVjEuMig==}
     engines: {node: '>=14.18'}
 
-  tar@7.5.9:
-    resolution: {integrity: sha512-BTLcK0xsDh2+PUe9F6c2TlRp4zOOBMTkoQHQIWSIzI0R7KG46uEwq4OPk2W7bZcprBMsuaeFsqwYr7pjh6CuHg==}
+  tar@7.5.10:
+    resolution: {integrity: sha512-8mOPs1//5q/rlkNSPcCegA6hiHJYDmSLEI8aMH/CdSQJNWztHC9WHNam5zdQlfpTwB9Xp7IBEsHfV5LKMJGVAw==}
     engines: {node: '>=18'}
 
   term-size@2.2.1:
@@ -3710,7 +3710,7 @@ snapshots:
       execa: 9.6.1
       get-port: 7.1.0
       http-proxy: 1.18.1
-      tar: 7.5.9
+      tar: 7.5.10
     transitivePeerDependencies:
       - debug
 
@@ -3875,7 +3875,7 @@ snapshots:
       has-flag: 4.0.0
       supports-color: 7.2.0
 
-  tar@7.5.9:
+  tar@7.5.10:
     dependencies:
       '@isaacs/fs-minipass': 4.0.1
       chownr: 3.0.0

@@ -1,10 +1,6 @@
 import { zeroAddress } from 'viem'
 import { describe, expect, it } from 'vitest'
-import {
-  getConditionAddress,
-  getEscrowAddress,
-  getOperatorConfig,
-} from '../src/operations/operator.js'
+import { getOperatorConfig } from '../src/operations/operator.js'
 import { createMockPublicClient } from './fixtures.js'
 
 // ---------------------------------------------------------------------------
@@ -78,37 +74,5 @@ describe('getOperatorConfig', () => {
     const config = await getOperatorConfig(client, MOCK_OPERATOR)
     expect(config.feeCalculator).toBe(zeroAddress)
     expect(config.protocolFeeConfig).toBe(zeroAddress)
-  })
-})
-
-// ---------------------------------------------------------------------------
-// getEscrowAddress
-// ---------------------------------------------------------------------------
-
-describe('getEscrowAddress', () => {
-  it('returns escrow address', async () => {
-    const client = createMockPublicClient({ ESCROW: MOCK_ESCROW })
-    const result = await getEscrowAddress(client, MOCK_OPERATOR)
-    expect(result).toBe(MOCK_ESCROW)
-  })
-})
-
-// ---------------------------------------------------------------------------
-// getConditionAddress
-// ---------------------------------------------------------------------------
-
-describe('getConditionAddress', () => {
-  const slots = [
-    'AUTHORIZE_CONDITION',
-    'CHARGE_CONDITION',
-    'RELEASE_CONDITION',
-    'REFUND_IN_ESCROW_CONDITION',
-    'REFUND_POST_ESCROW_CONDITION',
-  ] as const
-
-  it.each(slots)('reads %s', async (slot) => {
-    const client = createMockPublicClient({ [slot]: MOCK_ADDR })
-    const result = await getConditionAddress(client, MOCK_OPERATOR, slot)
-    expect(result).toBe(MOCK_ADDR)
   })
 })

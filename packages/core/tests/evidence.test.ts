@@ -2,9 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { ContractCallError } from '../src/errors/index.js'
 import {
   type EvidenceEntry,
-  getEvidence,
   getEvidenceBatch,
-  getEvidenceCount,
   SubmitterRole,
   submitEvidence,
 } from '../src/operations/evidence.js'
@@ -47,18 +45,6 @@ describe('evidence read functions', () => {
     timestamp: 1700000000,
     cid: 'QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco',
   }
-
-  it('getEvidence returns typed entry', async () => {
-    const client = createMockPublicClient({ getEvidence: mockEntry })
-    const result = await getEvidence(client, MOCK_CONTRACT, pi, 0n, 0n)
-    expect(result).toEqual(mockEntry)
-  })
-
-  it('getEvidenceCount returns bigint', async () => {
-    const client = createMockPublicClient({ getEvidenceCount: 3n })
-    const result = await getEvidenceCount(client, MOCK_CONTRACT, pi, 0n)
-    expect(result).toBe(3n)
-  })
 
   it('getEvidenceBatch returns entries and total', async () => {
     const client = createMockPublicClient({
