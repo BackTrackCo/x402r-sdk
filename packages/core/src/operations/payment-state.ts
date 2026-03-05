@@ -19,6 +19,20 @@ const escrowStateAbi = [
   },
 ] as const
 
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+export interface PaymentAmounts {
+  hasCollectedPayment: boolean
+  capturableAmount: bigint
+  refundableAmount: bigint
+}
+
+// ---------------------------------------------------------------------------
+// Read functions
+// ---------------------------------------------------------------------------
+
 /**
  * Reads escrow payment state for a given payment.
  *
@@ -55,4 +69,15 @@ export async function getPaymentState(
       args: [hash],
     }),
   )
+}
+
+export async function getPaymentAmounts(
+  publicClient: PublicClient,
+  operatorAddress: Address,
+  chainId: number,
+  paymentInfo: PaymentInfo,
+): Promise<PaymentAmounts> {
+  const [hasCollectedPayment, capturableAmount, refundableAmount] =
+    await getPaymentState(publicClient, operatorAddress, chainId, paymentInfo)
+  return { hasCollectedPayment, capturableAmount, refundableAmount }
 }

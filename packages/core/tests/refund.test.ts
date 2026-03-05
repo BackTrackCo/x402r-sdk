@@ -4,11 +4,16 @@ import {
   approveRefundWithSignature,
   cancelRefundRequest,
   denyRefundRequest,
+  getRefundRequest,
+  getRefundRequestStatus,
+  hasRefundRequest,
+  type RefundRequestData,
   RefundRequestStatus,
   refuseRefundRequest,
   requestRefund,
 } from '../src/operations/refund.js'
 import {
+  createMockPublicClient,
   createMockWalletClient,
   createMockWalletWithoutAccount,
   makePaymentInfo,
@@ -33,6 +38,45 @@ describe('RefundRequestStatus', () => {
 // ---------------------------------------------------------------------------
 
 const MOCK_CONTRACT = '0x1111111111111111111111111111111111111111' as const
+
+// ---------------------------------------------------------------------------
+// Read functions
+// ---------------------------------------------------------------------------
+
+describe('refund read functions', () => {
+  const pi = makePaymentInfo()
+
+  it('hasRefundRequest returns true', async () => {
+    const client = createMockPublicClient({ hasRefundRequest: true })
+    expect(await hasRefundRequest(client, MOCK_CONTRACT, pi, 0n)).toBe(true)
+  })
+
+  it('hasRefundRequest returns false', async () => {
+    const client = createMockPublicClient({ hasRefundRequest: false })
+    expect(await hasRefundRequest(client, MOCK_CONTRACT, pi, 0n)).toBe(false)
+  })
+
+  it('getRefundRequestStatus returns enum value', async () => {
+    const client = createMockPublicClient({
+      getRefundRequestStatus: RefundRequestStatus.Approved,
+    })
+    const status = await getRefundRequestStatus(client, MOCK_CONTRACT, pi, 0n)
+    expect(status).toBe(RefundRequestStatus.Approved)
+  })
+
+  it('getRefundRequest returns full data', async () => {
+    const mockData: RefundRequestData = {
+      paymentInfoHash:
+        '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
+      nonce: 1n,
+      amount: 500000n,
+      status: RefundRequestStatus.Pending,
+    }
+    const client = createMockPublicClient({ getRefundRequest: mockData })
+    const result = await getRefundRequest(client, MOCK_CONTRACT, pi, 1n)
+    expect(result).toEqual(mockData)
+  })
+})
 
 // ---------------------------------------------------------------------------
 // Write functions — table-driven

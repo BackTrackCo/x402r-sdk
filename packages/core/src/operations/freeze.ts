@@ -1,8 +1,29 @@
-import type { Address, Hash, WalletClient } from 'viem'
+import type { Address, Hash, PublicClient, WalletClient } from 'viem'
 import { freezeAbi } from '../abis/generated.js'
 import { ContractCallError } from '../errors/index.js'
 import type { PaymentInfo } from '../types/index.js'
 import { wrapContractCall } from './error-wrapping.js'
+
+// ---------------------------------------------------------------------------
+// Read functions
+// ---------------------------------------------------------------------------
+
+export async function isFrozen(
+  publicClient: PublicClient,
+  freezeAddress: Address,
+  paymentInfo: PaymentInfo,
+): Promise<boolean> {
+  return publicClient.readContract({
+    address: freezeAddress,
+    abi: freezeAbi,
+    functionName: 'isFrozen',
+    args: [paymentInfo],
+  }) as Promise<boolean>
+}
+
+// ---------------------------------------------------------------------------
+// Write functions
+// ---------------------------------------------------------------------------
 
 export async function freezePayment(
   walletClient: WalletClient,

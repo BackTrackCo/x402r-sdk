@@ -1,4 +1,4 @@
-import type { Address, Hash, Hex, WalletClient } from 'viem'
+import type { Address, Hash, Hex, PublicClient, WalletClient } from 'viem'
 import { signatureRefundRequestAbi } from '../abis/generated.js'
 import { ContractCallError } from '../errors/index.js'
 import type { PaymentInfo } from '../types/index.js'
@@ -18,6 +18,63 @@ export const RefundRequestStatus = {
 
 export type RefundRequestStatus =
   (typeof RefundRequestStatus)[keyof typeof RefundRequestStatus]
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+export interface RefundRequestData {
+  paymentInfoHash: Hex
+  nonce: bigint
+  amount: bigint
+  status: number
+}
+
+// ---------------------------------------------------------------------------
+// Read functions
+// ---------------------------------------------------------------------------
+
+export async function hasRefundRequest(
+  publicClient: PublicClient,
+  contractAddress: Address,
+  paymentInfo: PaymentInfo,
+  nonce: bigint,
+): Promise<boolean> {
+  return publicClient.readContract({
+    address: contractAddress,
+    abi: signatureRefundRequestAbi,
+    functionName: 'hasRefundRequest',
+    args: [paymentInfo, nonce],
+  }) as Promise<boolean>
+}
+
+export async function getRefundRequestStatus(
+  publicClient: PublicClient,
+  contractAddress: Address,
+  paymentInfo: PaymentInfo,
+  nonce: bigint,
+): Promise<RefundRequestStatus> {
+  return publicClient.readContract({
+    address: contractAddress,
+    abi: signatureRefundRequestAbi,
+    functionName: 'getRefundRequestStatus',
+    args: [paymentInfo, nonce],
+  }) as Promise<RefundRequestStatus>
+}
+
+export async function getRefundRequest(
+  publicClient: PublicClient,
+  contractAddress: Address,
+  paymentInfo: PaymentInfo,
+  nonce: bigint,
+): Promise<RefundRequestData> {
+  return publicClient.readContract({
+    address: contractAddress,
+    abi: signatureRefundRequestAbi,
+    functionName: 'getRefundRequest',
+    args: [paymentInfo, nonce],
+  }) as Promise<RefundRequestData>
+}
 
 // ---------------------------------------------------------------------------
 // Write functions

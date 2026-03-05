@@ -1,4 +1,4 @@
-import type { Address, Hash, WalletClient } from 'viem'
+import type { Address, Hash, PublicClient, WalletClient } from 'viem'
 import { refundRequestEvidenceAbi } from '../abis/generated.js'
 import { ContractCallError } from '../errors/index.js'
 import type { PaymentInfo } from '../types/index.js'
@@ -15,6 +15,68 @@ export const SubmitterRole = {
 } as const
 
 export type SubmitterRole = (typeof SubmitterRole)[keyof typeof SubmitterRole]
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+export interface EvidenceEntry {
+  submitter: Address
+  role: number
+  timestamp: number
+  cid: string
+}
+
+// ---------------------------------------------------------------------------
+// Read functions
+// ---------------------------------------------------------------------------
+
+export async function getEvidence(
+  publicClient: PublicClient,
+  contractAddress: Address,
+  paymentInfo: PaymentInfo,
+  nonce: bigint,
+  index: bigint,
+): Promise<EvidenceEntry> {
+  const result = await publicClient.readContract({
+    address: contractAddress,
+    abi: refundRequestEvidenceAbi,
+    functionName: 'getEvidence',
+    args: [paymentInfo, nonce, index],
+  })
+  return result as unknown as EvidenceEntry
+}
+
+export async function getEvidenceCount(
+  publicClient: PublicClient,
+  contractAddress: Address,
+  paymentInfo: PaymentInfo,
+  nonce: bigint,
+): Promise<bigint> {
+  return publicClient.readContract({
+    address: contractAddress,
+    abi: refundRequestEvidenceAbi,
+    functionName: 'getEvidenceCount',
+    args: [paymentInfo, nonce],
+  }) as Promise<bigint>
+}
+
+export async function getEvidenceBatch(
+  publicClient: PublicClient,
+  contractAddress: Address,
+  paymentInfo: PaymentInfo,
+  nonce: bigint,
+  offset: bigint,
+  count: bigint,
+): Promise<{ entries: EvidenceEntry[]; total: bigint }> {
+  const [entries, total] = (await publicClient.readContract({
+    address: contractAddress,
+    abi: refundRequestEvidenceAbi,
+    functionName: 'getEvidenceBatch',
+    args: [paymentInfo, nonce, offset, count],
+  })) as unknown as [EvidenceEntry[], bigint]
+  return { entries, total }
+}
 
 // ---------------------------------------------------------------------------
 // Write functions

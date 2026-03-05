@@ -119,6 +119,8 @@ jobs:
         run: pnpm --filter=@x402r/core exec attw --pack --ignore-rules no-resolution cjs-resolves-to-esm
       - name: knip
         run: pnpm knip
+      - name: size-limit
+        run: pnpm size-limit
 
   abi-drift:
     name: ABI Drift

@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { ContractCallError } from '../src/errors/index.js'
-import { freezePayment, unfreezePayment } from '../src/operations/freeze.js'
 import {
+  freezePayment,
+  isFrozen,
+  unfreezePayment,
+} from '../src/operations/freeze.js'
+import {
+  createMockPublicClient,
   createMockWalletClient,
   createMockWalletWithoutAccount,
   makePaymentInfo,
@@ -12,6 +17,24 @@ import {
 // ---------------------------------------------------------------------------
 
 const MOCK_FREEZE = '0x1111111111111111111111111111111111111111' as const
+
+// ---------------------------------------------------------------------------
+// Read functions
+// ---------------------------------------------------------------------------
+
+describe('isFrozen', () => {
+  const pi = makePaymentInfo()
+
+  it('returns true when frozen', async () => {
+    const client = createMockPublicClient({ isFrozen: true })
+    expect(await isFrozen(client, MOCK_FREEZE, pi)).toBe(true)
+  })
+
+  it('returns false when not frozen', async () => {
+    const client = createMockPublicClient({ isFrozen: false })
+    expect(await isFrozen(client, MOCK_FREEZE, pi)).toBe(false)
+  })
+})
 
 // ---------------------------------------------------------------------------
 // Write functions — table-driven

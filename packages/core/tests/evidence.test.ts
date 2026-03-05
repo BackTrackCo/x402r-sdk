@@ -1,10 +1,19 @@
 import { describe, expect, it } from 'vitest'
 import { ContractCallError } from '../src/errors/index.js'
-import { SubmitterRole, submitEvidence } from '../src/operations/evidence.js'
 import {
+  type EvidenceEntry,
+  getEvidence,
+  getEvidenceBatch,
+  getEvidenceCount,
+  SubmitterRole,
+  submitEvidence,
+} from '../src/operations/evidence.js'
+import {
+  createMockPublicClient,
   createMockWalletClient,
   createMockWalletWithoutAccount,
   makePaymentInfo,
+  TEST_ADDRESSES,
 } from './fixtures.js'
 
 // ---------------------------------------------------------------------------
@@ -24,6 +33,63 @@ describe('SubmitterRole', () => {
 // ---------------------------------------------------------------------------
 
 const MOCK_CONTRACT = '0x1111111111111111111111111111111111111111' as const
+
+// ---------------------------------------------------------------------------
+// Read functions
+// ---------------------------------------------------------------------------
+
+describe('evidence read functions', () => {
+  const pi = makePaymentInfo()
+
+  const mockEntry: EvidenceEntry = {
+    submitter: TEST_ADDRESSES.payer,
+    role: SubmitterRole.Payer,
+    timestamp: 1700000000,
+    cid: 'QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco',
+  }
+
+  it('getEvidence returns typed entry', async () => {
+    const client = createMockPublicClient({ getEvidence: mockEntry })
+    const result = await getEvidence(client, MOCK_CONTRACT, pi, 0n, 0n)
+    expect(result).toEqual(mockEntry)
+  })
+
+  it('getEvidenceCount returns bigint', async () => {
+    const client = createMockPublicClient({ getEvidenceCount: 3n })
+    const result = await getEvidenceCount(client, MOCK_CONTRACT, pi, 0n)
+    expect(result).toBe(3n)
+  })
+
+  it('getEvidenceBatch returns entries and total', async () => {
+    const client = createMockPublicClient({
+      getEvidenceBatch: [[mockEntry], 1n],
+    })
+    const result = await getEvidenceBatch(
+      client,
+      MOCK_CONTRACT,
+      pi,
+      0n,
+      0n,
+      10n,
+    )
+    expect(result.entries).toEqual([mockEntry])
+    expect(result.total).toBe(1n)
+  })
+
+  it('getEvidenceBatch handles empty result', async () => {
+    const client = createMockPublicClient({ getEvidenceBatch: [[], 0n] })
+    const result = await getEvidenceBatch(
+      client,
+      MOCK_CONTRACT,
+      pi,
+      0n,
+      0n,
+      10n,
+    )
+    expect(result.entries).toEqual([])
+    expect(result.total).toBe(0n)
+  })
+})
 
 // ---------------------------------------------------------------------------
 // Write functions — table-driven
