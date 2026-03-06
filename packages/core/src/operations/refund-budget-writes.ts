@@ -1,31 +1,8 @@
-import type { Address, Hash, Hex, PublicClient, WalletClient } from 'viem'
+import type { Address, Hash, Hex, WalletClient } from 'viem'
 import { erc20Abi } from 'viem'
 import { paymentOperatorAbi } from '../abis/generated.js'
-import { ContractCallError } from '../errors/index.js'
 import type { PaymentInfo } from '../types/index.js'
-import { wrapContractCall } from './error-wrapping.js'
-
-// ---------------------------------------------------------------------------
-// Read functions
-// ---------------------------------------------------------------------------
-
-export async function getRefundBudget(
-  publicClient: PublicClient,
-  token: Address,
-  owner: Address,
-  operatorAddress: Address,
-): Promise<bigint> {
-  return publicClient.readContract({
-    address: token,
-    abi: erc20Abi,
-    functionName: 'allowance',
-    args: [owner, operatorAddress],
-  })
-}
-
-// ---------------------------------------------------------------------------
-// Write functions
-// ---------------------------------------------------------------------------
+import { requireAccount, wrapContractCall } from './error-wrapping.js'
 
 export async function approveRefundBudget(
   walletClient: WalletClient,
@@ -33,11 +10,7 @@ export async function approveRefundBudget(
   operatorAddress: Address,
   amount: bigint,
 ): Promise<Hash> {
-  if (!walletClient.account) {
-    throw new ContractCallError('approveRefundBudget', {
-      details: 'walletClient must have an account attached',
-    })
-  }
+  requireAccount(walletClient, 'approveRefundBudget')
 
   return wrapContractCall('approveRefundBudget', () =>
     walletClient.writeContract({
@@ -57,11 +30,7 @@ export async function refundInEscrow(
   paymentInfo: PaymentInfo,
   amount: bigint,
 ): Promise<Hash> {
-  if (!walletClient.account) {
-    throw new ContractCallError('refundInEscrow', {
-      details: 'walletClient must have an account attached',
-    })
-  }
+  requireAccount(walletClient, 'refundInEscrow')
 
   return wrapContractCall('refundInEscrow', () =>
     walletClient.writeContract({
@@ -83,11 +52,7 @@ export async function refundPostEscrow(
   tokenCollector: Address,
   collectorData: Hex,
 ): Promise<Hash> {
-  if (!walletClient.account) {
-    throw new ContractCallError('refundPostEscrow', {
-      details: 'walletClient must have an account attached',
-    })
-  }
+  requireAccount(walletClient, 'refundPostEscrow')
 
   return wrapContractCall('refundPostEscrow', () =>
     walletClient.writeContract({

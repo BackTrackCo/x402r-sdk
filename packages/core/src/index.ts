@@ -89,7 +89,10 @@ export {
 // ---------------------------------------------------------------------------
 // Operations
 // ---------------------------------------------------------------------------
-export { wrapContractCall } from './operations/error-wrapping.js'
+export {
+  requireAccount,
+  wrapContractCall,
+} from './operations/error-wrapping.js'
 export type { EvidenceEntry } from './operations/evidence.js'
 export {
   getEvidence,
@@ -108,11 +111,8 @@ export {
   getFeeAddresses,
   validateFeeBounds,
 } from './operations/fees.js'
-export {
-  freezePayment,
-  isFrozen,
-  unfreezePayment,
-} from './operations/freeze.js'
+export { isFrozen } from './operations/freeze-reads.js'
+export { freezePayment, unfreezePayment } from './operations/freeze-writes.js'
 export type { ConditionSlot, OperatorSlots } from './operations/operator.js'
 export {
   getConditionAddress,
@@ -125,24 +125,33 @@ export {
   getPaymentAmounts,
   getPaymentState,
 } from './operations/payment-state.js'
-export type { RefundRequestData } from './operations/refund.js'
+export { getRefundBudget } from './operations/refund-budget-reads.js'
+export {
+  approveRefundBudget,
+  refundInEscrow,
+  refundPostEscrow,
+} from './operations/refund-budget-writes.js'
+export type { RefundRequestData } from './operations/refund-reads.js'
+export {
+  getCancelCount,
+  getCancelledAmount,
+  getOperatorRefundRequests,
+  getPayerRefundRequests,
+  getReceiverRefundRequests,
+  getRefundRequest,
+  getRefundRequestByKey,
+  getRefundRequestStatus,
+  getStoredPaymentInfo,
+  hasRefundRequest,
+  RefundRequestStatus,
+} from './operations/refund-reads.js'
 export {
   approveRefundWithSignature,
   cancelRefundRequest,
   denyRefundRequest,
-  getRefundRequest,
-  getRefundRequestStatus,
-  hasRefundRequest,
-  RefundRequestStatus,
   refuseRefundRequest,
   requestRefund,
-} from './operations/refund.js'
-export {
-  approveRefundBudget,
-  getRefundBudget,
-  refundInEscrow,
-  refundPostEscrow,
-} from './operations/refund-budget.js'
+} from './operations/refund-writes.js'
 
 // ---------------------------------------------------------------------------
 // Payment

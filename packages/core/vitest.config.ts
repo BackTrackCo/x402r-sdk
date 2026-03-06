@@ -12,10 +12,8 @@ export default defineConfig({
         'src/types/**',
         'tests/**',
         // Write-only wrappers — thin writeContract forwarding with account guards
+        'src/operations/*-writes.ts',
         'src/operations/operator-writes.ts',
-        'src/operations/freeze.ts',
-        'src/operations/refund.ts',
-        'src/operations/refund-budget.ts',
       ],
       thresholds: {
         lines: 85,

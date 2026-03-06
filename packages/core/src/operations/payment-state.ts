@@ -1,23 +1,9 @@
 import type { Address, PublicClient } from 'viem'
+import { escrowStateAbi } from '../abis/escrow.js'
 import { paymentOperatorAbi } from '../abis/generated.js'
 import { computePaymentInfoHash } from '../payment/hashing.js'
 import type { PaymentInfo } from '../types/index.js'
 import { wrapContractCall } from './error-wrapping.js'
-
-// Inline ABI — escrow is from x402 base protocol, not in generated.ts
-const escrowStateAbi = [
-  {
-    type: 'function',
-    name: 'paymentState',
-    inputs: [{ name: 'paymentInfoHash', type: 'bytes32' }],
-    outputs: [
-      { name: 'hasCollectedPayment', type: 'bool' },
-      { name: 'capturableAmount', type: 'uint120' },
-      { name: 'refundableAmount', type: 'uint120' },
-    ],
-    stateMutability: 'view',
-  },
-] as const
 
 // ---------------------------------------------------------------------------
 // Types
@@ -46,7 +32,7 @@ export async function getPaymentState(
   operatorAddress: Address,
   chainId: number,
   paymentInfo: PaymentInfo,
-) {
+): Promise<readonly [boolean, bigint, bigint]> {
   const escrowAddress = await wrapContractCall('getPaymentState.ESCROW', () =>
     publicClient.readContract({
       address: operatorAddress,
@@ -55,15 +41,11 @@ export async function getPaymentState(
     }),
   )
 
-  const hash = computePaymentInfoHash(
-    chainId,
-    escrowAddress as Address,
-    paymentInfo,
-  )
+  const hash = computePaymentInfoHash(chainId, escrowAddress, paymentInfo)
 
   return wrapContractCall('getPaymentState.paymentState', () =>
     publicClient.readContract({
-      address: escrowAddress as Address,
+      address: escrowAddress,
       abi: escrowStateAbi,
       functionName: 'paymentState',
       args: [hash],

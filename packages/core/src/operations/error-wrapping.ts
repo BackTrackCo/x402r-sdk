@@ -2,8 +2,20 @@ import {
   BaseError,
   ContractFunctionExecutionError,
   ContractFunctionRevertedError,
+  type WalletClient,
 } from 'viem'
 import { ContractCallError } from '../errors/index.js'
+
+export function requireAccount(
+  walletClient: WalletClient,
+  opName: string,
+): void {
+  if (!walletClient.account) {
+    throw new ContractCallError(opName, {
+      details: 'walletClient must have an account attached',
+    })
+  }
+}
 
 export async function wrapContractCall<T>(
   opName: string,

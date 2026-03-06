@@ -1,8 +1,7 @@
 import type { Address, Hash, PublicClient, WalletClient } from 'viem'
 import { refundRequestEvidenceAbi } from '../abis/generated.js'
-import { ContractCallError } from '../errors/index.js'
 import type { PaymentInfo } from '../types/index.js'
-import { wrapContractCall } from './error-wrapping.js'
+import { requireAccount, wrapContractCall } from './error-wrapping.js'
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -100,11 +99,7 @@ export async function submitEvidence(
   nonce: bigint,
   cid: string,
 ): Promise<Hash> {
-  if (!walletClient.account) {
-    throw new ContractCallError('submitEvidence', {
-      details: 'walletClient must have an account attached',
-    })
-  }
+  requireAccount(walletClient, 'submitEvidence')
 
   return wrapContractCall('submitEvidence', () =>
     walletClient.writeContract({

@@ -27,6 +27,7 @@ import {
 const baseSepolia = x402rChains[84532]
 const USDC = baseSepolia.usdc
 const CHAIN_ID = 84532
+const FAR_FUTURE = 281474976710655 // max uint48
 
 // ---------------------------------------------------------------------------
 // Shared state
@@ -109,9 +110,9 @@ describe('Fee Read Operations', () => {
     receiver: testRoles.receiver.address,
     token: USDC,
     maxAmount: 1_000_000n,
-    preApprovalExpiry: 0,
-    authorizationExpiry: 281474976710655,
-    refundExpiry: 281474976710655,
+    preApprovalExpiry: FAR_FUTURE,
+    authorizationExpiry: FAR_FUTURE,
+    refundExpiry: FAR_FUTURE,
     minFeeBps: 0,
     maxFeeBps: 500,
     feeReceiver: zeroAddress,
@@ -156,7 +157,7 @@ describe('Fee Read Operations', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Payment State (pre-authorize baseline)
+// Payment State Read Operations
 // ---------------------------------------------------------------------------
 
 describe('Payment State Read Operations', () => {
@@ -167,9 +168,9 @@ describe('Payment State Read Operations', () => {
       receiver: testRoles.receiver.address,
       token: USDC,
       maxAmount: 1_000_000n,
-      preApprovalExpiry: 0,
-      authorizationExpiry: 281474976710655,
-      refundExpiry: 281474976710655,
+      preApprovalExpiry: FAR_FUTURE,
+      authorizationExpiry: FAR_FUTURE,
+      refundExpiry: FAR_FUTURE,
       minFeeBps: 0,
       maxFeeBps: 500,
       feeReceiver: fixtures.operatorAddress,
@@ -194,9 +195,9 @@ describe('Payment State Read Operations', () => {
       receiver: testRoles.receiver.address,
       token: USDC,
       maxAmount: 1_000_000n,
-      preApprovalExpiry: 0,
-      authorizationExpiry: 281474976710655,
-      refundExpiry: 281474976710655,
+      preApprovalExpiry: FAR_FUTURE,
+      authorizationExpiry: FAR_FUTURE,
+      refundExpiry: FAR_FUTURE,
       minFeeBps: 0,
       maxFeeBps: 500,
       feeReceiver: fixtures.operatorAddress,

@@ -1,8 +1,7 @@
 import type { Address, Hash, Hex, WalletClient } from 'viem'
 import { paymentOperatorAbi } from '../abis/generated.js'
-import { ContractCallError } from '../errors/index.js'
 import type { PaymentInfo } from '../types/index.js'
-import { wrapContractCall } from './error-wrapping.js'
+import { requireAccount, wrapContractCall } from './error-wrapping.js'
 
 export async function authorize(
   walletClient: WalletClient,
@@ -12,11 +11,7 @@ export async function authorize(
   tokenCollector: Address,
   collectorData: Hex,
 ): Promise<Hash> {
-  if (!walletClient.account) {
-    throw new ContractCallError('authorize', {
-      details: 'walletClient must have an account attached',
-    })
-  }
+  requireAccount(walletClient, 'authorize')
 
   return wrapContractCall('authorize', () =>
     walletClient.writeContract({
@@ -38,11 +33,7 @@ export async function charge(
   tokenCollector: Address,
   collectorData: Hex,
 ): Promise<Hash> {
-  if (!walletClient.account) {
-    throw new ContractCallError('charge', {
-      details: 'walletClient must have an account attached',
-    })
-  }
+  requireAccount(walletClient, 'charge')
 
   return wrapContractCall('charge', () =>
     walletClient.writeContract({
@@ -62,11 +53,7 @@ export async function release(
   paymentInfo: PaymentInfo,
   amount: bigint,
 ): Promise<Hash> {
-  if (!walletClient.account) {
-    throw new ContractCallError('release', {
-      details: 'walletClient must have an account attached',
-    })
-  }
+  requireAccount(walletClient, 'release')
 
   return wrapContractCall('release', () =>
     walletClient.writeContract({
