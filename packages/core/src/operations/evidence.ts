@@ -62,7 +62,7 @@ export async function getEvidenceCount(
     abi: refundRequestEvidenceAbi,
     functionName: 'getEvidenceCount',
     args: [paymentInfo, nonce],
-  }) as Promise<bigint>
+  })
 }
 
 export async function getEvidenceBatch(
