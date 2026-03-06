@@ -1,6 +1,5 @@
 import type { Address, PublicClient } from 'viem'
-import { escrowStateAbi } from '../abis/escrow.js'
-import { paymentOperatorAbi } from '../abis/generated.js'
+import { authCaptureEscrowAbi, paymentOperatorAbi } from '../abis/generated.js'
 import { computePaymentInfoHash } from '../payment/hashing.js'
 import type { PaymentInfo } from '../types/index.js'
 import { wrapContractCall } from './error-wrapping.js'
@@ -46,7 +45,7 @@ export async function getPaymentState(
   return wrapContractCall('getPaymentState.paymentState', () =>
     publicClient.readContract({
       address: escrowAddress,
-      abi: escrowStateAbi,
+      abi: authCaptureEscrowAbi,
       functionName: 'paymentState',
       args: [hash],
     }),
