@@ -44,7 +44,12 @@ export async function getEvidence(
     functionName: 'getEvidence',
     args: [paymentInfo, nonce, index],
   })
-  return result as unknown as EvidenceEntry
+  return {
+    submitter: result.submitter,
+    role: result.role,
+    timestamp: result.timestamp,
+    cid: result.cid,
+  }
 }
 
 export async function getEvidenceCount(
@@ -69,12 +74,18 @@ export async function getEvidenceBatch(
   offset: bigint,
   count: bigint,
 ): Promise<{ entries: EvidenceEntry[]; total: bigint }> {
-  const [entries, total] = (await publicClient.readContract({
+  const [rawEntries, total] = await publicClient.readContract({
     address: contractAddress,
     abi: refundRequestEvidenceAbi,
     functionName: 'getEvidenceBatch',
     args: [paymentInfo, nonce, offset, count],
-  })) as unknown as [EvidenceEntry[], bigint]
+  })
+  const entries = rawEntries.map(({ submitter, role, timestamp, cid }) => ({
+    submitter,
+    role,
+    timestamp,
+    cid,
+  }))
   return { entries, total }
 }
 

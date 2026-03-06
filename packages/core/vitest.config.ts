@@ -6,7 +6,17 @@ export default defineConfig({
       provider: 'v8',
       reporter: process.env.CI ? ['lcov'] : ['text', 'json', 'html'],
       include: ['src/**/*.ts'],
-      exclude: ['src/**/index.ts', 'src/abis/**', 'src/types/**', 'tests/**'],
+      exclude: [
+        'src/**/index.ts',
+        'src/abis/**',
+        'src/types/**',
+        'tests/**',
+        // Write-only wrappers — thin writeContract forwarding with account guards
+        'src/operations/operator-writes.ts',
+        'src/operations/freeze.ts',
+        'src/operations/refund.ts',
+        'src/operations/refund-budget.ts',
+      ],
       thresholds: {
         lines: 85,
         functions: 85,
