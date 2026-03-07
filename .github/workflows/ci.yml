@@ -59,6 +59,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: packages/core/coverage/lcov.info
+          flags: core
           fail_ci_if_error: true
 
   test-fork:
@@ -82,7 +83,7 @@ jobs:
         uses: nick-fields/retry@v3
         with:
           timeout_minutes: 10
-          max_attempts: 3
+          max_attempts: 2
           command: pnpm test:fork
 
   build:

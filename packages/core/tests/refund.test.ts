@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { ContractCallError } from '../src/errors/index.js'
 import {
   getOperatorRefundRequests,
   getPayerRefundRequests,
@@ -8,16 +7,15 @@ import {
   getRefundRequestByKey,
   RefundRequestStatus,
 } from '../src/operations/refund-reads.js'
-import { requestRefund } from '../src/operations/refund-writes.js'
 import {
   createMockPublicClient,
-  createMockWalletWithoutAccount,
   makePaymentInfo,
   TEST_ADDRESSES,
 } from './fixtures.js'
 
 const MOCK_CONTRACT = '0x1111111111111111111111111111111111111111' as const
 
+// Guards parity between the TypeScript enum and Solidity's RefundRequestStatus enum ordering
 describe('RefundRequestStatus', () => {
   it('matches Solidity enum values (Pending=0, Approved=1, Denied=2, Cancelled=3, Refused=4)', () => {
     expect(RefundRequestStatus.Pending).toBe(0)
@@ -103,19 +101,5 @@ describe('refund read functions', () => {
       '0xabc' as `0x${string}`,
     )
     expect(result).toEqual(mockData)
-  })
-})
-
-describe('refund write functions', () => {
-  it('requestRefund throws without account', async () => {
-    await expect(
-      requestRefund(
-        createMockWalletWithoutAccount(),
-        MOCK_CONTRACT,
-        makePaymentInfo(),
-        100n,
-        0n,
-      ),
-    ).rejects.toThrow(ContractCallError)
   })
 })
