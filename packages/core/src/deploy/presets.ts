@@ -115,45 +115,46 @@ export async function previewMarketplaceOperator(
   } = resolveOptions(options)
 
   // 1. EscrowPeriod
-  const escrowPeriodAddress = await computeEscrowPeriodAddress(
-    publicClient,
-    factories.escrowPeriod,
-    options.escrowPeriodSeconds,
+  const escrowPeriodAddress = await computeEscrowPeriodAddress(publicClient, {
+    factoryAddress: factories.escrowPeriod,
+    escrowPeriod: options.escrowPeriodSeconds,
     authorizedCodehash,
-  )
+  })
 
   // 2. Freeze (payer freezes, receiver unfreezes)
-  const freezeAddress = await computeFreezeAddress(
-    publicClient,
-    factories.freeze,
-    singletons.payer,
-    singletons.receiver,
-    freezeDurationSeconds,
-    escrowPeriodAddress,
-  )
+  const freezeAddress = await computeFreezeAddress(publicClient, {
+    factoryAddress: factories.freeze,
+    freezeCondition: singletons.payer,
+    unfreezeCondition: singletons.receiver,
+    freezeDuration: freezeDurationSeconds,
+    escrowPeriodContract: escrowPeriodAddress,
+  })
 
   // 3. Arbiter StaticAddressCondition
   const arbiterConditionAddress = await computeStaticAddressConditionAddress(
     publicClient,
-    factories.staticAddressCondition,
-    options.arbiter,
+    {
+      factoryAddress: factories.staticAddressCondition,
+      designatedAddress: options.arbiter,
+    },
   )
 
   // 4. RefundInEscrow: OR(receiver singleton, arbiter condition)
   const refundInEscrowConditionAddress = await computeOrConditionAddress(
     publicClient,
-    factories.orCondition,
-    [singletons.receiver, arbiterConditionAddress],
+    {
+      factoryAddress: factories.orCondition,
+      conditions: [singletons.receiver, arbiterConditionAddress],
+    },
   )
 
   // 5. FeeCalculator (only if operatorFeeBps > 0)
   const feeCalculatorAddress =
     operatorFeeBps > 0n
-      ? await computeFeeCalculatorAddress(
-          publicClient,
-          factories.staticFeeCalculator,
-          operatorFeeBps,
-        )
+      ? await computeFeeCalculatorAddress(publicClient, {
+          factoryAddress: factories.staticFeeCalculator,
+          feeBps: operatorFeeBps,
+        })
       : null
 
   // 6. Build OperatorConfig
@@ -173,11 +174,10 @@ export async function previewMarketplaceOperator(
   }
 
   // 7. Compute operator address
-  const operatorAddress = await computeOperatorAddress(
-    publicClient,
-    factories.paymentOperator,
-    operatorConfig,
-  )
+  const operatorAddress = await computeOperatorAddress(publicClient, {
+    factoryAddress: factories.paymentOperator,
+    config: operatorConfig,
+  })
 
   return {
     operatorAddress,
@@ -211,26 +211,22 @@ export async function deployMarketplaceOperator(
   const deployments: DeployResult[] = []
 
   // 1. EscrowPeriod
-  const escrowResult = await deployEscrowPeriod(
-    walletClient,
-    publicClient,
-    factories.escrowPeriod,
-    options.escrowPeriodSeconds,
+  const escrowResult = await deployEscrowPeriod(walletClient, publicClient, {
+    factoryAddress: factories.escrowPeriod,
+    escrowPeriod: options.escrowPeriodSeconds,
     authorizedCodehash,
-  )
+  })
   deployments.push(escrowResult)
   const escrowPeriodAddress = escrowResult.address
 
   // 2. Freeze (payer freezes, receiver unfreezes)
-  const freezeResult = await deployFreeze(
-    walletClient,
-    publicClient,
-    factories.freeze,
-    singletons.payer,
-    singletons.receiver,
-    freezeDurationSeconds,
-    escrowPeriodAddress,
-  )
+  const freezeResult = await deployFreeze(walletClient, publicClient, {
+    factoryAddress: factories.freeze,
+    freezeCondition: singletons.payer,
+    unfreezeCondition: singletons.receiver,
+    freezeDuration: freezeDurationSeconds,
+    escrowPeriodContract: escrowPeriodAddress,
+  })
   deployments.push(freezeResult)
   const freezeAddress = freezeResult.address
 
@@ -238,8 +234,10 @@ export async function deployMarketplaceOperator(
   const arbiterResult = await deployStaticAddressCondition(
     walletClient,
     publicClient,
-    factories.staticAddressCondition,
-    options.arbiter,
+    {
+      factoryAddress: factories.staticAddressCondition,
+      designatedAddress: options.arbiter,
+    },
   )
   deployments.push(arbiterResult)
   const arbiterConditionAddress = arbiterResult.address
@@ -248,8 +246,10 @@ export async function deployMarketplaceOperator(
   const refundInEscrowResult = await deployOrCondition(
     walletClient,
     publicClient,
-    factories.orCondition,
-    [singletons.receiver, arbiterConditionAddress],
+    {
+      factoryAddress: factories.orCondition,
+      conditions: [singletons.receiver, arbiterConditionAddress],
+    },
   )
   deployments.push(refundInEscrowResult)
   const refundInEscrowConditionAddress = refundInEscrowResult.address
@@ -257,12 +257,10 @@ export async function deployMarketplaceOperator(
   // 5. FeeCalculator (only if operatorFeeBps > 0)
   let feeCalculatorAddress: Address | null = null
   if (operatorFeeBps > 0n) {
-    const feeResult = await deployFeeCalculator(
-      walletClient,
-      publicClient,
-      factories.staticFeeCalculator,
-      operatorFeeBps,
-    )
+    const feeResult = await deployFeeCalculator(walletClient, publicClient, {
+      factoryAddress: factories.staticFeeCalculator,
+      feeBps: operatorFeeBps,
+    })
     deployments.push(feeResult)
     feeCalculatorAddress = feeResult.address
   }
@@ -284,12 +282,10 @@ export async function deployMarketplaceOperator(
   }
 
   // 7. Deploy PaymentOperator
-  const operatorResult = await deployOperator(
-    walletClient,
-    publicClient,
-    factories.paymentOperator,
-    operatorConfig,
-  )
+  const operatorResult = await deployOperator(walletClient, publicClient, {
+    factoryAddress: factories.paymentOperator,
+    config: operatorConfig,
+  })
   deployments.push(operatorResult)
   const operatorAddress = operatorResult.address
 

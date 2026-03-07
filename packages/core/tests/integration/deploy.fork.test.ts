@@ -36,11 +36,10 @@ describe('Deploy Module (Fork)', () => {
   })
 
   it('computeFeeCalculatorAddress returns deterministic non-zero address', async () => {
-    const address = await computeFeeCalculatorAddress(
-      publicClient,
-      factories.staticFeeCalculator,
-      50n,
-    )
+    const address = await computeFeeCalculatorAddress(publicClient, {
+      factoryAddress: factories.staticFeeCalculator,
+      feeBps: 50n,
+    })
 
     expect(address).toMatch(/^0x[0-9a-fA-F]{40}$/)
     expect(address).not.toBe('0x0000000000000000000000000000000000000000')

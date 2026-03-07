@@ -1,5 +1,13 @@
+import type { Hex } from 'viem'
 import { encodeAbiParameters, keccak256, toHex, zeroAddress } from 'viem'
 import type { PaymentInfo } from '../types/index.js'
+
+// ---------------------------------------------------------------------------
+// Companion types
+// ---------------------------------------------------------------------------
+
+export type ComputePaymentInfoHashReturnType = Hex
+export type ComputeEscrowNonceReturnType = Hex
 
 // ---------------------------------------------------------------------------
 // Typehash
@@ -48,7 +56,7 @@ export function computePaymentInfoHash(
   chainId: number,
   escrowAddress: `0x${string}`,
   paymentInfo: PaymentInfo,
-): `0x${string}` {
+): ComputePaymentInfoHashReturnType {
   const encodedPaymentInfo = encodeAbiParameters(paymentInfoAbiParams, [
     PAYMENT_INFO_TYPEHASH,
     paymentInfo.operator,
@@ -81,7 +89,7 @@ export function computeEscrowNonce(
   chainId: number,
   escrowAddress: `0x${string}`,
   paymentInfo: PaymentInfo,
-): `0x${string}` {
+): ComputeEscrowNonceReturnType {
   return computePaymentInfoHash(chainId, escrowAddress, {
     ...paymentInfo,
     payer: zeroAddress,
