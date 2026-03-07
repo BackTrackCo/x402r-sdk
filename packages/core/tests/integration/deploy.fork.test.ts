@@ -53,7 +53,8 @@ describe('Deploy Module (Fork)', () => {
 
     expect(preview.operatorAddress).toMatch(/^0x[0-9a-fA-F]{40}$/)
     expect(preview.escrowPeriodAddress).toMatch(/^0x[0-9a-fA-F]{40}$/)
-    expect(preview.freezeAddress).toMatch(/^0x[0-9a-fA-F]{40}$/)
+    // freezeAddress should be null when freezeDurationSeconds is not set
+    expect(preview.freezeAddress).toBeNull()
     expect(preview.arbiterConditionAddress).toMatch(/^0x[0-9a-fA-F]{40}$/)
     expect(preview.refundInEscrowConditionAddress).toMatch(
       /^0x[0-9a-fA-F]{40}$/,
@@ -64,7 +65,7 @@ describe('Deploy Module (Fork)', () => {
     const zero = '0x0000000000000000000000000000000000000000'
     expect(preview.operatorAddress).not.toBe(zero)
     expect(preview.escrowPeriodAddress).not.toBe(zero)
-    expect(preview.freezeAddress).not.toBe(zero)
+    // freezeAddress is null (no freeze configured), skip zero-check
     expect(preview.arbiterConditionAddress).not.toBe(zero)
     expect(preview.refundInEscrowConditionAddress).not.toBe(zero)
   })
@@ -91,11 +92,11 @@ describe('Deploy Module (Fork)', () => {
     )
     expect(deployment.feeCalculatorAddress).toBe(preview.feeCalculatorAddress)
 
-    // With fee: escrow + freeze + arbiterCondition + orCondition + feeCalc + operator = 6
-    expect(deployment.deployments).toHaveLength(6)
+    // No freeze, with fee: escrow + arbiterCondition + orCondition + feeCalc + operator = 5
+    expect(deployment.deployments).toHaveLength(5)
     // Some components may already exist on the forked chain — assert totals add up
     expect(deployment.summary.newCount + deployment.summary.existingCount).toBe(
-      6,
+      5,
     )
     expect(deployment.summary.txHashes).toHaveLength(
       deployment.summary.newCount,
@@ -112,14 +113,39 @@ describe('Deploy Module (Fork)', () => {
     )
 
     // All should be existing since we deployed (or found existing) in the previous test
-    expect(deployment.deployments).toHaveLength(6)
+    expect(deployment.deployments).toHaveLength(5)
     expect(deployment.summary.newCount).toBe(0)
-    expect(deployment.summary.existingCount).toBe(6)
+    expect(deployment.summary.existingCount).toBe(5)
     expect(deployment.summary.txHashes).toHaveLength(0)
     for (const d of deployment.deployments) {
       expect(d.isNew).toBe(false)
       expect(d.hash).toBeNull()
     }
+  })
+
+  it('deploys freeze + andCondition when freezeDurationSeconds > 0', async () => {
+    const options = makeOptions({ freezeDurationSeconds: 86400n })
+    const preview = await previewMarketplaceOperator(publicClient, options)
+    const deployment = await deployMarketplaceOperator(
+      walletClient,
+      publicClient,
+      options,
+    )
+
+    // freezeAddress should be non-null and valid
+    expect(deployment.freezeAddress).toMatch(/^0x[0-9a-fA-F]{40}$/)
+    expect(deployment.freezeAddress).toBe(preview.freezeAddress)
+
+    // releaseCondition should NOT be escrowPeriodAddress (it's the AndCondition)
+    expect(deployment.operatorConfig.releaseCondition).not.toBe(
+      deployment.escrowPeriodAddress,
+    )
+
+    // freeze + andCondition + escrow + arbiter + orCondition + feeCalc + operator = 7
+    expect(deployment.deployments).toHaveLength(7)
+    expect(deployment.summary.newCount + deployment.summary.existingCount).toBe(
+      7,
+    )
   })
 
   it('deploy with different arbiter produces different operator address', async () => {

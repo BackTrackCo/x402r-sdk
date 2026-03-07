@@ -8,12 +8,14 @@ import {
 import { ConfigError } from '../errors/index.js'
 import type { OperatorConfig } from '../types/index.js'
 import {
+  computeAndConditionAddress,
   computeEscrowPeriodAddress,
   computeFeeCalculatorAddress,
   computeFreezeAddress,
   computeOperatorAddress,
   computeOrConditionAddress,
   computeStaticAddressConditionAddress,
+  deployAndCondition,
   deployEscrowPeriod,
   deployFeeCalculator,
   deployFreeze,
@@ -40,7 +42,7 @@ export interface MarketplaceOperatorOptions {
 export interface MarketplaceOperatorPreview {
   operatorAddress: Address
   escrowPeriodAddress: Address
-  freezeAddress: Address
+  freezeAddress: Address | null
   arbiterConditionAddress: Address
   refundInEscrowConditionAddress: Address
   feeCalculatorAddress: Address | null
@@ -50,7 +52,7 @@ export interface MarketplaceOperatorPreview {
 export interface MarketplaceOperatorDeployment {
   operatorAddress: Address
   escrowPeriodAddress: Address
-  freezeAddress: Address
+  freezeAddress: Address | null
   arbiterConditionAddress: Address
   refundInEscrowConditionAddress: Address
   feeCalculatorAddress: Address | null
@@ -121,14 +123,24 @@ export async function previewMarketplaceOperator(
     authorizedCodehash,
   })
 
-  // 2. Freeze (payer freezes, receiver unfreezes)
-  const freezeAddress = await computeFreezeAddress(publicClient, {
-    factoryAddress: factories.freeze,
-    freezeCondition: singletons.payer,
-    unfreezeCondition: singletons.receiver,
-    freezeDuration: freezeDurationSeconds,
-    escrowPeriodContract: escrowPeriodAddress,
-  })
+  // 2. Freeze + AndCondition (only when freezeDurationSeconds > 0)
+  let freezeAddress: Address | null = null
+  let releaseConditionAddress: Address = escrowPeriodAddress
+
+  if (freezeDurationSeconds > 0n) {
+    freezeAddress = await computeFreezeAddress(publicClient, {
+      factoryAddress: factories.freeze,
+      freezeCondition: singletons.payer,
+      unfreezeCondition: singletons.receiver,
+      freezeDuration: freezeDurationSeconds,
+      escrowPeriodContract: escrowPeriodAddress,
+    })
+
+    releaseConditionAddress = await computeAndConditionAddress(publicClient, {
+      factoryAddress: factories.andCondition,
+      conditions: [escrowPeriodAddress, freezeAddress],
+    })
+  }
 
   // 3. Arbiter StaticAddressCondition
   const arbiterConditionAddress = await computeStaticAddressConditionAddress(
@@ -165,7 +177,7 @@ export async function previewMarketplaceOperator(
     authorizeRecorder: escrowPeriodAddress,
     chargeCondition: zeroAddress,
     chargeRecorder: zeroAddress,
-    releaseCondition: escrowPeriodAddress,
+    releaseCondition: releaseConditionAddress,
     releaseRecorder: zeroAddress,
     refundInEscrowCondition: refundInEscrowConditionAddress,
     refundInEscrowRecorder: zeroAddress,
@@ -219,16 +231,28 @@ export async function deployMarketplaceOperator(
   deployments.push(escrowResult)
   const escrowPeriodAddress = escrowResult.address
 
-  // 2. Freeze (payer freezes, receiver unfreezes)
-  const freezeResult = await deployFreeze(walletClient, publicClient, {
-    factoryAddress: factories.freeze,
-    freezeCondition: singletons.payer,
-    unfreezeCondition: singletons.receiver,
-    freezeDuration: freezeDurationSeconds,
-    escrowPeriodContract: escrowPeriodAddress,
-  })
-  deployments.push(freezeResult)
-  const freezeAddress = freezeResult.address
+  // 2. Freeze + AndCondition (only when freezeDurationSeconds > 0)
+  let freezeAddress: Address | null = null
+  let releaseConditionAddress: Address = escrowPeriodAddress
+
+  if (freezeDurationSeconds > 0n) {
+    const freezeResult = await deployFreeze(walletClient, publicClient, {
+      factoryAddress: factories.freeze,
+      freezeCondition: singletons.payer,
+      unfreezeCondition: singletons.receiver,
+      freezeDuration: freezeDurationSeconds,
+      escrowPeriodContract: escrowPeriodAddress,
+    })
+    deployments.push(freezeResult)
+    freezeAddress = freezeResult.address
+
+    const andResult = await deployAndCondition(walletClient, publicClient, {
+      factoryAddress: factories.andCondition,
+      conditions: [escrowPeriodAddress, freezeAddress],
+    })
+    deployments.push(andResult)
+    releaseConditionAddress = andResult.address
+  }
 
   // 3. Arbiter StaticAddressCondition
   const arbiterResult = await deployStaticAddressCondition(
@@ -273,7 +297,7 @@ export async function deployMarketplaceOperator(
     authorizeRecorder: escrowPeriodAddress,
     chargeCondition: zeroAddress,
     chargeRecorder: zeroAddress,
-    releaseCondition: escrowPeriodAddress,
+    releaseCondition: releaseConditionAddress,
     releaseRecorder: zeroAddress,
     refundInEscrowCondition: refundInEscrowConditionAddress,
     refundInEscrowRecorder: zeroAddress,
