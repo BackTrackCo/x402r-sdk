@@ -54,6 +54,67 @@ describe('previewMarketplaceOperator', () => {
     expect(result2.feeCalculatorAddress).toBeNull()
   })
 
+  it('freezeAddress is null and releaseCondition equals escrowPeriodAddress when freeze disabled', async () => {
+    // Use distinct addresses to verify wiring (not just COMPUTED_ADDR === COMPUTED_ADDR)
+    let computeCallCount = 0
+    const addresses = [
+      '0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', // escrowPeriod
+      '0xBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB', // arbiterCondition
+      '0xCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC', // orCondition
+      '0xDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD', // operator
+    ] as Address[]
+    const publicClient = createMockPublicClient({})
+    ;(publicClient as any).readContract = async (params: {
+      functionName: string
+      [k: string]: unknown
+    }) => {
+      if (params.functionName === 'computeAddress') {
+        return addresses[computeCallCount++] ?? COMPUTED_ADDR
+      }
+      return COMPUTED_ADDR
+    }
+
+    const result = await previewMarketplaceOperator(publicClient, makeOptions())
+
+    expect(result.freezeAddress).toBeNull()
+    // releaseCondition must literally be the escrowPeriod address (first computed)
+    expect(result.operatorConfig.releaseCondition).toBe(addresses[0])
+    expect(result.escrowPeriodAddress).toBe(addresses[0])
+  })
+
+  it('freezeAddress is non-null and releaseCondition is AndCondition when freeze enabled', async () => {
+    let computeCallCount = 0
+    const addresses = [
+      '0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', // escrowPeriod
+      '0xBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB', // freeze
+      '0xCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC', // andCondition
+      '0xDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD', // arbiterCondition
+      '0xEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE', // orCondition
+      '0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', // operator
+    ] as Address[]
+    const publicClient = createMockPublicClient({})
+    ;(publicClient as any).readContract = async (params: {
+      functionName: string
+      [k: string]: unknown
+    }) => {
+      if (params.functionName === 'computeAddress') {
+        return addresses[computeCallCount++] ?? COMPUTED_ADDR
+      }
+      return COMPUTED_ADDR
+    }
+
+    const result = await previewMarketplaceOperator(
+      publicClient,
+      makeOptions({ freezeDurationSeconds: 86400n }),
+    )
+
+    expect(result.freezeAddress).toBe(addresses[1]) // freeze address
+    expect(result.operatorConfig.releaseCondition).toBe(addresses[2]) // andCondition, NOT escrowPeriod
+    expect(result.operatorConfig.releaseCondition).not.toBe(
+      result.escrowPeriodAddress,
+    )
+  })
+
   it('feeCalculatorAddress is non-null when operatorFeeBps > 0', async () => {
     const publicClient = createMockPublicClient({
       computeAddress: COMPUTED_ADDR,
@@ -70,26 +131,31 @@ describe('previewMarketplaceOperator', () => {
 })
 
 describe('deployMarketplaceOperator', () => {
-  it('summary correctly counts new vs existing', async () => {
-    // First 3 calls to getDeployed/getOperator return zeroAddress (new)
-    // Last 3 calls return non-zero (existing)
+  it('summary correctly counts new vs existing (freeze disabled)', async () => {
     let getDeployedCallCount = 0
-    const publicClient = createMockPublicClient({
-      computeAddress: COMPUTED_ADDR,
-    })
+    let computeCallCount = 0
+    const addresses = [
+      '0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', // escrowPeriod
+      '0xBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB', // arbiterCondition
+      '0xCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC', // orCondition
+      '0xDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD', // operator
+    ] as Address[]
+    const publicClient = createMockPublicClient({})
 
-    // Override readContract to alternate between new and existing
     ;(publicClient as any).readContract = async (params: {
       functionName: string
       [k: string]: unknown
     }) => {
+      if (params.functionName === 'computeAddress') {
+        return addresses[computeCallCount++] ?? COMPUTED_ADDR
+      }
       if (
         params.functionName === 'getDeployed' ||
         params.functionName === 'getOperator'
       ) {
         getDeployedCallCount++
-        // First 3 are new (return zero), rest are existing (return non-zero)
-        return getDeployedCallCount <= 3 ? zeroAddress : COMPUTED_ADDR
+        // First 2 are new (return zero), rest are existing (return non-zero)
+        return getDeployedCallCount <= 2 ? zeroAddress : COMPUTED_ADDR
       }
       return COMPUTED_ADDR
     }
@@ -105,11 +171,15 @@ describe('deployMarketplaceOperator', () => {
       makeOptions(),
     )
 
-    // Without fee calculator: escrow + freeze + arbiterCondition + orCondition + operator = 5
-    expect(result.deployments).toHaveLength(5)
-    expect(result.summary.newCount).toBe(3)
+    // Without freeze or fee calculator: escrow + arbiterCondition + orCondition + operator = 4
+    expect(result.deployments).toHaveLength(4)
+    expect(result.freezeAddress).toBeNull()
+    // releaseCondition is escrowPeriod (first address), not some other contract
+    expect(result.operatorConfig.releaseCondition).toBe(addresses[0])
+    expect(result.escrowPeriodAddress).toBe(addresses[0])
+    expect(result.summary.newCount).toBe(2)
     expect(result.summary.existingCount).toBe(2)
-    expect(result.summary.txHashes).toHaveLength(3)
+    expect(result.summary.txHashes).toHaveLength(2)
   })
 
   it('deploys feeCalculator when operatorFeeBps > 0', async () => {
@@ -126,8 +196,97 @@ describe('deployMarketplaceOperator', () => {
       makeOptions({ operatorFeeBps: 100n }),
     )
 
-    // With fee calculator: escrow + freeze + arbiterCondition + orCondition + feeCalc + operator = 6
-    expect(result.deployments).toHaveLength(6)
+    // Without freeze, with fee calculator: escrow + arbiterCondition + orCondition + feeCalc + operator = 5
+    expect(result.deployments).toHaveLength(5)
     expect(result.feeCalculatorAddress).toBe(COMPUTED_ADDR)
+  })
+
+  it('deploys freeze + andCondition when freezeDurationSeconds > 0', async () => {
+    // Use a counter to return distinct addresses so we can verify releaseCondition differs
+    let computeCallCount = 0
+    const addresses = [
+      '0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', // escrowPeriod
+      '0xBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB', // freeze
+      '0xCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC', // andCondition
+      '0xDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD', // arbiterCondition
+      '0xEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE', // orCondition
+      '0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', // operator
+    ] as Address[]
+    const publicClient = createMockPublicClient({
+      getDeployed: zeroAddress,
+      getOperator: zeroAddress,
+    })
+    ;(publicClient as any).readContract = async (params: {
+      functionName: string
+      [k: string]: unknown
+    }) => {
+      if (params.functionName === 'computeAddress') {
+        return addresses[computeCallCount++] ?? COMPUTED_ADDR
+      }
+      if (
+        params.functionName === 'getDeployed' ||
+        params.functionName === 'getOperator'
+      ) {
+        return zeroAddress
+      }
+      return COMPUTED_ADDR
+    }
+    const walletClient = createMockWalletClient()
+
+    const result = await deployMarketplaceOperator(
+      walletClient,
+      publicClient,
+      makeOptions({ freezeDurationSeconds: 86400n }),
+    )
+
+    // With freeze: escrow + freeze + andCondition + arbiterCondition + orCondition + operator = 6
+    expect(result.deployments).toHaveLength(6)
+    expect(result.freezeAddress).not.toBeNull()
+    // releaseCondition should be the AndCondition address, not escrowPeriodAddress
+    expect(result.operatorConfig.releaseCondition).not.toBe(
+      result.escrowPeriodAddress,
+    )
+  })
+
+  it('skips freeze when freezeDurationSeconds omitted', async () => {
+    let computeCallCount = 0
+    const addresses = [
+      '0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', // escrowPeriod
+      '0xBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB', // arbiterCondition
+      '0xCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC', // orCondition
+      '0xDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD', // operator
+    ] as Address[]
+    const publicClient = createMockPublicClient({
+      getDeployed: zeroAddress,
+      getOperator: zeroAddress,
+    })
+    ;(publicClient as any).readContract = async (params: {
+      functionName: string
+      [k: string]: unknown
+    }) => {
+      if (params.functionName === 'computeAddress') {
+        return addresses[computeCallCount++] ?? COMPUTED_ADDR
+      }
+      if (
+        params.functionName === 'getDeployed' ||
+        params.functionName === 'getOperator'
+      ) {
+        return zeroAddress
+      }
+      return COMPUTED_ADDR
+    }
+    const walletClient = createMockWalletClient()
+
+    const result = await deployMarketplaceOperator(
+      walletClient,
+      publicClient,
+      makeOptions(),
+    )
+
+    expect(result.freezeAddress).toBeNull()
+    expect(result.operatorConfig.releaseCondition).toBe(addresses[0])
+    expect(result.operatorConfig.releaseCondition).toBe(
+      result.escrowPeriodAddress,
+    )
   })
 })
