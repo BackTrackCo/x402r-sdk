@@ -107,8 +107,10 @@ export async function resolveCondition(
       const result = await deployStaticAddressCondition(
         walletClient,
         publicClient,
-        factoryAddresses.staticAddressCondition,
-        node.designatedAddress,
+        {
+          factoryAddress: factoryAddresses.staticAddressCondition,
+          designatedAddress: node.designatedAddress,
+        },
       )
       return { address: result.address, deployments: [result] }
     }
@@ -127,12 +129,10 @@ export async function resolveCondition(
         childAddresses.push(resolved.address)
         allDeployments.push(...resolved.deployments)
       }
-      const result = await deployAndCondition(
-        walletClient,
-        publicClient,
-        factoryAddresses.andCondition,
-        childAddresses,
-      )
+      const result = await deployAndCondition(walletClient, publicClient, {
+        factoryAddress: factoryAddresses.andCondition,
+        conditions: childAddresses,
+      })
       return {
         address: result.address,
         deployments: [...allDeployments, result],
@@ -152,12 +152,10 @@ export async function resolveCondition(
         childAddresses.push(resolved.address)
         allDeployments.push(...resolved.deployments)
       }
-      const result = await deployOrCondition(
-        walletClient,
-        publicClient,
-        factoryAddresses.orCondition,
-        childAddresses,
-      )
+      const result = await deployOrCondition(walletClient, publicClient, {
+        factoryAddress: factoryAddresses.orCondition,
+        conditions: childAddresses,
+      })
       return {
         address: result.address,
         deployments: [...allDeployments, result],
@@ -171,12 +169,10 @@ export async function resolveCondition(
         factoryAddresses,
         node.condition,
       )
-      const result = await deployNotCondition(
-        walletClient,
-        publicClient,
-        factoryAddresses.notCondition,
-        child.address,
-      )
+      const result = await deployNotCondition(walletClient, publicClient, {
+        factoryAddress: factoryAddresses.notCondition,
+        condition: child.address,
+      })
       return {
         address: result.address,
         deployments: [...child.deployments, result],
@@ -210,11 +206,10 @@ export async function previewConditionAddress(
 
   switch (node.type) {
     case 'staticAddress': {
-      return computeStaticAddressConditionAddress(
-        publicClient,
-        factoryAddresses.staticAddressCondition,
-        node.designatedAddress,
-      )
+      return computeStaticAddressConditionAddress(publicClient, {
+        factoryAddress: factoryAddresses.staticAddressCondition,
+        designatedAddress: node.designatedAddress,
+      })
     }
 
     case 'and': {
@@ -223,11 +218,10 @@ export async function previewConditionAddress(
           previewConditionAddress(publicClient, factoryAddresses, child),
         ),
       )
-      return computeAndConditionAddress(
-        publicClient,
-        factoryAddresses.andCondition,
-        childAddresses,
-      )
+      return computeAndConditionAddress(publicClient, {
+        factoryAddress: factoryAddresses.andCondition,
+        conditions: childAddresses,
+      })
     }
 
     case 'or': {
@@ -236,11 +230,10 @@ export async function previewConditionAddress(
           previewConditionAddress(publicClient, factoryAddresses, child),
         ),
       )
-      return computeOrConditionAddress(
-        publicClient,
-        factoryAddresses.orCondition,
-        childAddresses,
-      )
+      return computeOrConditionAddress(publicClient, {
+        factoryAddress: factoryAddresses.orCondition,
+        conditions: childAddresses,
+      })
     }
 
     case 'not': {
@@ -249,11 +242,10 @@ export async function previewConditionAddress(
         factoryAddresses,
         node.condition,
       )
-      return computeNotConditionAddress(
-        publicClient,
-        factoryAddresses.notCondition,
-        childAddress,
-      )
+      return computeNotConditionAddress(publicClient, {
+        factoryAddress: factoryAddresses.notCondition,
+        condition: childAddress,
+      })
     }
 
     default: {

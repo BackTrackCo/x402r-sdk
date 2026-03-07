@@ -41,6 +41,24 @@ export {
   type StaticAddressConditionInput,
 } from './deploy/conditions.js'
 export {
+  type ComputeAndConditionAddressParameters,
+  type ComputeAndConditionAddressReturnType,
+  type ComputeEscrowPeriodAddressParameters,
+  type ComputeEscrowPeriodAddressReturnType,
+  type ComputeFeeCalculatorAddressParameters,
+  type ComputeFeeCalculatorAddressReturnType,
+  type ComputeFreezeAddressParameters,
+  type ComputeFreezeAddressReturnType,
+  type ComputeNotConditionAddressParameters,
+  type ComputeNotConditionAddressReturnType,
+  type ComputeOperatorAddressParameters,
+  type ComputeOperatorAddressReturnType,
+  type ComputeOrConditionAddressParameters,
+  type ComputeOrConditionAddressReturnType,
+  type ComputeRecorderCombinatorAddressParameters,
+  type ComputeRecorderCombinatorAddressReturnType,
+  type ComputeStaticAddressConditionAddressParameters,
+  type ComputeStaticAddressConditionAddressReturnType,
   computeAndConditionAddress,
   computeEscrowPeriodAddress,
   computeFeeCalculatorAddress,
@@ -50,6 +68,24 @@ export {
   computeOrConditionAddress,
   computeRecorderCombinatorAddress,
   computeStaticAddressConditionAddress,
+  type DeployAndConditionParameters,
+  type DeployAndConditionReturnType,
+  type DeployEscrowPeriodParameters,
+  type DeployEscrowPeriodReturnType,
+  type DeployFeeCalculatorParameters,
+  type DeployFeeCalculatorReturnType,
+  type DeployFreezeParameters,
+  type DeployFreezeReturnType,
+  type DeployNotConditionParameters,
+  type DeployNotConditionReturnType,
+  type DeployOperatorParameters,
+  type DeployOperatorReturnType,
+  type DeployOrConditionParameters,
+  type DeployOrConditionReturnType,
+  type DeployRecorderCombinatorParameters,
+  type DeployRecorderCombinatorReturnType,
+  type DeployStaticAddressConditionParameters,
+  type DeployStaticAddressConditionReturnType,
   deployAndCondition,
   deployEscrowPeriod,
   deployFeeCalculator,
@@ -160,11 +196,16 @@ export {
 // Payment
 // ---------------------------------------------------------------------------
 export {
+  type ComputeEscrowNonceReturnType,
+  type ComputePaymentInfoHashReturnType,
   computeEscrowNonce,
   computePaymentInfoHash,
   PAYMENT_INFO_TYPEHASH,
 } from './payment/hashing.js'
-export { toPaymentInfo } from './payment/serialization.js'
+export {
+  type ToPaymentInfoReturnType,
+  toPaymentInfo,
+} from './payment/serialization.js'
 export { validatePaymentInfo } from './payment/validation.js'
 
 // ---------------------------------------------------------------------------

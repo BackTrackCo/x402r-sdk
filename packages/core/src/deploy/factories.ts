@@ -21,28 +21,38 @@ import {
 // StaticFeeCalculator
 // ---------------------------------------------------------------------------
 
+export interface ComputeFeeCalculatorAddressParameters {
+  factoryAddress: Address
+  feeBps: bigint
+}
+export type ComputeFeeCalculatorAddressReturnType = Address
+
 export function computeFeeCalculatorAddress(
   publicClient: PublicClient,
-  factoryAddress: Address,
-  feeBps: bigint,
-): Promise<Address> {
+  parameters: ComputeFeeCalculatorAddressParameters,
+): Promise<ComputeFeeCalculatorAddressReturnType> {
   return computeViaFactory(publicClient, {
-    factoryAddress,
+    factoryAddress: parameters.factoryAddress,
     abi: staticFeeCalculatorFactoryAbi,
-    args: [feeBps],
+    args: [parameters.feeBps],
   })
 }
+
+export interface DeployFeeCalculatorParameters {
+  factoryAddress: Address
+  feeBps: bigint
+}
+export type DeployFeeCalculatorReturnType = DeployResult
 
 export function deployFeeCalculator(
   walletClient: WalletClient,
   publicClient: PublicClient,
-  factoryAddress: Address,
-  feeBps: bigint,
-): Promise<DeployResult> {
+  parameters: DeployFeeCalculatorParameters,
+): Promise<DeployFeeCalculatorReturnType> {
   return deployViaFactory(walletClient, publicClient, {
-    factoryAddress,
+    factoryAddress: parameters.factoryAddress,
     abi: staticFeeCalculatorFactoryAbi,
-    args: [feeBps],
+    args: [parameters.feeBps],
     opName: 'deployFeeCalculator',
   })
 }
@@ -51,30 +61,40 @@ export function deployFeeCalculator(
 // EscrowPeriod
 // ---------------------------------------------------------------------------
 
+export interface ComputeEscrowPeriodAddressParameters {
+  factoryAddress: Address
+  escrowPeriod: bigint
+  authorizedCodehash: Hex
+}
+export type ComputeEscrowPeriodAddressReturnType = Address
+
 export function computeEscrowPeriodAddress(
   publicClient: PublicClient,
-  factoryAddress: Address,
-  escrowPeriod: bigint,
-  authorizedCodehash: Hex,
-): Promise<Address> {
+  parameters: ComputeEscrowPeriodAddressParameters,
+): Promise<ComputeEscrowPeriodAddressReturnType> {
   return computeViaFactory(publicClient, {
-    factoryAddress,
+    factoryAddress: parameters.factoryAddress,
     abi: escrowPeriodFactoryAbi,
-    args: [escrowPeriod, authorizedCodehash],
+    args: [parameters.escrowPeriod, parameters.authorizedCodehash],
   })
 }
+
+export interface DeployEscrowPeriodParameters {
+  factoryAddress: Address
+  escrowPeriod: bigint
+  authorizedCodehash: Hex
+}
+export type DeployEscrowPeriodReturnType = DeployResult
 
 export function deployEscrowPeriod(
   walletClient: WalletClient,
   publicClient: PublicClient,
-  factoryAddress: Address,
-  escrowPeriod: bigint,
-  authorizedCodehash: Hex,
-): Promise<DeployResult> {
+  parameters: DeployEscrowPeriodParameters,
+): Promise<DeployEscrowPeriodReturnType> {
   return deployViaFactory(walletClient, publicClient, {
-    factoryAddress,
+    factoryAddress: parameters.factoryAddress,
     abi: escrowPeriodFactoryAbi,
-    args: [escrowPeriod, authorizedCodehash],
+    args: [parameters.escrowPeriod, parameters.authorizedCodehash],
     opName: 'deployEscrowPeriod',
   })
 }
@@ -83,43 +103,53 @@ export function deployEscrowPeriod(
 // Freeze
 // ---------------------------------------------------------------------------
 
+export interface ComputeFreezeAddressParameters {
+  factoryAddress: Address
+  freezeCondition: Address
+  unfreezeCondition: Address
+  freezeDuration: bigint
+  escrowPeriodContract: Address
+}
+export type ComputeFreezeAddressReturnType = Address
+
 export function computeFreezeAddress(
   publicClient: PublicClient,
-  factoryAddress: Address,
-  freezeCondition: Address,
-  unfreezeCondition: Address,
-  freezeDuration: bigint,
-  escrowPeriodContract: Address,
-): Promise<Address> {
+  parameters: ComputeFreezeAddressParameters,
+): Promise<ComputeFreezeAddressReturnType> {
   return computeViaFactory(publicClient, {
-    factoryAddress,
+    factoryAddress: parameters.factoryAddress,
     abi: freezeFactoryAbi,
     args: [
-      freezeCondition,
-      unfreezeCondition,
-      freezeDuration,
-      escrowPeriodContract,
+      parameters.freezeCondition,
+      parameters.unfreezeCondition,
+      parameters.freezeDuration,
+      parameters.escrowPeriodContract,
     ],
   })
 }
 
+export interface DeployFreezeParameters {
+  factoryAddress: Address
+  freezeCondition: Address
+  unfreezeCondition: Address
+  freezeDuration: bigint
+  escrowPeriodContract: Address
+}
+export type DeployFreezeReturnType = DeployResult
+
 export function deployFreeze(
   walletClient: WalletClient,
   publicClient: PublicClient,
-  factoryAddress: Address,
-  freezeCondition: Address,
-  unfreezeCondition: Address,
-  freezeDuration: bigint,
-  escrowPeriodContract: Address,
-): Promise<DeployResult> {
+  parameters: DeployFreezeParameters,
+): Promise<DeployFreezeReturnType> {
   return deployViaFactory(walletClient, publicClient, {
-    factoryAddress,
+    factoryAddress: parameters.factoryAddress,
     abi: freezeFactoryAbi,
     args: [
-      freezeCondition,
-      unfreezeCondition,
-      freezeDuration,
-      escrowPeriodContract,
+      parameters.freezeCondition,
+      parameters.unfreezeCondition,
+      parameters.freezeDuration,
+      parameters.escrowPeriodContract,
     ],
     opName: 'deployFreeze',
   })
@@ -129,28 +159,38 @@ export function deployFreeze(
 // StaticAddressCondition
 // ---------------------------------------------------------------------------
 
+export interface ComputeStaticAddressConditionAddressParameters {
+  factoryAddress: Address
+  designatedAddress: Address
+}
+export type ComputeStaticAddressConditionAddressReturnType = Address
+
 export function computeStaticAddressConditionAddress(
   publicClient: PublicClient,
-  factoryAddress: Address,
-  designatedAddress: Address,
-): Promise<Address> {
+  parameters: ComputeStaticAddressConditionAddressParameters,
+): Promise<ComputeStaticAddressConditionAddressReturnType> {
   return computeViaFactory(publicClient, {
-    factoryAddress,
+    factoryAddress: parameters.factoryAddress,
     abi: staticAddressConditionFactoryAbi,
-    args: [designatedAddress],
+    args: [parameters.designatedAddress],
   })
 }
+
+export interface DeployStaticAddressConditionParameters {
+  factoryAddress: Address
+  designatedAddress: Address
+}
+export type DeployStaticAddressConditionReturnType = DeployResult
 
 export function deployStaticAddressCondition(
   walletClient: WalletClient,
   publicClient: PublicClient,
-  factoryAddress: Address,
-  designatedAddress: Address,
-): Promise<DeployResult> {
+  parameters: DeployStaticAddressConditionParameters,
+): Promise<DeployStaticAddressConditionReturnType> {
   return deployViaFactory(walletClient, publicClient, {
-    factoryAddress,
+    factoryAddress: parameters.factoryAddress,
     abi: staticAddressConditionFactoryAbi,
-    args: [designatedAddress],
+    args: [parameters.designatedAddress],
     opName: 'deployStaticAddressCondition',
   })
 }
@@ -159,28 +199,38 @@ export function deployStaticAddressCondition(
 // AndCondition
 // ---------------------------------------------------------------------------
 
+export interface ComputeAndConditionAddressParameters {
+  factoryAddress: Address
+  conditions: readonly Address[]
+}
+export type ComputeAndConditionAddressReturnType = Address
+
 export function computeAndConditionAddress(
   publicClient: PublicClient,
-  factoryAddress: Address,
-  conditions: readonly Address[],
-): Promise<Address> {
+  parameters: ComputeAndConditionAddressParameters,
+): Promise<ComputeAndConditionAddressReturnType> {
   return computeViaFactory(publicClient, {
-    factoryAddress,
+    factoryAddress: parameters.factoryAddress,
     abi: andConditionFactoryAbi,
-    args: [conditions],
+    args: [parameters.conditions],
   })
 }
+
+export interface DeployAndConditionParameters {
+  factoryAddress: Address
+  conditions: readonly Address[]
+}
+export type DeployAndConditionReturnType = DeployResult
 
 export function deployAndCondition(
   walletClient: WalletClient,
   publicClient: PublicClient,
-  factoryAddress: Address,
-  conditions: readonly Address[],
-): Promise<DeployResult> {
+  parameters: DeployAndConditionParameters,
+): Promise<DeployAndConditionReturnType> {
   return deployViaFactory(walletClient, publicClient, {
-    factoryAddress,
+    factoryAddress: parameters.factoryAddress,
     abi: andConditionFactoryAbi,
-    args: [conditions],
+    args: [parameters.conditions],
     opName: 'deployAndCondition',
   })
 }
@@ -189,28 +239,38 @@ export function deployAndCondition(
 // OrCondition
 // ---------------------------------------------------------------------------
 
+export interface ComputeOrConditionAddressParameters {
+  factoryAddress: Address
+  conditions: readonly Address[]
+}
+export type ComputeOrConditionAddressReturnType = Address
+
 export function computeOrConditionAddress(
   publicClient: PublicClient,
-  factoryAddress: Address,
-  conditions: readonly Address[],
-): Promise<Address> {
+  parameters: ComputeOrConditionAddressParameters,
+): Promise<ComputeOrConditionAddressReturnType> {
   return computeViaFactory(publicClient, {
-    factoryAddress,
+    factoryAddress: parameters.factoryAddress,
     abi: orConditionFactoryAbi,
-    args: [conditions],
+    args: [parameters.conditions],
   })
 }
+
+export interface DeployOrConditionParameters {
+  factoryAddress: Address
+  conditions: readonly Address[]
+}
+export type DeployOrConditionReturnType = DeployResult
 
 export function deployOrCondition(
   walletClient: WalletClient,
   publicClient: PublicClient,
-  factoryAddress: Address,
-  conditions: readonly Address[],
-): Promise<DeployResult> {
+  parameters: DeployOrConditionParameters,
+): Promise<DeployOrConditionReturnType> {
   return deployViaFactory(walletClient, publicClient, {
-    factoryAddress,
+    factoryAddress: parameters.factoryAddress,
     abi: orConditionFactoryAbi,
-    args: [conditions],
+    args: [parameters.conditions],
     opName: 'deployOrCondition',
   })
 }
@@ -219,28 +279,38 @@ export function deployOrCondition(
 // NotCondition
 // ---------------------------------------------------------------------------
 
+export interface ComputeNotConditionAddressParameters {
+  factoryAddress: Address
+  condition: Address
+}
+export type ComputeNotConditionAddressReturnType = Address
+
 export function computeNotConditionAddress(
   publicClient: PublicClient,
-  factoryAddress: Address,
-  condition: Address,
-): Promise<Address> {
+  parameters: ComputeNotConditionAddressParameters,
+): Promise<ComputeNotConditionAddressReturnType> {
   return computeViaFactory(publicClient, {
-    factoryAddress,
+    factoryAddress: parameters.factoryAddress,
     abi: notConditionFactoryAbi,
-    args: [condition],
+    args: [parameters.condition],
   })
 }
+
+export interface DeployNotConditionParameters {
+  factoryAddress: Address
+  condition: Address
+}
+export type DeployNotConditionReturnType = DeployResult
 
 export function deployNotCondition(
   walletClient: WalletClient,
   publicClient: PublicClient,
-  factoryAddress: Address,
-  condition: Address,
-): Promise<DeployResult> {
+  parameters: DeployNotConditionParameters,
+): Promise<DeployNotConditionReturnType> {
   return deployViaFactory(walletClient, publicClient, {
-    factoryAddress,
+    factoryAddress: parameters.factoryAddress,
     abi: notConditionFactoryAbi,
-    args: [condition],
+    args: [parameters.condition],
     opName: 'deployNotCondition',
   })
 }
@@ -249,28 +319,38 @@ export function deployNotCondition(
 // RecorderCombinator
 // ---------------------------------------------------------------------------
 
+export interface ComputeRecorderCombinatorAddressParameters {
+  factoryAddress: Address
+  recorders: readonly Address[]
+}
+export type ComputeRecorderCombinatorAddressReturnType = Address
+
 export function computeRecorderCombinatorAddress(
   publicClient: PublicClient,
-  factoryAddress: Address,
-  recorders: readonly Address[],
-): Promise<Address> {
+  parameters: ComputeRecorderCombinatorAddressParameters,
+): Promise<ComputeRecorderCombinatorAddressReturnType> {
   return computeViaFactory(publicClient, {
-    factoryAddress,
+    factoryAddress: parameters.factoryAddress,
     abi: recorderCombinatorFactoryAbi,
-    args: [recorders],
+    args: [parameters.recorders],
   })
 }
+
+export interface DeployRecorderCombinatorParameters {
+  factoryAddress: Address
+  recorders: readonly Address[]
+}
+export type DeployRecorderCombinatorReturnType = DeployResult
 
 export function deployRecorderCombinator(
   walletClient: WalletClient,
   publicClient: PublicClient,
-  factoryAddress: Address,
-  recorders: readonly Address[],
-): Promise<DeployResult> {
+  parameters: DeployRecorderCombinatorParameters,
+): Promise<DeployRecorderCombinatorReturnType> {
   return deployViaFactory(walletClient, publicClient, {
-    factoryAddress,
+    factoryAddress: parameters.factoryAddress,
     abi: recorderCombinatorFactoryAbi,
-    args: [recorders],
+    args: [parameters.recorders],
     opName: 'deployRecorderCombinator',
   })
 }
@@ -279,28 +359,38 @@ export function deployRecorderCombinator(
 // PaymentOperator
 // ---------------------------------------------------------------------------
 
+export interface ComputeOperatorAddressParameters {
+  factoryAddress: Address
+  config: OperatorConfig
+}
+export type ComputeOperatorAddressReturnType = Address
+
 export function computeOperatorAddress(
   publicClient: PublicClient,
-  factoryAddress: Address,
-  config: OperatorConfig,
-): Promise<Address> {
+  parameters: ComputeOperatorAddressParameters,
+): Promise<ComputeOperatorAddressReturnType> {
   return computeViaFactory(publicClient, {
-    factoryAddress,
+    factoryAddress: parameters.factoryAddress,
     abi: paymentOperatorFactoryAbi,
-    args: [config],
+    args: [parameters.config],
   })
 }
+
+export interface DeployOperatorParameters {
+  factoryAddress: Address
+  config: OperatorConfig
+}
+export type DeployOperatorReturnType = DeployResult
 
 export function deployOperator(
   walletClient: WalletClient,
   publicClient: PublicClient,
-  factoryAddress: Address,
-  config: OperatorConfig,
-): Promise<DeployResult> {
+  parameters: DeployOperatorParameters,
+): Promise<DeployOperatorReturnType> {
   return deployViaFactory(walletClient, publicClient, {
-    factoryAddress,
+    factoryAddress: parameters.factoryAddress,
     abi: paymentOperatorFactoryAbi,
-    args: [config],
+    args: [parameters.config],
     opName: 'deployOperator',
     functionNames: {
       deployFn: 'deployOperator',
