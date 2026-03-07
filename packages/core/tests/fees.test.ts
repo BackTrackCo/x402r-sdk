@@ -3,12 +3,12 @@ import {
   calculateOperatorFeeBps,
   calculateProtocolFeeBps,
   calculateTotalFees,
-  distributeFees,
   type FeeCalculationResult,
   formatFeeBreakdown,
   getFeeAddresses,
   validateFeeBounds,
-} from '../src/operations/fees.js'
+} from '../src/operations/fee-reads.js'
+import { distributeFees } from '../src/operations/fee-writes.js'
 import {
   createMockPublicClient,
   createMockWalletClient,

@@ -19,7 +19,7 @@ export async function approveRefundBudget(
       functionName: 'approve',
       args: [operatorAddress, amount],
       chain: walletClient.chain,
-      account: walletClient.account!,
+      account: walletClient.account,
     }),
   )
 }
@@ -39,7 +39,7 @@ export async function refundInEscrow(
       functionName: 'refundInEscrow',
       args: [paymentInfo, amount],
       chain: walletClient.chain,
-      account: walletClient.account!,
+      account: walletClient.account,
     }),
   )
 }
@@ -61,7 +61,7 @@ export async function refundPostEscrow(
       functionName: 'refundPostEscrow',
       args: [paymentInfo, amount, tokenCollector, collectorData],
       chain: walletClient.chain,
-      account: walletClient.account!,
+      account: walletClient.account,
     }),
   )
 }

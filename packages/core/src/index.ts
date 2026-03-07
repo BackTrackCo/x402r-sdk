@@ -93,24 +93,27 @@ export {
   requireAccount,
   wrapContractCall,
 } from './operations/error-wrapping.js'
-export type { EvidenceEntry } from './operations/evidence.js'
+export type { EvidenceEntry } from './operations/evidence-reads.js'
 export {
   getEvidence,
   getEvidenceBatch,
   getEvidenceCount,
   SubmitterRole,
-  submitEvidence,
-} from './operations/evidence.js'
-export type { FeeAddresses, FeeCalculationResult } from './operations/fees.js'
+} from './operations/evidence-reads.js'
+export { submitEvidence } from './operations/evidence-writes.js'
+export type {
+  FeeAddresses,
+  FeeCalculationResult,
+} from './operations/fee-reads.js'
 export {
   calculateOperatorFeeBps,
   calculateProtocolFeeBps,
   calculateTotalFees,
-  distributeFees,
   formatFeeBreakdown,
   getFeeAddresses,
   validateFeeBounds,
-} from './operations/fees.js'
+} from './operations/fee-reads.js'
+export { distributeFees } from './operations/fee-writes.js'
 export { isFrozen } from './operations/freeze-reads.js'
 export { freezePayment, unfreezePayment } from './operations/freeze-writes.js'
 export type { ConditionSlot, OperatorSlots } from './operations/operator.js'

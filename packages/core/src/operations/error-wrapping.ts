@@ -9,7 +9,9 @@ import { ContractCallError } from '../errors/index.js'
 export function requireAccount(
   walletClient: WalletClient,
   opName: string,
-): void {
+): asserts walletClient is WalletClient & {
+  account: NonNullable<WalletClient['account']>
+} {
   if (!walletClient.account) {
     throw new ContractCallError(opName, {
       details: 'walletClient must have an account attached',

@@ -17,7 +17,7 @@ export async function freezePayment(
       functionName: 'freeze',
       args: [paymentInfo],
       chain: walletClient.chain,
-      account: walletClient.account!,
+      account: walletClient.account,
     }),
   )
 }
@@ -36,7 +36,7 @@ export async function unfreezePayment(
       functionName: 'unfreeze',
       args: [paymentInfo],
       chain: walletClient.chain,
-      account: walletClient.account!,
+      account: walletClient.account,
     }),
   )
 }

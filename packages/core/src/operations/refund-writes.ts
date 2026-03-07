@@ -19,7 +19,7 @@ export async function requestRefund(
       functionName: 'requestRefund',
       args: [paymentInfo, amount, nonce],
       chain: walletClient.chain,
-      account: walletClient.account!,
+      account: walletClient.account,
     }),
   )
 }
@@ -42,7 +42,7 @@ export async function approveRefundWithSignature(
       functionName: 'approveWithSignature',
       args: [paymentInfo, nonce, amount, expiry, signature],
       chain: walletClient.chain,
-      account: walletClient.account!,
+      account: walletClient.account,
     }),
   )
 }
@@ -62,7 +62,7 @@ export async function denyRefundRequest(
       functionName: 'deny',
       args: [paymentInfo, nonce],
       chain: walletClient.chain,
-      account: walletClient.account!,
+      account: walletClient.account,
     }),
   )
 }
@@ -82,7 +82,7 @@ export async function refuseRefundRequest(
       functionName: 'refuse',
       args: [paymentInfo, nonce],
       chain: walletClient.chain,
-      account: walletClient.account!,
+      account: walletClient.account,
     }),
   )
 }
@@ -102,7 +102,7 @@ export async function cancelRefundRequest(
       functionName: 'cancelRefundRequest',
       args: [paymentInfo, nonce],
       chain: walletClient.chain,
-      account: walletClient.account!,
+      account: walletClient.account,
     }),
   )
 }

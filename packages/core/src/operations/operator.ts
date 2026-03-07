@@ -1,5 +1,6 @@
 import type { Address, PublicClient } from 'viem'
 import { paymentOperatorAbi } from '../abis/generated.js'
+import { wrapContractCall } from './error-wrapping.js'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -33,53 +34,80 @@ export type ConditionSlot =
 // Read functions
 // ---------------------------------------------------------------------------
 
-const SLOT_ENTRIES = [
-  ['ESCROW', 'escrow'],
-  ['AUTHORIZE_CONDITION', 'authorizeCondition'],
-  ['AUTHORIZE_RECORDER', 'authorizeRecorder'],
-  ['CHARGE_CONDITION', 'chargeCondition'],
-  ['CHARGE_RECORDER', 'chargeRecorder'],
-  ['RELEASE_CONDITION', 'releaseCondition'],
-  ['RELEASE_RECORDER', 'releaseRecorder'],
-  ['REFUND_IN_ESCROW_CONDITION', 'refundInEscrowCondition'],
-  ['REFUND_IN_ESCROW_RECORDER', 'refundInEscrowRecorder'],
-  ['REFUND_POST_ESCROW_CONDITION', 'refundPostEscrowCondition'],
-  ['REFUND_POST_ESCROW_RECORDER', 'refundPostEscrowRecorder'],
-  ['FEE_CALCULATOR', 'feeCalculator'],
-  ['FEE_RECIPIENT', 'feeRecipient'],
-  ['PROTOCOL_FEE_CONFIG', 'protocolFeeConfig'],
-] as const satisfies readonly (readonly [string, keyof OperatorSlots])[]
-
 export async function getOperatorConfig(
   publicClient: PublicClient,
   operatorAddress: Address,
 ): Promise<OperatorSlots> {
-  const results = await Promise.all(
-    SLOT_ENTRIES.map(([contractName]) =>
+  return wrapContractCall('getOperatorConfig', async () => {
+    const read = <T extends string>(functionName: T) =>
       publicClient.readContract({
         address: operatorAddress,
         abi: paymentOperatorAbi,
-        functionName: contractName,
-      }),
-    ),
-  )
+        functionName: functionName as any,
+      }) as Promise<Address>
 
-  const slots: Record<string, Address> = {}
-  for (let i = 0; i < SLOT_ENTRIES.length; i++) {
-    slots[SLOT_ENTRIES[i][1]] = results[i] as Address
-  }
-  return slots as unknown as OperatorSlots
+    const [
+      escrow,
+      authorizeCondition,
+      authorizeRecorder,
+      chargeCondition,
+      chargeRecorder,
+      releaseCondition,
+      releaseRecorder,
+      refundInEscrowCondition,
+      refundInEscrowRecorder,
+      refundPostEscrowCondition,
+      refundPostEscrowRecorder,
+      feeCalculator,
+      feeRecipient,
+      protocolFeeConfig,
+    ] = await Promise.all([
+      read('ESCROW'),
+      read('AUTHORIZE_CONDITION'),
+      read('AUTHORIZE_RECORDER'),
+      read('CHARGE_CONDITION'),
+      read('CHARGE_RECORDER'),
+      read('RELEASE_CONDITION'),
+      read('RELEASE_RECORDER'),
+      read('REFUND_IN_ESCROW_CONDITION'),
+      read('REFUND_IN_ESCROW_RECORDER'),
+      read('REFUND_POST_ESCROW_CONDITION'),
+      read('REFUND_POST_ESCROW_RECORDER'),
+      read('FEE_CALCULATOR'),
+      read('FEE_RECIPIENT'),
+      read('PROTOCOL_FEE_CONFIG'),
+    ])
+
+    return {
+      escrow,
+      authorizeCondition,
+      authorizeRecorder,
+      chargeCondition,
+      chargeRecorder,
+      releaseCondition,
+      releaseRecorder,
+      refundInEscrowCondition,
+      refundInEscrowRecorder,
+      refundPostEscrowCondition,
+      refundPostEscrowRecorder,
+      feeCalculator,
+      feeRecipient,
+      protocolFeeConfig,
+    } satisfies OperatorSlots
+  })
 }
 
 export async function getEscrowAddress(
   publicClient: PublicClient,
   operatorAddress: Address,
 ): Promise<Address> {
-  return publicClient.readContract({
-    address: operatorAddress,
-    abi: paymentOperatorAbi,
-    functionName: 'ESCROW',
-  }) as Promise<Address>
+  return wrapContractCall('getEscrowAddress', () =>
+    publicClient.readContract({
+      address: operatorAddress,
+      abi: paymentOperatorAbi,
+      functionName: 'ESCROW',
+    }),
+  )
 }
 
 export async function getConditionAddress(
@@ -87,9 +115,11 @@ export async function getConditionAddress(
   operatorAddress: Address,
   slot: ConditionSlot,
 ): Promise<Address> {
-  return publicClient.readContract({
-    address: operatorAddress,
-    abi: paymentOperatorAbi,
-    functionName: slot,
-  }) as Promise<Address>
+  return wrapContractCall('getConditionAddress', () =>
+    publicClient.readContract({
+      address: operatorAddress,
+      abi: paymentOperatorAbi,
+      functionName: slot,
+    }),
+  )
 }

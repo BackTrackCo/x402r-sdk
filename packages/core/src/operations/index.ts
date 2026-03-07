@@ -1,26 +1,30 @@
 export { requireAccount, wrapContractCall } from './error-wrapping.js'
 
-// Evidence
-export type { EvidenceEntry } from './evidence.js'
+// Evidence reads
+export type { EvidenceEntry } from './evidence-reads.js'
 export {
   getEvidence,
   getEvidenceBatch,
   getEvidenceCount,
   SubmitterRole,
-  submitEvidence,
-} from './evidence.js'
+} from './evidence-reads.js'
 
-// Fees
-export type { FeeAddresses, FeeCalculationResult } from './fees.js'
+// Evidence writes
+export { submitEvidence } from './evidence-writes.js'
+
+// Fee reads
+export type { FeeAddresses, FeeCalculationResult } from './fee-reads.js'
 export {
   calculateOperatorFeeBps,
   calculateProtocolFeeBps,
   calculateTotalFees,
-  distributeFees,
   formatFeeBreakdown,
   getFeeAddresses,
   validateFeeBounds,
-} from './fees.js'
+} from './fee-reads.js'
+
+// Fee writes
+export { distributeFees } from './fee-writes.js'
 
 // Freeze
 export { isFrozen } from './freeze-reads.js'

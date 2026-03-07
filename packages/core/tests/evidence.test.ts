@@ -4,8 +4,8 @@ import {
   type EvidenceEntry,
   getEvidenceBatch,
   SubmitterRole,
-  submitEvidence,
-} from '../src/operations/evidence.js'
+} from '../src/operations/evidence-reads.js'
+import { submitEvidence } from '../src/operations/evidence-writes.js'
 import {
   createMockPublicClient,
   createMockWalletWithoutAccount,

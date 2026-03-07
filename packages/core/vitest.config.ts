@@ -13,7 +13,6 @@ export default defineConfig({
         'tests/**',
         // Write-only wrappers — thin writeContract forwarding with account guards
         'src/operations/*-writes.ts',
-        'src/operations/operator-writes.ts',
       ],
       thresholds: {
         lines: 85,

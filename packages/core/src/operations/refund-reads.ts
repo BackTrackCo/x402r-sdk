@@ -1,6 +1,7 @@
 import type { Address, Hex, PublicClient } from 'viem'
 import { signatureRefundRequestAbi } from '../abis/generated.js'
 import type { PaymentInfo } from '../types/index.js'
+import { wrapContractCall } from './error-wrapping.js'
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -25,7 +26,7 @@ export interface RefundRequestData {
   paymentInfoHash: Hex
   nonce: bigint
   amount: bigint
-  status: number
+  status: RefundRequestStatus
 }
 
 // ---------------------------------------------------------------------------
@@ -38,12 +39,14 @@ export async function hasRefundRequest(
   paymentInfo: PaymentInfo,
   nonce: bigint,
 ): Promise<boolean> {
-  return publicClient.readContract({
-    address: contractAddress,
-    abi: signatureRefundRequestAbi,
-    functionName: 'hasRefundRequest',
-    args: [paymentInfo, nonce],
-  }) as Promise<boolean>
+  return wrapContractCall('hasRefundRequest', () =>
+    publicClient.readContract({
+      address: contractAddress,
+      abi: signatureRefundRequestAbi,
+      functionName: 'hasRefundRequest',
+      args: [paymentInfo, nonce],
+    }),
+  )
 }
 
 export async function getRefundRequestStatus(
@@ -51,13 +54,15 @@ export async function getRefundRequestStatus(
   contractAddress: Address,
   paymentInfo: PaymentInfo,
   nonce: bigint,
-): Promise<number> {
-  return publicClient.readContract({
-    address: contractAddress,
-    abi: signatureRefundRequestAbi,
-    functionName: 'getRefundRequestStatus',
-    args: [paymentInfo, nonce],
-  }) as Promise<number>
+): Promise<RefundRequestStatus> {
+  return wrapContractCall('getRefundRequestStatus', () =>
+    publicClient.readContract({
+      address: contractAddress,
+      abi: signatureRefundRequestAbi,
+      functionName: 'getRefundRequestStatus',
+      args: [paymentInfo, nonce],
+    }),
+  ) as Promise<RefundRequestStatus>
 }
 
 export async function getRefundRequest(
@@ -66,18 +71,20 @@ export async function getRefundRequest(
   paymentInfo: PaymentInfo,
   nonce: bigint,
 ): Promise<RefundRequestData> {
-  const result = await publicClient.readContract({
-    address: contractAddress,
-    abi: signatureRefundRequestAbi,
-    functionName: 'getRefundRequest',
-    args: [paymentInfo, nonce],
+  return wrapContractCall('getRefundRequest', async () => {
+    const result = await publicClient.readContract({
+      address: contractAddress,
+      abi: signatureRefundRequestAbi,
+      functionName: 'getRefundRequest',
+      args: [paymentInfo, nonce],
+    })
+    return {
+      paymentInfoHash: result.paymentInfoHash,
+      nonce: result.nonce,
+      amount: result.amount,
+      status: result.status as RefundRequestStatus,
+    }
   })
-  return {
-    paymentInfoHash: result.paymentInfoHash,
-    nonce: result.nonce,
-    amount: result.amount,
-    status: result.status,
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -91,13 +98,15 @@ export async function getPayerRefundRequests(
   offset: bigint,
   count: bigint,
 ): Promise<{ keys: readonly Hex[]; total: bigint }> {
-  const [keys, total] = await publicClient.readContract({
-    address: contractAddress,
-    abi: signatureRefundRequestAbi,
-    functionName: 'getPayerRefundRequests',
-    args: [payer, offset, count],
+  return wrapContractCall('getPayerRefundRequests', async () => {
+    const [keys, total] = await publicClient.readContract({
+      address: contractAddress,
+      abi: signatureRefundRequestAbi,
+      functionName: 'getPayerRefundRequests',
+      args: [payer, offset, count],
+    })
+    return { keys: keys as readonly Hex[], total }
   })
-  return { keys: keys as readonly Hex[], total }
 }
 
 export async function getReceiverRefundRequests(
@@ -107,13 +116,15 @@ export async function getReceiverRefundRequests(
   offset: bigint,
   count: bigint,
 ): Promise<{ keys: readonly Hex[]; total: bigint }> {
-  const [keys, total] = await publicClient.readContract({
-    address: contractAddress,
-    abi: signatureRefundRequestAbi,
-    functionName: 'getReceiverRefundRequests',
-    args: [receiver, offset, count],
+  return wrapContractCall('getReceiverRefundRequests', async () => {
+    const [keys, total] = await publicClient.readContract({
+      address: contractAddress,
+      abi: signatureRefundRequestAbi,
+      functionName: 'getReceiverRefundRequests',
+      args: [receiver, offset, count],
+    })
+    return { keys: keys as readonly Hex[], total }
   })
-  return { keys: keys as readonly Hex[], total }
 }
 
 export async function getOperatorRefundRequests(
@@ -123,13 +134,15 @@ export async function getOperatorRefundRequests(
   offset: bigint,
   count: bigint,
 ): Promise<{ keys: readonly Hex[]; total: bigint }> {
-  const [keys, total] = await publicClient.readContract({
-    address: contractAddress,
-    abi: signatureRefundRequestAbi,
-    functionName: 'getOperatorRefundRequests',
-    args: [operator, offset, count],
+  return wrapContractCall('getOperatorRefundRequests', async () => {
+    const [keys, total] = await publicClient.readContract({
+      address: contractAddress,
+      abi: signatureRefundRequestAbi,
+      functionName: 'getOperatorRefundRequests',
+      args: [operator, offset, count],
+    })
+    return { keys: keys as readonly Hex[], total }
   })
-  return { keys: keys as readonly Hex[], total }
 }
 
 export async function getRefundRequestByKey(
@@ -137,31 +150,36 @@ export async function getRefundRequestByKey(
   contractAddress: Address,
   compositeKey: Hex,
 ): Promise<RefundRequestData> {
-  const result = await publicClient.readContract({
-    address: contractAddress,
-    abi: signatureRefundRequestAbi,
-    functionName: 'getRefundRequestByKey',
-    args: [compositeKey],
+  return wrapContractCall('getRefundRequestByKey', async () => {
+    const result = await publicClient.readContract({
+      address: contractAddress,
+      abi: signatureRefundRequestAbi,
+      functionName: 'getRefundRequestByKey',
+      args: [compositeKey],
+    })
+    return {
+      paymentInfoHash: result.paymentInfoHash,
+      nonce: result.nonce,
+      amount: result.amount,
+      status: result.status as RefundRequestStatus,
+    }
   })
-  return {
-    paymentInfoHash: result.paymentInfoHash,
-    nonce: result.nonce,
-    amount: result.amount,
-    status: result.status,
-  }
 }
 
+/** Reads stored payment info by hash. ABI function name: `getPaymentInfo`. */
 export async function getStoredPaymentInfo(
   publicClient: PublicClient,
   contractAddress: Address,
   paymentInfoHash: Hex,
 ): Promise<PaymentInfo> {
-  return publicClient.readContract({
-    address: contractAddress,
-    abi: signatureRefundRequestAbi,
-    functionName: 'getPaymentInfo',
-    args: [paymentInfoHash],
-  }) as Promise<PaymentInfo>
+  return wrapContractCall('getStoredPaymentInfo', () =>
+    publicClient.readContract({
+      address: contractAddress,
+      abi: signatureRefundRequestAbi,
+      functionName: 'getPaymentInfo',
+      args: [paymentInfoHash],
+    }),
+  )
 }
 
 export async function getCancelCount(
@@ -170,12 +188,14 @@ export async function getCancelCount(
   paymentInfo: PaymentInfo,
   nonce: bigint,
 ): Promise<bigint> {
-  return publicClient.readContract({
-    address: contractAddress,
-    abi: signatureRefundRequestAbi,
-    functionName: 'getCancelCount',
-    args: [paymentInfo, nonce],
-  }) as Promise<bigint>
+  return wrapContractCall('getCancelCount', () =>
+    publicClient.readContract({
+      address: contractAddress,
+      abi: signatureRefundRequestAbi,
+      functionName: 'getCancelCount',
+      args: [paymentInfo, nonce],
+    }),
+  )
 }
 
 export async function getCancelledAmount(
@@ -185,10 +205,12 @@ export async function getCancelledAmount(
   nonce: bigint,
   cancelIndex: bigint,
 ): Promise<bigint> {
-  return publicClient.readContract({
-    address: contractAddress,
-    abi: signatureRefundRequestAbi,
-    functionName: 'getCancelledAmount',
-    args: [paymentInfo, nonce, cancelIndex],
-  }) as Promise<bigint>
+  return wrapContractCall('getCancelledAmount', () =>
+    publicClient.readContract({
+      address: contractAddress,
+      abi: signatureRefundRequestAbi,
+      functionName: 'getCancelledAmount',
+      args: [paymentInfo, nonce, cancelIndex],
+    }),
+  )
 }

@@ -20,7 +20,7 @@ export async function authorize(
       functionName: 'authorize',
       args: [paymentInfo, amount, tokenCollector, collectorData],
       chain: walletClient.chain,
-      account: walletClient.account!,
+      account: walletClient.account,
     }),
   )
 }
@@ -42,7 +42,7 @@ export async function charge(
       functionName: 'charge',
       args: [paymentInfo, amount, tokenCollector, collectorData],
       chain: walletClient.chain,
-      account: walletClient.account!,
+      account: walletClient.account,
     }),
   )
 }
@@ -62,7 +62,7 @@ export async function release(
       functionName: 'release',
       args: [paymentInfo, amount],
       chain: walletClient.chain,
-      account: walletClient.account!,
+      account: walletClient.account,
     }),
   )
 }
