@@ -1,27 +1,7 @@
 import type { Address, Hash, Hex, WalletClient } from 'viem'
 import { signatureRefundRequestAbi } from '../abis/generated.js'
-import { ContractCallError } from '../errors/index.js'
 import type { PaymentInfo } from '../types/index.js'
-import { wrapContractCall } from './error-wrapping.js'
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-export const RefundRequestStatus = {
-  Pending: 0,
-  Approved: 1,
-  Denied: 2,
-  Refused: 3,
-  Cancelled: 4,
-} as const
-
-export type RefundRequestStatus =
-  (typeof RefundRequestStatus)[keyof typeof RefundRequestStatus]
-
-// ---------------------------------------------------------------------------
-// Write functions
-// ---------------------------------------------------------------------------
+import { requireAccount, wrapContractCall } from './error-wrapping.js'
 
 export async function requestRefund(
   walletClient: WalletClient,
@@ -30,11 +10,7 @@ export async function requestRefund(
   amount: bigint,
   nonce: bigint,
 ): Promise<Hash> {
-  if (!walletClient.account) {
-    throw new ContractCallError('requestRefund', {
-      details: 'walletClient must have an account attached',
-    })
-  }
+  requireAccount(walletClient, 'requestRefund')
 
   return wrapContractCall('requestRefund', () =>
     walletClient.writeContract({
@@ -43,7 +19,7 @@ export async function requestRefund(
       functionName: 'requestRefund',
       args: [paymentInfo, amount, nonce],
       chain: walletClient.chain,
-      account: walletClient.account!,
+      account: walletClient.account,
     }),
   )
 }
@@ -57,11 +33,7 @@ export async function approveRefundWithSignature(
   expiry: number,
   signature: Hex,
 ): Promise<Hash> {
-  if (!walletClient.account) {
-    throw new ContractCallError('approveRefundWithSignature', {
-      details: 'walletClient must have an account attached',
-    })
-  }
+  requireAccount(walletClient, 'approveRefundWithSignature')
 
   return wrapContractCall('approveRefundWithSignature', () =>
     walletClient.writeContract({
@@ -70,7 +42,7 @@ export async function approveRefundWithSignature(
       functionName: 'approveWithSignature',
       args: [paymentInfo, nonce, amount, expiry, signature],
       chain: walletClient.chain,
-      account: walletClient.account!,
+      account: walletClient.account,
     }),
   )
 }
@@ -81,11 +53,7 @@ export async function denyRefundRequest(
   paymentInfo: PaymentInfo,
   nonce: bigint,
 ): Promise<Hash> {
-  if (!walletClient.account) {
-    throw new ContractCallError('denyRefundRequest', {
-      details: 'walletClient must have an account attached',
-    })
-  }
+  requireAccount(walletClient, 'denyRefundRequest')
 
   return wrapContractCall('denyRefundRequest', () =>
     walletClient.writeContract({
@@ -94,7 +62,7 @@ export async function denyRefundRequest(
       functionName: 'deny',
       args: [paymentInfo, nonce],
       chain: walletClient.chain,
-      account: walletClient.account!,
+      account: walletClient.account,
     }),
   )
 }
@@ -105,11 +73,7 @@ export async function refuseRefundRequest(
   paymentInfo: PaymentInfo,
   nonce: bigint,
 ): Promise<Hash> {
-  if (!walletClient.account) {
-    throw new ContractCallError('refuseRefundRequest', {
-      details: 'walletClient must have an account attached',
-    })
-  }
+  requireAccount(walletClient, 'refuseRefundRequest')
 
   return wrapContractCall('refuseRefundRequest', () =>
     walletClient.writeContract({
@@ -118,7 +82,7 @@ export async function refuseRefundRequest(
       functionName: 'refuse',
       args: [paymentInfo, nonce],
       chain: walletClient.chain,
-      account: walletClient.account!,
+      account: walletClient.account,
     }),
   )
 }
@@ -129,11 +93,7 @@ export async function cancelRefundRequest(
   paymentInfo: PaymentInfo,
   nonce: bigint,
 ): Promise<Hash> {
-  if (!walletClient.account) {
-    throw new ContractCallError('cancelRefundRequest', {
-      details: 'walletClient must have an account attached',
-    })
-  }
+  requireAccount(walletClient, 'cancelRefundRequest')
 
   return wrapContractCall('cancelRefundRequest', () =>
     walletClient.writeContract({
@@ -142,7 +102,7 @@ export async function cancelRefundRequest(
       functionName: 'cancelRefundRequest',
       args: [paymentInfo, nonce],
       chain: walletClient.chain,
-      account: walletClient.account!,
+      account: walletClient.account,
     }),
   )
 }

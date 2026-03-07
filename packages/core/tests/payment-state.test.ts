@@ -1,7 +1,10 @@
 import type { PublicClient } from 'viem'
 import { describe, expect, it, vi } from 'vitest'
 import { ContractCallError } from '../src/errors/index.js'
-import { getPaymentState } from '../src/operations/payment-state.js'
+import {
+  getPaymentAmounts,
+  getPaymentState,
+} from '../src/operations/payment-state.js'
 import {
   createMockPublicClient,
   makePaymentInfo,
@@ -123,6 +126,47 @@ describe('getPaymentState', () => {
 
     await expect(
       getPaymentState(client, MOCK_OPERATOR, TEST_CHAIN_ID, paymentInfo),
+    ).rejects.toThrow(ContractCallError)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// getPaymentAmounts
+// ---------------------------------------------------------------------------
+
+describe('getPaymentAmounts', () => {
+  const paymentInfo = makePaymentInfo()
+
+  it('returns named object from tuple', async () => {
+    const client = createMockPublicClient({
+      [`${MOCK_OPERATOR}:ESCROW`]: MOCK_ESCROW,
+      [`${MOCK_ESCROW}:paymentState`]: [true, 750000n, 250000n],
+    })
+
+    const result = await getPaymentAmounts(
+      client,
+      MOCK_OPERATOR,
+      TEST_CHAIN_ID,
+      paymentInfo,
+    )
+
+    expect(result).toEqual({
+      hasCollectedPayment: true,
+      capturableAmount: 750000n,
+      refundableAmount: 250000n,
+    })
+  })
+
+  it('propagates errors from getPaymentState', async () => {
+    const { BaseError } = await import('viem')
+    const client = {
+      readContract: vi.fn(() => {
+        throw new BaseError('execution reverted', { details: 'bad call' })
+      }),
+    } as unknown as PublicClient
+
+    await expect(
+      getPaymentAmounts(client, MOCK_OPERATOR, TEST_CHAIN_ID, paymentInfo),
     ).rejects.toThrow(ContractCallError)
   })
 })

@@ -11,7 +11,6 @@ export default defineConfig({
 
         // Test helpers and mocks
         'Mock*.sol/**',
-        'AuthCaptureEscrow.sol/**',
         'MaliciousRecorder.sol/**',
         '*Invariants*/**',
         '*Handler*/**',

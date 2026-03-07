@@ -30,7 +30,7 @@
   "packageManager": "pnpm@10.23.0",
   "pnpm": {
     "overrides": {
-      "tar": ">=7.5.8"
+      "tar": ">=7.5.10"
     }
   },
   "devDependencies": {
