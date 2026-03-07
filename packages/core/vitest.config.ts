@@ -43,6 +43,8 @@ export default defineConfig({
           testTimeout: 60_000,
           hookTimeout: 60_000,
           passWithNoTests: true,
+          // Fork RPC (Alchemy) can be flaky — retry individual tests instead of restarting the suite
+          retry: 3,
         },
       },
     ],
