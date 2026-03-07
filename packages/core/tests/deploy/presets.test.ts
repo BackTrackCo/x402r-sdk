@@ -53,6 +53,20 @@ describe('previewMarketplaceOperator', () => {
     )
     expect(result2.feeCalculatorAddress).toBeNull()
   })
+
+  it('feeCalculatorAddress is non-null when operatorFeeBps > 0', async () => {
+    const publicClient = createMockPublicClient({
+      computeAddress: COMPUTED_ADDR,
+    })
+
+    const result = await previewMarketplaceOperator(
+      publicClient,
+      makeOptions({ operatorFeeBps: 100n }),
+    )
+
+    expect(result.feeCalculatorAddress).toBe(COMPUTED_ADDR)
+    expect(result.operatorConfig.feeCalculator).toBe(COMPUTED_ADDR)
+  })
 })
 
 describe('deployMarketplaceOperator', () => {
@@ -96,5 +110,24 @@ describe('deployMarketplaceOperator', () => {
     expect(result.summary.newCount).toBe(3)
     expect(result.summary.existingCount).toBe(2)
     expect(result.summary.txHashes).toHaveLength(3)
+  })
+
+  it('deploys feeCalculator when operatorFeeBps > 0', async () => {
+    const publicClient = createMockPublicClient({
+      getDeployed: zeroAddress,
+      getOperator: zeroAddress,
+      computeAddress: COMPUTED_ADDR,
+    })
+    const walletClient = createMockWalletClient()
+
+    const result = await deployMarketplaceOperator(
+      walletClient,
+      publicClient,
+      makeOptions({ operatorFeeBps: 100n }),
+    )
+
+    // With fee calculator: escrow + freeze + arbiterCondition + orCondition + feeCalc + operator = 6
+    expect(result.deployments).toHaveLength(6)
+    expect(result.feeCalculatorAddress).toBe(COMPUTED_ADDR)
   })
 })

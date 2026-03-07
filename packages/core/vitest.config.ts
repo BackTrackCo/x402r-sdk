@@ -16,6 +16,8 @@ export default defineConfig({
         // Pure readContract passthrough — no mapping logic
         'src/operations/freeze-reads.ts',
         'src/operations/refund-budget-reads.ts',
+        // Typed wrappers — each function is a 1-line delegation to factory-helpers.ts (100% covered)
+        'src/deploy/factories.ts',
       ],
       thresholds: {
         lines: 85,
