@@ -59,6 +59,15 @@ export function createMockPublicClient(
         )
       },
     ),
+    multicall: vi.fn(
+      ({ contracts }: { contracts: { functionName: string }[] }) => {
+        const results = contracts.map(({ functionName }) => {
+          if (functionName in responses) return responses[functionName]
+          throw new Error(`No mock response for multicall(${functionName})`)
+        })
+        return Promise.resolve(results)
+      },
+    ),
     waitForTransactionReceipt: vi.fn().mockResolvedValue({ status: 'success' }),
   } as unknown as PublicClient
 }

@@ -13,6 +13,9 @@ export default defineConfig({
         'tests/**',
         // Write-only wrappers — thin writeContract forwarding with account guards
         'src/operations/*-writes.ts',
+        // Pure readContract passthrough — no mapping logic
+        'src/operations/freeze-reads.ts',
+        'src/operations/refund-budget-reads.ts',
       ],
       thresholds: {
         lines: 85,

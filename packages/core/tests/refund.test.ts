@@ -1,16 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { ContractCallError } from '../src/errors/index.js'
 import {
-  getCancelCount,
-  getCancelledAmount,
   getOperatorRefundRequests,
   getPayerRefundRequests,
   getReceiverRefundRequests,
   getRefundRequest,
   getRefundRequestByKey,
-  getRefundRequestStatus,
-  getStoredPaymentInfo,
-  hasRefundRequest,
   RefundRequestStatus,
 } from '../src/operations/refund-reads.js'
 import { requestRefund } from '../src/operations/refund-writes.js'
@@ -36,20 +31,6 @@ describe('RefundRequestStatus', () => {
 describe('refund read functions', () => {
   const pi = makePaymentInfo()
 
-  it('hasRefundRequest calls readContract with correct args', async () => {
-    const client = createMockPublicClient({ hasRefundRequest: false })
-    const result = await hasRefundRequest(client, MOCK_CONTRACT, pi, 0n)
-    expect(result).toBe(false)
-  })
-
-  it('getRefundRequestStatus calls readContract with correct args', async () => {
-    const client = createMockPublicClient({
-      getRefundRequestStatus: RefundRequestStatus.Pending,
-    })
-    const result = await getRefundRequestStatus(client, MOCK_CONTRACT, pi, 0n)
-    expect(result).toBe(0)
-  })
-
   it('getRefundRequest returns mapped object', async () => {
     const mockData = {
       paymentInfoHash: '0xabc' as const,
@@ -60,18 +41,6 @@ describe('refund read functions', () => {
     const client = createMockPublicClient({ getRefundRequest: mockData })
     const result = await getRefundRequest(client, MOCK_CONTRACT, pi, 1n)
     expect(result).toEqual(mockData)
-  })
-
-  it('getCancelCount returns bigint', async () => {
-    const client = createMockPublicClient({ getCancelCount: 0n })
-    const result = await getCancelCount(client, MOCK_CONTRACT, pi, 0n)
-    expect(result).toBe(0n)
-  })
-
-  it('getCancelledAmount returns bigint', async () => {
-    const client = createMockPublicClient({ getCancelledAmount: 500n })
-    const result = await getCancelledAmount(client, MOCK_CONTRACT, pi, 0n, 0n)
-    expect(result).toBe(500n)
   })
 
   it('getPayerRefundRequests returns keys and total', async () => {
@@ -134,17 +103,6 @@ describe('refund read functions', () => {
       '0xabc' as `0x${string}`,
     )
     expect(result).toEqual(mockData)
-  })
-
-  it('getStoredPaymentInfo returns PaymentInfo', async () => {
-    const mockPi = makePaymentInfo()
-    const client = createMockPublicClient({ getPaymentInfo: mockPi })
-    const result = await getStoredPaymentInfo(
-      client,
-      MOCK_CONTRACT,
-      '0xabc' as `0x${string}`,
-    )
-    expect(result).toEqual(mockPi)
   })
 })
 

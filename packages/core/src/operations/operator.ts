@@ -39,12 +39,10 @@ export async function getOperatorConfig(
   operatorAddress: Address,
 ): Promise<OperatorSlots> {
   return wrapContractCall('getOperatorConfig', async () => {
-    const read = <T extends string>(functionName: T) =>
-      publicClient.readContract({
-        address: operatorAddress,
-        abi: paymentOperatorAbi,
-        functionName: functionName as any,
-      }) as Promise<Address>
+    const contract = {
+      address: operatorAddress,
+      abi: paymentOperatorAbi,
+    } as const
 
     const [
       escrow,
@@ -61,22 +59,25 @@ export async function getOperatorConfig(
       feeCalculator,
       feeRecipient,
       protocolFeeConfig,
-    ] = await Promise.all([
-      read('ESCROW'),
-      read('AUTHORIZE_CONDITION'),
-      read('AUTHORIZE_RECORDER'),
-      read('CHARGE_CONDITION'),
-      read('CHARGE_RECORDER'),
-      read('RELEASE_CONDITION'),
-      read('RELEASE_RECORDER'),
-      read('REFUND_IN_ESCROW_CONDITION'),
-      read('REFUND_IN_ESCROW_RECORDER'),
-      read('REFUND_POST_ESCROW_CONDITION'),
-      read('REFUND_POST_ESCROW_RECORDER'),
-      read('FEE_CALCULATOR'),
-      read('FEE_RECIPIENT'),
-      read('PROTOCOL_FEE_CONFIG'),
-    ])
+    ] = await publicClient.multicall({
+      contracts: [
+        { ...contract, functionName: 'ESCROW' },
+        { ...contract, functionName: 'AUTHORIZE_CONDITION' },
+        { ...contract, functionName: 'AUTHORIZE_RECORDER' },
+        { ...contract, functionName: 'CHARGE_CONDITION' },
+        { ...contract, functionName: 'CHARGE_RECORDER' },
+        { ...contract, functionName: 'RELEASE_CONDITION' },
+        { ...contract, functionName: 'RELEASE_RECORDER' },
+        { ...contract, functionName: 'REFUND_IN_ESCROW_CONDITION' },
+        { ...contract, functionName: 'REFUND_IN_ESCROW_RECORDER' },
+        { ...contract, functionName: 'REFUND_POST_ESCROW_CONDITION' },
+        { ...contract, functionName: 'REFUND_POST_ESCROW_RECORDER' },
+        { ...contract, functionName: 'FEE_CALCULATOR' },
+        { ...contract, functionName: 'FEE_RECIPIENT' },
+        { ...contract, functionName: 'PROTOCOL_FEE_CONFIG' },
+      ],
+      allowFailure: false,
+    })
 
     return {
       escrow,
