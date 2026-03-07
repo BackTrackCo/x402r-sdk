@@ -98,6 +98,54 @@ export function createMockWalletWithoutAccount(): WalletClient {
 }
 
 // ---------------------------------------------------------------------------
+// Sequential mock public client for deploy tests
+// ---------------------------------------------------------------------------
+
+/**
+ * Creates a mock PublicClient where `computeAddress` calls return addresses
+ * sequentially from the provided array, and `getDeployed`/`getOperator`
+ * behavior is configurable.
+ */
+export function createSequentialMockPublicClient(
+  computeAddresses: Address[],
+  options: {
+    getDeployedBehavior?:
+      | 'allNew'
+      | 'allExisting'
+      | ((callIndex: number) => Address)
+  } = {},
+): PublicClient {
+  let computeCallCount = 0
+  let getDeployedCallCount = 0
+  const behavior = options.getDeployedBehavior ?? 'allNew'
+
+  const base = createMockPublicClient({})
+  ;(base as any).readContract = async (params: {
+    functionName: string
+    [k: string]: unknown
+  }) => {
+    if (params.functionName === 'computeAddress') {
+      return computeAddresses[computeCallCount++] ?? FALLBACK_COMPUTED_ADDR
+    }
+    if (
+      params.functionName === 'getDeployed' ||
+      params.functionName === 'getOperator'
+    ) {
+      const idx = getDeployedCallCount++
+      if (behavior === 'allNew') return zeroAddress
+      if (behavior === 'allExisting') return FALLBACK_COMPUTED_ADDR
+      return behavior(idx)
+    }
+    return FALLBACK_COMPUTED_ADDR
+  }
+
+  return base
+}
+
+const FALLBACK_COMPUTED_ADDR =
+  '0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' as Address
+
+// ---------------------------------------------------------------------------
 // PaymentInfo factory
 // ---------------------------------------------------------------------------
 

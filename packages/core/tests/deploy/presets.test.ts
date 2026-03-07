@@ -7,7 +7,11 @@ import {
   previewMarketplaceOperator,
 } from '../../src/deploy/presets.js'
 import { ConfigError } from '../../src/errors/index.js'
-import { createMockPublicClient, createMockWalletClient } from '../fixtures.js'
+import {
+  createMockPublicClient,
+  createMockWalletClient,
+  createSequentialMockPublicClient,
+} from '../fixtures.js'
 
 const COMPUTED_ADDR = '0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' as Address
 
@@ -55,24 +59,13 @@ describe('previewMarketplaceOperator', () => {
   })
 
   it('freezeAddress is null and releaseCondition equals escrowPeriodAddress when freeze disabled', async () => {
-    // Use distinct addresses to verify wiring (not just COMPUTED_ADDR === COMPUTED_ADDR)
-    let computeCallCount = 0
     const addresses = [
       '0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', // escrowPeriod
       '0xBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB', // arbiterCondition
       '0xCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC', // orCondition
       '0xDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD', // operator
     ] as Address[]
-    const publicClient = createMockPublicClient({})
-    ;(publicClient as any).readContract = async (params: {
-      functionName: string
-      [k: string]: unknown
-    }) => {
-      if (params.functionName === 'computeAddress') {
-        return addresses[computeCallCount++] ?? COMPUTED_ADDR
-      }
-      return COMPUTED_ADDR
-    }
+    const publicClient = createSequentialMockPublicClient(addresses)
 
     const result = await previewMarketplaceOperator(publicClient, makeOptions())
 
@@ -83,7 +76,6 @@ describe('previewMarketplaceOperator', () => {
   })
 
   it('freezeAddress is non-null and releaseCondition is AndCondition when freeze enabled', async () => {
-    let computeCallCount = 0
     const addresses = [
       '0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', // escrowPeriod
       '0xBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB', // freeze
@@ -92,16 +84,7 @@ describe('previewMarketplaceOperator', () => {
       '0xEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE', // orCondition
       '0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', // operator
     ] as Address[]
-    const publicClient = createMockPublicClient({})
-    ;(publicClient as any).readContract = async (params: {
-      functionName: string
-      [k: string]: unknown
-    }) => {
-      if (params.functionName === 'computeAddress') {
-        return addresses[computeCallCount++] ?? COMPUTED_ADDR
-      }
-      return COMPUTED_ADDR
-    }
+    const publicClient = createSequentialMockPublicClient(addresses)
 
     const result = await previewMarketplaceOperator(
       publicClient,
@@ -132,38 +115,17 @@ describe('previewMarketplaceOperator', () => {
 
 describe('deployMarketplaceOperator', () => {
   it('summary correctly counts new vs existing (freeze disabled)', async () => {
-    let getDeployedCallCount = 0
-    let computeCallCount = 0
     const addresses = [
       '0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', // escrowPeriod
       '0xBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB', // arbiterCondition
       '0xCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC', // orCondition
       '0xDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD', // operator
     ] as Address[]
-    const publicClient = createMockPublicClient({})
-
-    ;(publicClient as any).readContract = async (params: {
-      functionName: string
-      [k: string]: unknown
-    }) => {
-      if (params.functionName === 'computeAddress') {
-        return addresses[computeCallCount++] ?? COMPUTED_ADDR
-      }
-      if (
-        params.functionName === 'getDeployed' ||
-        params.functionName === 'getOperator'
-      ) {
-        getDeployedCallCount++
-        // First 2 are new (return zero), rest are existing (return non-zero)
-        return getDeployedCallCount <= 2 ? zeroAddress : COMPUTED_ADDR
-      }
-      return COMPUTED_ADDR
-    }
-
-    const walletClient = createMockWalletClient()
-    ;(publicClient as any).waitForTransactionReceipt = async () => ({
-      status: 'success',
+    // First 2 are new (return zero), rest are existing (return non-zero)
+    const publicClient = createSequentialMockPublicClient(addresses, {
+      getDeployedBehavior: (idx) => (idx < 2 ? zeroAddress : COMPUTED_ADDR),
     })
+    const walletClient = createMockWalletClient()
 
     const result = await deployMarketplaceOperator(
       walletClient,
@@ -202,8 +164,6 @@ describe('deployMarketplaceOperator', () => {
   })
 
   it('deploys freeze + andCondition when freezeDurationSeconds > 0', async () => {
-    // Use a counter to return distinct addresses so we can verify releaseCondition differs
-    let computeCallCount = 0
     const addresses = [
       '0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', // escrowPeriod
       '0xBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB', // freeze
@@ -212,25 +172,7 @@ describe('deployMarketplaceOperator', () => {
       '0xEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE', // orCondition
       '0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', // operator
     ] as Address[]
-    const publicClient = createMockPublicClient({
-      getDeployed: zeroAddress,
-      getOperator: zeroAddress,
-    })
-    ;(publicClient as any).readContract = async (params: {
-      functionName: string
-      [k: string]: unknown
-    }) => {
-      if (params.functionName === 'computeAddress') {
-        return addresses[computeCallCount++] ?? COMPUTED_ADDR
-      }
-      if (
-        params.functionName === 'getDeployed' ||
-        params.functionName === 'getOperator'
-      ) {
-        return zeroAddress
-      }
-      return COMPUTED_ADDR
-    }
+    const publicClient = createSequentialMockPublicClient(addresses)
     const walletClient = createMockWalletClient()
 
     const result = await deployMarketplaceOperator(
@@ -249,32 +191,13 @@ describe('deployMarketplaceOperator', () => {
   })
 
   it('skips freeze when freezeDurationSeconds omitted', async () => {
-    let computeCallCount = 0
     const addresses = [
       '0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', // escrowPeriod
       '0xBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB', // arbiterCondition
       '0xCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC', // orCondition
       '0xDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD', // operator
     ] as Address[]
-    const publicClient = createMockPublicClient({
-      getDeployed: zeroAddress,
-      getOperator: zeroAddress,
-    })
-    ;(publicClient as any).readContract = async (params: {
-      functionName: string
-      [k: string]: unknown
-    }) => {
-      if (params.functionName === 'computeAddress') {
-        return addresses[computeCallCount++] ?? COMPUTED_ADDR
-      }
-      if (
-        params.functionName === 'getDeployed' ||
-        params.functionName === 'getOperator'
-      ) {
-        return zeroAddress
-      }
-      return COMPUTED_ADDR
-    }
+    const publicClient = createSequentialMockPublicClient(addresses)
     const walletClient = createMockWalletClient()
 
     const result = await deployMarketplaceOperator(

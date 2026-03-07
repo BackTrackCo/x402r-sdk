@@ -123,6 +123,31 @@ describe('Deploy Module (Fork)', () => {
     }
   })
 
+  it('deploys freeze + andCondition when freezeDurationSeconds > 0', async () => {
+    const options = makeOptions({ freezeDurationSeconds: 86400n })
+    const preview = await previewMarketplaceOperator(publicClient, options)
+    const deployment = await deployMarketplaceOperator(
+      walletClient,
+      publicClient,
+      options,
+    )
+
+    // freezeAddress should be non-null and valid
+    expect(deployment.freezeAddress).toMatch(/^0x[0-9a-fA-F]{40}$/)
+    expect(deployment.freezeAddress).toBe(preview.freezeAddress)
+
+    // releaseCondition should NOT be escrowPeriodAddress (it's the AndCondition)
+    expect(deployment.operatorConfig.releaseCondition).not.toBe(
+      deployment.escrowPeriodAddress,
+    )
+
+    // freeze + andCondition + escrow + arbiter + orCondition + feeCalc + operator = 7
+    expect(deployment.deployments).toHaveLength(7)
+    expect(deployment.summary.newCount + deployment.summary.existingCount).toBe(
+      7,
+    )
+  })
+
   it('deploy with different arbiter produces different operator address', async () => {
     const options1 = makeOptions()
     const options2 = makeOptions({
