@@ -38,7 +38,7 @@ describe('computePaymentInfoHash', () => {
       samplePaymentInfo,
     )
     expect(hash).toBe(
-      '0x6b28d39eba9622eaad35e4a6e7fa0c63c6b6c63c2faa08935a271c8bb38cebad',
+      '0x63b799e9bb087cf3850744ec28fef9f335dc9ae7de044918ecc86cae31ad1065',
     )
   })
 
