@@ -1,36 +1,17 @@
 import { getChainConfig } from '@x402r/core'
-import { createPublicClient, createWalletClient, http } from 'viem'
-import { privateKeyToAccount } from 'viem/accounts'
-import { baseSepolia } from 'viem/chains'
+import { createPublicClient, http } from 'viem'
 import { describe, expect, it } from 'vitest'
 import { createX402r, resolveConfig } from '../src/client.js'
 import type { X402rConfig } from '../src/types.js'
+import {
+  TEST_ESCROW_PERIOD as escrowPeriodAddress,
+  TEST_FREEZE as freezeAddress,
+  TEST_OPERATOR as operatorAddress,
+  publicClient,
+  walletClient,
+} from './fixtures.js'
 
 const baseSepoliaConfig = getChainConfig(84532)
-
-// ---------------------------------------------------------------------------
-// Fixtures
-// ---------------------------------------------------------------------------
-
-const TEST_PRIVATE_KEY =
-  '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80' as const
-const account = privateKeyToAccount(TEST_PRIVATE_KEY)
-
-const publicClient = createPublicClient({
-  chain: baseSepolia,
-  transport: http(),
-})
-
-const walletClient = createWalletClient({
-  chain: baseSepolia,
-  transport: http(),
-  account,
-})
-
-const operatorAddress = '0x1234567890abcdef1234567890abcdef12345678' as const
-const freezeAddress = '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd' as const
-const escrowPeriodAddress =
-  '0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef' as const
 
 const baseConfig: X402rConfig = {
   publicClient,

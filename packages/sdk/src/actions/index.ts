@@ -3,8 +3,6 @@ import type {
   EscrowActions,
   EvidenceActions,
   FreezeActions,
-  OperatorActions,
-  PaymentActions,
   RefundActions,
   ResolvedConfig,
   WatchActions,
@@ -14,15 +12,8 @@ function stub(group: string): never {
   throw new NotImplementedError(`${group} action group is not yet implemented`)
 }
 
-export function createPaymentActions(_config: ResolvedConfig): PaymentActions {
-  return {
-    authorize: () => stub('payment'),
-    charge: () => stub('payment'),
-    release: () => stub('payment'),
-    getState: () => stub('payment'),
-    getAmounts: () => stub('payment'),
-  }
-}
+export { createOperatorActions } from './operator.js'
+export { createPaymentActions } from './payment.js'
 
 export function createEscrowActions(_config: ResolvedConfig): EscrowActions {
   return {
@@ -72,21 +63,6 @@ export function createFreezeActions(_config: ResolvedConfig): FreezeActions {
     freeze: () => stub('freeze'),
     unfreeze: () => stub('freeze'),
     isFrozen: () => stub('freeze'),
-  }
-}
-
-export function createOperatorActions(
-  _config: ResolvedConfig,
-): OperatorActions {
-  return {
-    getConfig: () => stub('operator'),
-    getFeeAddresses: () => stub('operator'),
-    calculateFees: () => stub('operator'),
-    calculateOperatorFeeBps: () => stub('operator'),
-    calculateProtocolFeeBps: () => stub('operator'),
-    getAuthorizedFees: () => stub('operator'),
-    getAccumulatedProtocolFees: () => stub('operator'),
-    distributeFees: () => stub('operator'),
   }
 }
 
