@@ -125,11 +125,7 @@ export const x402rChains = {
     43114,
     '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E',
   ),
-  10143: chainConfig(
-    'Monad',
-    10143,
-    '0x754704Bc059F8C67012fEd69BC8A327a5aafb603',
-  ),
+  143: chainConfig('Monad', 143, '0x754704Bc059F8C67012fEd69BC8A327a5aafb603'),
 } as const satisfies Record<number, X402rChainConfig>
 
 // ---------------------------------------------------------------------------
