@@ -85,7 +85,7 @@ describe('canExecute', () => {
     expect(result).toBe(true)
   })
 
-  it('returns false when getConditionAddress fails', async () => {
+  it('propagates errors from getConditionAddress', async () => {
     const { BaseError } = await import('viem')
     mockGetConditionAddress.mockRejectedValue(
       new BaseError('Contract call failed'),
@@ -146,9 +146,9 @@ describe('canExecute', () => {
       '0x5555555555555555555555555555555555555555',
     )
 
-    vi.spyOn(publicClient, 'readContract').mockRejectedValue(
-      new BaseError('Condition check reverted'),
-    )
+    const spy = vi
+      .spyOn(publicClient, 'readContract')
+      .mockRejectedValue(new BaseError('Condition check reverted'))
 
     const result = await canExecute(
       config,
@@ -157,5 +157,7 @@ describe('canExecute', () => {
       1000000n,
     )
     expect(result).toBe(false)
+
+    spy.mockRestore()
   })
 })

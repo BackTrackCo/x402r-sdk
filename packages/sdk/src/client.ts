@@ -1,5 +1,4 @@
 import { fromNetworkId, getChainConfig, ValidationError } from '@x402r/core'
-import type { Address } from 'viem'
 import {
   createEscrowActions,
   createEvidenceActions,
@@ -64,8 +63,8 @@ export function createX402r(config: X402rConfig): X402r {
 export function resolveConfig(config: X402rConfig): ResolvedConfig {
   const chainId = resolveChainId(config)
   const chainConfig = getChainConfig(chainId)
-  const refundRequestEvidenceAddress = (config.refundRequestEvidenceAddress ??
-    chainConfig.refundRequestEvidence) as Address
+  const refundRequestEvidenceAddress =
+    config.refundRequestEvidenceAddress ?? chainConfig.refundRequestEvidence
 
   return {
     publicClient: config.publicClient,
