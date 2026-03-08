@@ -1,43 +1,19 @@
 import type { Address, PublicClient } from 'viem'
-import { paymentOperatorAbi } from '../abis/generated.js'
-import { wrapContractCall } from './error-wrapping.js'
+import { paymentOperatorAbi } from '../../abis/generated.js'
+import { wrapContractCall } from '../_internal/error-wrapping.js'
+import type { ConditionSlot, OperatorSlots } from './types.js'
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-export interface OperatorSlots {
-  escrow: Address
-  authorizeCondition: Address
-  authorizeRecorder: Address
-  chargeCondition: Address
-  chargeRecorder: Address
-  releaseCondition: Address
-  releaseRecorder: Address
-  refundInEscrowCondition: Address
-  refundInEscrowRecorder: Address
-  refundPostEscrowCondition: Address
-  refundPostEscrowRecorder: Address
-  feeCalculator: Address
-  feeRecipient: Address
-  protocolFeeConfig: Address
+export interface GetOperatorConfigParameters {
+  operatorAddress: Address
 }
-
-export type ConditionSlot =
-  | 'AUTHORIZE_CONDITION'
-  | 'CHARGE_CONDITION'
-  | 'RELEASE_CONDITION'
-  | 'REFUND_IN_ESCROW_CONDITION'
-  | 'REFUND_POST_ESCROW_CONDITION'
-
-// ---------------------------------------------------------------------------
-// Read functions
-// ---------------------------------------------------------------------------
+export type GetOperatorConfigReturnType = OperatorSlots
 
 export async function getOperatorConfig(
   publicClient: PublicClient,
-  operatorAddress: Address,
-): Promise<OperatorSlots> {
+  parameters: GetOperatorConfigParameters,
+): Promise<GetOperatorConfigReturnType> {
+  const { operatorAddress } = parameters
+
   return wrapContractCall('getOperatorConfig', async () => {
     const contract = {
       address: operatorAddress,
@@ -98,10 +74,17 @@ export async function getOperatorConfig(
   })
 }
 
+export interface GetEscrowAddressParameters {
+  operatorAddress: Address
+}
+export type GetEscrowAddressReturnType = Address
+
 export async function getEscrowAddress(
   publicClient: PublicClient,
-  operatorAddress: Address,
-): Promise<Address> {
+  parameters: GetEscrowAddressParameters,
+): Promise<GetEscrowAddressReturnType> {
+  const { operatorAddress } = parameters
+
   return wrapContractCall('getEscrowAddress', () =>
     publicClient.readContract({
       address: operatorAddress,
@@ -111,11 +94,18 @@ export async function getEscrowAddress(
   )
 }
 
+export interface GetConditionAddressParameters {
+  operatorAddress: Address
+  slot: ConditionSlot
+}
+export type GetConditionAddressReturnType = Address
+
 export async function getConditionAddress(
   publicClient: PublicClient,
-  operatorAddress: Address,
-  slot: ConditionSlot,
-): Promise<Address> {
+  parameters: GetConditionAddressParameters,
+): Promise<GetConditionAddressReturnType> {
+  const { operatorAddress, slot } = parameters
+
   return wrapContractCall('getConditionAddress', () =>
     publicClient.readContract({
       address: operatorAddress,

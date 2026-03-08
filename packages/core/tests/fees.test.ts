@@ -1,14 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import {
-  calculateOperatorFeeBps,
-  calculateProtocolFeeBps,
-  calculateTotalFees,
-  type FeeCalculationResult,
-  formatFeeBreakdown,
-  getFeeAddresses,
-  validateFeeBounds,
-} from '../src/operations/fee-reads.js'
-import { distributeFees } from '../src/operations/fee-writes.js'
+import { calculateOperatorFeeBps } from '../src/actions/fees/calculateOperatorFeeBps.js'
+import { calculateProtocolFeeBps } from '../src/actions/fees/calculateProtocolFeeBps.js'
+import { calculateTotalFees } from '../src/actions/fees/calculateTotalFees.js'
+import { distributeFees } from '../src/actions/fees/distributeFees.js'
+import { formatFeeBreakdown } from '../src/actions/fees/formatFeeBreakdown.js'
+import { getAuthorizedFees } from '../src/actions/fees/getAuthorizedFees.js'
+import { getFeeAddresses } from '../src/actions/fees/getFeeAddresses.js'
+import type { FeeCalculationResult } from '../src/actions/fees/types.js'
+import { validateFeeBounds } from '../src/actions/fees/validateFeeBounds.js'
 import {
   createMockPublicClient,
   createMockWalletClient,
@@ -50,7 +49,9 @@ describe('getFeeAddresses', () => {
         MOCK_PROTOCOL_RECIPIENT,
     })
 
-    const result = await getFeeAddresses(client, MOCK_OPERATOR)
+    const result = await getFeeAddresses(client, {
+      operatorAddress: MOCK_OPERATOR,
+    })
 
     expect(result).toEqual({
       operatorFeeCalculator: MOCK_FEE_CALCULATOR,
@@ -68,7 +69,9 @@ describe('getFeeAddresses', () => {
       [`${MOCK_OPERATOR}:FEE_RECIPIENT`]: MOCK_FEE_RECIPIENT,
     })
 
-    const result = await getFeeAddresses(client, MOCK_OPERATOR)
+    const result = await getFeeAddresses(client, {
+      operatorAddress: MOCK_OPERATOR,
+    })
 
     expect(result.protocolFeeCalculator).toBe(zeroAddress)
     expect(result.protocolFeeRecipient).toBe(zeroAddress)
@@ -89,13 +92,12 @@ describe('calculateOperatorFeeBps', () => {
       [`${MOCK_OPERATOR}:FEE_CALCULATOR`]: zeroAddress,
     })
 
-    const result = await calculateOperatorFeeBps(
-      client,
-      MOCK_OPERATOR,
+    const result = await calculateOperatorFeeBps(client, {
+      operatorAddress: MOCK_OPERATOR,
       paymentInfo,
-      1000000n,
-      MOCK_CALLER,
-    )
+      amount: 1000000n,
+      caller: MOCK_CALLER,
+    })
 
     expect(result).toBe(0n)
   })
@@ -106,13 +108,12 @@ describe('calculateOperatorFeeBps', () => {
       [`${MOCK_FEE_CALCULATOR}:calculateFee`]: 250n,
     })
 
-    const result = await calculateOperatorFeeBps(
-      client,
-      MOCK_OPERATOR,
+    const result = await calculateOperatorFeeBps(client, {
+      operatorAddress: MOCK_OPERATOR,
       paymentInfo,
-      1000000n,
-      MOCK_CALLER,
-    )
+      amount: 1000000n,
+      caller: MOCK_CALLER,
+    })
 
     expect(result).toBe(250n)
   })
@@ -130,13 +131,12 @@ describe('calculateProtocolFeeBps', () => {
       [`${MOCK_OPERATOR}:PROTOCOL_FEE_CONFIG`]: zeroAddress,
     })
 
-    const result = await calculateProtocolFeeBps(
-      client,
-      MOCK_OPERATOR,
+    const result = await calculateProtocolFeeBps(client, {
+      operatorAddress: MOCK_OPERATOR,
       paymentInfo,
-      1000000n,
-      MOCK_CALLER,
-    )
+      amount: 1000000n,
+      caller: MOCK_CALLER,
+    })
 
     expect(result).toBe(0n)
   })
@@ -147,13 +147,12 @@ describe('calculateProtocolFeeBps', () => {
       [`${MOCK_PROTOCOL_FEE_CONFIG}:getProtocolFeeBps`]: 100n,
     })
 
-    const result = await calculateProtocolFeeBps(
-      client,
-      MOCK_OPERATOR,
+    const result = await calculateProtocolFeeBps(client, {
+      operatorAddress: MOCK_OPERATOR,
       paymentInfo,
-      1000000n,
-      MOCK_CALLER,
-    )
+      amount: 1000000n,
+      caller: MOCK_CALLER,
+    })
 
     expect(result).toBe(100n)
   })
@@ -174,13 +173,12 @@ describe('calculateTotalFees', () => {
       [`${MOCK_PROTOCOL_FEE_CONFIG}:getProtocolFeeBps`]: 100n,
     })
 
-    const result = await calculateTotalFees(
-      client,
-      MOCK_OPERATOR,
+    const result = await calculateTotalFees(client, {
+      operatorAddress: MOCK_OPERATOR,
       paymentInfo,
-      1000000n,
-      MOCK_CALLER,
-    )
+      amount: 1000000n,
+      caller: MOCK_CALLER,
+    })
 
     expect(result.operatorFeeBps).toBe(250n)
     expect(result.protocolFeeBps).toBe(100n)
@@ -195,13 +193,12 @@ describe('calculateTotalFees', () => {
       [`${MOCK_PROTOCOL_FEE_CONFIG}:getProtocolFeeBps`]: 100n,
     })
 
-    await calculateTotalFees(
-      client,
-      MOCK_OPERATOR,
+    await calculateTotalFees(client, {
+      operatorAddress: MOCK_OPERATOR,
       paymentInfo,
-      1000000n,
-      MOCK_CALLER,
-    )
+      amount: 1000000n,
+      caller: MOCK_CALLER,
+    })
 
     // 2 config reads + 2 calculator reads = 4 total (no redundant calls)
     expect(client.readContract).toHaveBeenCalledTimes(4)
@@ -213,13 +210,12 @@ describe('calculateTotalFees', () => {
       [`${MOCK_OPERATOR}:PROTOCOL_FEE_CONFIG`]: zeroAddress,
     })
 
-    await calculateTotalFees(
-      client,
-      MOCK_OPERATOR,
+    await calculateTotalFees(client, {
+      operatorAddress: MOCK_OPERATOR,
       paymentInfo,
-      1000000n,
-      MOCK_CALLER,
-    )
+      amount: 1000000n,
+      caller: MOCK_CALLER,
+    })
 
     // Only 2 config reads, no calculator calls needed
     expect(client.readContract).toHaveBeenCalledTimes(2)
@@ -231,13 +227,12 @@ describe('calculateTotalFees', () => {
       [`${MOCK_OPERATOR}:PROTOCOL_FEE_CONFIG`]: zeroAddress,
     })
 
-    const result = await calculateTotalFees(
-      client,
-      MOCK_OPERATOR,
+    const result = await calculateTotalFees(client, {
+      operatorAddress: MOCK_OPERATOR,
       paymentInfo,
-      1000000n,
-      MOCK_CALLER,
-    )
+      amount: 1000000n,
+      caller: MOCK_CALLER,
+    })
 
     expect(result.totalFeeBps).toBe(0n)
     expect(result.totalFeeAmount).toBe(0n)
@@ -254,13 +249,12 @@ describe('calculateTotalFees', () => {
     })
 
     const amount = 1000000n
-    const result = await calculateTotalFees(
-      client,
-      MOCK_OPERATOR,
+    const result = await calculateTotalFees(client, {
+      operatorAddress: MOCK_OPERATOR,
       paymentInfo,
       amount,
-      MOCK_CALLER,
-    )
+      caller: MOCK_CALLER,
+    })
 
     // 250 bps = 2.5% → 25000
     expect(result.operatorFeeAmount).toBe(25000n)
@@ -363,24 +357,61 @@ describe('formatFeeBreakdown', () => {
 })
 
 // ---------------------------------------------------------------------------
+// getAuthorizedFees
+// ---------------------------------------------------------------------------
+
+describe('getAuthorizedFees', () => {
+  const MOCK_HASH =
+    '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890' as const
+
+  it('maps contract tuple to { totalFeeBps, protocolFeeBps }', async () => {
+    const client = createMockPublicClient({
+      [`${MOCK_OPERATOR}:authorizedFees`]: [350, 100],
+    })
+
+    const result = await getAuthorizedFees(client, {
+      operatorAddress: MOCK_OPERATOR,
+      paymentInfoHash: MOCK_HASH,
+    })
+
+    expect(result).toEqual({ totalFeeBps: 350, protocolFeeBps: 100 })
+  })
+
+  it('returns zeros when no fees are authorized', async () => {
+    const client = createMockPublicClient({
+      [`${MOCK_OPERATOR}:authorizedFees`]: [0, 0],
+    })
+
+    const result = await getAuthorizedFees(client, {
+      operatorAddress: MOCK_OPERATOR,
+      paymentInfoHash: MOCK_HASH,
+    })
+
+    expect(result).toEqual({ totalFeeBps: 0, protocolFeeBps: 0 })
+  })
+})
+
+// ---------------------------------------------------------------------------
 // distributeFees
 // ---------------------------------------------------------------------------
 
 describe('distributeFees', () => {
   it('throws ContractCallError when account is missing', async () => {
     await expect(
-      distributeFees(
-        createMockWalletWithoutAccount(),
-        MOCK_OPERATOR,
-        MOCK_TOKEN,
-      ),
+      distributeFees(createMockWalletWithoutAccount(), {
+        operatorAddress: MOCK_OPERATOR,
+        token: MOCK_TOKEN,
+      }),
     ).rejects.toThrow('distributeFees failed')
   })
 
   it('returns transaction hash', async () => {
     const wallet = createMockWalletClient()
 
-    const result = await distributeFees(wallet, MOCK_OPERATOR, MOCK_TOKEN)
+    const result = await distributeFees(wallet, {
+      operatorAddress: MOCK_OPERATOR,
+      token: MOCK_TOKEN,
+    })
 
     expect(result).toBe(MOCK_TX_HASH)
     expect(wallet.writeContract).toHaveBeenCalledWith(
