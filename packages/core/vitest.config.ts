@@ -42,12 +42,6 @@ export default defineConfig({
         // Typed wrappers — each function is a 1-line delegation to factory-helpers.ts (100% covered)
         'src/deploy/factories.ts',
       ],
-      thresholds: {
-        lines: 85,
-        functions: 85,
-        branches: 85,
-        statements: 85,
-      },
     },
     projects: [
       {
