@@ -107,5 +107,5 @@ export const anvilBaseSepolia = defineAnvil({
   forkUrl:
     process.env.VITE_ANVIL_FORK_URL_BASE_SEPOLIA ?? 'https://sepolia.base.org',
   port: 8745,
-  forkBlockNumber: 38_381_873n,
+  forkBlockNumber: 38_592_000n,
 })
