@@ -22,10 +22,6 @@ export type {
 } from './distributeFees.js'
 export { distributeFees } from './distributeFees.js'
 
-export type {
-  FormatFeeBreakdownParameters,
-  FormatFeeBreakdownReturnType,
-} from './formatFeeBreakdown.js'
 export { formatFeeBreakdown } from './formatFeeBreakdown.js'
 
 export type {
@@ -46,8 +42,4 @@ export type {
 } from './getFeeAddresses.js'
 export { getFeeAddresses } from './getFeeAddresses.js'
 export type { FeeAddresses, FeeCalculationResult } from './types.js'
-export type {
-  ValidateFeeBoundsParameters,
-  ValidateFeeBoundsReturnType,
-} from './validateFeeBounds.js'
 export { validateFeeBounds } from './validateFeeBounds.js'

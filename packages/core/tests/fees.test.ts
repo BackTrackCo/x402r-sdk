@@ -4,6 +4,7 @@ import { calculateProtocolFeeBps } from '../src/actions/fees/calculateProtocolFe
 import { calculateTotalFees } from '../src/actions/fees/calculateTotalFees.js'
 import { distributeFees } from '../src/actions/fees/distributeFees.js'
 import { formatFeeBreakdown } from '../src/actions/fees/formatFeeBreakdown.js'
+import { getAuthorizedFees } from '../src/actions/fees/getAuthorizedFees.js'
 import { getFeeAddresses } from '../src/actions/fees/getFeeAddresses.js'
 import type { FeeCalculationResult } from '../src/actions/fees/types.js'
 import { validateFeeBounds } from '../src/actions/fees/validateFeeBounds.js'
@@ -282,19 +283,19 @@ describe('validateFeeBounds', () => {
   it('returns true when within bounds', () => {
     const fees = makeFees(250n)
     const paymentInfo = makePaymentInfo({ minFeeBps: 100, maxFeeBps: 500 })
-    expect(validateFeeBounds({ fees, paymentInfo })).toBe(true)
+    expect(validateFeeBounds(fees, paymentInfo)).toBe(true)
   })
 
   it('returns false when below min', () => {
     const fees = makeFees(50n)
     const paymentInfo = makePaymentInfo({ minFeeBps: 100, maxFeeBps: 500 })
-    expect(validateFeeBounds({ fees, paymentInfo })).toBe(false)
+    expect(validateFeeBounds(fees, paymentInfo)).toBe(false)
   })
 
   it('returns false when above max', () => {
     const fees = makeFees(600n)
     const paymentInfo = makePaymentInfo({ minFeeBps: 100, maxFeeBps: 500 })
-    expect(validateFeeBounds({ fees, paymentInfo })).toBe(false)
+    expect(validateFeeBounds(fees, paymentInfo)).toBe(false)
   })
 })
 
@@ -314,7 +315,7 @@ describe('formatFeeBreakdown', () => {
       netAmount: 965000n,
     }
 
-    const result = formatFeeBreakdown({ fees })
+    const result = formatFeeBreakdown(fees)
 
     expect(result).toContain('Operator: 250 bps (2.5%) (0.025 USDC)')
     expect(result).toContain('Protocol: 100 bps (1%) (0.01 USDC)')
@@ -332,7 +333,7 @@ describe('formatFeeBreakdown', () => {
       netAmount: 950000000000000000n,
     }
 
-    const result = formatFeeBreakdown({ fees, decimals: 18, symbol: 'WETH' })
+    const result = formatFeeBreakdown(fees, 18, 'WETH')
 
     expect(result).toContain('WETH')
     expect(result).toContain('Operator: 500 bps (5%)')
@@ -349,9 +350,44 @@ describe('formatFeeBreakdown', () => {
       netAmount: 1000000n,
     }
 
-    const result = formatFeeBreakdown({ fees })
+    const result = formatFeeBreakdown(fees)
 
     expect(result).toContain('Total: 0 bps (0%) (0 USDC)')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// getAuthorizedFees
+// ---------------------------------------------------------------------------
+
+describe('getAuthorizedFees', () => {
+  const MOCK_HASH =
+    '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890' as const
+
+  it('maps contract tuple to { totalFeeBps, protocolFeeBps }', async () => {
+    const client = createMockPublicClient({
+      [`${MOCK_OPERATOR}:authorizedFees`]: [350, 100],
+    })
+
+    const result = await getAuthorizedFees(client, {
+      operatorAddress: MOCK_OPERATOR,
+      paymentInfoHash: MOCK_HASH,
+    })
+
+    expect(result).toEqual({ totalFeeBps: 350, protocolFeeBps: 100 })
+  })
+
+  it('returns zeros when no fees are authorized', async () => {
+    const client = createMockPublicClient({
+      [`${MOCK_OPERATOR}:authorizedFees`]: [0, 0],
+    })
+
+    const result = await getAuthorizedFees(client, {
+      operatorAddress: MOCK_OPERATOR,
+      paymentInfoHash: MOCK_HASH,
+    })
+
+    expect(result).toEqual({ totalFeeBps: 0, protocolFeeBps: 0 })
   })
 })
 
