@@ -165,6 +165,27 @@ describe('calculateProtocolFeeBps', () => {
 describe('calculateTotalFees', () => {
   const paymentInfo = makePaymentInfo()
 
+  it('handles amount = 0n without division errors', async () => {
+    const client = createMockPublicClient({
+      [`${MOCK_OPERATOR}:FEE_CALCULATOR`]: MOCK_FEE_CALCULATOR,
+      [`${MOCK_OPERATOR}:PROTOCOL_FEE_CONFIG`]: MOCK_PROTOCOL_FEE_CONFIG,
+      [`${MOCK_FEE_CALCULATOR}:calculateFee`]: 250n,
+      [`${MOCK_PROTOCOL_FEE_CONFIG}:getProtocolFeeBps`]: 100n,
+    })
+
+    const result = await calculateTotalFees(client, {
+      operatorAddress: MOCK_OPERATOR,
+      paymentInfo,
+      amount: 0n,
+      caller: MOCK_CALLER,
+    })
+
+    expect(result.operatorFeeAmount).toBe(0n)
+    expect(result.protocolFeeAmount).toBe(0n)
+    expect(result.totalFeeAmount).toBe(0n)
+    expect(result.netAmount).toBe(0n)
+  })
+
   it('returns correct breakdown with both fees', async () => {
     const client = createMockPublicClient({
       [`${MOCK_OPERATOR}:FEE_CALCULATOR`]: MOCK_FEE_CALCULATOR,
@@ -290,6 +311,18 @@ describe('validateFeeBounds', () => {
     const fees = makeFees(50n)
     const paymentInfo = makePaymentInfo({ minFeeBps: 100, maxFeeBps: 500 })
     expect(validateFeeBounds(fees, paymentInfo)).toBe(false)
+  })
+
+  it('returns true at exact min boundary', () => {
+    const fees = makeFees(100n)
+    const paymentInfo = makePaymentInfo({ minFeeBps: 100, maxFeeBps: 500 })
+    expect(validateFeeBounds(fees, paymentInfo)).toBe(true)
+  })
+
+  it('returns true at exact max boundary', () => {
+    const fees = makeFees(500n)
+    const paymentInfo = makePaymentInfo({ minFeeBps: 100, maxFeeBps: 500 })
+    expect(validateFeeBounds(fees, paymentInfo)).toBe(true)
   })
 
   it('returns false when above max', () => {

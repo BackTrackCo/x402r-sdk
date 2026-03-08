@@ -4,6 +4,7 @@ import {
   fromNetworkId,
   getChainConfig,
   getConditionSingletons,
+  getFactoryAddress,
   getFactoryAddresses,
   isSupportedChain,
   toNetworkId,
@@ -47,6 +48,19 @@ describe('getFactoryAddresses', () => {
 
   it('throws ConfigError for unsupported chain', () => {
     expect(() => getFactoryAddresses(999999)).toThrow(ConfigError)
+  })
+})
+
+describe('getFactoryAddress', () => {
+  it('returns address for valid factory key', () => {
+    const addr = getFactoryAddress(84532, 'paymentOperator')
+    expect(addr).toMatch(/^0x[0-9a-fA-F]{40}$/)
+  })
+
+  it('throws ConfigError for unsupported chain', () => {
+    expect(() => getFactoryAddress(999999, 'paymentOperator')).toThrow(
+      ConfigError,
+    )
   })
 })
 

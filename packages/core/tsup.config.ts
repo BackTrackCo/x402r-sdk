@@ -10,7 +10,6 @@ export default defineConfig({
     config: 'src/config/index.ts',
     errors: 'src/errors/index.ts',
     payment: 'src/payment/index.ts',
-    operations: 'src/operations/index.ts',
     actions: 'src/actions/index.ts',
     deploy: 'src/deploy/index.ts',
   },
