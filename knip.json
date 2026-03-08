@@ -10,7 +10,7 @@
       "ignoreDependencies": ["@x402r/evm"]
     },
     "packages/sdk": {
-      "entry": ["vitest.config.ts"],
+      "entry": ["tests/**/*.test.ts", "tests/**/*.ts", "vitest.config.ts"],
       "ignoreDependencies": ["viem"]
     }
   }

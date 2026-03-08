@@ -16,6 +16,9 @@ ignore:
   - "packages/core/src/abis/**"
   - "packages/core/src/types/**"
   - "packages/core/src/deploy/factories.ts"
+  - "packages/sdk/src/index.ts"
+  - "packages/sdk/src/types.ts"
+  - "packages/sdk/src/actions/index.ts"
   - "**/*.test.ts"
   - "**/tests/**"
 
@@ -23,4 +26,8 @@ flags:
   core:
     paths:
       - packages/core/src/
+    carryforward: true
+  sdk:
+    paths:
+      - packages/sdk/src/
     carryforward: true

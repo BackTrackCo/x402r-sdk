@@ -54,12 +54,20 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: pnpm --filter=@x402r/core test:cov
-      - name: Upload coverage
+      - name: Upload core coverage
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: packages/core/coverage/lcov.info
           flags: core
+          fail_ci_if_error: true
+      - run: pnpm --filter=@x402r/sdk test:cov
+      - name: Upload SDK coverage
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: packages/sdk/coverage/lcov.info
+          flags: sdk
           fail_ci_if_error: true
 
   test-fork:
