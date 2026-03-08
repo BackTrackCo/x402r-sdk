@@ -68,6 +68,20 @@ describe('createOperatorActions', () => {
     })
   })
 
+  it('getConfig works without walletClient (read-only)', async () => {
+    const config = createTestConfig({ walletClient: undefined })
+    const operator = createOperatorActions(config)
+
+    await expect(operator.getConfig()).resolves.not.toThrow()
+  })
+
+  it('getFeeAddresses works without walletClient (read-only)', async () => {
+    const config = createTestConfig({ walletClient: undefined })
+    const operator = createOperatorActions(config)
+
+    await expect(operator.getFeeAddresses()).resolves.not.toThrow()
+  })
+
   it('distributeFees throws ValidationError without walletClient', async () => {
     const config = createTestConfig({ walletClient: undefined })
     const operator = createOperatorActions(config)

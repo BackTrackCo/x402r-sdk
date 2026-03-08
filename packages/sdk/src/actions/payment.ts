@@ -5,16 +5,10 @@ import {
   release as coreRelease,
   getPaymentAmounts,
   getPaymentState,
-  ValidationError,
 } from '@x402r/core'
-import type { Address, Hash, Hex, WalletClient } from 'viem'
+import type { Address, Hash, Hex } from 'viem'
 import type { PaymentActions, ResolvedConfig } from '../types.js'
-
-function requireWallet(config: ResolvedConfig): WalletClient {
-  if (!config.walletClient)
-    throw new ValidationError('walletClient is required for write operations')
-  return config.walletClient
-}
+import { requireWallet } from './utils.js'
 
 export function createPaymentActions(config: ResolvedConfig): PaymentActions {
   return {
