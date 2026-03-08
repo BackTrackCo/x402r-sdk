@@ -30,6 +30,7 @@ vi.mock('@x402r/core', async (importOriginal) => {
 import {
   authorize as coreAuthorize,
   release as coreRelease,
+  getPaymentAmounts,
   getPaymentState,
 } from '@x402r/core'
 
@@ -98,5 +99,37 @@ describe('createPaymentActions', () => {
       amount: 500000n,
     })
     expect(hash).toBe('0xrelease_hash')
+  })
+
+  it('charge throws ValidationError without walletClient', async () => {
+    const config = createTestConfig({ walletClient: undefined })
+    const payment = createPaymentActions(config)
+
+    await expect(
+      payment.charge(
+        mockPaymentInfo,
+        1000000n,
+        '0xaaaa000000000000000000000000000000000000',
+        '0x',
+      ),
+    ).rejects.toThrow(ValidationError)
+  })
+
+  it('getAmounts works without walletClient (read-only)', async () => {
+    const config = createTestConfig({ walletClient: undefined })
+    const payment = createPaymentActions(config)
+
+    const amounts = await payment.getAmounts(mockPaymentInfo)
+
+    expect(getPaymentAmounts).toHaveBeenCalledWith(config.publicClient, {
+      operatorAddress: TEST_OPERATOR,
+      chainId: 84532,
+      paymentInfo: mockPaymentInfo,
+    })
+    expect(amounts).toEqual({
+      hasCollectedPayment: false,
+      capturableAmount: 1000000n,
+      refundableAmount: 0n,
+    })
   })
 })

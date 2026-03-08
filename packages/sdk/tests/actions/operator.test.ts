@@ -33,7 +33,10 @@ vi.mock('@x402r/core', async (importOriginal) => {
   }
 })
 
-import { calculateTotalFees } from '@x402r/core'
+import {
+  calculateTotalFees,
+  distributeFees as coreDistributeFees,
+} from '@x402r/core'
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -89,5 +92,20 @@ describe('createOperatorActions', () => {
     await expect(
       operator.distributeFees('0x036CbD53842c5426634e7929541eC2318f3dCF7e'),
     ).rejects.toThrow(ValidationError)
+  })
+
+  it('distributeFees delegates to core with walletClient', async () => {
+    const config = createTestConfig()
+    const operator = createOperatorActions(config)
+
+    const hash = await operator.distributeFees(
+      '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+    )
+
+    expect(coreDistributeFees).toHaveBeenCalledWith(config.walletClient, {
+      operatorAddress: config.operatorAddress,
+      token: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+    })
+    expect(hash).toBe('0xdistribute_hash')
   })
 })
