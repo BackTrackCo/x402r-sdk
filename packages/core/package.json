@@ -28,6 +28,10 @@
       "types": "./dist/operations.d.ts",
       "default": "./dist/operations.js"
     },
+    "./actions": {
+      "types": "./dist/actions.d.ts",
+      "default": "./dist/actions.js"
+    },
     "./deploy": {
       "types": "./dist/deploy.d.ts",
       "default": "./dist/deploy.js"

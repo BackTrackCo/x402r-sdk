@@ -4,7 +4,7 @@ import {
   ContractFunctionRevertedError,
   type WalletClient,
 } from 'viem'
-import { ContractCallError } from '../errors/index.js'
+import { ContractCallError } from '../../errors/index.js'
 
 export function requireAccount(
   walletClient: WalletClient,

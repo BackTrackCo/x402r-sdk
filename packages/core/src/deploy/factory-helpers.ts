@@ -1,7 +1,7 @@
 import type { Abi, Address, Hash, PublicClient, WalletClient } from 'viem'
 import { zeroAddress } from 'viem'
+import { wrapContractCall } from '../actions/_internal/error-wrapping.js'
 import { ContractCallError } from '../errors/index.js'
-import { wrapContractCall } from '../operations/error-wrapping.js'
 
 // ---------------------------------------------------------------------------
 // Types

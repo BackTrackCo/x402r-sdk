@@ -1,12 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import {
-  getOperatorRefundRequests,
-  getPayerRefundRequests,
-  getReceiverRefundRequests,
-  getRefundRequest,
-  getRefundRequestByKey,
-  RefundRequestStatus,
-} from '../src/operations/refund-reads.js'
+import { getOperatorRefundRequests } from '../src/actions/refund/getOperatorRefundRequests.js'
+import { getPayerRefundRequests } from '../src/actions/refund/getPayerRefundRequests.js'
+import { getReceiverRefundRequests } from '../src/actions/refund/getReceiverRefundRequests.js'
+import { getRefundRequest } from '../src/actions/refund/getRefundRequest.js'
+import { getRefundRequestByKey } from '../src/actions/refund/getRefundRequestByKey.js'
+import { RefundRequestStatus } from '../src/actions/refund/types.js'
 import {
   createMockPublicClient,
   makePaymentInfo,
@@ -37,7 +35,11 @@ describe('refund read functions', () => {
       status: 0,
     }
     const client = createMockPublicClient({ getRefundRequest: mockData })
-    const result = await getRefundRequest(client, MOCK_CONTRACT, pi, 1n)
+    const result = await getRefundRequest(client, {
+      contractAddress: MOCK_CONTRACT,
+      paymentInfo: pi,
+      nonce: 1n,
+    })
     expect(result).toEqual(mockData)
   })
 
@@ -46,13 +48,12 @@ describe('refund read functions', () => {
     const client = createMockPublicClient({
       getPayerRefundRequests: [mockKeys, 2n],
     })
-    const result = await getPayerRefundRequests(
-      client,
-      MOCK_CONTRACT,
-      TEST_ADDRESSES.payer as `0x${string}`,
-      0n,
-      10n,
-    )
+    const result = await getPayerRefundRequests(client, {
+      contractAddress: MOCK_CONTRACT,
+      payer: TEST_ADDRESSES.payer as `0x${string}`,
+      offset: 0n,
+      count: 10n,
+    })
     expect(result.keys).toEqual(mockKeys)
     expect(result.total).toBe(2n)
   })
@@ -61,13 +62,12 @@ describe('refund read functions', () => {
     const client = createMockPublicClient({
       getReceiverRefundRequests: [[], 0n],
     })
-    const result = await getReceiverRefundRequests(
-      client,
-      MOCK_CONTRACT,
-      TEST_ADDRESSES.receiver as `0x${string}`,
-      0n,
-      10n,
-    )
+    const result = await getReceiverRefundRequests(client, {
+      contractAddress: MOCK_CONTRACT,
+      receiver: TEST_ADDRESSES.receiver as `0x${string}`,
+      offset: 0n,
+      count: 10n,
+    })
     expect(result.keys).toEqual([])
     expect(result.total).toBe(0n)
   })
@@ -76,13 +76,12 @@ describe('refund read functions', () => {
     const client = createMockPublicClient({
       getOperatorRefundRequests: [[], 0n],
     })
-    const result = await getOperatorRefundRequests(
-      client,
-      MOCK_CONTRACT,
-      TEST_ADDRESSES.operator as `0x${string}`,
-      0n,
-      10n,
-    )
+    const result = await getOperatorRefundRequests(client, {
+      contractAddress: MOCK_CONTRACT,
+      operator: TEST_ADDRESSES.operator as `0x${string}`,
+      offset: 0n,
+      count: 10n,
+    })
     expect(result.keys).toEqual([])
     expect(result.total).toBe(0n)
   })
@@ -95,11 +94,10 @@ describe('refund read functions', () => {
       status: 1,
     }
     const client = createMockPublicClient({ getRefundRequestByKey: mockData })
-    const result = await getRefundRequestByKey(
-      client,
-      MOCK_CONTRACT,
-      '0xabc' as `0x${string}`,
-    )
+    const result = await getRefundRequestByKey(client, {
+      contractAddress: MOCK_CONTRACT,
+      compositeKey: '0xabc' as `0x${string}`,
+    })
     expect(result).toEqual(mockData)
   })
 })

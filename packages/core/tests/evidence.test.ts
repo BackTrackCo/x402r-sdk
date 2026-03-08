@@ -1,13 +1,11 @@
 import { describe, expect, it } from 'vitest'
+import { getEvidence } from '../src/actions/evidence/getEvidence.js'
+import { getEvidenceBatch } from '../src/actions/evidence/getEvidenceBatch.js'
+import { getEvidenceCount } from '../src/actions/evidence/getEvidenceCount.js'
+import { submitEvidence } from '../src/actions/evidence/submitEvidence.js'
+import type { EvidenceEntry } from '../src/actions/evidence/types.js'
+import { SubmitterRole } from '../src/actions/evidence/types.js'
 import { ContractCallError } from '../src/errors/index.js'
-import {
-  type EvidenceEntry,
-  getEvidence,
-  getEvidenceBatch,
-  getEvidenceCount,
-  SubmitterRole,
-} from '../src/operations/evidence-reads.js'
-import { submitEvidence } from '../src/operations/evidence-writes.js'
 import {
   createMockPublicClient,
   createMockWalletWithoutAccount,
@@ -37,14 +35,23 @@ describe('evidence read functions', () => {
 
   it('getEvidence returns mapped entry with role cast', async () => {
     const client = createMockPublicClient({ getEvidence: mockEntry })
-    const result = await getEvidence(client, MOCK_CONTRACT, pi, 0n, 0n)
+    const result = await getEvidence(client, {
+      contractAddress: MOCK_CONTRACT,
+      paymentInfo: pi,
+      nonce: 0n,
+      index: 0n,
+    })
     expect(result).toEqual(mockEntry)
     expect(result.role).toBe(SubmitterRole.Payer)
   })
 
   it('getEvidenceCount returns the count', async () => {
     const client = createMockPublicClient({ getEvidenceCount: 3n })
-    const result = await getEvidenceCount(client, MOCK_CONTRACT, pi, 0n)
+    const result = await getEvidenceCount(client, {
+      contractAddress: MOCK_CONTRACT,
+      paymentInfo: pi,
+      nonce: 0n,
+    })
     expect(result).toBe(3n)
   })
 
@@ -52,14 +59,13 @@ describe('evidence read functions', () => {
     const client = createMockPublicClient({
       getEvidenceBatch: [[mockEntry], 1n],
     })
-    const result = await getEvidenceBatch(
-      client,
-      MOCK_CONTRACT,
-      pi,
-      0n,
-      0n,
-      10n,
-    )
+    const result = await getEvidenceBatch(client, {
+      contractAddress: MOCK_CONTRACT,
+      paymentInfo: pi,
+      nonce: 0n,
+      offset: 0n,
+      count: 10n,
+    })
     expect(result.entries).toEqual([mockEntry])
     expect(result.total).toBe(1n)
   })
@@ -68,13 +74,12 @@ describe('evidence read functions', () => {
 describe('evidence write functions', () => {
   it('submitEvidence throws without account', async () => {
     await expect(
-      submitEvidence(
-        createMockWalletWithoutAccount(),
-        MOCK_CONTRACT,
-        makePaymentInfo(),
-        1n,
-        'QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco',
-      ),
+      submitEvidence(createMockWalletWithoutAccount(), {
+        contractAddress: MOCK_CONTRACT,
+        paymentInfo: makePaymentInfo(),
+        nonce: 1n,
+        cid: 'QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco',
+      }),
     ).rejects.toThrow(ContractCallError)
   })
 })

@@ -1,15 +1,21 @@
 import type { Address, Hash, WalletClient } from 'viem'
-import { paymentOperatorAbi } from '../abis/generated.js'
-import { requireAccount, wrapContractCall } from './error-wrapping.js'
+import { paymentOperatorAbi } from '../../abis/generated.js'
+import {
+  requireAccount,
+  wrapContractCall,
+} from '../_internal/error-wrapping.js'
 
-/**
- * Distributes accumulated fees for a token from the PaymentOperator.
- */
+export interface DistributeFeesParameters {
+  operatorAddress: Address
+  token: Address
+}
+export type DistributeFeesReturnType = Hash
+
 export async function distributeFees(
   walletClient: WalletClient,
-  operatorAddress: Address,
-  token: Address,
-): Promise<Hash> {
+  parameters: DistributeFeesParameters,
+): Promise<DistributeFeesReturnType> {
+  const { operatorAddress, token } = parameters
   requireAccount(walletClient, 'distributeFees')
 
   return wrapContractCall('distributeFees', () =>
