@@ -1,7 +1,6 @@
 import type { PublicClient, TestClient } from 'viem'
 import { zeroAddress } from 'viem'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { x402rChains } from '../../src/config/index.js'
 import {
   calculateOperatorFeeBps,
   calculateTotalFees,
@@ -11,7 +10,8 @@ import {
   getOperatorConfig,
   getPaymentAmounts,
   getPaymentState,
-} from '../../src/operations/index.js'
+} from '../../src/actions/index.js'
+import { x402rChains } from '../../src/config/index.js'
 import type { PaymentInfo } from '../../src/types/index.js'
 import { anvilBaseSepolia } from '../setup/anvil.js'
 import { testRoles } from '../setup/constants.js'
@@ -53,10 +53,9 @@ beforeAll(async () => {
 
 describe('Operator Read Operations', () => {
   it('getOperatorConfig returns deployed slot addresses', async () => {
-    const config = await getOperatorConfig(
-      publicClient,
-      fixtures.operatorAddress,
-    )
+    const config = await getOperatorConfig(publicClient, {
+      operatorAddress: fixtures.operatorAddress,
+    })
 
     expect(config.escrow.toLowerCase()).toBe(
       baseSepolia.authCaptureEscrow.toLowerCase(),
@@ -80,21 +79,19 @@ describe('Operator Read Operations', () => {
   })
 
   it('getEscrowAddress returns escrow', async () => {
-    const escrow = await getEscrowAddress(
-      publicClient,
-      fixtures.operatorAddress,
-    )
+    const escrow = await getEscrowAddress(publicClient, {
+      operatorAddress: fixtures.operatorAddress,
+    })
     expect(escrow.toLowerCase()).toBe(
       baseSepolia.authCaptureEscrow.toLowerCase(),
     )
   })
 
   it('getConditionAddress reads RELEASE_CONDITION', async () => {
-    const addr = await getConditionAddress(
-      publicClient,
-      fixtures.operatorAddress,
-      'RELEASE_CONDITION',
-    )
+    const addr = await getConditionAddress(publicClient, {
+      operatorAddress: fixtures.operatorAddress,
+      slot: 'RELEASE_CONDITION',
+    })
     expect(addr.toLowerCase()).toBe(fixtures.escrowPeriodAddress.toLowerCase())
   })
 })
@@ -120,7 +117,9 @@ describe('Fee Read Operations', () => {
   }
 
   it('getFeeAddresses returns deployed fee addresses', async () => {
-    const fees = await getFeeAddresses(publicClient, fixtures.operatorAddress)
+    const fees = await getFeeAddresses(publicClient, {
+      operatorAddress: fixtures.operatorAddress,
+    })
     expect(fees.operatorFeeCalculator.toLowerCase()).toBe(
       fixtures.feeCalculatorAddress.toLowerCase(),
     )
@@ -131,25 +130,23 @@ describe('Fee Read Operations', () => {
 
   it('calculateOperatorFeeBps returns 50 bps', async () => {
     const pi = { ...dummyPaymentInfo, operator: fixtures.operatorAddress }
-    const bps = await calculateOperatorFeeBps(
-      publicClient,
-      fixtures.operatorAddress,
-      pi,
-      1_000_000n,
-      testRoles.payer.address,
-    )
+    const bps = await calculateOperatorFeeBps(publicClient, {
+      operatorAddress: fixtures.operatorAddress,
+      paymentInfo: pi,
+      amount: 1_000_000n,
+      caller: testRoles.payer.address,
+    })
     expect(bps).toBe(50n)
   })
 
   it('calculateTotalFees computes amounts', async () => {
     const pi = { ...dummyPaymentInfo, operator: fixtures.operatorAddress }
-    const fees = await calculateTotalFees(
-      publicClient,
-      fixtures.operatorAddress,
-      pi,
-      1_000_000n,
-      testRoles.payer.address,
-    )
+    const fees = await calculateTotalFees(publicClient, {
+      operatorAddress: fixtures.operatorAddress,
+      paymentInfo: pi,
+      amount: 1_000_000n,
+      caller: testRoles.payer.address,
+    })
     expect(fees.operatorFeeBps).toBe(50n)
     expect(fees.operatorFeeAmount).toBe(5000n) // 1_000_000 * 50 / 10_000
     expect(fees.netAmount).toBe(995000n)
@@ -179,9 +176,11 @@ describe('Payment State Read Operations', () => {
 
     const [hasCollected, capturable, refundable] = await getPaymentState(
       publicClient,
-      fixtures.operatorAddress,
-      CHAIN_ID,
-      paymentInfo,
+      {
+        operatorAddress: fixtures.operatorAddress,
+        chainId: CHAIN_ID,
+        paymentInfo,
+      },
     )
     expect(hasCollected).toBe(false)
     expect(capturable).toBe(0n)
@@ -204,12 +203,11 @@ describe('Payment State Read Operations', () => {
       salt: 998n,
     }
 
-    const amounts = await getPaymentAmounts(
-      publicClient,
-      fixtures.operatorAddress,
-      CHAIN_ID,
+    const amounts = await getPaymentAmounts(publicClient, {
+      operatorAddress: fixtures.operatorAddress,
+      chainId: CHAIN_ID,
       paymentInfo,
-    )
+    })
     expect(amounts.hasCollectedPayment).toBe(false)
     expect(amounts.capturableAmount).toBe(0n)
     expect(amounts.refundableAmount).toBe(0n)

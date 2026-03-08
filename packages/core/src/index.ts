@@ -2,7 +2,10 @@
 // ABIs (auto-generated — keep export *)
 // ---------------------------------------------------------------------------
 export * from './abis/generated.js'
-
+// ---------------------------------------------------------------------------
+// Actions
+// ---------------------------------------------------------------------------
+export * from './actions/index.js'
 // ---------------------------------------------------------------------------
 // Config
 // ---------------------------------------------------------------------------
@@ -25,7 +28,6 @@ export {
   toNetworkId,
   x402rChains,
 } from './config/index.js'
-
 // ---------------------------------------------------------------------------
 // Deploy
 // ---------------------------------------------------------------------------
@@ -109,7 +111,6 @@ export {
   type MarketplaceOperatorPreview,
   previewMarketplaceOperator,
 } from './deploy/presets.js'
-
 // ---------------------------------------------------------------------------
 // Errors
 // ---------------------------------------------------------------------------
@@ -121,76 +122,6 @@ export {
   ValidationError,
   X402rError,
 } from './errors/index.js'
-
-// ---------------------------------------------------------------------------
-// Operations
-// ---------------------------------------------------------------------------
-export {
-  requireAccount,
-  wrapContractCall,
-} from './operations/error-wrapping.js'
-export type { EvidenceEntry } from './operations/evidence-reads.js'
-export {
-  getEvidence,
-  getEvidenceBatch,
-  getEvidenceCount,
-  SubmitterRole,
-} from './operations/evidence-reads.js'
-export { submitEvidence } from './operations/evidence-writes.js'
-export type {
-  FeeAddresses,
-  FeeCalculationResult,
-} from './operations/fee-reads.js'
-export {
-  calculateOperatorFeeBps,
-  calculateProtocolFeeBps,
-  calculateTotalFees,
-  formatFeeBreakdown,
-  getFeeAddresses,
-  validateFeeBounds,
-} from './operations/fee-reads.js'
-export { distributeFees } from './operations/fee-writes.js'
-export { isFrozen } from './operations/freeze-reads.js'
-export { freezePayment, unfreezePayment } from './operations/freeze-writes.js'
-export type { ConditionSlot, OperatorSlots } from './operations/operator.js'
-export {
-  getConditionAddress,
-  getEscrowAddress,
-  getOperatorConfig,
-} from './operations/operator.js'
-export { authorize, charge, release } from './operations/operator-writes.js'
-export type { PaymentAmounts } from './operations/payment-state.js'
-export {
-  getPaymentAmounts,
-  getPaymentState,
-} from './operations/payment-state.js'
-export { getRefundBudget } from './operations/refund-budget-reads.js'
-export {
-  approveRefundBudget,
-  refundInEscrow,
-  refundPostEscrow,
-} from './operations/refund-budget-writes.js'
-export type { RefundRequestData } from './operations/refund-reads.js'
-export {
-  getCancelCount,
-  getCancelledAmount,
-  getOperatorRefundRequests,
-  getPayerRefundRequests,
-  getReceiverRefundRequests,
-  getRefundRequest,
-  getRefundRequestByKey,
-  getRefundRequestStatus,
-  getStoredPaymentInfo,
-  hasRefundRequest,
-  RefundRequestStatus,
-} from './operations/refund-reads.js'
-export {
-  approveRefundWithSignature,
-  cancelRefundRequest,
-  denyRefundRequest,
-  refuseRefundRequest,
-  requestRefund,
-} from './operations/refund-writes.js'
 
 // ---------------------------------------------------------------------------
 // Payment

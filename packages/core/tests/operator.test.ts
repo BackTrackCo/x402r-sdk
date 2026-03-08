@@ -3,7 +3,7 @@ import {
   getConditionAddress,
   getEscrowAddress,
   getOperatorConfig,
-} from '../src/operations/operator.js'
+} from '../src/actions/operator/getOperatorConfig.js'
 import { createMockPublicClient } from './fixtures.js'
 
 const MOCK_CONTRACT = '0x1111111111111111111111111111111111111111' as const
@@ -29,7 +29,9 @@ const SLOT_ADDRESSES = {
 describe('getOperatorConfig', () => {
   it('maps all 14 multicall results to the correct named fields', async () => {
     const client = createMockPublicClient(SLOT_ADDRESSES)
-    const result = await getOperatorConfig(client, MOCK_CONTRACT)
+    const result = await getOperatorConfig(client, {
+      operatorAddress: MOCK_CONTRACT,
+    })
 
     expect(result).toEqual({
       escrow: SLOT_ADDRESSES.ESCROW,
@@ -53,7 +55,9 @@ describe('getOperatorConfig', () => {
 describe('getEscrowAddress', () => {
   it('returns the ESCROW slot address', async () => {
     const client = createMockPublicClient({ ESCROW: SLOT_ADDRESSES.ESCROW })
-    const result = await getEscrowAddress(client, MOCK_CONTRACT)
+    const result = await getEscrowAddress(client, {
+      operatorAddress: MOCK_CONTRACT,
+    })
     expect(result).toBe(SLOT_ADDRESSES.ESCROW)
   })
 })
@@ -63,11 +67,10 @@ describe('getConditionAddress', () => {
     const client = createMockPublicClient({
       AUTHORIZE_CONDITION: SLOT_ADDRESSES.AUTHORIZE_CONDITION,
     })
-    const result = await getConditionAddress(
-      client,
-      MOCK_CONTRACT,
-      'AUTHORIZE_CONDITION',
-    )
+    const result = await getConditionAddress(client, {
+      operatorAddress: MOCK_CONTRACT,
+      slot: 'AUTHORIZE_CONDITION',
+    })
     expect(result).toBe(SLOT_ADDRESSES.AUTHORIZE_CONDITION)
   })
 })

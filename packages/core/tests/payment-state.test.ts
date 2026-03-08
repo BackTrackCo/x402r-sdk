@@ -1,10 +1,8 @@
 import type { PublicClient } from 'viem'
 import { describe, expect, it, vi } from 'vitest'
+import { getPaymentAmounts } from '../src/actions/escrow/getPaymentAmounts.js'
+import { getPaymentState } from '../src/actions/escrow/getPaymentState.js'
 import { ContractCallError } from '../src/errors/index.js'
-import {
-  getPaymentAmounts,
-  getPaymentState,
-} from '../src/operations/payment-state.js'
 import {
   createMockPublicClient,
   makePaymentInfo,
@@ -31,12 +29,11 @@ describe('getPaymentState', () => {
       [`${MOCK_ESCROW}:paymentState`]: [true, 500000n, 500000n],
     })
 
-    const result = await getPaymentState(
-      client,
-      MOCK_OPERATOR,
-      TEST_CHAIN_ID,
+    const result = await getPaymentState(client, {
+      operatorAddress: MOCK_OPERATOR,
+      chainId: TEST_CHAIN_ID,
       paymentInfo,
-    )
+    })
 
     expect(result).toEqual([true, 500000n, 500000n])
     expect(client.readContract).toHaveBeenCalledTimes(2)
@@ -53,7 +50,11 @@ describe('getPaymentState', () => {
       }),
     } as unknown as PublicClient
 
-    await getPaymentState(client, MOCK_OPERATOR, TEST_CHAIN_ID, paymentInfo)
+    await getPaymentState(client, {
+      operatorAddress: MOCK_OPERATOR,
+      chainId: TEST_CHAIN_ID,
+      paymentInfo,
+    })
 
     // Second call should be to escrow address with a bytes32 hash arg
     const escrowCall = calls[1]
@@ -75,7 +76,11 @@ describe('getPaymentState', () => {
         }),
       } as unknown as PublicClient
 
-      await getPaymentState(client, MOCK_OPERATOR, chainId, paymentInfo)
+      await getPaymentState(client, {
+        operatorAddress: MOCK_OPERATOR,
+        chainId,
+        paymentInfo,
+      })
     }
 
     expect(hashes[0]).not.toBe(hashes[1])
@@ -87,12 +92,11 @@ describe('getPaymentState', () => {
       [`${MOCK_ESCROW}:paymentState`]: [true, 750000n, 250000n],
     })
 
-    const result = await getPaymentState(
-      client,
-      MOCK_OPERATOR,
-      TEST_CHAIN_ID,
+    const result = await getPaymentState(client, {
+      operatorAddress: MOCK_OPERATOR,
+      chainId: TEST_CHAIN_ID,
       paymentInfo,
-    )
+    })
 
     expect(result[0]).toBe(true) // hasCollectedPayment
     expect(result[1]).toBe(750000n) // capturableAmount
@@ -108,7 +112,11 @@ describe('getPaymentState', () => {
     } as unknown as PublicClient
 
     await expect(
-      getPaymentState(client, MOCK_OPERATOR, TEST_CHAIN_ID, paymentInfo),
+      getPaymentState(client, {
+        operatorAddress: MOCK_OPERATOR,
+        chainId: TEST_CHAIN_ID,
+        paymentInfo,
+      }),
     ).rejects.toThrow(ContractCallError)
   })
 
@@ -125,7 +133,11 @@ describe('getPaymentState', () => {
     } as unknown as PublicClient
 
     await expect(
-      getPaymentState(client, MOCK_OPERATOR, TEST_CHAIN_ID, paymentInfo),
+      getPaymentState(client, {
+        operatorAddress: MOCK_OPERATOR,
+        chainId: TEST_CHAIN_ID,
+        paymentInfo,
+      }),
     ).rejects.toThrow(ContractCallError)
   })
 })
@@ -143,12 +155,11 @@ describe('getPaymentAmounts', () => {
       [`${MOCK_ESCROW}:paymentState`]: [true, 750000n, 250000n],
     })
 
-    const result = await getPaymentAmounts(
-      client,
-      MOCK_OPERATOR,
-      TEST_CHAIN_ID,
+    const result = await getPaymentAmounts(client, {
+      operatorAddress: MOCK_OPERATOR,
+      chainId: TEST_CHAIN_ID,
       paymentInfo,
-    )
+    })
 
     expect(result).toEqual({
       hasCollectedPayment: true,
@@ -166,7 +177,11 @@ describe('getPaymentAmounts', () => {
     } as unknown as PublicClient
 
     await expect(
-      getPaymentAmounts(client, MOCK_OPERATOR, TEST_CHAIN_ID, paymentInfo),
+      getPaymentAmounts(client, {
+        operatorAddress: MOCK_OPERATOR,
+        chainId: TEST_CHAIN_ID,
+        paymentInfo,
+      }),
     ).rejects.toThrow(ContractCallError)
   })
 })

@@ -5,8 +5,8 @@ import {
   encodeErrorResult,
 } from 'viem'
 import { describe, expect, it } from 'vitest'
+import { wrapContractCall } from '../src/actions/_internal/error-wrapping.js'
 import { ContractCallError } from '../src/errors/index.js'
-import { wrapContractCall } from '../src/operations/error-wrapping.js'
 
 const testAbi = [
   {
