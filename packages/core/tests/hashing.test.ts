@@ -31,6 +31,17 @@ describe('PAYMENT_INFO_TYPEHASH', () => {
 // ---------------------------------------------------------------------------
 
 describe('computePaymentInfoHash', () => {
+  it('matches golden hash for reference PaymentInfo', () => {
+    const hash = computePaymentInfoHash(
+      TEST_CHAIN_ID,
+      TEST_ESCROW_ADDRESS,
+      samplePaymentInfo,
+    )
+    expect(hash).toBe(
+      '0x6b28d39eba9622eaad35e4a6e7fa0c63c6b6c63c2faa08935a271c8bb38cebad',
+    )
+  })
+
   it('produces different hashes for different payment info', () => {
     const hash1 = computePaymentInfoHash(
       TEST_CHAIN_ID,

@@ -61,6 +61,18 @@ describe('validatePaymentInfo', () => {
     ).toThrow(ValidationError)
   })
 
+  it('passes when minFeeBps === maxFeeBps', () => {
+    expect(() =>
+      validatePaymentInfo(
+        makePaymentInfo({
+          ...validOverrides,
+          minFeeBps: 250,
+          maxFeeBps: 250,
+        }),
+      ),
+    ).not.toThrow()
+  })
+
   it('throws when minFeeBps > maxFeeBps', () => {
     expect(() =>
       validatePaymentInfo(
@@ -77,6 +89,18 @@ describe('validatePaymentInfo', () => {
     expect(() =>
       validatePaymentInfo(
         makePaymentInfo({ ...validOverrides, maxFeeBps: 15000 }),
+      ),
+    ).toThrow(ValidationError)
+  })
+
+  it('throws when authorizationExpiry is at exact current second', () => {
+    const nowSeconds = Math.floor(Date.now() / 1000)
+    expect(() =>
+      validatePaymentInfo(
+        makePaymentInfo({
+          ...validOverrides,
+          authorizationExpiry: nowSeconds,
+        }),
       ),
     ).toThrow(ValidationError)
   })

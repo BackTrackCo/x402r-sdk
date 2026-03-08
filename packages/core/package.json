@@ -24,10 +24,6 @@
       "types": "./dist/payment.d.ts",
       "default": "./dist/payment.js"
     },
-    "./operations": {
-      "types": "./dist/operations.d.ts",
-      "default": "./dist/operations.js"
-    },
     "./actions": {
       "types": "./dist/actions.d.ts",
       "default": "./dist/actions.js"
