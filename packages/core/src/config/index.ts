@@ -34,9 +34,9 @@ export interface X402rChainConfig {
   arbiterRegistry: Address
   receiverRefundCollector: Address
   usdc: Address
-  refundRequestEvidence?: Address
-  factories?: FactoryAddresses
-  conditions?: ConditionSingletonAddresses
+  refundRequestEvidence: Address
+  factories: FactoryAddresses
+  conditions: ConditionSingletonAddresses
 }
 
 // ---------------------------------------------------------------------------
@@ -44,29 +44,29 @@ export interface X402rChainConfig {
 // ---------------------------------------------------------------------------
 
 const PROTOCOL_ADDRESSES = {
-  authCaptureEscrow: '0xe050bb89ed43bb02d71343063824614a7fb80b77',
-  tokenCollector: '0xce66ab399eda513bd12760b6427c87d6602344a7',
-  refundRequest: '0x45af78aabc0a0dd70f16381cfd6d657ab441b7a0',
-  protocolFeeConfig: '0x7e868a42a458fa2443b6259419aa6a8a161e08c8',
-  usdcTvlLimit: '0x0f1f26719219cfadc8a1c80d2216098a0534a091',
-  arbiterRegistry: '0x1c2d7d5978d46a943fa98ac9a649519c1424fb3e',
-  receiverRefundCollector: '0xe5500a38be45a6c598420fbd7867ac85ec451a07',
-  refundRequestEvidence: '0xf97aab816b7cbe53025454ad05b03cf5c361f1ba',
+  authCaptureEscrow: '0xe050bB89eD43BB02d71343063824614A7fb80B77',
+  tokenCollector: '0xcE66Ab399EDA513BD12760b6427C87D6602344a7',
+  refundRequest: '0x45af78aaBC0A0dD70f16381CfD6D657Ab441B7a0',
+  protocolFeeConfig: '0x7e868A42a458fa2443b6259419aA6A8a161E08c8',
+  usdcTvlLimit: '0x0F1F26719219CfAdC8a1C80D2216098A0534a091',
+  arbiterRegistry: '0x1c2d7d5978d46a943FA98aC9a649519C1424FB3e',
+  receiverRefundCollector: '0xE5500a38BE45a6C598420fbd7867ac85EC451A07',
+  refundRequestEvidence: '0xF97aAB816b7cbe53025454ad05b03cf5C361F1BA',
   factories: {
-    paymentOperator: '0x4d9bc2ba2d0d9afb6b63e3afbbfc95143e6e8da9',
-    escrowPeriod: '0x15db06aadeb3a39d47756bf864a173cc48bafe24',
-    freeze: '0xdf129effe040c3403aca597c0f0bb704859a78fd',
-    staticFeeCalculator: '0x6cddbdb46e2d7caae31a6b213b59a1412d7f16ac',
-    staticAddressCondition: '0xfb09350b200fda7ddd06565f5296a0ca625311d5',
-    andCondition: '0x5a1f3b6d030d25a2b86aae469ae1216ef3be308d',
-    orCondition: '0x101b2fac8cdc6348e541a0ef087275da62aa13a0',
-    notCondition: '0x1d58f97843579356863d3393ebe24feed76ceeff',
-    recorderCombinator: '0xacf2b5e21cfc14135c9cd43ebe96a481f184c1a1',
+    paymentOperator: '0x4D9BC2Ba2D0d9AFb6B63E3afBbfC95143E6E8Da9',
+    escrowPeriod: '0x15DB06aADEB3a39D47756Bf864a173cc48bafe24',
+    freeze: '0xdf129EFFE040c3403aca597c0F0bb704859a78Fd',
+    staticFeeCalculator: '0x6CDdBdB46e2d7Caae31A6b213B59a1412d7f16Ac',
+    staticAddressCondition: '0xfB09350b200fda7dDd06565F5296A0CA625311d5',
+    andCondition: '0x5a1F3b6d030D25a2B86aAE469Ae1216ef3be308D',
+    orCondition: '0x101B2fac8cdC6348E541A0ef087275dA62AA13A0',
+    notCondition: '0x1D58f97843579356863d3393ebe24feEd76ceefF',
+    recorderCombinator: '0xACf2b5e21CFc14135C9cD43ebE96a481F184C1A1',
   },
   conditions: {
-    payer: '0x33f5f1154a02d0839266efd23fd3b85a3505bb4b',
-    receiver: '0xf41974a853940ff4c18d46b6565f973c1180e171',
-    alwaysTrue: '0xb295df7e7f786fd84d614ab26b1f2e86026c3483',
+    payer: '0x33F5F1154A02d0839266EFd23Fd3b85a3505bB4B',
+    receiver: '0xF41974A853940Ff4c18d46B6565f973c1180E171',
+    alwaysTrue: '0xb295df7E7f786fd84D614AB26b1f2e86026C3483',
   },
 } as const
 
