@@ -186,6 +186,7 @@ export interface OperatorActions {
   distributeFees(token: Address): Promise<Hash>
 }
 
+// TODO: type event logs per-event (e.g. AuthorizationCreatedLog) once ABI event inference is added
 export interface WatchActions {
   onPayment(callback: (log: unknown) => void): () => void
   onRefundRequest(callback: (log: unknown) => void): () => void
