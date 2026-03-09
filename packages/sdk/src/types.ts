@@ -215,3 +215,118 @@ export interface X402r {
     fn: (client: X402r) => T,
   ): X402r & T
 }
+
+// ---------------------------------------------------------------------------
+// Role-based preset types (DX narrowing — not a security boundary)
+// ---------------------------------------------------------------------------
+
+export interface PayerClient {
+  readonly config: ResolvedConfig
+  readonly payment: Pick<PaymentActions, 'getState' | 'getAmounts'>
+  readonly escrow:
+    | Pick<
+        EscrowActions,
+        'isDuringEscrow' | 'getAuthorizationTime' | 'getDuration'
+      >
+    | undefined
+  readonly refund: Pick<
+    RefundActions,
+    | 'request'
+    | 'cancel'
+    | 'get'
+    | 'getByKey'
+    | 'getStatus'
+    | 'has'
+    | 'getStoredPaymentInfo'
+    | 'getPayerRequests'
+    | 'getCancelCount'
+    | 'getCancelledAmount'
+  >
+  readonly evidence: EvidenceActions
+  readonly freeze: Pick<FreezeActions, 'isFrozen'> | undefined
+  readonly operator: Pick<OperatorActions, 'getConfig' | 'getFeeAddresses'>
+  readonly watch: WatchActions
+  canExecute(
+    slot: ConditionSlot,
+    paymentInfo: PaymentInfo,
+    amount: bigint,
+  ): Promise<boolean>
+  extend<const T extends Record<string, unknown>>(
+    fn: (client: X402r) => T,
+  ): PayerClient & T
+}
+
+export interface MerchantClient {
+  readonly config: ResolvedConfig
+  readonly payment: PaymentActions
+  readonly escrow:
+    | Pick<
+        EscrowActions,
+        'isDuringEscrow' | 'getAuthorizationTime' | 'getDuration'
+      >
+    | undefined
+  readonly refund: Pick<
+    RefundActions,
+    | 'refuse'
+    | 'get'
+    | 'getByKey'
+    | 'getStatus'
+    | 'has'
+    | 'getStoredPaymentInfo'
+    | 'getReceiverRequests'
+    | 'getCancelCount'
+    | 'getCancelledAmount'
+    | 'approveBudget'
+    | 'getBudget'
+    | 'refundInEscrow'
+    | 'refundPostEscrow'
+  >
+  readonly evidence: EvidenceActions
+  readonly freeze: Pick<FreezeActions, 'isFrozen'> | undefined
+  readonly operator: OperatorActions
+  readonly watch: WatchActions
+  canExecute(
+    slot: ConditionSlot,
+    paymentInfo: PaymentInfo,
+    amount: bigint,
+  ): Promise<boolean>
+  extend<const T extends Record<string, unknown>>(
+    fn: (client: X402r) => T,
+  ): MerchantClient & T
+}
+
+export interface ArbiterClient {
+  readonly config: ResolvedConfig
+  readonly payment: Pick<PaymentActions, 'getState' | 'getAmounts'>
+  readonly escrow:
+    | Pick<
+        EscrowActions,
+        'isDuringEscrow' | 'getAuthorizationTime' | 'getDuration'
+      >
+    | undefined
+  readonly refund: Pick<
+    RefundActions,
+    | 'deny'
+    | 'approveWithSignature'
+    | 'get'
+    | 'getByKey'
+    | 'getStatus'
+    | 'has'
+    | 'getStoredPaymentInfo'
+    | 'getOperatorRequests'
+    | 'getCancelCount'
+    | 'getCancelledAmount'
+  >
+  readonly evidence: EvidenceActions
+  readonly freeze: FreezeActions | undefined
+  readonly operator: Pick<OperatorActions, 'getConfig' | 'getFeeAddresses'>
+  readonly watch: WatchActions
+  canExecute(
+    slot: ConditionSlot,
+    paymentInfo: PaymentInfo,
+    amount: bigint,
+  ): Promise<boolean>
+  extend<const T extends Record<string, unknown>>(
+    fn: (client: X402r) => T,
+  ): ArbiterClient & T
+}
