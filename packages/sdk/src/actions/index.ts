@@ -3,7 +3,6 @@ import type {
   EscrowActions,
   EvidenceActions,
   FreezeActions,
-  RefundActions,
   ResolvedConfig,
   WatchActions,
 } from '../types.js'
@@ -23,29 +22,7 @@ export function createEscrowActions(_config: ResolvedConfig): EscrowActions {
   }
 }
 
-export function createRefundActions(_config: ResolvedConfig): RefundActions {
-  return {
-    request: () => stub('refund'),
-    cancel: () => stub('refund'),
-    deny: () => stub('refund'),
-    refuse: () => stub('refund'),
-    approveWithSignature: () => stub('refund'),
-    get: () => stub('refund'),
-    getByKey: () => stub('refund'),
-    getStatus: () => stub('refund'),
-    has: () => stub('refund'),
-    getStoredPaymentInfo: () => stub('refund'),
-    getPayerRequests: () => stub('refund'),
-    getReceiverRequests: () => stub('refund'),
-    getOperatorRequests: () => stub('refund'),
-    getCancelCount: () => stub('refund'),
-    getCancelledAmount: () => stub('refund'),
-    approveBudget: () => stub('refund'),
-    getBudget: () => stub('refund'),
-    refundInEscrow: () => stub('refund'),
-    refundPostEscrow: () => stub('refund'),
-  }
-}
+export { createRefundActions } from './refund.js'
 
 export function createEvidenceActions(
   _config: ResolvedConfig,
