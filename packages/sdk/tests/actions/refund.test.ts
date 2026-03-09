@@ -1,5 +1,5 @@
 import { ValidationError } from '@x402r/core'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createRefundActions } from '../../src/actions/refund.js'
 import {
   createTestConfig,
@@ -79,6 +79,8 @@ import {
 // ---------------------------------------------------------------------------
 
 describe('createRefundActions', () => {
+  beforeEach(() => vi.clearAllMocks())
+
   // ---- Existing tests (fixed assertions) ------------------------------------
 
   it('request injects refundRequestAddress as contractAddress', async () => {
