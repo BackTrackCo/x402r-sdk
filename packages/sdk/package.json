@@ -9,6 +9,14 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./actions": {
+      "types": "./dist/actions.d.ts",
+      "default": "./dist/actions.js"
+    },
+    "./plugins": {
+      "types": "./dist/plugins.d.ts",
+      "default": "./dist/plugins.js"
     }
   },
   "files": [
@@ -21,7 +29,8 @@
     "dev": "tsup --watch",
     "test": "vitest run",
     "test:cov": "vitest run --coverage",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:typecheck": "vitest --typecheck --run"
   },
   "dependencies": {
     "@x402r/core": "workspace:*",

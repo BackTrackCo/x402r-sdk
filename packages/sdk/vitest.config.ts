@@ -4,6 +4,9 @@ export default defineConfig({
   test: {
     name: 'sdk',
     include: ['tests/**/*.test.ts'],
+    typecheck: {
+      include: ['tests/**/*.test-d.ts'],
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],

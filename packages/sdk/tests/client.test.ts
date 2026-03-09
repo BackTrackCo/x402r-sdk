@@ -179,4 +179,11 @@ describe('extend', () => {
     }))
     expect(extended.meta.chainId).toBe(84532)
   })
+
+  it('extend can fill undefined slots', () => {
+    const client = createX402r(baseConfig) // no escrowPeriodAddress → escrow is undefined
+    expect(client.escrow).toBeUndefined()
+    const extended = client.extend(() => ({ escrow: { custom: true } }))
+    expect(extended.escrow).toEqual({ custom: true })
+  })
 })

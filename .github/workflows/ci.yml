@@ -39,6 +39,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: pnpm typecheck
+      - run: pnpm --filter=@x402r/sdk test:typecheck
 
   test:
     name: Test
