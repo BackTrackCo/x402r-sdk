@@ -42,14 +42,24 @@ export {
   X402rError,
 } from '@x402r/core'
 export { createX402r } from './client.js'
+export {
+  createArbiterClient,
+  createMerchantClient,
+  createPayerClient,
+} from './presets.js'
 export type {
+  ArbiterClient,
   EscrowActions,
   EvidenceActions,
   FreezeActions,
+  MerchantClient,
   OperatorActions,
+  PayerClient,
   PaymentActions,
+  Prettify,
   RefundActions,
   ResolvedConfig,
+  ResolvedWriteConfig,
   WatchActions,
   X402r,
   X402rConfig,

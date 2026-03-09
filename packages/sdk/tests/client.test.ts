@@ -150,7 +150,7 @@ describe('extend', () => {
     const extended = client.extend(() => ({
       custom: { hello: () => 'world' },
     }))
-    expect((extended as any).custom.hello()).toBe('world')
+    expect(extended.custom.hello()).toBe('world')
   })
 
   it('cannot override base keys', () => {
@@ -168,8 +168,8 @@ describe('extend', () => {
     const extended = client
       .extend(() => ({ foo: { a: 1 } }))
       .extend(() => ({ bar: { b: 2 } }))
-    expect((extended as any).foo.a).toBe(1)
-    expect((extended as any).bar.b).toBe(2)
+    expect(extended.foo.a).toBe(1)
+    expect(extended.bar.b).toBe(2)
   })
 
   it('receives client in extension function', () => {
@@ -177,6 +177,13 @@ describe('extend', () => {
     const extended = client.extend((c) => ({
       meta: { chainId: c.config.chainId },
     }))
-    expect((extended as any).meta.chainId).toBe(84532)
+    expect(extended.meta.chainId).toBe(84532)
+  })
+
+  it('extend can fill undefined slots', () => {
+    const client = createX402r(baseConfig) // no escrowPeriodAddress → escrow is undefined
+    expect(client.escrow).toBeUndefined()
+    const extended = client.extend(() => ({ escrow: { custom: true } }))
+    expect(extended.escrow).toEqual({ custom: true })
   })
 })

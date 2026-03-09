@@ -19,8 +19,14 @@ function buildExtend(base: X402r): X402r['extend'] {
   return (fn) => {
     const extensions = fn(base)
     const safe = { ...extensions }
+    // Extensions can fill slots that are undefined on the base client
+    // (e.g., providing escrow/freeze when no address was configured).
+    // Only defined base keys are protected from override.
+    const baseRecord = base as unknown as Record<string, unknown>
     for (const key of Object.keys(base)) {
-      delete (safe as Record<string, unknown>)[key]
+      if (baseRecord[key] !== undefined) {
+        delete (safe as Record<string, unknown>)[key]
+      }
     }
     const combined = { ...base, ...safe } as X402r & typeof extensions
     return Object.assign(combined, {
