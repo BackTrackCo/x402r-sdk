@@ -3,16 +3,10 @@ import {
   isFrozen as coreIsFrozen,
   freezePayment,
   unfreezePayment,
-  ValidationError,
 } from '@x402r/core'
-import type { Hash, WalletClient } from 'viem'
+import type { Hash } from 'viem'
 import type { FreezeActions, ResolvedConfig } from '../types.js'
-
-function requireWallet(config: ResolvedConfig): WalletClient {
-  if (!config.walletClient)
-    throw new ValidationError('walletClient is required for write operations')
-  return config.walletClient
-}
+import { requireWallet } from './utils.js'
 
 export function createFreezeActions(config: ResolvedConfig): FreezeActions {
   const freezeAddress = config.freezeAddress!

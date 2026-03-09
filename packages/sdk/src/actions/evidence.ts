@@ -4,16 +4,10 @@ import {
   getEvidenceBatch,
   getEvidenceCount,
   submitEvidence,
-  ValidationError,
 } from '@x402r/core'
-import type { Hash, WalletClient } from 'viem'
+import type { Hash } from 'viem'
 import type { EvidenceActions, ResolvedConfig } from '../types.js'
-
-function requireWallet(config: ResolvedConfig): WalletClient {
-  if (!config.walletClient)
-    throw new ValidationError('walletClient is required for write operations')
-  return config.walletClient
-}
+import { requireWallet } from './utils.js'
 
 export function createEvidenceActions(config: ResolvedConfig): EvidenceActions {
   const contractAddress = config.refundRequestEvidenceAddress

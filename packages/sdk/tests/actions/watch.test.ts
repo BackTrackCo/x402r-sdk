@@ -1,4 +1,4 @@
-import { paymentOperatorAbi } from '@x402r/core'
+import { paymentOperatorAbi, signatureRefundRequestAbi } from '@x402r/core'
 import { describe, expect, it, vi } from 'vitest'
 import { createWatchActions } from '../../src/actions/watch.js'
 import { createTestConfig } from '../fixtures.js'
@@ -34,6 +34,30 @@ describe('createWatchActions', () => {
         eventName: 'ReleaseExecuted',
       }),
     )
+  })
+
+  it('onRefundRequest calls watchContractEvent with signatureRefundRequestAbi and refundRequestAddress', () => {
+    const unwatchFn = vi.fn()
+    const mockWatchContractEvent = vi.fn().mockReturnValue(unwatchFn)
+    const config = createTestConfig()
+    ;(config as any).publicClient = {
+      ...config.publicClient,
+      watchContractEvent: mockWatchContractEvent,
+    }
+
+    const actions = createWatchActions(config)
+    const unwatch = actions.onRefundRequest(() => {})
+
+    expect(mockWatchContractEvent).toHaveBeenCalledTimes(1)
+    expect(mockWatchContractEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        address: config.refundRequestAddress,
+        abi: signatureRefundRequestAbi,
+      }),
+    )
+
+    unwatch()
+    expect(unwatchFn).toHaveBeenCalledOnce()
   })
 
   it('returned unwatch function calls all individual unwatchers', () => {
