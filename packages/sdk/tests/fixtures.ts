@@ -42,7 +42,7 @@ export const mockPaymentInfo = {
   maxFeeBps: 500,
   feeReceiver: '0x4234567890abcdef1234567890abcdef12345678',
   salt: 1n,
-} as unknown as PaymentInfo
+} satisfies PaymentInfo
 
 export function createTestConfig(
   overrides?: Partial<ResolvedConfig>,
