@@ -166,7 +166,7 @@ describe('createRefundActions', () => {
       mockPaymentInfo,
       1n,
       200n,
-      1700000000n,
+      1700000000,
       signature,
     )
 
@@ -177,7 +177,7 @@ describe('createRefundActions', () => {
         paymentInfo: mockPaymentInfo,
         nonce: 1n,
         amount: 200n,
-        expiry: 1700000000n,
+        expiry: 1700000000,
         signature,
       },
     )
