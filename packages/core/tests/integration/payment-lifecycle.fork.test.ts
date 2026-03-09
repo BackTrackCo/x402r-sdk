@@ -1,15 +1,21 @@
-import type { PublicClient, TestClient } from 'viem'
-import { zeroAddress } from 'viem'
+import type { PublicClient, TestClient, WalletClient } from 'viem'
+import { erc20Abi, zeroAddress } from 'viem'
 import { beforeAll, describe, expect, it } from 'vitest'
 import {
+  authorize,
   calculateOperatorFeeBps,
   calculateTotalFees,
+  getAuthorizationTime,
   getConditionAddress,
   getEscrowAddress,
+  getEscrowPeriodDuration,
   getFeeAddresses,
   getOperatorConfig,
   getPaymentAmounts,
   getPaymentState,
+  isDuringEscrowPeriod,
+  refundInEscrow,
+  release,
 } from '../../src/actions/index.js'
 import { x402rChains } from '../../src/config/index.js'
 import type { PaymentInfo } from '../../src/types/index.js'
@@ -36,6 +42,8 @@ const FAR_FUTURE = 281474976710655 // max uint48
 let publicClient: PublicClient
 let testClient: TestClient
 let fixtures: DeployedFixtures
+let payerWallet: WalletClient
+let receiverWallet: WalletClient
 
 beforeAll(async () => {
   publicClient = anvilBaseSepolia.getPublicClient()
@@ -45,6 +53,9 @@ beforeAll(async () => {
   testClient = anvilBaseSepolia.getTestClient()
 
   fixtures = await deployTestFixtures(publicClient, deployerWallet, testClient)
+
+  payerWallet = anvilBaseSepolia.getWalletClient(testRoles.payer.address)
+  receiverWallet = anvilBaseSepolia.getWalletClient(testRoles.receiver.address)
 }, 60_000)
 
 // ---------------------------------------------------------------------------
@@ -212,4 +223,257 @@ describe('Payment State Read Operations', () => {
     expect(amounts.capturableAmount).toBe(0n)
     expect(amounts.refundableAmount).toBe(0n)
   })
+})
+
+// ---------------------------------------------------------------------------
+// Payment Lifecycle Write Operations
+// ---------------------------------------------------------------------------
+
+// Helper: approve tokenCollector and authorize a payment
+async function approveAndAuthorize(
+  paymentInfo: PaymentInfo,
+  amount: bigint,
+): Promise<void> {
+  // Payer approves the tokenCollector to pull USDC
+  const approveHash = await payerWallet.writeContract({
+    address: USDC,
+    abi: erc20Abi,
+    functionName: 'approve',
+    args: [baseSepolia.tokenCollector, amount],
+    chain: payerWallet.chain,
+    account: testRoles.payer.address,
+  })
+  await publicClient.waitForTransactionReceipt({ hash: approveHash })
+
+  // Authorize the payment via the operator
+  const authHash = await authorize(payerWallet, {
+    operatorAddress: fixtures.operatorAddress,
+    paymentInfo,
+    amount,
+    tokenCollector: baseSepolia.tokenCollector,
+    collectorData: '0x',
+  })
+  await publicClient.waitForTransactionReceipt({ hash: authHash })
+}
+
+describe('Scenario 1: Authorize -> Release after escrow (Flow 1)', () => {
+  const AMOUNT = 1_000_000n
+
+  let paymentInfo: PaymentInfo
+
+  beforeAll(() => {
+    paymentInfo = {
+      operator: fixtures.operatorAddress,
+      payer: testRoles.payer.address,
+      receiver: testRoles.receiver.address,
+      token: USDC,
+      maxAmount: AMOUNT,
+      preApprovalExpiry: FAR_FUTURE,
+      authorizationExpiry: FAR_FUTURE,
+      refundExpiry: FAR_FUTURE,
+      minFeeBps: 0,
+      maxFeeBps: 500,
+      feeReceiver: fixtures.operatorAddress,
+      salt: 1n,
+    }
+  })
+
+  it(
+    'authorize creates a capturable payment',
+    async () => {
+      await approveAndAuthorize(paymentInfo, AMOUNT)
+
+      const [hasCollected, capturable] = await getPaymentState(publicClient, {
+        operatorAddress: fixtures.operatorAddress,
+        chainId: CHAIN_ID,
+        paymentInfo,
+      })
+
+      expect(hasCollected).toBe(false)
+      expect(capturable).toBeGreaterThan(0n)
+    },
+    60_000,
+  )
+
+  it(
+    'release after escrow marks payment as collected',
+    async () => {
+      // Fast-forward past the 7-day escrow period
+      await testClient.increaseTime({ seconds: 604801 })
+      await testClient.mine({ blocks: 1 })
+
+      const releaseHash = await release(receiverWallet, {
+        operatorAddress: fixtures.operatorAddress,
+        paymentInfo,
+        amount: AMOUNT,
+      })
+      await publicClient.waitForTransactionReceipt({ hash: releaseHash })
+
+      const [hasCollected] = await getPaymentState(publicClient, {
+        operatorAddress: fixtures.operatorAddress,
+        chainId: CHAIN_ID,
+        paymentInfo,
+      })
+
+      expect(hasCollected).toBe(true)
+    },
+    60_000,
+  )
+})
+
+describe('Scenario 2: Escrow period timing', () => {
+  const AMOUNT = 1_000_000n
+
+  let paymentInfo: PaymentInfo
+
+  beforeAll(() => {
+    paymentInfo = {
+      operator: fixtures.operatorAddress,
+      payer: testRoles.payer.address,
+      receiver: testRoles.receiver.address,
+      token: USDC,
+      maxAmount: AMOUNT,
+      preApprovalExpiry: FAR_FUTURE,
+      authorizationExpiry: FAR_FUTURE,
+      refundExpiry: FAR_FUTURE,
+      minFeeBps: 0,
+      maxFeeBps: 500,
+      feeReceiver: fixtures.operatorAddress,
+      salt: 2n,
+    }
+  })
+
+  it(
+    'authorization time is recorded and escrow period is active',
+    async () => {
+      await approveAndAuthorize(paymentInfo, AMOUNT)
+
+      const authTime = await getAuthorizationTime(publicClient, {
+        escrowPeriodAddress: fixtures.escrowPeriodAddress,
+        paymentInfo,
+      })
+      expect(authTime).toBeGreaterThan(0n)
+
+      const duringEscrow = await isDuringEscrowPeriod(publicClient, {
+        escrowPeriodAddress: fixtures.escrowPeriodAddress,
+        paymentInfo,
+      })
+      expect(duringEscrow).toBe(true)
+
+      const duration = await getEscrowPeriodDuration(publicClient, {
+        escrowPeriodAddress: fixtures.escrowPeriodAddress,
+      })
+      expect(duration).toBe(604800n)
+    },
+    60_000,
+  )
+
+  it(
+    'escrow period becomes inactive after fast-forward',
+    async () => {
+      // Fast-forward past escrow period
+      await testClient.increaseTime({ seconds: 604801 })
+      await testClient.mine({ blocks: 1 })
+
+      const duringEscrow = await isDuringEscrowPeriod(publicClient, {
+        escrowPeriodAddress: fixtures.escrowPeriodAddress,
+        paymentInfo,
+      })
+      expect(duringEscrow).toBe(false)
+    },
+    60_000,
+  )
+})
+
+describe('Scenario 3: Partial refund during escrow (Flow 3)', () => {
+  const TOTAL_AMOUNT = 1_000_000n
+  const REFUND_AMOUNT = 300_000n
+
+  let paymentInfo: PaymentInfo
+
+  beforeAll(() => {
+    paymentInfo = {
+      operator: fixtures.operatorAddress,
+      payer: testRoles.payer.address,
+      receiver: testRoles.receiver.address,
+      token: USDC,
+      maxAmount: TOTAL_AMOUNT,
+      preApprovalExpiry: FAR_FUTURE,
+      authorizationExpiry: FAR_FUTURE,
+      refundExpiry: FAR_FUTURE,
+      minFeeBps: 0,
+      maxFeeBps: 500,
+      feeReceiver: fixtures.operatorAddress,
+      salt: 3n,
+    }
+  })
+
+  it(
+    'partial refundInEscrow reduces capturable amount',
+    async () => {
+      await approveAndAuthorize(paymentInfo, TOTAL_AMOUNT)
+
+      // Verify initial state — capturable > 0
+      const amountsBefore = await getPaymentAmounts(publicClient, {
+        operatorAddress: fixtures.operatorAddress,
+        chainId: CHAIN_ID,
+        paymentInfo,
+      })
+      expect(amountsBefore.capturableAmount).toBeGreaterThan(0n)
+
+      // Receiver issues partial refund during escrow
+      const refundHash = await refundInEscrow(receiverWallet, {
+        operatorAddress: fixtures.operatorAddress,
+        paymentInfo,
+        amount: REFUND_AMOUNT,
+      })
+      await publicClient.waitForTransactionReceipt({ hash: refundHash })
+
+      // Capturable amount should have decreased
+      const amountsAfter = await getPaymentAmounts(publicClient, {
+        operatorAddress: fixtures.operatorAddress,
+        chainId: CHAIN_ID,
+        paymentInfo,
+      })
+      expect(amountsAfter.capturableAmount).toBeLessThan(
+        amountsBefore.capturableAmount,
+      )
+    },
+    60_000,
+  )
+
+  it(
+    'release remaining amount after escrow completes the payment',
+    async () => {
+      // Fast-forward past escrow
+      await testClient.increaseTime({ seconds: 604801 })
+      await testClient.mine({ blocks: 1 })
+
+      // Get the remaining capturable amount
+      const amounts = await getPaymentAmounts(publicClient, {
+        operatorAddress: fixtures.operatorAddress,
+        chainId: CHAIN_ID,
+        paymentInfo,
+      })
+      const remainingAmount = amounts.capturableAmount
+      expect(remainingAmount).toBeGreaterThan(0n)
+
+      // Release the remaining amount
+      const releaseHash = await release(receiverWallet, {
+        operatorAddress: fixtures.operatorAddress,
+        paymentInfo,
+        amount: remainingAmount,
+      })
+      await publicClient.waitForTransactionReceipt({ hash: releaseHash })
+
+      // Payment should now be collected
+      const finalAmounts = await getPaymentAmounts(publicClient, {
+        operatorAddress: fixtures.operatorAddress,
+        chainId: CHAIN_ID,
+        paymentInfo,
+      })
+      expect(finalAmounts.hasCollectedPayment).toBe(true)
+    },
+    60_000,
+  )
 })
