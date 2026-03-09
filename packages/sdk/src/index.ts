@@ -56,6 +56,7 @@ export type {
   OperatorActions,
   PayerClient,
   PaymentActions,
+  Prettify,
   RefundActions,
   ResolvedConfig,
   ResolvedWriteConfig,

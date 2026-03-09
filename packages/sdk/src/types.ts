@@ -17,6 +17,11 @@ import type {
 } from '@x402r/core'
 import type { Address, Hash, Hex, PublicClient, WalletClient } from 'viem'
 
+/** Force TypeScript to flatten intersection types for cleaner IDE tooltips. */
+export type Prettify<T> = {
+  [K in keyof T]: T[K]
+} & {}
+
 // ---------------------------------------------------------------------------
 // User-facing config
 // ---------------------------------------------------------------------------
@@ -217,7 +222,7 @@ export interface X402r {
   ): Promise<boolean>
   extend<const T extends Record<string, unknown>>(
     fn: (client: X402r) => T,
-  ): this & T
+  ): Prettify<this & T>
 }
 
 // ---------------------------------------------------------------------------
@@ -257,7 +262,7 @@ export interface PayerClient {
   ): Promise<boolean>
   extend<const T extends Record<string, unknown>>(
     fn: (client: X402r) => T,
-  ): this & T
+  ): Prettify<this & T>
 }
 
 export interface MerchantClient {
@@ -296,7 +301,7 @@ export interface MerchantClient {
   ): Promise<boolean>
   extend<const T extends Record<string, unknown>>(
     fn: (client: X402r) => T,
-  ): this & T
+  ): Prettify<this & T>
 }
 
 export interface ArbiterClient {
@@ -332,5 +337,5 @@ export interface ArbiterClient {
   ): Promise<boolean>
   extend<const T extends Record<string, unknown>>(
     fn: (client: X402r) => T,
-  ): this & T
+  ): Prettify<this & T>
 }
