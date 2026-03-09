@@ -6,11 +6,8 @@
 // Core re-exports — types
 // ---------------------------------------------------------------------------
 export type {
-  ConditionConfig,
-  ConditionSingletonAddresses,
   ConditionSlot,
   EvidenceEntry,
-  FactoryAddresses,
   FeeAddresses,
   FeeCalculationResult,
   GetAuthorizedFeesReturnType,
@@ -32,18 +29,13 @@ export type {
 export {
   ConfigError,
   ContractCallError,
-  computeEscrowNonce,
   computePaymentInfoHash,
   formatFeeBreakdown,
-  fromNetworkId,
   getChainConfig,
   isSupportedChain,
-  NotImplementedError,
   RefundRequestStatus,
   SubmitterRole,
   supportedChainIds,
-  toNetworkId,
-  toPaymentInfo,
   ValidationError,
   validateFeeBounds,
   validatePaymentInfo,
