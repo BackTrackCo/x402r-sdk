@@ -53,6 +53,10 @@ export interface ResolvedConfig {
   freezeAddress: Address | undefined
 }
 
+export interface ResolvedWriteConfig extends ResolvedConfig {
+  walletClient: WalletClient
+}
+
 // ---------------------------------------------------------------------------
 // Action group interfaces
 // ---------------------------------------------------------------------------
@@ -213,7 +217,7 @@ export interface X402r {
   ): Promise<boolean>
   extend<const T extends Record<string, unknown>>(
     fn: (client: X402r) => T,
-  ): X402r & T
+  ): this & T
 }
 
 // ---------------------------------------------------------------------------
@@ -221,7 +225,7 @@ export interface X402r {
 // ---------------------------------------------------------------------------
 
 export interface PayerClient {
-  readonly config: ResolvedConfig
+  readonly config: ResolvedWriteConfig
   readonly payment: Pick<PaymentActions, 'getState' | 'getAmounts'>
   readonly escrow:
     | Pick<
@@ -253,11 +257,11 @@ export interface PayerClient {
   ): Promise<boolean>
   extend<const T extends Record<string, unknown>>(
     fn: (client: X402r) => T,
-  ): PayerClient & T
+  ): this & T
 }
 
 export interface MerchantClient {
-  readonly config: ResolvedConfig
+  readonly config: ResolvedWriteConfig
   readonly payment: PaymentActions
   readonly escrow:
     | Pick<
@@ -292,11 +296,11 @@ export interface MerchantClient {
   ): Promise<boolean>
   extend<const T extends Record<string, unknown>>(
     fn: (client: X402r) => T,
-  ): MerchantClient & T
+  ): this & T
 }
 
 export interface ArbiterClient {
-  readonly config: ResolvedConfig
+  readonly config: ResolvedWriteConfig
   readonly payment: Pick<PaymentActions, 'getState' | 'getAmounts'>
   readonly escrow:
     | Pick<
@@ -328,5 +332,5 @@ export interface ArbiterClient {
   ): Promise<boolean>
   extend<const T extends Record<string, unknown>>(
     fn: (client: X402r) => T,
-  ): ArbiterClient & T
+  ): this & T
 }

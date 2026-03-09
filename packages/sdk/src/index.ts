@@ -58,6 +58,7 @@ export type {
   PaymentActions,
   RefundActions,
   ResolvedConfig,
+  ResolvedWriteConfig,
   WatchActions,
   X402r,
   X402rConfig,
