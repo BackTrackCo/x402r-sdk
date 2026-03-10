@@ -3,7 +3,7 @@
   "changelog": ["@changesets/changelog-github", { "repo": "x402r/x402r-sdk" }],
   "commit": false,
   "fixed": [],
-  "linked": [],
+  "linked": [["@x402r/core", "@x402r/helpers", "@x402r/sdk"]],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
