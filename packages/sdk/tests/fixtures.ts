@@ -1,4 +1,4 @@
-import type { PaymentInfo, X402rChainConfig } from '@x402r/core'
+import { getChainConfig, type PaymentInfo } from '@x402r/core'
 import { createPublicClient, createWalletClient, http } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { baseSepolia } from 'viem/chains'
@@ -30,6 +30,8 @@ export const TEST_ESCROW_PERIOD =
 export const TEST_FREEZE = '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd' as const
 export const TEST_RECEIVER_REFUND_COLLECTOR =
   '0xE5500a38BE45a6C598420fbd7867ac85EC451A07' as const
+export const TEST_TOKEN_COLLECTOR =
+  '0xcE66Ab399EDA513BD12760b6427C87D6602344a7' as const
 
 export const mockPaymentInfo = {
   operator: TEST_OPERATOR,
@@ -54,13 +56,12 @@ export function createTestConfig(
     walletClient,
     operatorAddress: TEST_OPERATOR,
     chainId: 84532,
-    chainConfig: {
-      receiverRefundCollector: TEST_RECEIVER_REFUND_COLLECTOR,
-    } as X402rChainConfig,
+    chainConfig: getChainConfig(84532),
     refundRequestAddress: TEST_REFUND_REQUEST,
     refundRequestEvidenceAddress: TEST_EVIDENCE,
     escrowPeriodAddress: undefined,
     freezeAddress: undefined,
+    tokenCollector: TEST_TOKEN_COLLECTOR,
     ...overrides,
   }
 }

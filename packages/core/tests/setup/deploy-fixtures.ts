@@ -2,16 +2,27 @@ import type { Address, PublicClient, TestClient, WalletClient } from 'viem'
 import {
   encodeAbiParameters,
   erc20Abi,
+  getContractAddress,
   keccak256,
   pad,
   zeroAddress,
 } from 'viem'
 import {
+  andConditionFactoryAbi,
   escrowPeriodFactoryAbi,
+  freezeFactoryAbi,
   paymentOperatorFactoryAbi,
+  signatureConditionAbi,
+  signatureRefundRequestAbi,
+  staticAddressConditionFactoryAbi,
   staticFeeCalculatorFactoryAbi,
 } from '../../src/abis/generated.js'
 import { x402rChains } from '../../src/config/index.js'
+import {
+  preApprovalPaymentCollectorBytecode,
+  signatureConditionBytecode,
+  signatureRefundRequestBytecode,
+} from './bytecodes.js'
 import { testRoles } from './constants.js'
 
 // ---------------------------------------------------------------------------
@@ -22,6 +33,12 @@ export interface DeployedFixtures {
   operatorAddress: Address
   feeCalculatorAddress: Address
   escrowPeriodAddress: Address
+  preApprovalCollectorAddress: Address
+  freezeAddress: Address
+  operatorWithFreezeAddress: Address
+  arbiterConditionAddress: Address
+  signatureConditionAddress: Address
+  signatureRefundRequestAddress: Address
 }
 
 // ---------------------------------------------------------------------------
@@ -103,7 +120,7 @@ export async function deployTestFixtures(
     args: [ESCROW_PERIOD_SECONDS, pad('0x00')],
   })
 
-  // 3. Deploy PaymentOperator via factory
+  // 3. Deploy standard PaymentOperator via factory (no freeze)
   const operatorConfig = {
     feeRecipient: testRoles.operatorFeeRecipient.address,
     feeCalculator: feeCalculatorAddress,
@@ -136,7 +153,183 @@ export async function deployTestFixtures(
     args: [operatorConfig],
   })
 
+  // ---------------------------------------------------------------------------
+  // 2b. Deploy PreApprovalPaymentCollector(authCaptureEscrow) — direct deploy
+  // ---------------------------------------------------------------------------
+  const preApprovalAbi = [
+    {
+      type: 'constructor',
+      inputs: [{ name: 'authCaptureEscrow_', type: 'address' }],
+      stateMutability: 'nonpayable',
+    },
+  ] as const
+
+  const preApprovalNonce = await publicClient.getTransactionCount({
+    address: deployer,
+  })
+  const preApprovalCollectorAddress = getContractAddress({
+    from: deployer,
+    nonce: BigInt(preApprovalNonce),
+  })
+
+  const preApprovalHash = await walletClient.deployContract({
+    abi: preApprovalAbi,
+    bytecode: preApprovalPaymentCollectorBytecode,
+    args: [baseSepolia.authCaptureEscrow],
+    account: deployer,
+    chain: walletClient.chain,
+  })
+  await publicClient.waitForTransactionReceipt({ hash: preApprovalHash })
+
+  // ---------------------------------------------------------------------------
+  // 3a. Deploy StaticAddressCondition(arbiter) via factory
+  // ---------------------------------------------------------------------------
+  const arbiterCondHash = await walletClient.writeContract({
+    address: factories.staticAddressCondition,
+    abi: staticAddressConditionFactoryAbi,
+    functionName: 'deploy',
+    args: [testRoles.arbiter.address],
+    account: deployer,
+    chain: walletClient.chain,
+  })
+  await publicClient.waitForTransactionReceipt({ hash: arbiterCondHash })
+
+  const arbiterConditionAddress = await publicClient.readContract({
+    address: factories.staticAddressCondition,
+    abi: staticAddressConditionFactoryAbi,
+    functionName: 'computeAddress',
+    args: [testRoles.arbiter.address],
+  })
+
+  // ---------------------------------------------------------------------------
+  // 3b. Deploy Freeze(arbiterCond, arbiterCond, 0, escrowPeriod) via factory
+  // ---------------------------------------------------------------------------
+  const freezeHash = await walletClient.writeContract({
+    address: factories.freeze,
+    abi: freezeFactoryAbi,
+    functionName: 'deploy',
+    args: [
+      arbiterConditionAddress,
+      arbiterConditionAddress,
+      0n, // freezeDuration = 0 → permanent
+      escrowPeriodAddress,
+    ],
+    account: deployer,
+    chain: walletClient.chain,
+  })
+  await publicClient.waitForTransactionReceipt({ hash: freezeHash })
+
+  const freezeAddress = await publicClient.readContract({
+    address: factories.freeze,
+    abi: freezeFactoryAbi,
+    functionName: 'computeAddress',
+    args: [
+      arbiterConditionAddress,
+      arbiterConditionAddress,
+      0n,
+      escrowPeriodAddress,
+    ],
+  })
+
+  // ---------------------------------------------------------------------------
+  // 3c. Deploy AndCondition([escrowPeriod, freeze]) via factory
+  // ---------------------------------------------------------------------------
+  const andCondHash = await walletClient.writeContract({
+    address: factories.andCondition,
+    abi: andConditionFactoryAbi,
+    functionName: 'deploy',
+    args: [[escrowPeriodAddress, freezeAddress]],
+    account: deployer,
+    chain: walletClient.chain,
+  })
+  await publicClient.waitForTransactionReceipt({ hash: andCondHash })
+
+  const andConditionAddress = await publicClient.readContract({
+    address: factories.andCondition,
+    abi: andConditionFactoryAbi,
+    functionName: 'computeAddress',
+    args: [[escrowPeriodAddress, freezeAddress]],
+  })
+
+  // ---------------------------------------------------------------------------
+  // 3d. Deploy PaymentOperator with freeze (release uses AndCondition,
+  //     refundInEscrow uses ReceiverCondition)
+  // ---------------------------------------------------------------------------
+  const freezeOperatorConfig = {
+    feeRecipient: testRoles.operatorFeeRecipient.address,
+    feeCalculator: feeCalculatorAddress,
+    authorizeCondition: zeroAddress,
+    authorizeRecorder: escrowPeriodAddress,
+    chargeCondition: zeroAddress,
+    chargeRecorder: zeroAddress,
+    releaseCondition: andConditionAddress, // EscrowPeriod AND Freeze
+    releaseRecorder: zeroAddress,
+    refundInEscrowCondition: baseSepolia.conditions.receiver, // Only receiver can refund
+    refundInEscrowRecorder: zeroAddress,
+    refundPostEscrowCondition: zeroAddress,
+    refundPostEscrowRecorder: zeroAddress,
+  } as const
+
+  const freezeOpHash = await walletClient.writeContract({
+    address: factories.paymentOperator,
+    abi: paymentOperatorFactoryAbi,
+    functionName: 'deployOperator',
+    args: [freezeOperatorConfig],
+    account: deployer,
+    chain: walletClient.chain,
+  })
+  await publicClient.waitForTransactionReceipt({ hash: freezeOpHash })
+
+  const operatorWithFreezeAddress = await publicClient.readContract({
+    address: factories.paymentOperator,
+    abi: paymentOperatorFactoryAbi,
+    functionName: 'computeAddress',
+    args: [freezeOperatorConfig],
+  })
+
+  // ---------------------------------------------------------------------------
+  // 3e. Deploy SignatureCondition(arbiter) — direct deploy from bytecode
+  // ---------------------------------------------------------------------------
+  const sigCondNonce = await publicClient.getTransactionCount({
+    address: deployer,
+  })
+  const signatureConditionAddress = getContractAddress({
+    from: deployer,
+    nonce: BigInt(sigCondNonce),
+  })
+
+  const sigCondHash = await walletClient.deployContract({
+    abi: signatureConditionAbi,
+    bytecode: signatureConditionBytecode,
+    args: [testRoles.arbiter.address],
+    account: deployer,
+    chain: walletClient.chain,
+  })
+  await publicClient.waitForTransactionReceipt({ hash: sigCondHash })
+
+  // ---------------------------------------------------------------------------
+  // 3f. Deploy SignatureRefundRequest(signatureCondition) — direct deploy
+  // ---------------------------------------------------------------------------
+  const sigRefundNonce = await publicClient.getTransactionCount({
+    address: deployer,
+  })
+  const signatureRefundRequestAddress = getContractAddress({
+    from: deployer,
+    nonce: BigInt(sigRefundNonce),
+  })
+
+  const sigRefundHash = await walletClient.deployContract({
+    abi: signatureRefundRequestAbi,
+    bytecode: signatureRefundRequestBytecode,
+    args: [signatureConditionAddress],
+    account: deployer,
+    chain: walletClient.chain,
+  })
+  await publicClient.waitForTransactionReceipt({ hash: sigRefundHash })
+
+  // ---------------------------------------------------------------------------
   // 4. Fund payer with USDC via storage slot manipulation
+  // ---------------------------------------------------------------------------
   const payerUsdcAmount = 10_000_000_000n // 10,000 USDC (6 decimals)
   const payerSlot = getBalanceSlot(testRoles.payer.address, USDC_BALANCE_SLOT)
   await testClient.setStorageAt({
@@ -180,5 +373,11 @@ export async function deployTestFixtures(
     operatorAddress,
     feeCalculatorAddress,
     escrowPeriodAddress,
+    preApprovalCollectorAddress,
+    freezeAddress,
+    operatorWithFreezeAddress,
+    arbiterConditionAddress,
+    signatureConditionAddress,
+    signatureRefundRequestAddress,
   }
 }

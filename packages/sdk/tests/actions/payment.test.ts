@@ -5,6 +5,7 @@ import {
   createTestConfig,
   mockPaymentInfo,
   TEST_OPERATOR,
+  TEST_TOKEN_COLLECTOR,
 } from '../fixtures.js'
 
 // ---------------------------------------------------------------------------
@@ -41,6 +42,24 @@ import {
   getPaymentAmounts,
   getPaymentState,
 } from '@x402r/core'
+
+const mockWriteContract = vi.fn().mockResolvedValue('0xapprove_hash')
+const mockWaitForTransactionReceipt = vi.fn().mockResolvedValue({})
+
+function createMockWalletConfig() {
+  return createTestConfig({
+    walletClient: {
+      writeContract: mockWriteContract,
+      chain: { id: 84532 },
+      account: { address: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266' },
+    } as any,
+    publicClient: {
+      readContract: vi.fn(),
+      waitForTransactionReceipt: mockWaitForTransactionReceipt,
+      chain: { id: 84532 },
+    } as any,
+  })
+}
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -120,6 +139,63 @@ describe('createPaymentActions', () => {
         '0xaaaa000000000000000000000000000000000000',
         '0x',
       ),
+    ).rejects.toThrow(ValidationError)
+  })
+
+  it('approveAndAuthorize calls preApprove, ERC-20 approve, then core authorize', async () => {
+    const config = createMockWalletConfig()
+    const payment = createPaymentActions(config)
+
+    mockWriteContract
+      .mockResolvedValueOnce('0xpreapprove_hash')
+      .mockResolvedValueOnce('0xapprove_hash')
+
+    await payment.approveAndAuthorize(mockPaymentInfo, 1000000n)
+
+    // First call is preApprove on the collector
+    expect(mockWriteContract).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        address: TEST_TOKEN_COLLECTOR,
+        functionName: 'preApprove',
+        args: [mockPaymentInfo],
+      }),
+    )
+
+    // Second call is ERC-20 approve
+    expect(mockWriteContract).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        address: mockPaymentInfo.token,
+        functionName: 'approve',
+        args: [TEST_TOKEN_COLLECTOR, 1000000n],
+      }),
+    )
+
+    // Waited for both receipts
+    expect(mockWaitForTransactionReceipt).toHaveBeenCalledWith({
+      hash: '0xpreapprove_hash',
+    })
+    expect(mockWaitForTransactionReceipt).toHaveBeenCalledWith({
+      hash: '0xapprove_hash',
+    })
+
+    // Then core authorize was called
+    expect(coreAuthorize).toHaveBeenCalledWith(config.walletClient, {
+      operatorAddress: TEST_OPERATOR,
+      paymentInfo: mockPaymentInfo,
+      amount: 1000000n,
+      tokenCollector: TEST_TOKEN_COLLECTOR,
+      collectorData: '0x',
+    })
+  })
+
+  it('approveAndAuthorize throws ValidationError without walletClient', async () => {
+    const config = createTestConfig({ walletClient: undefined })
+    const payment = createPaymentActions(config)
+
+    await expect(
+      payment.approveAndAuthorize(mockPaymentInfo, 1000000n),
     ).rejects.toThrow(ValidationError)
   })
 

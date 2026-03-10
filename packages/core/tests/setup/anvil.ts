@@ -77,6 +77,7 @@ export function defineAnvil(options: {
       return createPublicClient({
         chain,
         transport,
+        cacheTime: 0,
       })
     },
 
