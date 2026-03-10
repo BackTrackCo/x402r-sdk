@@ -50,31 +50,44 @@ The client organizes operations into action groups by protocol domain:
 
 ## Extending
 
+`.extend()` adds new namespaces to the client — inspired by viem's extend pattern. The extension function receives the base client and returns an object whose keys become top-level properties, fully typed and chainable.
+
 ```ts
-// Shipped plugin: fill the optional escrow slot
 import { escrowPeriodActions } from '@x402r/sdk/plugins'
 
 const x402r = createX402r({ publicClient, walletClient, operatorAddress: '0x…' })
   .extend(escrowPeriodActions('0xEscrowPeriod…'))
-
-await x402r.escrow!.isDuringEscrow(paymentInfo)  // now available
-```
-
-```ts
-// Custom extension: add your own namespace
-const x402r = createX402r({ publicClient, walletClient, operatorAddress: '0x…' }).extend((client) => ({
-  analytics: {
-    totalRefunds: async (payer: Address) => {
-      const { total } = await client.refund.getPayerRequests(payer, 0n, 0n)
-      return total
+  .extend((client) => ({
+    disputes: {
+      async submitEvidence(
+        paymentInfo: PaymentInfo,
+        nonce: bigint,
+        evidence: { name: string; description: string },
+        ipfsUpload: (data: string) => Promise<string>,
+      ) {
+        const cid = await ipfsUpload(JSON.stringify(evidence))
+        return client.evidence.submit(paymentInfo, nonce, cid)
+      },
+      async resolve(paymentInfo: PaymentInfo, nonce: bigint, ruling: 'refund' | 'deny') {
+        if (ruling === 'refund') {
+          const { refundableAmount } = await client.payment.getAmounts(paymentInfo)
+          return client.refund.refundInEscrow(paymentInfo, refundableAmount)
+        }
+        return client.refund.deny(paymentInfo, nonce)
+      },
     },
-  },
-}))
+  }))
 
-await x402r.analytics.totalRefunds('0x…')
+await x402r.escrow!.isDuringEscrow(paymentInfo)
+await x402r.disputes.submitEvidence(
+  paymentInfo, 0n,
+  { name: 'Missing delivery', description: '...' },
+  pinataUpload,
+)
+await x402r.disputes.resolve(paymentInfo, 0n, 'refund')
 ```
 
-Extensions cannot override defined base keys. They can fill `undefined` slots (e.g., providing `escrow` when no address was configured).
+Shipped plugins (`escrowPeriodActions`, `freezeActions`) fill optional `escrow`/`freeze` slots. Custom extensions can add any namespace. Extensions cannot override defined base keys.
 
 ## Docs
 

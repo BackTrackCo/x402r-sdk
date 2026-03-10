@@ -26,7 +26,6 @@ git config core.hooksPath .githooks   # enables pre-commit (runs check + build +
 | `pnpm typecheck` | Type-check all packages |
 | `pnpm check` | Biome lint + format check |
 | `pnpm format` | Auto-fix lint + format |
-| `pnpm changeset` | Create a changeset |
 
 ## Code style
 
@@ -36,14 +35,4 @@ git config core.hooksPath .githooks   # enables pre-commit (runs check + build +
 
 ## Branching
 
-Branch from `main` using `<username>/<feature-description>` (kebab-case). One changeset per PR.
-
-## Changesets
-
-Create a changeset when your PR changes public API or behavior:
-
-```bash
-pnpm changeset
-```
-
-Use past tense in summaries (e.g., "added freeze action group").
+Branch from `main` using `<username>/<feature-description>` (kebab-case).
