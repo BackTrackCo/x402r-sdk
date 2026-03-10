@@ -1,0 +1,39 @@
+{
+  "name": "@x402r/helpers",
+  "version": "0.0.0",
+  "type": "module",
+  "license": "Apache-2.0",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:cov": "vitest run --coverage",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@x402r/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "@x402r/evm": ">=0.0.3"
+  },
+  "devDependencies": {
+    "@x402r/evm": "0.0.3"
+  },
+  "size-limit": [
+    {
+      "path": "dist/index.js",
+      "limit": "2 kB"
+    }
+  ]
+}
