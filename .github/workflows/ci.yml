@@ -132,9 +132,15 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - name: publint
-        run: pnpm --filter=@x402r/core exec publint --strict
+        run: |
+          pnpm --filter=@x402r/core exec publint --strict
+          pnpm --filter=@x402r/helpers exec publint --strict
+          pnpm --filter=@x402r/sdk exec publint --strict
       - name: attw
-        run: pnpm --filter=@x402r/core exec attw --pack --ignore-rules no-resolution cjs-resolves-to-esm
+        run: |
+          pnpm --filter=@x402r/core exec attw --pack --ignore-rules no-resolution cjs-resolves-to-esm
+          pnpm --filter=@x402r/helpers exec attw --pack --ignore-rules no-resolution cjs-resolves-to-esm
+          pnpm --filter=@x402r/sdk exec attw --pack --ignore-rules no-resolution cjs-resolves-to-esm
       - name: knip
         run: pnpm knip
       - name: size-limit

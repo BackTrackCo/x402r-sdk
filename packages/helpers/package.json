@@ -19,7 +19,8 @@
     "dev": "tsup --watch",
     "test": "vitest run",
     "test:cov": "vitest run --coverage",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "publint --strict && attw --pack --ignore-rules no-resolution cjs-resolves-to-esm"
   },
   "dependencies": {
     "@x402r/core": "workspace:*"
