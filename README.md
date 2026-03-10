@@ -43,7 +43,9 @@ const config = await x402r.operator.getConfig()
 
 ## Supported chains
 
-Base Sepolia is supported today. See [`packages/core/src/config/index.ts`](packages/core/src/config/index.ts) for the chain registry.
+Ethereum · Base · Polygon · Arbitrum One · Optimism · Celo · Avalanche C-Chain · Monad · Linea · Base Sepolia · Ethereum Sepolia
+
+All contracts share the same CREATE3 addresses on every chain. See [`packages/core/src/config`](packages/core/src/config/index.ts) for the full registry.
 
 ## Development
 
@@ -55,7 +57,6 @@ pnpm test:fork      # run fork tests (requires Foundry)
 pnpm typecheck      # type-check all packages
 pnpm check          # biome lint + format check
 pnpm format         # auto-fix lint + format
-pnpm changeset      # create a changeset
 ```
 
 ## Package details
