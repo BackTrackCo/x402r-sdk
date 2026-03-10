@@ -2,7 +2,7 @@
 
 ## Reporting
 
-Report vulnerabilities to **hi@x402r.org**. Include steps to reproduce and expected vs. actual behavior.
+Report vulnerabilities to **security@x402r.org**. Include steps to reproduce and expected vs. actual behavior.
 
 ## Scope
 
