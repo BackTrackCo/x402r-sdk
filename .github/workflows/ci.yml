@@ -62,6 +62,14 @@ jobs:
           files: packages/core/coverage/lcov.info
           flags: core
           fail_ci_if_error: true
+      - run: pnpm --filter=@x402r/helpers test:cov
+      - name: Upload helpers coverage
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: packages/helpers/coverage/lcov.info
+          flags: helpers
+          fail_ci_if_error: true
       - run: pnpm --filter=@x402r/sdk test:cov
       - name: Upload SDK coverage
         uses: codecov/codecov-action@v5
@@ -124,9 +132,15 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - name: publint
-        run: pnpm --filter=@x402r/core exec publint --strict
+        run: |
+          pnpm --filter=@x402r/core exec publint --strict
+          pnpm --filter=@x402r/helpers exec publint --strict
+          pnpm --filter=@x402r/sdk exec publint --strict
       - name: attw
-        run: pnpm --filter=@x402r/core exec attw --pack --ignore-rules no-resolution cjs-resolves-to-esm
+        run: |
+          pnpm --filter=@x402r/core exec attw --pack --ignore-rules no-resolution cjs-resolves-to-esm
+          pnpm --filter=@x402r/helpers exec attw --pack --ignore-rules no-resolution cjs-resolves-to-esm
+          pnpm --filter=@x402r/sdk exec attw --pack --ignore-rules no-resolution cjs-resolves-to-esm
       - name: knip
         run: pnpm knip
       - name: size-limit

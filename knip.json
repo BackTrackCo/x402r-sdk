@@ -9,6 +9,10 @@
       "entry": ["tests/**/*.test.ts", "tests/**/*.ts", "vitest.config.ts"],
       "ignoreDependencies": ["@x402r/evm"]
     },
+    "packages/helpers": {
+      "entry": ["tests/**/*.test.ts", "tests/**/*.ts", "vitest.config.ts"],
+      "ignoreDependencies": ["@x402r/evm"]
+    },
     "packages/sdk": {
       "entry": ["tests/**/*.test.ts", "tests/**/*.ts", "vitest.config.ts"],
       "ignoreDependencies": ["viem"]
