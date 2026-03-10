@@ -31,8 +31,7 @@ import { getPaymentState } from '@x402r/core/actions'
 
 const [isAuthorized, authorizedAmount, chargedAmount] = await getPaymentState(
   publicClient,
-  operatorAddress,
-  paymentInfo,
+  { operatorAddress, chainId: 84532, paymentInfo },
 )
 ```
 

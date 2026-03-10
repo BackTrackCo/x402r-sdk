@@ -36,7 +36,9 @@ const x402r = createX402r({
   operatorAddress: '0x…',
 })
 
-const amounts = await x402r.payment.getAmounts(paymentInfo)
+// paymentInfo identifies a payment (payer, receiver, token, amount, operator)
+const state = await x402r.payment.getState(paymentInfo)
+const config = await x402r.operator.getConfig()
 ```
 
 ## Supported chains

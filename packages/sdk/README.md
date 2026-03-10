@@ -38,6 +38,8 @@ Role presets (`createPayerClient`, `createMerchantClient`, `createArbiterClient`
 
 ## Action groups
 
+The client organizes operations into action groups by protocol domain:
+
 - **payment** — `authorize`, `charge`, `release`, `getState`, `getAmounts`
 - **refund** — `request`, `cancel`, `deny`, `refuse`, `approveWithSignature`, `approveBudget`, `refundInEscrow`, `refundPostEscrow`, and read helpers
 - **evidence** — `submit`, `get`, `getBatch`, `count`
@@ -49,11 +51,27 @@ Role presets (`createPayerClient`, `createMerchantClient`, `createArbiterClient`
 ## Extending
 
 ```ts
-const extended = x402r.extend((base) => ({
-  myCustomAction: () => base.payment.getAmounts(paymentInfo),
+// Shipped plugin: fill the optional escrow slot
+import { escrowPeriodActions } from '@x402r/sdk/plugins'
+
+const x402r = createX402r({ publicClient, walletClient, operatorAddress: '0x…' })
+  .extend(escrowPeriodActions('0xEscrowPeriod…'))
+
+await x402r.escrow!.isDuringEscrow(paymentInfo)  // now available
+```
+
+```ts
+// Custom extension: add your own namespace
+const x402r = createX402r({ publicClient, walletClient, operatorAddress: '0x…' }).extend((client) => ({
+  analytics: {
+    totalRefunds: async (payer: Address) => {
+      const { total } = await client.refund.getPayerRequests(payer, 0n, 0n)
+      return total
+    },
+  },
 }))
 
-await extended.myCustomAction()
+await x402r.analytics.totalRefunds('0x…')
 ```
 
 Extensions cannot override defined base keys. They can fill `undefined` slots (e.g., providing `escrow` when no address was configured).
