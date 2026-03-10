@@ -21,7 +21,7 @@
     "publint": "pnpm --filter=@x402r/core exec publint --strict",
     "attw": "pnpm --filter=@x402r/core exec attw --pack --ignore-rules no-resolution cjs-resolves-to-esm",
     "knip": "knip",
-    "size-limit": "pnpm --filter=@x402r/core exec size-limit",
+    "size-limit": "pnpm --filter=@x402r/core exec size-limit && pnpm --filter=@x402r/helpers exec size-limit && pnpm --filter=@x402r/sdk exec size-limit",
     "test:pkg": "pnpm publint && pnpm attw"
   },
   "engines": {

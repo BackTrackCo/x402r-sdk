@@ -35,5 +35,19 @@
   "dependencies": {
     "@x402r/core": "workspace:*",
     "viem": "^2.46.3"
-  }
+  },
+  "size-limit": [
+    {
+      "path": "dist/index.js",
+      "limit": "6 kB"
+    },
+    {
+      "path": "dist/actions.js",
+      "limit": "2 kB"
+    },
+    {
+      "path": "dist/plugins.js",
+      "limit": "2 kB"
+    }
+  ]
 }
