@@ -74,6 +74,7 @@ describe('previewMarketplaceOperator', () => {
     // releaseCondition must literally be the escrowPeriod address (first computed)
     expect(result.operatorConfig.releaseCondition).toBe(addresses[0])
     expect(result.escrowPeriodAddress).toBe(addresses[0])
+    expect(result.signatureRefundRequestAddress).toBe(addresses[3])
   })
 
   it('freezeAddress is non-null and releaseCondition is AndCondition when freeze enabled', async () => {
@@ -98,6 +99,7 @@ describe('previewMarketplaceOperator', () => {
     expect(result.operatorConfig.releaseCondition).not.toBe(
       result.escrowPeriodAddress,
     )
+    expect(result.signatureRefundRequestAddress).toBe(addresses[5])
   })
 
   it('feeCalculatorAddress is non-null when operatorFeeBps > 0', async () => {
@@ -142,6 +144,8 @@ describe('deployMarketplaceOperator', () => {
     // releaseCondition is escrowPeriod (first address), not some other contract
     expect(result.operatorConfig.releaseCondition).toBe(addresses[0])
     expect(result.escrowPeriodAddress).toBe(addresses[0])
+    // signatureRefundRequest is existing (getDeployed idx 3 >= 2), so address = COMPUTED_ADDR
+    expect(result.signatureRefundRequestAddress).toBe(COMPUTED_ADDR)
     expect(result.summary.newCount).toBe(2)
     expect(result.summary.existingCount).toBe(3)
     expect(result.summary.txHashes).toHaveLength(2)
@@ -192,6 +196,7 @@ describe('deployMarketplaceOperator', () => {
     expect(result.operatorConfig.releaseCondition).not.toBe(
       result.escrowPeriodAddress,
     )
+    expect(result.signatureRefundRequestAddress).toBe(addresses[5])
   })
 
   it('skips freeze when freezeDurationSeconds omitted', async () => {
@@ -216,5 +221,6 @@ describe('deployMarketplaceOperator', () => {
     expect(result.operatorConfig.releaseCondition).toBe(
       result.escrowPeriodAddress,
     )
+    expect(result.signatureRefundRequestAddress).toBe(addresses[3])
   })
 })
