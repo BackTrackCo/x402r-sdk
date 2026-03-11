@@ -23,7 +23,8 @@ import type { RefundActions, ResolvedConfig } from '../types.js'
 import { requireWallet } from './utils.js'
 
 export function createRefundActions(config: ResolvedConfig): RefundActions {
-  const { publicClient, refundRequestAddress, operatorAddress } = config
+  const { publicClient, operatorAddress } = config
+  const refundRequestAddress = config.refundRequestAddress!
 
   return {
     // -----------------------------------------------------------------------

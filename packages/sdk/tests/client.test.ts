@@ -39,15 +39,14 @@ describe('resolveConfig', () => {
     expect(resolved.freezeAddress).toBeUndefined()
   })
 
-  it('throws when refundRequestAddress is not provided', () => {
-    expect(() =>
-      resolveConfig({
-        publicClient,
-        walletClient,
-        operatorAddress,
-        chainId: 84532,
-      }),
-    ).toThrow('refundRequestAddress is required')
+  it('refund is undefined when refundRequestAddress is not provided', () => {
+    const resolved = resolveConfig({
+      publicClient,
+      walletClient,
+      operatorAddress,
+      chainId: 84532,
+    })
+    expect(resolved.refundRequestAddress).toBeUndefined()
   })
 
   it('resolves chainId from CAIP-2 network string', () => {
@@ -139,6 +138,28 @@ describe('createX402r', () => {
     expect(client.escrow!.isDuringEscrow).toBeTypeOf('function')
     expect(client.escrow!.getAuthorizationTime).toBeTypeOf('function')
     expect(client.escrow!.getDuration).toBeTypeOf('function')
+  })
+
+  it('refund is undefined when no refundRequestAddress', () => {
+    const client = createX402r({
+      publicClient,
+      walletClient,
+      operatorAddress,
+      chainId: 84532,
+    })
+    expect(client.refund).toBeUndefined()
+  })
+
+  it('refund is defined when refundRequestAddress provided', () => {
+    const client = createX402r({
+      publicClient,
+      walletClient,
+      operatorAddress,
+      refundRequestAddress,
+      chainId: 84532,
+    })
+    expect(client.refund).toBeDefined()
+    expect(client.refund!.request).toBeTypeOf('function')
   })
 
   it('freeze is undefined when no freezeAddress', () => {

@@ -28,6 +28,21 @@ import { anvilBaseSepolia } from '../setup/anvil.js'
 
 const config = x402rChains[84532]
 
+const dummyOperatorConfig: OperatorConfig = {
+  feeRecipient: zeroAddress,
+  feeCalculator: zeroAddress,
+  authorizeCondition: zeroAddress,
+  authorizeRecorder: zeroAddress,
+  chargeCondition: zeroAddress,
+  chargeRecorder: zeroAddress,
+  releaseCondition: zeroAddress,
+  releaseRecorder: zeroAddress,
+  refundInEscrowCondition: zeroAddress,
+  refundInEscrowRecorder: zeroAddress,
+  refundPostEscrowCondition: zeroAddress,
+  refundPostEscrowRecorder: zeroAddress,
+}
+
 describe('Config Address Smoke Tests (Fork)', () => {
   let publicClient: PublicClient
 
@@ -63,7 +78,7 @@ describe('Config Address Smoke Tests (Fork)', () => {
       abi: usdcTvlLimitAbi,
       functionName: 'ESCROW',
     })
-    expect(result).toMatch(/^0x[0-9a-fA-F]{40}$/)
+    expect(result).toBe(config.authCaptureEscrow)
   })
 
   it('arbiterRegistry responds to arbiterCount()', async () => {
@@ -72,7 +87,7 @@ describe('Config Address Smoke Tests (Fork)', () => {
       abi: arbiterRegistryAbi,
       functionName: 'arbiterCount',
     })
-    expect(typeof result).toBe('bigint')
+    expect(result).toBeGreaterThanOrEqual(0n)
   })
 
   it('receiverRefundCollector responds to authCaptureEscrow()', async () => {
@@ -81,7 +96,7 @@ describe('Config Address Smoke Tests (Fork)', () => {
       abi: receiverRefundCollectorAbi,
       functionName: 'authCaptureEscrow',
     })
-    expect(result).toMatch(/^0x[0-9a-fA-F]{40}$/)
+    expect(result).toBe(config.authCaptureEscrow)
   })
 
   it('refundRequestEvidence responds to REFUND_REQUEST()', async () => {
@@ -102,21 +117,6 @@ describe('Config Address Smoke Tests (Fork)', () => {
   // ---------------------------------------------------------------------------
   // Factories — call computeAddress with dummy args to prove each responds
   // ---------------------------------------------------------------------------
-
-  const dummyOperatorConfig: OperatorConfig = {
-    feeRecipient: zeroAddress,
-    feeCalculator: zeroAddress,
-    authorizeCondition: zeroAddress,
-    authorizeRecorder: zeroAddress,
-    chargeCondition: zeroAddress,
-    chargeRecorder: zeroAddress,
-    releaseCondition: zeroAddress,
-    releaseRecorder: zeroAddress,
-    refundInEscrowCondition: zeroAddress,
-    refundInEscrowRecorder: zeroAddress,
-    refundPostEscrowCondition: zeroAddress,
-    refundPostEscrowRecorder: zeroAddress,
-  }
 
   it('paymentOperator factory responds to computeAddress', async () => {
     const addr = await computeOperatorAddress(publicClient, {

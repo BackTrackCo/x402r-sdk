@@ -22,7 +22,7 @@ export const walletClient = createWalletClient({
 export const TEST_OPERATOR =
   '0x1234567890abcdef1234567890abcdef12345678' as const
 export const TEST_REFUND_REQUEST =
-  '0x45af78aaBC0A0dD70f16381CfD6D657Ab441B7a0' as const
+  '0xbEEFbEEFbEEFbEEFbEEFbEEFbEEFbEEFbEEFbEEF' as const
 export const TEST_EVIDENCE =
   '0xF97aAB816b7cbe53025454ad05b03cf5C361F1BA' as const
 export const TEST_ESCROW_PERIOD =

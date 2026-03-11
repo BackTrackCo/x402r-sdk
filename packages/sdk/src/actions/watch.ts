@@ -29,6 +29,7 @@ export function createWatchActions(config: ResolvedConfig): WatchActions {
       }
     },
     onRefundRequest(callback: (log: unknown) => void): () => void {
+      if (!config.refundRequestAddress) return () => {}
       const unwatch = config.publicClient.watchContractEvent({
         address: config.refundRequestAddress,
         abi: signatureRefundRequestAbi,
