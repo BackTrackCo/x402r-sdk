@@ -58,11 +58,11 @@ importers:
     dependencies:
       viem:
         specifier: ^2.46.3
-        version: 2.46.3(typescript@5.9.3)(zod@4.3.6)
+        version: 2.47.1(typescript@5.9.3)(zod@3.25.76)
     devDependencies:
       '@x402r/evm':
         specifier: 0.0.3
-        version: 0.0.3(@x402/core@2.5.0)(@x402/evm@2.5.0(ethers@6.16.0)(typescript@5.9.3))(viem@2.46.3(typescript@5.9.3)(zod@4.3.6))
+        version: 0.0.3(@x402/core@2.5.0)(@x402/evm@2.5.0(ethers@6.16.0)(typescript@5.9.3))(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))
       prool:
         specifier: ^0.2.3
         version: 0.2.3
@@ -84,7 +84,7 @@ importers:
         version: link:../core
       viem:
         specifier: ^2.46.3
-        version: 2.46.3(typescript@5.9.3)(zod@4.3.6)
+        version: 2.47.1(typescript@5.9.3)(zod@4.3.6)
 
 packages:
 
@@ -1579,14 +1579,6 @@ packages:
   outdent@0.5.0:
     resolution: {integrity: sha512-/jHxFIzoMXdqPzTaCpFzAAWhpkSjZPF4Vsn6jAfNpmbH/ymsmd7Qc6VE9BGn0L6YMj6uwpQLxCECpus4ukKS9Q==}
 
-  ox@0.12.4:
-    resolution: {integrity: sha512-+P+C7QzuwPV8lu79dOwjBKfB2CbnbEXe/hfyyrff1drrO1nOOj3Hc87svHfcW1yneRr3WXaKr6nz11nq+/DF9Q==}
-    peerDependencies:
-      typescript: '>=5.4.0'
-    peerDependenciesMeta:
-      typescript:
-        optional: true
-
   ox@0.14.0:
     resolution: {integrity: sha512-WLOB7IKnmI3Ol6RAqY7CJdZKl8QaI44LN91OGF1061YIeN6bL5IsFcdp7+oQShRyamE/8fW/CBRWhJAOzI35Dw==}
     peerDependencies:
@@ -2033,14 +2025,6 @@ packages:
   validate-npm-package-name@5.0.1:
     resolution: {integrity: sha512-OljLrQ9SQdOUqTaQxqL5dEfZWrXExyyWsozYlAWFawPVNuD83igl7uJD2RTkNMbniIYgt8l81eCJGIdQF7avLQ==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
-
-  viem@2.46.3:
-    resolution: {integrity: sha512-2LJS+Hyh2sYjHXQtzfv1kU9pZx9dxFzvoU/ZKIcn0FNtOU0HQuIICuYdWtUDFHaGXbAdVo8J1eCvmjkL9JVGwg==}
-    peerDependencies:
-      typescript: '>=5.0.4'
-    peerDependenciesMeta:
-      typescript:
-        optional: true
 
   viem@2.47.1:
     resolution: {integrity: sha512-frlK109+X5z2vlZeIGKa6Rxev6CcIpumV/VVhaIPc/QFotiB6t/CgUwkMlYfr4F2YNBZZ2l6jguWz2sY1XrQHw==}
@@ -2968,7 +2952,7 @@ snapshots:
       picocolors: 1.1.1
       picomatch: 3.0.1
       prettier: 3.8.1
-      viem: 2.46.3(typescript@5.9.3)(zod@4.3.6)
+      viem: 2.47.1(typescript@5.9.3)(zod@4.3.6)
       zod: 4.3.6
     optionalDependencies:
       typescript: 5.9.3
@@ -3007,11 +2991,11 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@x402r/evm@0.0.3(@x402/core@2.5.0)(@x402/evm@2.5.0(ethers@6.16.0)(typescript@5.9.3))(viem@2.46.3(typescript@5.9.3)(zod@4.3.6))':
+  '@x402r/evm@0.0.3(@x402/core@2.5.0)(@x402/evm@2.5.0(ethers@6.16.0)(typescript@5.9.3))(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))':
     dependencies:
       '@x402/core': 2.5.0
       '@x402/evm': 2.5.0(ethers@6.16.0)(typescript@5.9.3)
-      viem: 2.46.3(typescript@5.9.3)(zod@4.3.6)
+      viem: 2.47.1(typescript@5.9.3)(zod@3.25.76)
 
   '@x402r/evm@0.0.3(@x402/core@2.5.0)(@x402/evm@2.5.0(ethers@6.16.0)(typescript@5.9.3))(viem@2.47.1(typescript@5.9.3)(zod@4.3.6))':
     dependencies:
@@ -3599,21 +3583,6 @@ snapshots:
 
   outdent@0.5.0: {}
 
-  ox@0.12.4(typescript@5.9.3)(zod@4.3.6):
-    dependencies:
-      '@adraffy/ens-normalize': 1.11.1
-      '@noble/ciphers': 1.3.0
-      '@noble/curves': 1.9.1
-      '@noble/hashes': 1.8.0
-      '@scure/bip32': 1.7.0
-      '@scure/bip39': 1.6.0
-      abitype: 1.2.3(typescript@5.9.3)(zod@4.3.6)
-      eventemitter3: 5.0.1
-    optionalDependencies:
-      typescript: 5.9.3
-    transitivePeerDependencies:
-      - zod
-
   ox@0.14.0(typescript@5.9.3)(zod@3.25.76):
     dependencies:
       '@adraffy/ens-normalize': 1.11.1
@@ -4043,23 +4012,6 @@ snapshots:
   valid-url@1.0.9: {}
 
   validate-npm-package-name@5.0.1: {}
-
-  viem@2.46.3(typescript@5.9.3)(zod@4.3.6):
-    dependencies:
-      '@noble/curves': 1.9.1
-      '@noble/hashes': 1.8.0
-      '@scure/bip32': 1.7.0
-      '@scure/bip39': 1.6.0
-      abitype: 1.2.3(typescript@5.9.3)(zod@4.3.6)
-      isows: 1.0.7(ws@8.18.3)
-      ox: 0.12.4(typescript@5.9.3)(zod@4.3.6)
-      ws: 8.18.3
-    optionalDependencies:
-      typescript: 5.9.3
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-      - zod
 
   viem@2.47.1(typescript@5.9.3)(zod@3.25.76):
     dependencies:
