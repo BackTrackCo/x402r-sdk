@@ -8,12 +8,14 @@ import {
 import {
   TEST_OPERATOR as operatorAddress,
   publicClient,
+  TEST_REFUND_REQUEST as refundRequestAddress,
   walletClient,
 } from './fixtures.js'
 
 const readOnlyConfig = {
   publicClient,
   operatorAddress,
+  refundRequestAddress,
   chainId: 84532 as const,
 }
 
@@ -21,6 +23,7 @@ const writeConfig = {
   publicClient,
   walletClient,
   operatorAddress,
+  refundRequestAddress,
   chainId: 84532 as const,
 }
 

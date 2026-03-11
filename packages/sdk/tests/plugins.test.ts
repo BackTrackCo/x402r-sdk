@@ -7,6 +7,7 @@ import {
   TEST_FREEZE as freezeAddress,
   TEST_OPERATOR as operatorAddress,
   publicClient,
+  TEST_REFUND_REQUEST as refundRequestAddress,
   walletClient,
 } from './fixtures.js'
 
@@ -14,6 +15,7 @@ const baseConfig: X402rConfig = {
   publicClient,
   walletClient,
   operatorAddress,
+  refundRequestAddress,
   chainId: 84532,
 }
 

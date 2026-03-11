@@ -1,4 +1,9 @@
-import { fromNetworkId, getChainConfig, ValidationError } from '@x402r/core'
+import {
+  ConfigError,
+  fromNetworkId,
+  getChainConfig,
+  ValidationError,
+} from '@x402r/core'
 import {
   createEscrowActions,
   createEvidenceActions,
@@ -72,14 +77,19 @@ export function resolveConfig(config: X402rConfig): ResolvedConfig {
   const refundRequestEvidenceAddress =
     config.refundRequestEvidenceAddress ?? chainConfig.refundRequestEvidence
 
+  if (!config.refundRequestAddress) {
+    throw new ConfigError(
+      'refundRequestAddress is required — deploy a SignatureRefundRequest via deployMarketplaceOperator or provide the address explicitly',
+    )
+  }
+
   return {
     publicClient: config.publicClient,
     walletClient: config.walletClient,
     operatorAddress: config.operatorAddress,
     chainId,
     chainConfig,
-    refundRequestAddress:
-      config.refundRequestAddress ?? chainConfig.refundRequest,
+    refundRequestAddress: config.refundRequestAddress,
     refundRequestEvidenceAddress,
     escrowPeriodAddress: config.escrowPeriodAddress,
     freezeAddress: config.freezeAddress,

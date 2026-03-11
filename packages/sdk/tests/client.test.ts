@@ -8,6 +8,7 @@ import {
   TEST_FREEZE as freezeAddress,
   TEST_OPERATOR as operatorAddress,
   publicClient,
+  TEST_REFUND_REQUEST as refundRequestAddress,
   walletClient,
 } from './fixtures.js'
 
@@ -17,6 +18,7 @@ const baseConfig: X402rConfig = {
   publicClient,
   walletClient,
   operatorAddress,
+  refundRequestAddress,
   chainId: 84532,
 }
 
@@ -29,12 +31,23 @@ describe('resolveConfig', () => {
     const resolved = resolveConfig(baseConfig)
     expect(resolved.chainId).toBe(84532)
     expect(resolved.operatorAddress).toBe(operatorAddress)
-    expect(resolved.refundRequestAddress).toBe(baseSepoliaConfig.refundRequest)
+    expect(resolved.refundRequestAddress).toBe(refundRequestAddress)
     expect(resolved.refundRequestEvidenceAddress).toBe(
       baseSepoliaConfig.refundRequestEvidence,
     )
     expect(resolved.escrowPeriodAddress).toBeUndefined()
     expect(resolved.freezeAddress).toBeUndefined()
+  })
+
+  it('throws when refundRequestAddress is not provided', () => {
+    expect(() =>
+      resolveConfig({
+        publicClient,
+        walletClient,
+        operatorAddress,
+        chainId: 84532,
+      }),
+    ).toThrow('refundRequestAddress is required')
   })
 
   it('resolves chainId from CAIP-2 network string', () => {
@@ -51,6 +64,7 @@ describe('resolveConfig', () => {
       publicClient,
       walletClient,
       operatorAddress,
+      refundRequestAddress,
     })
     expect(resolved.chainId).toBe(84532)
   })
@@ -91,6 +105,7 @@ describe('resolveConfig', () => {
       resolveConfig({
         publicClient: noChainClient,
         operatorAddress,
+        refundRequestAddress,
       }),
     ).toThrow('Unable to determine chain')
   })
