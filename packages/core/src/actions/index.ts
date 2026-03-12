@@ -173,12 +173,8 @@ export {
 export type {
   ApprovePostEscrowRefundParameters,
   ApprovePostEscrowRefundReturnType,
-  ApproveRefundBudgetParameters,
-  ApproveRefundBudgetReturnType,
   GetPostEscrowRefundAllowanceParameters,
   GetPostEscrowRefundAllowanceReturnType,
-  GetRefundBudgetParameters,
-  GetRefundBudgetReturnType,
   RefundInEscrowParameters,
   RefundInEscrowReturnType,
   RefundPostEscrowParameters,
@@ -186,9 +182,7 @@ export type {
 } from './refund-budget/index.js'
 export {
   approvePostEscrowRefund,
-  approveRefundBudget,
   getPostEscrowRefundAllowance,
-  getRefundBudget,
   refundInEscrow,
   refundPostEscrow,
 } from './refund-budget/index.js'

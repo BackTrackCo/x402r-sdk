@@ -9,13 +9,6 @@ export interface GetPostEscrowRefundAllowanceParameters {
 }
 export type GetPostEscrowRefundAllowanceReturnType = bigint
 
-/** @deprecated Use {@link getPostEscrowRefundAllowance} instead. */
-export const getRefundBudget = getPostEscrowRefundAllowance
-/** @deprecated Use {@link GetPostEscrowRefundAllowanceParameters} instead. */
-export type GetRefundBudgetParameters = GetPostEscrowRefundAllowanceParameters
-/** @deprecated Use {@link GetPostEscrowRefundAllowanceReturnType} instead. */
-export type GetRefundBudgetReturnType = GetPostEscrowRefundAllowanceReturnType
-
 export async function getPostEscrowRefundAllowance(
   publicClient: PublicClient,
   parameters: GetPostEscrowRefundAllowanceParameters,

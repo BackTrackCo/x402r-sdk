@@ -26,8 +26,6 @@ export * from './abis/generated.js'
 export type {
   ApprovePostEscrowRefundParameters,
   ApprovePostEscrowRefundReturnType,
-  ApproveRefundBudgetParameters,
-  ApproveRefundBudgetReturnType,
   ApproveRefundWithSignatureParameters,
   ApproveRefundWithSignatureReturnType,
   AuthorizeParameters,
@@ -90,8 +88,6 @@ export type {
   GetPostEscrowRefundAllowanceReturnType,
   GetReceiverRefundRequestsParameters,
   GetReceiverRefundRequestsReturnType,
-  GetRefundBudgetParameters,
-  GetRefundBudgetReturnType,
   GetRefundRequestByKeyParameters,
   GetRefundRequestByKeyReturnType,
   GetRefundRequestParameters,
@@ -126,7 +122,6 @@ export type {
 } from './actions/index.js'
 export {
   approvePostEscrowRefund,
-  approveRefundBudget,
   approveRefundWithSignature,
   authorize,
   calculateOperatorFeeBps,
@@ -157,7 +152,6 @@ export {
   getPaymentState,
   getPostEscrowRefundAllowance,
   getReceiverRefundRequests,
-  getRefundBudget,
   getRefundRequest,
   getRefundRequestByKey,
   getRefundRequestStatus,

@@ -12,13 +12,6 @@ export interface ApprovePostEscrowRefundParameters {
 }
 export type ApprovePostEscrowRefundReturnType = Hash
 
-/** @deprecated Use {@link approvePostEscrowRefund} instead. */
-export const approveRefundBudget = approvePostEscrowRefund
-/** @deprecated Use {@link ApprovePostEscrowRefundParameters} instead. */
-export type ApproveRefundBudgetParameters = ApprovePostEscrowRefundParameters
-/** @deprecated Use {@link ApprovePostEscrowRefundReturnType} instead. */
-export type ApproveRefundBudgetReturnType = ApprovePostEscrowRefundReturnType
-
 export async function approvePostEscrowRefund(
   walletClient: WalletClient,
   parameters: ApprovePostEscrowRefundParameters,

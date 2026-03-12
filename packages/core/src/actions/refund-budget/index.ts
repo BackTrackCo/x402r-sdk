@@ -1,30 +1,14 @@
 export type {
   ApprovePostEscrowRefundParameters,
   ApprovePostEscrowRefundReturnType,
-  /** @deprecated Use ApprovePostEscrowRefundParameters */
-  ApproveRefundBudgetParameters,
-  /** @deprecated Use ApprovePostEscrowRefundReturnType */
-  ApproveRefundBudgetReturnType,
-} from './approveRefundBudget.js'
-export {
-  approvePostEscrowRefund,
-  /** @deprecated Use approvePostEscrowRefund */
-  approveRefundBudget,
-} from './approveRefundBudget.js'
+} from './approvePostEscrowRefund.js'
+export { approvePostEscrowRefund } from './approvePostEscrowRefund.js'
 
 export type {
   GetPostEscrowRefundAllowanceParameters,
   GetPostEscrowRefundAllowanceReturnType,
-  /** @deprecated Use GetPostEscrowRefundAllowanceParameters */
-  GetRefundBudgetParameters,
-  /** @deprecated Use GetPostEscrowRefundAllowanceReturnType */
-  GetRefundBudgetReturnType,
-} from './getRefundBudget.js'
-export {
-  getPostEscrowRefundAllowance,
-  /** @deprecated Use getPostEscrowRefundAllowance */
-  getRefundBudget,
-} from './getRefundBudget.js'
+} from './getPostEscrowRefundAllowance.js'
+export { getPostEscrowRefundAllowance } from './getPostEscrowRefundAllowance.js'
 
 export type {
   RefundInEscrowParameters,
