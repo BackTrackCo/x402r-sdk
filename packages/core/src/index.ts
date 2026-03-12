@@ -24,6 +24,8 @@ export * from './abis/generated.js'
 // Actions — Refund Budget
 // ---------------------------------------------------------------------------
 export type {
+  ApprovePostEscrowRefundParameters,
+  ApprovePostEscrowRefundReturnType,
   ApproveRefundBudgetParameters,
   ApproveRefundBudgetReturnType,
   ApproveRefundWithSignatureParameters,
@@ -84,6 +86,8 @@ export type {
   GetPaymentAmountsReturnType,
   GetPaymentStateParameters,
   GetPaymentStateReturnType,
+  GetPostEscrowRefundAllowanceParameters,
+  GetPostEscrowRefundAllowanceReturnType,
   GetReceiverRefundRequestsParameters,
   GetReceiverRefundRequestsReturnType,
   GetRefundBudgetParameters,
@@ -121,6 +125,7 @@ export type {
   UnfreezePaymentReturnType,
 } from './actions/index.js'
 export {
+  approvePostEscrowRefund,
   approveRefundBudget,
   approveRefundWithSignature,
   authorize,
@@ -150,6 +155,7 @@ export {
   getPayerRefundRequests,
   getPaymentAmounts,
   getPaymentState,
+  getPostEscrowRefundAllowance,
   getReceiverRefundRequests,
   getRefundBudget,
   getRefundRequest,
@@ -269,10 +275,15 @@ export {
   type FactoryFunctionNames,
 } from './deploy/factory-helpers.js'
 export {
+  type ArbiterSetupDeployment,
+  type ArbiterSetupOptions,
+  type ArbiterSetupPreview,
+  deployArbiterSetup,
   deployMarketplaceOperator,
   type MarketplaceOperatorDeployment,
   type MarketplaceOperatorOptions,
   type MarketplaceOperatorPreview,
+  previewArbiterSetup,
   previewMarketplaceOperator,
 } from './deploy/presets.js'
 // ---------------------------------------------------------------------------

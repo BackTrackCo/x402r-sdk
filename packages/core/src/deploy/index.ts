@@ -91,9 +91,14 @@ export {
 
 // Presets
 export {
+  type ArbiterSetupDeployment,
+  type ArbiterSetupOptions,
+  type ArbiterSetupPreview,
+  deployArbiterSetup,
   deployMarketplaceOperator,
   type MarketplaceOperatorDeployment,
   type MarketplaceOperatorOptions,
   type MarketplaceOperatorPreview,
+  previewArbiterSetup,
   previewMarketplaceOperator,
 } from './presets.js'

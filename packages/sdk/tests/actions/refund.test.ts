@@ -45,26 +45,18 @@ vi.mock('@x402r/core', async (importOriginal) => {
       .mockResolvedValue({ keys: [], total: 0n }),
     getCancelCount: vi.fn().mockResolvedValue(0n),
     getCancelledAmount: vi.fn().mockResolvedValue(0n),
-    approveRefundBudget: vi.fn().mockResolvedValue('0xhash'),
-    getRefundBudget: vi.fn().mockResolvedValue(0n),
-    refundInEscrow: vi.fn().mockResolvedValue('0xhash'),
-    refundPostEscrow: vi.fn().mockResolvedValue('0xhash'),
   }
 })
 
 import {
-  approveRefundBudget,
   approveRefundWithSignature,
   cancelRefundRequest,
-  refundInEscrow as coreRefundInEscrow,
-  refundPostEscrow as coreRefundPostEscrow,
   denyRefundRequest,
   getCancelCount,
   getCancelledAmount,
   getOperatorRefundRequests,
   getPayerRefundRequests,
   getReceiverRefundRequests,
-  getRefundBudget,
   getRefundRequest,
   getRefundRequestByKey,
   getRefundRequestStatus,
@@ -81,7 +73,7 @@ import {
 describe('createRefundActions', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  // ---- Existing tests (fixed assertions) ------------------------------------
+  // ---- Dispute write ops ---------------------------------------------------
 
   it('request injects refundRequestAddress as contractAddress', async () => {
     const config = createTestConfig()
@@ -92,17 +84,6 @@ describe('createRefundActions', () => {
       paymentInfo: mockPaymentInfo,
       amount: 100n,
       nonce: 1n,
-    })
-  })
-
-  it('refundInEscrow injects operatorAddress', async () => {
-    const config = createTestConfig()
-    const actions = createRefundActions(config)
-    await actions.refundInEscrow(mockPaymentInfo, 50n)
-    expect(coreRefundInEscrow).toHaveBeenCalledWith(config.walletClient, {
-      operatorAddress: TEST_OPERATOR,
-      paymentInfo: mockPaymentInfo,
-      amount: 50n,
     })
   })
 
@@ -124,39 +105,6 @@ describe('createRefundActions', () => {
       paymentInfo: mockPaymentInfo,
       nonce: 1n,
     })
-  })
-
-  // ---- New tests (coverage + correctness) -----------------------------------
-
-  it('getBudget reads from operatorAddress', async () => {
-    const config = createTestConfig({ walletClient: undefined })
-    const actions = createRefundActions(config)
-    const token = '0x036CbD53842c5426634e7929541eC2318f3dCF7e' as const
-    const owner = '0x2234567890abcdef1234567890abcdef12345678' as const
-
-    const result = await actions.getBudget(token, owner)
-
-    expect(getRefundBudget).toHaveBeenCalledWith(config.publicClient, {
-      token,
-      owner,
-      operatorAddress: TEST_OPERATOR,
-    })
-    expect(result).toBe(0n)
-  })
-
-  it('approveBudget writes with walletClient and operatorAddress', async () => {
-    const config = createTestConfig()
-    const actions = createRefundActions(config)
-    const token = '0x036CbD53842c5426634e7929541eC2318f3dCF7e' as const
-
-    const hash = await actions.approveBudget(token, 500n)
-
-    expect(approveRefundBudget).toHaveBeenCalledWith(config.walletClient, {
-      token,
-      operatorAddress: TEST_OPERATOR,
-      amount: 500n,
-    })
-    expect(hash).toBe('0xhash')
   })
 
   it('approveWithSignature delegates all 5 args correctly', async () => {
@@ -217,6 +165,8 @@ describe('createRefundActions', () => {
       nonce: 3n,
     })
   })
+
+  // ---- Dispute read ops ----------------------------------------------------
 
   it('getByKey delegates correctly', async () => {
     const config = createTestConfig({ walletClient: undefined })
@@ -332,28 +282,5 @@ describe('createRefundActions', () => {
       cancelIndex: 0n,
     })
     expect(result).toBe(0n)
-  })
-
-  it('refundPostEscrow passes tokenCollector and collectorData', async () => {
-    const config = createTestConfig()
-    const actions = createRefundActions(config)
-    const tokenCollector = '0xaaaa000000000000000000000000000000000000' as const
-    const collectorData = '0xdeadbeef' as `0x${string}`
-
-    const hash = await actions.refundPostEscrow(
-      mockPaymentInfo,
-      300n,
-      tokenCollector,
-      collectorData,
-    )
-
-    expect(coreRefundPostEscrow).toHaveBeenCalledWith(config.walletClient, {
-      operatorAddress: TEST_OPERATOR,
-      paymentInfo: mockPaymentInfo,
-      amount: 300n,
-      tokenCollector,
-      collectorData,
-    })
-    expect(hash).toBe('0xhash')
   })
 })

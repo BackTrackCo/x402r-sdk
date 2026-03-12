@@ -2,8 +2,11 @@ import type { Address } from 'viem'
 import { zeroAddress } from 'viem'
 import { describe, expect, it } from 'vitest'
 import {
+  type ArbiterSetupOptions,
+  deployArbiterSetup,
   deployMarketplaceOperator,
   type MarketplaceOperatorOptions,
+  previewArbiterSetup,
   previewMarketplaceOperator,
 } from '../../src/deploy/presets.js'
 import { ConfigError } from '../../src/errors/index.js'
@@ -222,5 +225,90 @@ describe('deployMarketplaceOperator', () => {
       result.escrowPeriodAddress,
     )
     expect(result.signatureRefundRequestAddress).toBe(addresses[3])
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Arbiter setup
+// ---------------------------------------------------------------------------
+
+function makeArbiterOptions(
+  overrides: Partial<ArbiterSetupOptions> = {},
+): ArbiterSetupOptions {
+  return {
+    chainId: 84532,
+    arbiter: '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65',
+    ...overrides,
+  }
+}
+
+describe('previewArbiterSetup', () => {
+  it('computes signatureCondition and signatureRefundRequest addresses', async () => {
+    const addresses = [
+      '0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', // signatureCondition
+      '0xBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB', // signatureRefundRequest
+    ] as Address[]
+    const publicClient = createSequentialMockPublicClient(addresses)
+
+    const result = await previewArbiterSetup(publicClient, makeArbiterOptions())
+
+    expect(result.signatureConditionAddress).toBe(addresses[0])
+    expect(result.signatureRefundRequestAddress).toBe(addresses[1])
+  })
+
+  it('throws ConfigError for unsupported chainId', async () => {
+    const publicClient = createMockPublicClient()
+    await expect(
+      previewArbiterSetup(
+        publicClient,
+        makeArbiterOptions({ chainId: 999999 }),
+      ),
+    ).rejects.toThrow(ConfigError)
+  })
+})
+
+describe('deployArbiterSetup', () => {
+  it('deploys exactly 2 contracts (signatureCondition + signatureRefundRequest)', async () => {
+    const addresses = [
+      '0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', // signatureCondition
+      '0xBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB', // signatureRefundRequest
+    ] as Address[]
+    const publicClient = createSequentialMockPublicClient(addresses)
+    const walletClient = createMockWalletClient()
+
+    const result = await deployArbiterSetup(
+      walletClient,
+      publicClient,
+      makeArbiterOptions(),
+    )
+
+    expect(result.deployments).toHaveLength(2)
+    expect(result.signatureConditionAddress).toBe(addresses[0])
+    expect(result.signatureRefundRequestAddress).toBe(addresses[1])
+    expect(result.summary.newCount).toBe(2)
+    expect(result.summary.existingCount).toBe(0)
+    expect(result.summary.txHashes).toHaveLength(2)
+  })
+
+  it('is idempotent — reports existing when already deployed', async () => {
+    const addresses = [
+      '0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', // signatureCondition
+      '0xBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB', // signatureRefundRequest
+    ] as Address[]
+    const publicClient = createSequentialMockPublicClient(addresses, {
+      getDeployedBehavior: 'allExisting',
+    })
+    const walletClient = createMockWalletClient()
+
+    const result = await deployArbiterSetup(
+      walletClient,
+      publicClient,
+      makeArbiterOptions(),
+    )
+
+    expect(result.deployments).toHaveLength(2)
+    expect(result.summary.newCount).toBe(0)
+    expect(result.summary.existingCount).toBe(2)
+    expect(result.summary.txHashes).toHaveLength(0)
   })
 })

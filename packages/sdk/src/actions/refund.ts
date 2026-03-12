@@ -1,5 +1,4 @@
 import {
-  approveRefundBudget,
   approveRefundWithSignature,
   cancelRefundRequest,
   denyRefundRequest,
@@ -8,14 +7,11 @@ import {
   getOperatorRefundRequests,
   getPayerRefundRequests,
   getReceiverRefundRequests,
-  getRefundBudget,
   getRefundRequest,
   getRefundRequestByKey,
   getRefundRequestStatus,
   getStoredPaymentInfo,
   hasRefundRequest,
-  refundInEscrow,
-  refundPostEscrow,
   refuseRefundRequest,
   requestRefund,
 } from '@x402r/core'
@@ -23,7 +19,7 @@ import type { RefundActions, ResolvedConfig } from '../types.js'
 import { requireWallet } from './utils.js'
 
 export function createRefundActions(config: ResolvedConfig): RefundActions {
-  const { publicClient, operatorAddress } = config
+  const { publicClient } = config
   const refundRequestAddress = config.refundRequestAddress!
 
   return {
@@ -144,40 +140,6 @@ export function createRefundActions(config: ResolvedConfig): RefundActions {
         paymentInfo,
         nonce,
         cancelIndex,
-      }),
-
-    // -----------------------------------------------------------------------
-    // Budget ops (operatorAddress)
-    // -----------------------------------------------------------------------
-
-    approveBudget: (token, amount) =>
-      approveRefundBudget(requireWallet(config), {
-        token,
-        operatorAddress,
-        amount,
-      }),
-
-    getBudget: (token, owner) =>
-      getRefundBudget(publicClient, {
-        token,
-        owner,
-        operatorAddress,
-      }),
-
-    refundInEscrow: (paymentInfo, amount) =>
-      refundInEscrow(requireWallet(config), {
-        operatorAddress,
-        paymentInfo,
-        amount,
-      }),
-
-    refundPostEscrow: (paymentInfo, amount, tokenCollector, collectorData) =>
-      refundPostEscrow(requireWallet(config), {
-        operatorAddress,
-        paymentInfo,
-        amount,
-        tokenCollector,
-        collectorData,
       }),
   }
 }

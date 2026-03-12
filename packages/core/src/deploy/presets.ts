@@ -357,3 +357,107 @@ export async function deployMarketplaceOperator(
     summary: { newCount, existingCount, txHashes },
   }
 }
+
+// ---------------------------------------------------------------------------
+// Arbiter setup types
+// ---------------------------------------------------------------------------
+
+export interface ArbiterSetupOptions {
+  chainId: number
+  arbiter: Address
+}
+
+export interface ArbiterSetupPreview {
+  signatureConditionAddress: Address
+  signatureRefundRequestAddress: Address
+}
+
+export interface ArbiterSetupDeployment {
+  signatureConditionAddress: Address
+  signatureRefundRequestAddress: Address
+  deployments: DeployResult[]
+  summary: {
+    newCount: number
+    existingCount: number
+    txHashes: `0x${string}`[]
+  }
+}
+
+// ---------------------------------------------------------------------------
+// previewArbiterSetup — read-only address computation
+// ---------------------------------------------------------------------------
+
+export async function previewArbiterSetup(
+  publicClient: PublicClient,
+  options: ArbiterSetupOptions,
+): Promise<ArbiterSetupPreview> {
+  const factories = getFactoryAddresses(options.chainId)
+
+  const signatureConditionAddress = await computeSignatureConditionAddress(
+    publicClient,
+    {
+      factoryAddress: factories.signatureCondition,
+      signer: options.arbiter,
+    },
+  )
+
+  const signatureRefundRequestAddress =
+    await computeSignatureRefundRequestAddress(publicClient, {
+      factoryAddress: factories.signatureRefundRequest,
+      signatureCondition: signatureConditionAddress,
+    })
+
+  return {
+    signatureConditionAddress,
+    signatureRefundRequestAddress,
+  }
+}
+
+// ---------------------------------------------------------------------------
+// deployArbiterSetup — deploy SignatureCondition + SignatureRefundRequest
+// ---------------------------------------------------------------------------
+
+export async function deployArbiterSetup(
+  walletClient: WalletClient,
+  publicClient: PublicClient,
+  options: ArbiterSetupOptions,
+): Promise<ArbiterSetupDeployment> {
+  const factories = getFactoryAddresses(options.chainId)
+  const deployments: DeployResult[] = []
+
+  // 1. SignatureCondition(arbiter)
+  const signatureConditionResult = await deploySignatureCondition(
+    walletClient,
+    publicClient,
+    {
+      factoryAddress: factories.signatureCondition,
+      signer: options.arbiter,
+    },
+  )
+  deployments.push(signatureConditionResult)
+  const signatureConditionAddress = signatureConditionResult.address
+
+  // 2. SignatureRefundRequest(signatureCondition)
+  const signatureRefundRequestResult = await deploySignatureRefundRequest(
+    walletClient,
+    publicClient,
+    {
+      factoryAddress: factories.signatureRefundRequest,
+      signatureCondition: signatureConditionAddress,
+    },
+  )
+  deployments.push(signatureRefundRequestResult)
+
+  const newCount = deployments.filter((d) => d.isNew).length
+  const existingCount = deployments.filter((d) => !d.isNew).length
+  const txHashes = deployments
+    .map((d) => d.hash)
+    .filter((h): h is Hash => h !== null)
+
+  return {
+    signatureConditionAddress,
+    signatureRefundRequestAddress: signatureRefundRequestResult.address,
+    deployments,
+    summary: { newCount, existingCount, txHashes },
+  }
+}

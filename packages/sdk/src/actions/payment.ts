@@ -1,7 +1,11 @@
 import type { PaymentInfo } from '@x402r/core'
 import {
+  approvePostEscrowRefund as coreApprovePostEscrowRefund,
   authorize as coreAuthorize,
   charge as coreCharge,
+  getPostEscrowRefundAllowance as coreGetPostEscrowRefundAllowance,
+  refundInEscrow as coreRefundInEscrow,
+  refundPostEscrow as coreRefundPostEscrow,
   release as coreRelease,
   getPaymentAmounts,
   getPaymentState,
@@ -48,6 +52,53 @@ export function createPaymentActions(config: ResolvedConfig): PaymentActions {
         operatorAddress: config.operatorAddress,
         paymentInfo,
         amount,
+      })
+    },
+    async refundInEscrow(
+      paymentInfo: PaymentInfo,
+      amount: bigint,
+    ): Promise<Hash> {
+      const wallet = requireWallet(config)
+      return coreRefundInEscrow(wallet, {
+        operatorAddress: config.operatorAddress,
+        paymentInfo,
+        amount,
+      })
+    },
+    async refundPostEscrow(
+      paymentInfo: PaymentInfo,
+      amount: bigint,
+      tokenCollector: Address,
+      collectorData: Hex,
+    ): Promise<Hash> {
+      const wallet = requireWallet(config)
+      return coreRefundPostEscrow(wallet, {
+        operatorAddress: config.operatorAddress,
+        paymentInfo,
+        amount,
+        tokenCollector,
+        collectorData,
+      })
+    },
+    async approvePostEscrowRefund(
+      token: Address,
+      amount: bigint,
+    ): Promise<Hash> {
+      const wallet = requireWallet(config)
+      return coreApprovePostEscrowRefund(wallet, {
+        token,
+        collectorAddress: config.chainConfig.receiverRefundCollector,
+        amount,
+      })
+    },
+    async getPostEscrowRefundAllowance(
+      token: Address,
+      owner: Address,
+    ): Promise<bigint> {
+      return coreGetPostEscrowRefundAllowance(config.publicClient, {
+        token,
+        owner,
+        collectorAddress: config.chainConfig.receiverRefundCollector,
       })
     },
     async getState(paymentInfo: PaymentInfo) {

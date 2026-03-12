@@ -5,26 +5,33 @@ import {
   wrapContractCall,
 } from '../_internal/error-wrapping.js'
 
-export interface ApproveRefundBudgetParameters {
+export interface ApprovePostEscrowRefundParameters {
   token: Address
-  operatorAddress: Address
+  collectorAddress: Address
   amount: bigint
 }
-export type ApproveRefundBudgetReturnType = Hash
+export type ApprovePostEscrowRefundReturnType = Hash
 
-export async function approveRefundBudget(
+/** @deprecated Use {@link approvePostEscrowRefund} instead. */
+export const approveRefundBudget = approvePostEscrowRefund
+/** @deprecated Use {@link ApprovePostEscrowRefundParameters} instead. */
+export type ApproveRefundBudgetParameters = ApprovePostEscrowRefundParameters
+/** @deprecated Use {@link ApprovePostEscrowRefundReturnType} instead. */
+export type ApproveRefundBudgetReturnType = ApprovePostEscrowRefundReturnType
+
+export async function approvePostEscrowRefund(
   walletClient: WalletClient,
-  parameters: ApproveRefundBudgetParameters,
-): Promise<ApproveRefundBudgetReturnType> {
-  const { token, operatorAddress, amount } = parameters
-  requireAccount(walletClient, 'approveRefundBudget')
+  parameters: ApprovePostEscrowRefundParameters,
+): Promise<ApprovePostEscrowRefundReturnType> {
+  const { token, collectorAddress, amount } = parameters
+  requireAccount(walletClient, 'approvePostEscrowRefund')
 
-  return wrapContractCall('approveRefundBudget', () =>
+  return wrapContractCall('approvePostEscrowRefund', () =>
     walletClient.writeContract({
       address: token,
       abi: erc20Abi,
       functionName: 'approve',
-      args: [operatorAddress, amount],
+      args: [collectorAddress, amount],
       chain: walletClient.chain,
       account: walletClient.account,
     }),

@@ -162,6 +162,20 @@ describe('createX402r', () => {
     expect(client.refund!.request).toBeTypeOf('function')
   })
 
+  it('payment always has refund execution ops even without refundRequestAddress', () => {
+    const client = createX402r({
+      publicClient,
+      walletClient,
+      operatorAddress,
+      chainId: 84532,
+    })
+    expect(client.refund).toBeUndefined()
+    expect(client.payment.refundInEscrow).toBeTypeOf('function')
+    expect(client.payment.refundPostEscrow).toBeTypeOf('function')
+    expect(client.payment.approvePostEscrowRefund).toBeTypeOf('function')
+    expect(client.payment.getPostEscrowRefundAllowance).toBeTypeOf('function')
+  })
+
   it('freeze is undefined when no freezeAddress', () => {
     const client = createX402r(baseConfig)
     expect(client.freeze).toBeUndefined()

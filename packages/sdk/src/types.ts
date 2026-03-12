@@ -80,6 +80,15 @@ export interface PaymentActions {
     collectorData: Hex,
   ): Promise<Hash>
   release(paymentInfo: PaymentInfo, amount: bigint): Promise<Hash>
+  refundInEscrow(paymentInfo: PaymentInfo, amount: bigint): Promise<Hash>
+  refundPostEscrow(
+    paymentInfo: PaymentInfo,
+    amount: bigint,
+    tokenCollector: Address,
+    collectorData: Hex,
+  ): Promise<Hash>
+  approvePostEscrowRefund(token: Address, amount: bigint): Promise<Hash>
+  getPostEscrowRefundAllowance(token: Address, owner: Address): Promise<bigint>
   getState(
     paymentInfo: PaymentInfo,
   ): Promise<readonly [boolean, bigint, bigint]>
@@ -140,17 +149,6 @@ export interface RefundActions {
     nonce: bigint,
     cancelIndex: bigint,
   ): Promise<bigint>
-
-  // Refund budget (merchant self-service)
-  approveBudget(token: Address, amount: bigint): Promise<Hash>
-  getBudget(token: Address, owner: Address): Promise<bigint>
-  refundInEscrow(paymentInfo: PaymentInfo, amount: bigint): Promise<Hash>
-  refundPostEscrow(
-    paymentInfo: PaymentInfo,
-    amount: bigint,
-    tokenCollector: Address,
-    collectorData: Hex,
-  ): Promise<Hash>
 }
 
 export interface EvidenceActions {
@@ -288,10 +286,6 @@ export interface MerchantClient {
         | 'getReceiverRequests'
         | 'getCancelCount'
         | 'getCancelledAmount'
-        | 'approveBudget'
-        | 'getBudget'
-        | 'refundInEscrow'
-        | 'refundPostEscrow'
       >
     | undefined
   readonly evidence: EvidenceActions
