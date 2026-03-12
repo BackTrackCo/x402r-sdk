@@ -14,14 +14,16 @@ import {
   computeFreezeAddress,
   computeOperatorAddress,
   computeOrConditionAddress,
-  computeStaticAddressConditionAddress,
+  computeSignatureConditionAddress,
+  computeSignatureRefundRequestAddress,
   deployAndCondition,
   deployEscrowPeriod,
   deployFeeCalculator,
   deployFreeze,
   deployOperator,
   deployOrCondition,
-  deployStaticAddressCondition,
+  deploySignatureCondition,
+  deploySignatureRefundRequest,
 } from './factories.js'
 import type { DeployResult } from './factory-helpers.js'
 
@@ -43,8 +45,9 @@ export interface MarketplaceOperatorPreview {
   operatorAddress: Address
   escrowPeriodAddress: Address
   freezeAddress: Address | null
-  arbiterConditionAddress: Address
+  signatureConditionAddress: Address
   refundInEscrowConditionAddress: Address
+  signatureRefundRequestAddress: Address
   feeCalculatorAddress: Address | null
   operatorConfig: OperatorConfig
 }
@@ -53,8 +56,9 @@ export interface MarketplaceOperatorDeployment {
   operatorAddress: Address
   escrowPeriodAddress: Address
   freezeAddress: Address | null
-  arbiterConditionAddress: Address
+  signatureConditionAddress: Address
   refundInEscrowConditionAddress: Address
+  signatureRefundRequestAddress: Address
   feeCalculatorAddress: Address | null
   operatorConfig: OperatorConfig
   deployments: DeployResult[]
@@ -142,25 +146,32 @@ export async function previewMarketplaceOperator(
     })
   }
 
-  // 3. Arbiter StaticAddressCondition
-  const arbiterConditionAddress = await computeStaticAddressConditionAddress(
+  // 3. SignatureCondition(arbiter)
+  const signatureConditionAddress = await computeSignatureConditionAddress(
     publicClient,
     {
-      factoryAddress: factories.staticAddressCondition,
-      designatedAddress: options.arbiter,
+      factoryAddress: factories.signatureCondition,
+      signer: options.arbiter,
     },
   )
 
-  // 4. RefundInEscrow: OR(receiver singleton, arbiter condition)
+  // 4. RefundInEscrow: OR(receiver singleton, signature condition)
   const refundInEscrowConditionAddress = await computeOrConditionAddress(
     publicClient,
     {
       factoryAddress: factories.orCondition,
-      conditions: [singletons.receiver, arbiterConditionAddress],
+      conditions: [singletons.receiver, signatureConditionAddress],
     },
   )
 
-  // 5. FeeCalculator (only if operatorFeeBps > 0)
+  // 5. SignatureRefundRequest(signatureCondition)
+  const signatureRefundRequestAddress =
+    await computeSignatureRefundRequestAddress(publicClient, {
+      factoryAddress: factories.signatureRefundRequest,
+      signatureCondition: signatureConditionAddress,
+    })
+
+  // 6. FeeCalculator (only if operatorFeeBps > 0)
   const feeCalculatorAddress =
     operatorFeeBps > 0n
       ? await computeFeeCalculatorAddress(publicClient, {
@@ -169,7 +180,7 @@ export async function previewMarketplaceOperator(
         })
       : null
 
-  // 6. Build OperatorConfig
+  // 7. Build OperatorConfig
   const operatorConfig: OperatorConfig = {
     feeRecipient: options.feeRecipient,
     feeCalculator: feeCalculatorAddress ?? zeroAddress,
@@ -185,7 +196,7 @@ export async function previewMarketplaceOperator(
     refundPostEscrowRecorder: zeroAddress,
   }
 
-  // 7. Compute operator address
+  // 8. Compute operator address
   const operatorAddress = await computeOperatorAddress(publicClient, {
     factoryAddress: factories.paymentOperator,
     config: operatorConfig,
@@ -195,8 +206,9 @@ export async function previewMarketplaceOperator(
     operatorAddress,
     escrowPeriodAddress,
     freezeAddress,
-    arbiterConditionAddress,
+    signatureConditionAddress,
     refundInEscrowConditionAddress,
+    signatureRefundRequestAddress,
     feeCalculatorAddress,
     operatorConfig,
   }
@@ -254,31 +266,43 @@ export async function deployMarketplaceOperator(
     releaseConditionAddress = andResult.address
   }
 
-  // 3. Arbiter StaticAddressCondition
-  const arbiterResult = await deployStaticAddressCondition(
+  // 3. SignatureCondition(arbiter)
+  const signatureConditionResult = await deploySignatureCondition(
     walletClient,
     publicClient,
     {
-      factoryAddress: factories.staticAddressCondition,
-      designatedAddress: options.arbiter,
+      factoryAddress: factories.signatureCondition,
+      signer: options.arbiter,
     },
   )
-  deployments.push(arbiterResult)
-  const arbiterConditionAddress = arbiterResult.address
+  deployments.push(signatureConditionResult)
+  const signatureConditionAddress = signatureConditionResult.address
 
-  // 4. RefundInEscrow: OR(receiver singleton, arbiter condition)
+  // 4. RefundInEscrow: OR(receiver singleton, signature condition)
   const refundInEscrowResult = await deployOrCondition(
     walletClient,
     publicClient,
     {
       factoryAddress: factories.orCondition,
-      conditions: [singletons.receiver, arbiterConditionAddress],
+      conditions: [singletons.receiver, signatureConditionAddress],
     },
   )
   deployments.push(refundInEscrowResult)
   const refundInEscrowConditionAddress = refundInEscrowResult.address
 
-  // 5. FeeCalculator (only if operatorFeeBps > 0)
+  // 5. SignatureRefundRequest(signatureCondition)
+  const signatureRefundRequestResult = await deploySignatureRefundRequest(
+    walletClient,
+    publicClient,
+    {
+      factoryAddress: factories.signatureRefundRequest,
+      signatureCondition: signatureConditionAddress,
+    },
+  )
+  deployments.push(signatureRefundRequestResult)
+  const signatureRefundRequestAddress = signatureRefundRequestResult.address
+
+  // 6. FeeCalculator (only if operatorFeeBps > 0)
   let feeCalculatorAddress: Address | null = null
   if (operatorFeeBps > 0n) {
     const feeResult = await deployFeeCalculator(walletClient, publicClient, {
@@ -289,7 +313,7 @@ export async function deployMarketplaceOperator(
     feeCalculatorAddress = feeResult.address
   }
 
-  // 6. Build OperatorConfig
+  // 7. Build OperatorConfig
   const operatorConfig: OperatorConfig = {
     feeRecipient: options.feeRecipient,
     feeCalculator: feeCalculatorAddress ?? zeroAddress,
@@ -305,7 +329,7 @@ export async function deployMarketplaceOperator(
     refundPostEscrowRecorder: zeroAddress,
   }
 
-  // 7. Deploy PaymentOperator
+  // 8. Deploy PaymentOperator
   const operatorResult = await deployOperator(walletClient, publicClient, {
     factoryAddress: factories.paymentOperator,
     config: operatorConfig,
@@ -324,10 +348,115 @@ export async function deployMarketplaceOperator(
     operatorAddress,
     escrowPeriodAddress,
     freezeAddress,
-    arbiterConditionAddress,
+    signatureConditionAddress,
     refundInEscrowConditionAddress,
+    signatureRefundRequestAddress,
     feeCalculatorAddress,
     operatorConfig,
+    deployments,
+    summary: { newCount, existingCount, txHashes },
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Arbiter setup types
+// ---------------------------------------------------------------------------
+
+export interface ArbiterSetupOptions {
+  chainId: number
+  arbiter: Address
+}
+
+export interface ArbiterSetupPreview {
+  signatureConditionAddress: Address
+  signatureRefundRequestAddress: Address
+}
+
+export interface ArbiterSetupDeployment {
+  signatureConditionAddress: Address
+  signatureRefundRequestAddress: Address
+  deployments: DeployResult[]
+  summary: {
+    newCount: number
+    existingCount: number
+    txHashes: `0x${string}`[]
+  }
+}
+
+// ---------------------------------------------------------------------------
+// previewArbiterSetup — read-only address computation
+// ---------------------------------------------------------------------------
+
+export async function previewArbiterSetup(
+  publicClient: PublicClient,
+  options: ArbiterSetupOptions,
+): Promise<ArbiterSetupPreview> {
+  const factories = getFactoryAddresses(options.chainId)
+
+  const signatureConditionAddress = await computeSignatureConditionAddress(
+    publicClient,
+    {
+      factoryAddress: factories.signatureCondition,
+      signer: options.arbiter,
+    },
+  )
+
+  const signatureRefundRequestAddress =
+    await computeSignatureRefundRequestAddress(publicClient, {
+      factoryAddress: factories.signatureRefundRequest,
+      signatureCondition: signatureConditionAddress,
+    })
+
+  return {
+    signatureConditionAddress,
+    signatureRefundRequestAddress,
+  }
+}
+
+// ---------------------------------------------------------------------------
+// deployArbiterSetup — deploy SignatureCondition + SignatureRefundRequest
+// ---------------------------------------------------------------------------
+
+export async function deployArbiterSetup(
+  walletClient: WalletClient,
+  publicClient: PublicClient,
+  options: ArbiterSetupOptions,
+): Promise<ArbiterSetupDeployment> {
+  const factories = getFactoryAddresses(options.chainId)
+  const deployments: DeployResult[] = []
+
+  // 1. SignatureCondition(arbiter)
+  const signatureConditionResult = await deploySignatureCondition(
+    walletClient,
+    publicClient,
+    {
+      factoryAddress: factories.signatureCondition,
+      signer: options.arbiter,
+    },
+  )
+  deployments.push(signatureConditionResult)
+  const signatureConditionAddress = signatureConditionResult.address
+
+  // 2. SignatureRefundRequest(signatureCondition)
+  const signatureRefundRequestResult = await deploySignatureRefundRequest(
+    walletClient,
+    publicClient,
+    {
+      factoryAddress: factories.signatureRefundRequest,
+      signatureCondition: signatureConditionAddress,
+    },
+  )
+  deployments.push(signatureRefundRequestResult)
+
+  const newCount = deployments.filter((d) => d.isNew).length
+  const existingCount = deployments.filter((d) => !d.isNew).length
+  const txHashes = deployments
+    .map((d) => d.hash)
+    .filter((h): h is Hash => h !== null)
+
+  return {
+    signatureConditionAddress,
+    signatureRefundRequestAddress: signatureRefundRequestResult.address,
     deployments,
     summary: { newCount, existingCount, txHashes },
   }

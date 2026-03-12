@@ -52,7 +52,7 @@ export interface ResolvedConfig {
   operatorAddress: Address
   chainId: number
   chainConfig: X402rChainConfig
-  refundRequestAddress: Address
+  refundRequestAddress: Address | undefined
   refundRequestEvidenceAddress: Address
   escrowPeriodAddress: Address | undefined
   freezeAddress: Address | undefined
@@ -80,6 +80,15 @@ export interface PaymentActions {
     collectorData: Hex,
   ): Promise<Hash>
   release(paymentInfo: PaymentInfo, amount: bigint): Promise<Hash>
+  refundInEscrow(paymentInfo: PaymentInfo, amount: bigint): Promise<Hash>
+  refundPostEscrow(
+    paymentInfo: PaymentInfo,
+    amount: bigint,
+    tokenCollector: Address,
+    collectorData: Hex,
+  ): Promise<Hash>
+  approvePostEscrowRefund(token: Address, amount: bigint): Promise<Hash>
+  getPostEscrowRefundAllowance(token: Address, owner: Address): Promise<bigint>
   getState(
     paymentInfo: PaymentInfo,
   ): Promise<readonly [boolean, bigint, bigint]>
@@ -140,17 +149,6 @@ export interface RefundActions {
     nonce: bigint,
     cancelIndex: bigint,
   ): Promise<bigint>
-
-  // Refund budget (merchant self-service)
-  approveBudget(token: Address, amount: bigint): Promise<Hash>
-  getBudget(token: Address, owner: Address): Promise<bigint>
-  refundInEscrow(paymentInfo: PaymentInfo, amount: bigint): Promise<Hash>
-  refundPostEscrow(
-    paymentInfo: PaymentInfo,
-    amount: bigint,
-    tokenCollector: Address,
-    collectorData: Hex,
-  ): Promise<Hash>
 }
 
 export interface EvidenceActions {
@@ -210,7 +208,7 @@ export interface X402r {
   readonly config: ResolvedConfig
   readonly payment: PaymentActions
   readonly escrow: EscrowActions | undefined
-  readonly refund: RefundActions
+  readonly refund: RefundActions | undefined
   readonly evidence: EvidenceActions
   readonly freeze: FreezeActions | undefined
   readonly operator: OperatorActions
@@ -238,19 +236,21 @@ export interface PayerClient {
         'isDuringEscrow' | 'getAuthorizationTime' | 'getDuration'
       >
     | undefined
-  readonly refund: Pick<
-    RefundActions,
-    | 'request'
-    | 'cancel'
-    | 'get'
-    | 'getByKey'
-    | 'getStatus'
-    | 'has'
-    | 'getStoredPaymentInfo'
-    | 'getPayerRequests'
-    | 'getCancelCount'
-    | 'getCancelledAmount'
-  >
+  readonly refund:
+    | Pick<
+        RefundActions,
+        | 'request'
+        | 'cancel'
+        | 'get'
+        | 'getByKey'
+        | 'getStatus'
+        | 'has'
+        | 'getStoredPaymentInfo'
+        | 'getPayerRequests'
+        | 'getCancelCount'
+        | 'getCancelledAmount'
+      >
+    | undefined
   readonly evidence: EvidenceActions
   readonly freeze: Pick<FreezeActions, 'isFrozen'> | undefined
   readonly operator: Pick<OperatorActions, 'getConfig' | 'getFeeAddresses'>
@@ -274,22 +274,20 @@ export interface MerchantClient {
         'isDuringEscrow' | 'getAuthorizationTime' | 'getDuration'
       >
     | undefined
-  readonly refund: Pick<
-    RefundActions,
-    | 'refuse'
-    | 'get'
-    | 'getByKey'
-    | 'getStatus'
-    | 'has'
-    | 'getStoredPaymentInfo'
-    | 'getReceiverRequests'
-    | 'getCancelCount'
-    | 'getCancelledAmount'
-    | 'approveBudget'
-    | 'getBudget'
-    | 'refundInEscrow'
-    | 'refundPostEscrow'
-  >
+  readonly refund:
+    | Pick<
+        RefundActions,
+        | 'refuse'
+        | 'get'
+        | 'getByKey'
+        | 'getStatus'
+        | 'has'
+        | 'getStoredPaymentInfo'
+        | 'getReceiverRequests'
+        | 'getCancelCount'
+        | 'getCancelledAmount'
+      >
+    | undefined
   readonly evidence: EvidenceActions
   readonly freeze: Pick<FreezeActions, 'isFrozen'> | undefined
   readonly operator: OperatorActions
@@ -313,19 +311,21 @@ export interface ArbiterClient {
         'isDuringEscrow' | 'getAuthorizationTime' | 'getDuration'
       >
     | undefined
-  readonly refund: Pick<
-    RefundActions,
-    | 'deny'
-    | 'approveWithSignature'
-    | 'get'
-    | 'getByKey'
-    | 'getStatus'
-    | 'has'
-    | 'getStoredPaymentInfo'
-    | 'getOperatorRequests'
-    | 'getCancelCount'
-    | 'getCancelledAmount'
-  >
+  readonly refund:
+    | Pick<
+        RefundActions,
+        | 'deny'
+        | 'approveWithSignature'
+        | 'get'
+        | 'getByKey'
+        | 'getStatus'
+        | 'has'
+        | 'getStoredPaymentInfo'
+        | 'getOperatorRequests'
+        | 'getCancelCount'
+        | 'getCancelledAmount'
+      >
+    | undefined
   readonly evidence: EvidenceActions
   readonly freeze: FreezeActions | undefined
   readonly operator: Pick<OperatorActions, 'getConfig' | 'getFeeAddresses'>

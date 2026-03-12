@@ -15,6 +15,8 @@ export interface FactoryAddresses {
   orCondition: Address
   notCondition: Address
   recorderCombinator: Address
+  signatureCondition: Address
+  signatureRefundRequest: Address
 }
 
 export interface ConditionSingletonAddresses {
@@ -28,7 +30,6 @@ export interface X402rChainConfig {
   chainId: number
   authCaptureEscrow: Address
   tokenCollector: Address
-  refundRequest: Address
   protocolFeeConfig: Address
   usdcTvlLimit: Address
   arbiterRegistry: Address
@@ -46,7 +47,6 @@ export interface X402rChainConfig {
 const PROTOCOL_ADDRESSES = {
   authCaptureEscrow: '0xe050bB89eD43BB02d71343063824614A7fb80B77',
   tokenCollector: '0xcE66Ab399EDA513BD12760b6427C87D6602344a7',
-  refundRequest: '0x45af78aaBC0A0dD70f16381CfD6D657Ab441B7a0',
   protocolFeeConfig: '0x7e868A42a458fa2443b6259419aA6A8a161E08c8',
   usdcTvlLimit: '0x0F1F26719219CfAdC8a1C80D2216098A0534a091',
   arbiterRegistry: '0x1c2d7d5978d46a943FA98aC9a649519C1424FB3e',
@@ -62,6 +62,8 @@ const PROTOCOL_ADDRESSES = {
     orCondition: '0x101B2fac8cdC6348E541A0ef087275dA62AA13A0',
     notCondition: '0x1D58f97843579356863d3393ebe24feEd76ceefF',
     recorderCombinator: '0xACf2b5e21CFc14135C9cD43ebE96a481F184C1A1',
+    signatureCondition: '0x669B4930f9E72884725F5C7D837Ab9517eA3040f',
+    signatureRefundRequest: '0x45af78aaBC0A0dD70f16381CfD6D657Ab441B7a0',
   },
   conditions: {
     payer: '0x33F5F1154A02d0839266EFd23Fd3b85a3505bB4B',

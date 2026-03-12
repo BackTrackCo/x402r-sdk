@@ -7,6 +7,8 @@ import {
   orConditionFactoryAbi,
   paymentOperatorFactoryAbi,
   recorderCombinatorFactoryAbi,
+  signatureConditionFactoryAbi,
+  signatureRefundRequestFactoryAbi,
   staticAddressConditionFactoryAbi,
   staticFeeCalculatorFactoryAbi,
 } from '../abis/generated.js'
@@ -352,6 +354,86 @@ export function deployRecorderCombinator(
     abi: recorderCombinatorFactoryAbi,
     args: [parameters.recorders],
     opName: 'deployRecorderCombinator',
+  })
+}
+
+// ---------------------------------------------------------------------------
+// SignatureCondition
+// ---------------------------------------------------------------------------
+
+export interface ComputeSignatureConditionAddressParameters {
+  factoryAddress: Address
+  signer: Address
+}
+export type ComputeSignatureConditionAddressReturnType = Address
+
+export function computeSignatureConditionAddress(
+  publicClient: PublicClient,
+  parameters: ComputeSignatureConditionAddressParameters,
+): Promise<ComputeSignatureConditionAddressReturnType> {
+  return computeViaFactory(publicClient, {
+    factoryAddress: parameters.factoryAddress,
+    abi: signatureConditionFactoryAbi,
+    args: [parameters.signer],
+  })
+}
+
+export interface DeploySignatureConditionParameters {
+  factoryAddress: Address
+  signer: Address
+}
+export type DeploySignatureConditionReturnType = DeployResult
+
+export function deploySignatureCondition(
+  walletClient: WalletClient,
+  publicClient: PublicClient,
+  parameters: DeploySignatureConditionParameters,
+): Promise<DeploySignatureConditionReturnType> {
+  return deployViaFactory(walletClient, publicClient, {
+    factoryAddress: parameters.factoryAddress,
+    abi: signatureConditionFactoryAbi,
+    args: [parameters.signer],
+    opName: 'deploySignatureCondition',
+  })
+}
+
+// ---------------------------------------------------------------------------
+// SignatureRefundRequest
+// ---------------------------------------------------------------------------
+
+export interface ComputeSignatureRefundRequestAddressParameters {
+  factoryAddress: Address
+  signatureCondition: Address
+}
+export type ComputeSignatureRefundRequestAddressReturnType = Address
+
+export function computeSignatureRefundRequestAddress(
+  publicClient: PublicClient,
+  parameters: ComputeSignatureRefundRequestAddressParameters,
+): Promise<ComputeSignatureRefundRequestAddressReturnType> {
+  return computeViaFactory(publicClient, {
+    factoryAddress: parameters.factoryAddress,
+    abi: signatureRefundRequestFactoryAbi,
+    args: [parameters.signatureCondition],
+  })
+}
+
+export interface DeploySignatureRefundRequestParameters {
+  factoryAddress: Address
+  signatureCondition: Address
+}
+export type DeploySignatureRefundRequestReturnType = DeployResult
+
+export function deploySignatureRefundRequest(
+  walletClient: WalletClient,
+  publicClient: PublicClient,
+  parameters: DeploySignatureRefundRequestParameters,
+): Promise<DeploySignatureRefundRequestReturnType> {
+  return deployViaFactory(walletClient, publicClient, {
+    factoryAddress: parameters.factoryAddress,
+    abi: signatureRefundRequestFactoryAbi,
+    args: [parameters.signatureCondition],
+    opName: 'deploySignatureRefundRequest',
   })
 }
 

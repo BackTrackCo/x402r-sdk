@@ -46,11 +46,15 @@ export function createX402r(config: X402rConfig): X402r {
     config: resolved,
     payment: createPaymentActions(resolved),
     escrow: resolved.escrowPeriodAddress
-      ? createEscrowActions(resolved)
+      ? createEscrowActions(resolved, resolved.escrowPeriodAddress)
       : undefined,
-    refund: createRefundActions(resolved),
+    refund: resolved.refundRequestAddress
+      ? createRefundActions(resolved, resolved.refundRequestAddress)
+      : undefined,
     evidence: createEvidenceActions(resolved),
-    freeze: resolved.freezeAddress ? createFreezeActions(resolved) : undefined,
+    freeze: resolved.freezeAddress
+      ? createFreezeActions(resolved, resolved.freezeAddress)
+      : undefined,
     operator: createOperatorActions(resolved),
     watch: createWatchActions(resolved),
     canExecute: (slot, paymentInfo, amount) =>
@@ -78,8 +82,7 @@ export function resolveConfig(config: X402rConfig): ResolvedConfig {
     operatorAddress: config.operatorAddress,
     chainId,
     chainConfig,
-    refundRequestAddress:
-      config.refundRequestAddress ?? chainConfig.refundRequest,
+    refundRequestAddress: config.refundRequestAddress ?? undefined,
     refundRequestEvidenceAddress,
     escrowPeriodAddress: config.escrowPeriodAddress,
     freezeAddress: config.freezeAddress,

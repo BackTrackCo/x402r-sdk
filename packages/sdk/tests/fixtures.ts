@@ -22,12 +22,14 @@ export const walletClient = createWalletClient({
 export const TEST_OPERATOR =
   '0x1234567890abcdef1234567890abcdef12345678' as const
 export const TEST_REFUND_REQUEST =
-  '0x45af78aaBC0A0dD70f16381CfD6D657Ab441B7a0' as const
+  '0xbEEFbEEFbEEFbEEFbEEFbEEFbEEFbEEFbEEFbEEF' as const
 export const TEST_EVIDENCE =
   '0xF97aAB816b7cbe53025454ad05b03cf5C361F1BA' as const
 export const TEST_ESCROW_PERIOD =
   '0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef' as const
 export const TEST_FREEZE = '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd' as const
+export const TEST_RECEIVER_REFUND_COLLECTOR =
+  '0xE5500a38BE45a6C598420fbd7867ac85EC451A07' as const
 
 export const mockPaymentInfo = {
   operator: TEST_OPERATOR,
@@ -52,7 +54,9 @@ export function createTestConfig(
     walletClient,
     operatorAddress: TEST_OPERATOR,
     chainId: 84532,
-    chainConfig: {} as X402rChainConfig,
+    chainConfig: {
+      receiverRefundCollector: TEST_RECEIVER_REFUND_COLLECTOR,
+    } as X402rChainConfig,
     refundRequestAddress: TEST_REFUND_REQUEST,
     refundRequestEvidenceAddress: TEST_EVIDENCE,
     escrowPeriodAddress: undefined,

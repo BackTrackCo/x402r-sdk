@@ -8,12 +8,14 @@ import {
 import {
   TEST_OPERATOR as operatorAddress,
   publicClient,
+  TEST_REFUND_REQUEST as refundRequestAddress,
   walletClient,
 } from './fixtures.js'
 
 const readOnlyConfig = {
   publicClient,
   operatorAddress,
+  refundRequestAddress,
   chainId: 84532 as const,
 }
 
@@ -21,6 +23,7 @@ const writeConfig = {
   publicClient,
   walletClient,
   operatorAddress,
+  refundRequestAddress,
   chainId: 84532 as const,
 }
 
@@ -52,7 +55,7 @@ describe('presets', () => {
     expect(client.config.walletClient).toBeDefined()
     expect(client.payment.getState).toBeTypeOf('function')
     expect(client.payment.getAmounts).toBeTypeOf('function')
-    expect(client.refund.request).toBeTypeOf('function')
+    expect(client.refund!.request).toBeTypeOf('function')
     expect(client.evidence).toBeDefined()
     expect(client.operator.getConfig).toBeTypeOf('function')
     expect(client.watch).toBeDefined()
@@ -66,8 +69,9 @@ describe('presets', () => {
     expect(client.config.walletClient).toBeDefined()
     expect(client.payment.authorize).toBeTypeOf('function')
     expect(client.payment.charge).toBeTypeOf('function')
-    expect(client.refund.refuse).toBeTypeOf('function')
-    expect(client.refund.approveBudget).toBeTypeOf('function')
+    expect(client.payment.refundInEscrow).toBeTypeOf('function')
+    expect(client.payment.approvePostEscrowRefund).toBeTypeOf('function')
+    expect(client.refund!.refuse).toBeTypeOf('function')
     expect(client.operator.calculateFees).toBeTypeOf('function')
     expect(client.canExecute).toBeTypeOf('function')
     expect(client.extend).toBeTypeOf('function')
@@ -78,8 +82,8 @@ describe('presets', () => {
     expect(client.config).toBeDefined()
     expect(client.config.walletClient).toBeDefined()
     expect(client.payment.getState).toBeTypeOf('function')
-    expect(client.refund.deny).toBeTypeOf('function')
-    expect(client.refund.approveWithSignature).toBeTypeOf('function')
+    expect(client.refund!.deny).toBeTypeOf('function')
+    expect(client.refund!.approveWithSignature).toBeTypeOf('function')
     expect(client.freeze).toBeUndefined() // no freezeAddress in config
     expect(client.canExecute).toBeTypeOf('function')
     expect(client.extend).toBeTypeOf('function')

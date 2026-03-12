@@ -55,10 +55,11 @@ describe('Deploy Module (Fork)', () => {
     expect(preview.escrowPeriodAddress).toMatch(/^0x[0-9a-fA-F]{40}$/)
     // freezeAddress should be null when freezeDurationSeconds is not set
     expect(preview.freezeAddress).toBeNull()
-    expect(preview.arbiterConditionAddress).toMatch(/^0x[0-9a-fA-F]{40}$/)
+    expect(preview.signatureConditionAddress).toMatch(/^0x[0-9a-fA-F]{40}$/)
     expect(preview.refundInEscrowConditionAddress).toMatch(
       /^0x[0-9a-fA-F]{40}$/,
     )
+    expect(preview.signatureRefundRequestAddress).toMatch(/^0x[0-9a-fA-F]{40}$/)
     expect(preview.feeCalculatorAddress).toMatch(/^0x[0-9a-fA-F]{40}$/)
 
     // All addresses should be non-zero
@@ -66,8 +67,9 @@ describe('Deploy Module (Fork)', () => {
     expect(preview.operatorAddress).not.toBe(zero)
     expect(preview.escrowPeriodAddress).not.toBe(zero)
     // freezeAddress is null (no freeze configured), skip zero-check
-    expect(preview.arbiterConditionAddress).not.toBe(zero)
+    expect(preview.signatureConditionAddress).not.toBe(zero)
     expect(preview.refundInEscrowConditionAddress).not.toBe(zero)
+    expect(preview.signatureRefundRequestAddress).not.toBe(zero)
   })
 
   it('deployMarketplaceOperator deploys all components matching preview', async () => {
@@ -84,19 +86,22 @@ describe('Deploy Module (Fork)', () => {
     expect(deployment.operatorAddress).toBe(preview.operatorAddress)
     expect(deployment.escrowPeriodAddress).toBe(preview.escrowPeriodAddress)
     expect(deployment.freezeAddress).toBe(preview.freezeAddress)
-    expect(deployment.arbiterConditionAddress).toBe(
-      preview.arbiterConditionAddress,
+    expect(deployment.signatureConditionAddress).toBe(
+      preview.signatureConditionAddress,
     )
     expect(deployment.refundInEscrowConditionAddress).toBe(
       preview.refundInEscrowConditionAddress,
     )
+    expect(deployment.signatureRefundRequestAddress).toBe(
+      preview.signatureRefundRequestAddress,
+    )
     expect(deployment.feeCalculatorAddress).toBe(preview.feeCalculatorAddress)
 
-    // No freeze, with fee: escrow + arbiterCondition + orCondition + feeCalc + operator = 5
-    expect(deployment.deployments).toHaveLength(5)
+    // No freeze, with fee: escrow + signatureCondition + orCondition + signatureRefundRequest + feeCalc + operator = 6
+    expect(deployment.deployments).toHaveLength(6)
     // Some components may already exist on the forked chain — assert totals add up
     expect(deployment.summary.newCount + deployment.summary.existingCount).toBe(
-      5,
+      6,
     )
     expect(deployment.summary.txHashes).toHaveLength(
       deployment.summary.newCount,
@@ -113,9 +118,9 @@ describe('Deploy Module (Fork)', () => {
     )
 
     // All should be existing since we deployed (or found existing) in the previous test
-    expect(deployment.deployments).toHaveLength(5)
+    expect(deployment.deployments).toHaveLength(6)
     expect(deployment.summary.newCount).toBe(0)
-    expect(deployment.summary.existingCount).toBe(5)
+    expect(deployment.summary.existingCount).toBe(6)
     expect(deployment.summary.txHashes).toHaveLength(0)
     for (const d of deployment.deployments) {
       expect(d.isNew).toBe(false)
@@ -141,10 +146,10 @@ describe('Deploy Module (Fork)', () => {
       deployment.escrowPeriodAddress,
     )
 
-    // freeze + andCondition + escrow + arbiter + orCondition + feeCalc + operator = 7
-    expect(deployment.deployments).toHaveLength(7)
+    // freeze + andCondition + escrow + signatureCondition + orCondition + signatureRefundRequest + feeCalc + operator = 8
+    expect(deployment.deployments).toHaveLength(8)
     expect(deployment.summary.newCount + deployment.summary.existingCount).toBe(
-      7,
+      8,
     )
   })
 
@@ -157,9 +162,9 @@ describe('Deploy Module (Fork)', () => {
     const preview1 = await previewMarketplaceOperator(publicClient, options1)
     const preview2 = await previewMarketplaceOperator(publicClient, options2)
 
-    // Different arbiter → different arbiter condition → different OR → different operator
-    expect(preview1.arbiterConditionAddress).not.toBe(
-      preview2.arbiterConditionAddress,
+    // Different arbiter → different signature condition → different OR → different operator
+    expect(preview1.signatureConditionAddress).not.toBe(
+      preview2.signatureConditionAddress,
     )
     expect(preview1.operatorAddress).not.toBe(preview2.operatorAddress)
   })

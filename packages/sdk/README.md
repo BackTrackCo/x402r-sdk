@@ -40,8 +40,8 @@ Role presets (`createPayerClient`, `createMerchantClient`, `createArbiterClient`
 
 The client organizes operations into action groups by protocol domain:
 
-- **payment** — `authorize`, `charge`, `release`, `getState`, `getAmounts`
-- **refund** — `request`, `cancel`, `deny`, `refuse`, `approveWithSignature`, `approveBudget`, `refundInEscrow`, `refundPostEscrow`, and read helpers
+- **payment** — `authorize`, `charge`, `release`, `refundInEscrow`, `refundPostEscrow`, `approvePostEscrowRefund`, `getPostEscrowRefundAllowance`, `getState`, `getAmounts`
+- **refund** — dispute lifecycle: `request`, `cancel`, `deny`, `refuse`, `approveWithSignature`, and read helpers (requires `refundRequestAddress`)
 - **evidence** — `submit`, `get`, `getBatch`, `count`
 - **escrow** — `isDuringEscrow`, `getAuthorizationTime`, `getDuration` (requires `escrowPeriodAddress`)
 - **freeze** — `freeze`, `unfreeze`, `isFrozen` (requires `freezeAddress`)
@@ -71,7 +71,7 @@ const x402r = createX402r({ publicClient, walletClient, operatorAddress: '0x…'
       async resolve(paymentInfo: PaymentInfo, nonce: bigint, ruling: 'refund' | 'deny') {
         if (ruling === 'refund') {
           const { refundableAmount } = await client.payment.getAmounts(paymentInfo)
-          return client.refund.refundInEscrow(paymentInfo, refundableAmount)
+          return client.payment.refundInEscrow(paymentInfo, refundableAmount)
         }
         return client.refund.deny(paymentInfo, nonce)
       },

@@ -35,6 +35,14 @@ describe('PayerClient type narrowing', () => {
     payer.payment.charge
     // @ts-expect-error — payer cannot release
     payer.payment.release
+    // @ts-expect-error — payer cannot refundInEscrow
+    payer.payment.refundInEscrow
+    // @ts-expect-error — payer cannot refundPostEscrow
+    payer.payment.refundPostEscrow
+    // @ts-expect-error — payer cannot approvePostEscrowRefund
+    payer.payment.approvePostEscrowRefund
+    // @ts-expect-error — payer cannot getPostEscrowRefundAllowance
+    payer.payment.getPostEscrowRefundAllowance
   })
 
   it('refund exposes payer methods', () => {
@@ -53,14 +61,6 @@ describe('PayerClient type narrowing', () => {
     payer.refund.getReceiverRequests
     // @ts-expect-error — payer cannot getOperatorRequests
     payer.refund.getOperatorRequests
-    // @ts-expect-error — payer cannot approveBudget
-    payer.refund.approveBudget
-    // @ts-expect-error — payer cannot getBudget
-    payer.refund.getBudget
-    // @ts-expect-error — payer cannot refundInEscrow
-    payer.refund.refundInEscrow
-    // @ts-expect-error — payer cannot refundPostEscrow
-    payer.refund.refundPostEscrow
   })
 
   it('operator hides fee calculation methods', () => {
@@ -91,20 +91,23 @@ describe('PayerClient type narrowing', () => {
 // ---------------------------------------------------------------------------
 
 describe('MerchantClient type narrowing', () => {
-  it('payment exposes all methods', () => {
+  it('payment exposes all methods including refund execution', () => {
     expectTypeOf(merchant.payment.authorize).toBeFunction()
     expectTypeOf(merchant.payment.charge).toBeFunction()
     expectTypeOf(merchant.payment.release).toBeFunction()
     expectTypeOf(merchant.payment.getState).toBeFunction()
     expectTypeOf(merchant.payment.getAmounts).toBeFunction()
+    expectTypeOf(merchant.payment.refundInEscrow).toBeFunction()
+    expectTypeOf(merchant.payment.refundPostEscrow).toBeFunction()
+    expectTypeOf(merchant.payment.approvePostEscrowRefund).toBeFunction()
+    expectTypeOf(merchant.payment.getPostEscrowRefundAllowance).toBeFunction()
   })
 
-  it('refund exposes merchant methods', () => {
+  it('refund exposes merchant dispute methods', () => {
     expectTypeOf(merchant.refund.refuse).toBeFunction()
-    expectTypeOf(merchant.refund.approveBudget).toBeFunction()
-    expectTypeOf(merchant.refund.getBudget).toBeFunction()
-    expectTypeOf(merchant.refund.refundInEscrow).toBeFunction()
-    expectTypeOf(merchant.refund.refundPostEscrow).toBeFunction()
+    expectTypeOf(merchant.refund.get).toBeFunction()
+    expectTypeOf(merchant.refund.getStatus).toBeFunction()
+    expectTypeOf(merchant.refund.getReceiverRequests).toBeFunction()
   })
 
   it('refund hides non-merchant methods', () => {
@@ -147,6 +150,12 @@ describe('ArbiterClient type narrowing', () => {
     arbiter.payment.charge
     // @ts-expect-error — arbiter cannot release
     arbiter.payment.release
+    // @ts-expect-error — arbiter cannot refundInEscrow
+    arbiter.payment.refundInEscrow
+    // @ts-expect-error — arbiter cannot refundPostEscrow
+    arbiter.payment.refundPostEscrow
+    // @ts-expect-error — arbiter cannot approvePostEscrowRefund
+    arbiter.payment.approvePostEscrowRefund
   })
 
   it('refund exposes arbiter methods', () => {
@@ -162,14 +171,6 @@ describe('ArbiterClient type narrowing', () => {
     arbiter.refund.cancel
     // @ts-expect-error — arbiter cannot refuse
     arbiter.refund.refuse
-    // @ts-expect-error — arbiter cannot approveBudget
-    arbiter.refund.approveBudget
-    // @ts-expect-error — arbiter cannot getBudget
-    arbiter.refund.getBudget
-    // @ts-expect-error — arbiter cannot refundInEscrow
-    arbiter.refund.refundInEscrow
-    // @ts-expect-error — arbiter cannot refundPostEscrow
-    arbiter.refund.refundPostEscrow
   })
 
   it('freeze exposes full FreezeActions', () => {

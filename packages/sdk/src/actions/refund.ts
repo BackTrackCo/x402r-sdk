@@ -1,5 +1,4 @@
 import {
-  approveRefundBudget,
   approveRefundWithSignature,
   cancelRefundRequest,
   denyRefundRequest,
@@ -8,22 +7,23 @@ import {
   getOperatorRefundRequests,
   getPayerRefundRequests,
   getReceiverRefundRequests,
-  getRefundBudget,
   getRefundRequest,
   getRefundRequestByKey,
   getRefundRequestStatus,
   getStoredPaymentInfo,
   hasRefundRequest,
-  refundInEscrow,
-  refundPostEscrow,
   refuseRefundRequest,
   requestRefund,
 } from '@x402r/core'
+import type { Address } from 'viem'
 import type { RefundActions, ResolvedConfig } from '../types.js'
 import { requireWallet } from './utils.js'
 
-export function createRefundActions(config: ResolvedConfig): RefundActions {
-  const { publicClient, refundRequestAddress, operatorAddress } = config
+export function createRefundActions(
+  config: ResolvedConfig,
+  refundRequestAddress: Address,
+): RefundActions {
+  const { publicClient } = config
 
   return {
     // -----------------------------------------------------------------------
@@ -143,40 +143,6 @@ export function createRefundActions(config: ResolvedConfig): RefundActions {
         paymentInfo,
         nonce,
         cancelIndex,
-      }),
-
-    // -----------------------------------------------------------------------
-    // Budget ops (operatorAddress)
-    // -----------------------------------------------------------------------
-
-    approveBudget: (token, amount) =>
-      approveRefundBudget(requireWallet(config), {
-        token,
-        operatorAddress,
-        amount,
-      }),
-
-    getBudget: (token, owner) =>
-      getRefundBudget(publicClient, {
-        token,
-        owner,
-        operatorAddress,
-      }),
-
-    refundInEscrow: (paymentInfo, amount) =>
-      refundInEscrow(requireWallet(config), {
-        operatorAddress,
-        paymentInfo,
-        amount,
-      }),
-
-    refundPostEscrow: (paymentInfo, amount, tokenCollector, collectorData) =>
-      refundPostEscrow(requireWallet(config), {
-        operatorAddress,
-        paymentInfo,
-        amount,
-        tokenCollector,
-        collectorData,
       }),
   }
 }

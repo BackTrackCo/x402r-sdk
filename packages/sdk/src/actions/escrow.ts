@@ -4,10 +4,13 @@ import {
   getEscrowPeriodDuration,
   isDuringEscrowPeriod,
 } from '@x402r/core'
+import type { Address } from 'viem'
 import type { EscrowActions, ResolvedConfig } from '../types.js'
 
-export function createEscrowActions(config: ResolvedConfig): EscrowActions {
-  const escrowPeriodAddress = config.escrowPeriodAddress!
+export function createEscrowActions(
+  config: ResolvedConfig,
+  escrowPeriodAddress: Address,
+): EscrowActions {
   return {
     async isDuringEscrow(paymentInfo: PaymentInfo) {
       return isDuringEscrowPeriod(config.publicClient, {

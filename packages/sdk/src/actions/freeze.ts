@@ -4,12 +4,14 @@ import {
   freezePayment,
   unfreezePayment,
 } from '@x402r/core'
-import type { Hash } from 'viem'
+import type { Address, Hash } from 'viem'
 import type { FreezeActions, ResolvedConfig } from '../types.js'
 import { requireWallet } from './utils.js'
 
-export function createFreezeActions(config: ResolvedConfig): FreezeActions {
-  const freezeAddress = config.freezeAddress!
+export function createFreezeActions(
+  config: ResolvedConfig,
+  freezeAddress: Address,
+): FreezeActions {
   return {
     async freeze(paymentInfo: PaymentInfo): Promise<Hash> {
       const wallet = requireWallet(config)
