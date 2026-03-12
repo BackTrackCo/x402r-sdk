@@ -87,15 +87,7 @@ export async function deployViaFactory(
     return { address: existing, hash: null, isNew: false }
   }
 
-  // 3. Compute deterministic address (pure view function, independent of deployment)
-  const address = (await publicClient.readContract({
-    address: factoryAddress,
-    abi,
-    functionName: computeAddressFn,
-    args,
-  })) as Address
-
-  // 4. Deploy via factory
+  // 3. Deploy via factory
   const hash = await wrapContractCall(opName, () =>
     walletClient.writeContract({
       address: factoryAddress,
@@ -107,8 +99,16 @@ export async function deployViaFactory(
     }),
   )
 
-  // 5. Wait for transaction receipt
+  // 4. Wait for transaction receipt
   await publicClient.waitForTransactionReceipt({ hash })
+
+  // 5. Read deterministic address via computeAddress (pure function, no RPC cache issues)
+  const address = (await publicClient.readContract({
+    address: factoryAddress,
+    abi,
+    functionName: computeAddressFn,
+    args,
+  })) as Address
 
   return { address, hash, isNew: true }
 }
