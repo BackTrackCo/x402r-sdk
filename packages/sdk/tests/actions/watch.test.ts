@@ -88,6 +88,22 @@ describe('createWatchActions', () => {
     ])
   })
 
+  it('onRefundRequest returns callable unwatch when refundRequestAddress is undefined', () => {
+    const mockWatchContractEvent = vi.fn()
+    const config = createTestConfig({ refundRequestAddress: undefined })
+    ;(config as any).publicClient = {
+      ...config.publicClient,
+      watchContractEvent: mockWatchContractEvent,
+    }
+
+    const actions = createWatchActions(config)
+    const unwatch = actions.onRefundRequest(() => {})
+
+    expect(mockWatchContractEvent).not.toHaveBeenCalled()
+    expect(unwatch).toBeTypeOf('function')
+    unwatch() // should not throw
+  })
+
   it('onRefundRequest forwards logs to callback', () => {
     let capturedOnLogs: (logs: unknown[]) => void
     const unwatchFn = vi.fn()

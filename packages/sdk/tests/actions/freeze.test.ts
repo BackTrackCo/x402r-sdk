@@ -16,7 +16,7 @@ describe('createFreezeActions', () => {
   it('freeze delegates to core with freezeAddress and requires wallet', async () => {
     const { freezePayment } = await import('@x402r/core')
     const config = createTestConfig({ freezeAddress: TEST_FREEZE })
-    const actions = createFreezeActions(config)
+    const actions = createFreezeActions(config, TEST_FREEZE)
 
     const result = await actions.freeze(mockPaymentInfo)
 
@@ -32,7 +32,7 @@ describe('createFreezeActions', () => {
       freezeAddress: TEST_FREEZE,
       walletClient: undefined,
     })
-    const actions = createFreezeActions(config)
+    const actions = createFreezeActions(config, TEST_FREEZE)
 
     await expect(() => actions.freeze(mockPaymentInfo)).rejects.toThrow(
       'walletClient is required',
@@ -42,7 +42,7 @@ describe('createFreezeActions', () => {
   it('unfreeze delegates to core with freezeAddress', async () => {
     const { unfreezePayment } = await import('@x402r/core')
     const config = createTestConfig({ freezeAddress: TEST_FREEZE })
-    const actions = createFreezeActions(config)
+    const actions = createFreezeActions(config, TEST_FREEZE)
 
     const result = await actions.unfreeze(mockPaymentInfo)
 
@@ -59,7 +59,7 @@ describe('createFreezeActions', () => {
       freezeAddress: TEST_FREEZE,
       walletClient: undefined,
     })
-    const actions = createFreezeActions(config)
+    const actions = createFreezeActions(config, TEST_FREEZE)
 
     const result = await actions.isFrozen(mockPaymentInfo)
 

@@ -20,7 +20,7 @@ describe('createEscrowActions', () => {
   it('isDuringEscrow delegates to core with escrowPeriodAddress', async () => {
     const { isDuringEscrowPeriod } = await import('@x402r/core')
     const config = createTestConfig({ escrowPeriodAddress: TEST_ESCROW_PERIOD })
-    const actions = createEscrowActions(config)
+    const actions = createEscrowActions(config, TEST_ESCROW_PERIOD)
 
     const result = await actions.isDuringEscrow(mockPaymentInfo)
 
@@ -34,7 +34,7 @@ describe('createEscrowActions', () => {
   it('getAuthorizationTime delegates to core with escrowPeriodAddress', async () => {
     const { getAuthorizationTime } = await import('@x402r/core')
     const config = createTestConfig({ escrowPeriodAddress: TEST_ESCROW_PERIOD })
-    const actions = createEscrowActions(config)
+    const actions = createEscrowActions(config, TEST_ESCROW_PERIOD)
 
     const result = await actions.getAuthorizationTime(mockPaymentInfo)
 
@@ -48,7 +48,7 @@ describe('createEscrowActions', () => {
   it('getDuration delegates to core with escrowPeriodAddress', async () => {
     const { getEscrowPeriodDuration } = await import('@x402r/core')
     const config = createTestConfig({ escrowPeriodAddress: TEST_ESCROW_PERIOD })
-    const actions = createEscrowActions(config)
+    const actions = createEscrowActions(config, TEST_ESCROW_PERIOD)
 
     const result = await actions.getDuration()
 

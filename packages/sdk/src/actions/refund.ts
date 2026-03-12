@@ -15,12 +15,15 @@ import {
   refuseRefundRequest,
   requestRefund,
 } from '@x402r/core'
+import type { Address } from 'viem'
 import type { RefundActions, ResolvedConfig } from '../types.js'
 import { requireWallet } from './utils.js'
 
-export function createRefundActions(config: ResolvedConfig): RefundActions {
+export function createRefundActions(
+  config: ResolvedConfig,
+  refundRequestAddress: Address,
+): RefundActions {
   const { publicClient } = config
-  const refundRequestAddress = config.refundRequestAddress!
 
   return {
     // -----------------------------------------------------------------------
