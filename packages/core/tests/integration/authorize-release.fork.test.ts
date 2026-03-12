@@ -23,6 +23,7 @@ import {
   type DeployedFixtures,
   deployTestFixtures,
 } from '../setup/deploy-fixtures.js'
+import { createCollectorData } from '../setup/erc3009-helper.js'
 
 // ---------------------------------------------------------------------------
 // Config
@@ -60,7 +61,6 @@ beforeAll(async () => {
     walletClient: anvilBaseSepolia.getWalletClient(testRoles.payer.address),
     operatorAddress: fixtures.operatorAddress,
     escrowPeriodAddress: fixtures.escrowPeriodAddress,
-    tokenCollector: fixtures.preApprovalCollectorAddress,
   })
 
   merchant = createMerchantClient({
@@ -68,7 +68,6 @@ beforeAll(async () => {
     walletClient: anvilBaseSepolia.getWalletClient(testRoles.receiver.address),
     operatorAddress: fixtures.operatorAddress,
     escrowPeriodAddress: fixtures.escrowPeriodAddress,
-    tokenCollector: fixtures.preApprovalCollectorAddress,
   })
 
   paymentInfo = {
@@ -199,14 +198,20 @@ describe('Fee Read Operations', () => {
 
 describe('Scenario 1: Authorize -> Release after escrow', () => {
   it('authorize creates a capturable payment', async () => {
-    const hash = await payerClient.payment.approveAndAuthorize(
+    const { collectorData, tokenCollector } = await createCollectorData(
+      anvilBaseSepolia.getWalletClient(testRoles.payer.address),
+      paymentInfo,
+    )
+
+    const hash = await payerClient.payment.authorize(
       paymentInfo,
       AMOUNT,
+      tokenCollector,
+      collectorData,
     )
     await publicClient.waitForTransactionReceipt({ hash })
 
     const amounts = await merchant.payment.getAmounts(paymentInfo)
-    // hasCollectedPayment = true means tokens collected from payer into escrow
     expect(amounts.hasCollectedPayment).toBe(true)
     expect(amounts.capturableAmount).toBeGreaterThan(0n)
   }, 60_000)

@@ -86,7 +86,6 @@ export function resolveConfig(config: X402rConfig): ResolvedConfig {
     refundRequestEvidenceAddress,
     escrowPeriodAddress: config.escrowPeriodAddress,
     freezeAddress: config.freezeAddress,
-    tokenCollector: config.tokenCollector ?? chainConfig.tokenCollector,
   }
 }
 

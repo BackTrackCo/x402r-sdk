@@ -40,9 +40,6 @@ export interface X402rConfig {
   // Optional condition plugin addresses (per-operator, not in chain config)
   escrowPeriodAddress?: Address
   freezeAddress?: Address
-
-  // Override for tokenCollector (resolved from chain config by default)
-  tokenCollector?: Address
 }
 
 // ---------------------------------------------------------------------------
@@ -59,7 +56,6 @@ export interface ResolvedConfig {
   refundRequestEvidenceAddress: Address
   escrowPeriodAddress: Address | undefined
   freezeAddress: Address | undefined
-  tokenCollector: Address
 }
 
 export interface ResolvedWriteConfig extends ResolvedConfig {
@@ -83,7 +79,6 @@ export interface PaymentActions {
     tokenCollector: Address,
     collectorData: Hex,
   ): Promise<Hash>
-  approveAndAuthorize(paymentInfo: PaymentInfo, amount: bigint): Promise<Hash>
   release(paymentInfo: PaymentInfo, amount: bigint): Promise<Hash>
   refundInEscrow(paymentInfo: PaymentInfo, amount: bigint): Promise<Hash>
   refundPostEscrow(

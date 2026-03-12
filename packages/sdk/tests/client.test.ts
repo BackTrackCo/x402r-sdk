@@ -86,17 +86,6 @@ describe('resolveConfig', () => {
     )
   })
 
-  it('resolves tokenCollector from chain config when not provided', () => {
-    const resolved = resolveConfig(baseConfig)
-    expect(resolved.tokenCollector).toBe(baseSepoliaConfig.tokenCollector)
-  })
-
-  it('allows tokenCollector override', () => {
-    const custom = '0x1111111111111111111111111111111111111111' as const
-    const resolved = resolveConfig({ ...baseConfig, tokenCollector: custom })
-    expect(resolved.tokenCollector).toBe(custom)
-  })
-
   it('passes through optional plugin addresses', () => {
     const resolved = resolveConfig({
       ...baseConfig,

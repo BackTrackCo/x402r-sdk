@@ -14,6 +14,7 @@ import {
   type DeployedFixtures,
   deployTestFixtures,
 } from '../setup/deploy-fixtures.js'
+import { createCollectorData } from '../setup/erc3009-helper.js'
 
 // ---------------------------------------------------------------------------
 // Config
@@ -52,7 +53,6 @@ beforeAll(async () => {
     walletClient: anvilBaseSepolia.getWalletClient(testRoles.payer.address),
     operatorAddress: fixtures.operatorAddress,
     escrowPeriodAddress: fixtures.escrowPeriodAddress,
-    tokenCollector: fixtures.preApprovalCollectorAddress,
   })
 
   merchant = createMerchantClient({
@@ -60,7 +60,6 @@ beforeAll(async () => {
     walletClient: anvilBaseSepolia.getWalletClient(testRoles.receiver.address),
     operatorAddress: fixtures.operatorAddress,
     escrowPeriodAddress: fixtures.escrowPeriodAddress,
-    tokenCollector: fixtures.preApprovalCollectorAddress,
   })
 
   paymentInfo = {
@@ -85,9 +84,15 @@ beforeAll(async () => {
 
 describe('Scenario 3: Partial refund during escrow', () => {
   it('partial refundInEscrow reduces capturable amount', async () => {
-    const hash = await payerClient.payment.approveAndAuthorize(
+    const { collectorData, tokenCollector } = await createCollectorData(
+      anvilBaseSepolia.getWalletClient(testRoles.payer.address),
+      paymentInfo,
+    )
+    const hash = await payerClient.payment.authorize(
       paymentInfo,
       TOTAL_AMOUNT,
+      tokenCollector,
+      collectorData,
     )
     await publicClient.waitForTransactionReceipt({ hash })
 
@@ -96,7 +101,7 @@ describe('Scenario 3: Partial refund during escrow', () => {
     expect(amountsBefore.capturableAmount).toBeGreaterThan(0n)
 
     // Receiver issues partial refund during escrow
-    const refundHash = await merchant.refund.refundInEscrow(
+    const refundHash = await merchant.payment.refundInEscrow(
       paymentInfo,
       REFUND_AMOUNT,
     )

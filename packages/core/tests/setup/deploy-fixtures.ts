@@ -2,7 +2,6 @@ import type { Address, PublicClient, TestClient, WalletClient } from 'viem'
 import {
   encodeAbiParameters,
   erc20Abi,
-  getContractAddress,
   keccak256,
   pad,
   zeroAddress,
@@ -12,18 +11,12 @@ import {
   escrowPeriodFactoryAbi,
   freezeFactoryAbi,
   paymentOperatorFactoryAbi,
-  signatureConditionAbi,
-  signatureRefundRequestAbi,
   staticAddressConditionFactoryAbi,
   staticFeeCalculatorFactoryAbi,
 } from '../../src/abis/generated.js'
 import { x402rChains } from '../../src/config/index.js'
-import {
-  preApprovalPaymentCollectorBytecode,
-  signatureConditionBytecode,
-  signatureRefundRequestBytecode,
-} from './bytecodes.js'
-import { testRoles } from './constants.js'
+import { deployArbiterSetup } from '../../src/deploy/index.js'
+import { accounts, testRoles } from './constants.js'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -33,12 +26,12 @@ export interface DeployedFixtures {
   operatorAddress: Address
   feeCalculatorAddress: Address
   escrowPeriodAddress: Address
-  preApprovalCollectorAddress: Address
   freezeAddress: Address
   operatorWithFreezeAddress: Address
   arbiterConditionAddress: Address
   signatureConditionAddress: Address
   signatureRefundRequestAddress: Address
+  arbiterRefundOperatorAddress: Address
 }
 
 // ---------------------------------------------------------------------------
@@ -53,17 +46,12 @@ const FEE_BPS = 50n
 const ESCROW_PERIOD_SECONDS = 604800n // 7 days
 
 // USDC (proxy) balanceOf mapping is at storage slot 9
-// See: https://eips.ethereum.org/EIPS/eip-1967 — USDC uses FiatTokenV2_2
 const USDC_BALANCE_SLOT = 9n
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-/**
- * Computes the storage slot for `balanceOf[account]` in a standard ERC-20
- * mapping at `baseSlot`. Solidity mapping: `keccak256(abi.encode(key, slot))`
- */
 function getBalanceSlot(account: Address, baseSlot: bigint): `0x${string}` {
   return keccak256(
     encodeAbiParameters(
@@ -83,6 +71,14 @@ export async function deployTestFixtures(
   testClient: TestClient,
 ): Promise<DeployedFixtures> {
   const deployer = testRoles.deployer.address
+
+  // 0. Clear contract code at all test accounts
+  //    On Base Sepolia, standard Anvil/Hardhat addresses have contracts deployed.
+  //    USDC FiatTokenV2_2 uses OZ SignatureChecker which checks signer.code.length —
+  //    if code exists, it skips ecrecover and tries EIP-1271 instead, breaking ERC-3009.
+  for (const account of accounts) {
+    await testClient.setCode({ address: account.address, bytecode: '0x' })
+  }
 
   // 1. Deploy StaticFeeCalculator via factory
   const feeCalcHash = await walletClient.writeContract({
@@ -125,14 +121,14 @@ export async function deployTestFixtures(
     feeRecipient: testRoles.operatorFeeRecipient.address,
     feeCalculator: feeCalculatorAddress,
     authorizeCondition: zeroAddress,
-    authorizeRecorder: escrowPeriodAddress, // EscrowPeriod as authorize recorder
+    authorizeRecorder: escrowPeriodAddress,
     chargeCondition: zeroAddress,
     chargeRecorder: zeroAddress,
-    releaseCondition: escrowPeriodAddress, // EscrowPeriod as release condition
+    releaseCondition: escrowPeriodAddress,
     releaseRecorder: zeroAddress,
     refundInEscrowCondition: zeroAddress,
     refundInEscrowRecorder: zeroAddress,
-    refundPostEscrowCondition: zeroAddress,
+    refundPostEscrowCondition: baseSepolia.conditions.receiver,
     refundPostEscrowRecorder: zeroAddress,
   } as const
 
@@ -152,34 +148,6 @@ export async function deployTestFixtures(
     functionName: 'computeAddress',
     args: [operatorConfig],
   })
-
-  // ---------------------------------------------------------------------------
-  // 2b. Deploy PreApprovalPaymentCollector(authCaptureEscrow) — direct deploy
-  // ---------------------------------------------------------------------------
-  const preApprovalAbi = [
-    {
-      type: 'constructor',
-      inputs: [{ name: 'authCaptureEscrow_', type: 'address' }],
-      stateMutability: 'nonpayable',
-    },
-  ] as const
-
-  const preApprovalNonce = await publicClient.getTransactionCount({
-    address: deployer,
-  })
-  const preApprovalCollectorAddress = getContractAddress({
-    from: deployer,
-    nonce: BigInt(preApprovalNonce),
-  })
-
-  const preApprovalHash = await walletClient.deployContract({
-    abi: preApprovalAbi,
-    bytecode: preApprovalPaymentCollectorBytecode,
-    args: [baseSepolia.authCaptureEscrow],
-    account: deployer,
-    chain: walletClient.chain,
-  })
-  await publicClient.waitForTransactionReceipt({ hash: preApprovalHash })
 
   // ---------------------------------------------------------------------------
   // 3a. Deploy StaticAddressCondition(arbiter) via factory
@@ -211,7 +179,7 @@ export async function deployTestFixtures(
     args: [
       arbiterConditionAddress,
       arbiterConditionAddress,
-      0n, // freezeDuration = 0 → permanent
+      0n,
       escrowPeriodAddress,
     ],
     account: deployer,
@@ -252,8 +220,7 @@ export async function deployTestFixtures(
   })
 
   // ---------------------------------------------------------------------------
-  // 3d. Deploy PaymentOperator with freeze (release uses AndCondition,
-  //     refundInEscrow uses ReceiverCondition)
+  // 3d. Deploy PaymentOperator with freeze
   // ---------------------------------------------------------------------------
   const freezeOperatorConfig = {
     feeRecipient: testRoles.operatorFeeRecipient.address,
@@ -262,9 +229,9 @@ export async function deployTestFixtures(
     authorizeRecorder: escrowPeriodAddress,
     chargeCondition: zeroAddress,
     chargeRecorder: zeroAddress,
-    releaseCondition: andConditionAddress, // EscrowPeriod AND Freeze
+    releaseCondition: andConditionAddress,
     releaseRecorder: zeroAddress,
-    refundInEscrowCondition: baseSepolia.conditions.receiver, // Only receiver can refund
+    refundInEscrowCondition: baseSepolia.conditions.receiver,
     refundInEscrowRecorder: zeroAddress,
     refundPostEscrowCondition: zeroAddress,
     refundPostEscrowRecorder: zeroAddress,
@@ -288,44 +255,51 @@ export async function deployTestFixtures(
   })
 
   // ---------------------------------------------------------------------------
-  // 3e. Deploy SignatureCondition(arbiter) — direct deploy from bytecode
+  // 3e. Deploy SignatureCondition + SignatureRefundRequest via arbiter preset
   // ---------------------------------------------------------------------------
-  const sigCondNonce = await publicClient.getTransactionCount({
-    address: deployer,
+  const arbiterSetup = await deployArbiterSetup(walletClient, publicClient, {
+    chainId: 84532,
+    arbiter: testRoles.arbiter.address,
   })
-  const signatureConditionAddress = getContractAddress({
-    from: deployer,
-    nonce: BigInt(sigCondNonce),
-  })
+  const signatureConditionAddress = arbiterSetup.signatureConditionAddress
+  const signatureRefundRequestAddress =
+    arbiterSetup.signatureRefundRequestAddress
 
-  const sigCondHash = await walletClient.deployContract({
-    abi: signatureConditionAbi,
-    bytecode: signatureConditionBytecode,
-    args: [testRoles.arbiter.address],
+  // ---------------------------------------------------------------------------
+  // 3f. Deploy PaymentOperator for arbiter refund (Flow 7)
+  //     refundPostEscrowCondition = signatureCondition
+  // ---------------------------------------------------------------------------
+  const arbiterRefundOperatorConfig = {
+    feeRecipient: testRoles.operatorFeeRecipient.address,
+    feeCalculator: feeCalculatorAddress,
+    authorizeCondition: zeroAddress,
+    authorizeRecorder: escrowPeriodAddress,
+    chargeCondition: zeroAddress,
+    chargeRecorder: zeroAddress,
+    releaseCondition: escrowPeriodAddress,
+    releaseRecorder: zeroAddress,
+    refundInEscrowCondition: baseSepolia.conditions.receiver,
+    refundInEscrowRecorder: zeroAddress,
+    refundPostEscrowCondition: signatureConditionAddress,
+    refundPostEscrowRecorder: zeroAddress,
+  } as const
+
+  const arbiterRefundOpHash = await walletClient.writeContract({
+    address: factories.paymentOperator,
+    abi: paymentOperatorFactoryAbi,
+    functionName: 'deployOperator',
+    args: [arbiterRefundOperatorConfig],
     account: deployer,
     chain: walletClient.chain,
   })
-  await publicClient.waitForTransactionReceipt({ hash: sigCondHash })
+  await publicClient.waitForTransactionReceipt({ hash: arbiterRefundOpHash })
 
-  // ---------------------------------------------------------------------------
-  // 3f. Deploy SignatureRefundRequest(signatureCondition) — direct deploy
-  // ---------------------------------------------------------------------------
-  const sigRefundNonce = await publicClient.getTransactionCount({
-    address: deployer,
+  const arbiterRefundOperatorAddress = await publicClient.readContract({
+    address: factories.paymentOperator,
+    abi: paymentOperatorFactoryAbi,
+    functionName: 'computeAddress',
+    args: [arbiterRefundOperatorConfig],
   })
-  const signatureRefundRequestAddress = getContractAddress({
-    from: deployer,
-    nonce: BigInt(sigRefundNonce),
-  })
-
-  const sigRefundHash = await walletClient.deployContract({
-    abi: signatureRefundRequestAbi,
-    bytecode: signatureRefundRequestBytecode,
-    args: [signatureConditionAddress],
-    account: deployer,
-    chain: walletClient.chain,
-  })
-  await publicClient.waitForTransactionReceipt({ hash: sigRefundHash })
 
   // ---------------------------------------------------------------------------
   // 4. Fund payer with USDC via storage slot manipulation
@@ -338,7 +312,6 @@ export async function deployTestFixtures(
     value: pad(`0x${payerUsdcAmount.toString(16)}` as `0x${string}`),
   })
 
-  // Verify USDC was funded
   const payerBalance = await publicClient.readContract({
     address: USDC,
     abi: erc20Abi,
@@ -346,8 +319,6 @@ export async function deployTestFixtures(
     args: [testRoles.payer.address],
   })
 
-  // If direct slot didn't work, the USDC proxy might use a different slot layout.
-  // Try slot 0 as fallback (some USDC implementations use slot 0 for balances).
   if (payerBalance === 0n) {
     const fallbackSlot = getBalanceSlot(testRoles.payer.address, 0n)
     await testClient.setStorageAt({
@@ -373,11 +344,11 @@ export async function deployTestFixtures(
     operatorAddress,
     feeCalculatorAddress,
     escrowPeriodAddress,
-    preApprovalCollectorAddress,
     freezeAddress,
     operatorWithFreezeAddress,
     arbiterConditionAddress,
     signatureConditionAddress,
     signatureRefundRequestAddress,
+    arbiterRefundOperatorAddress,
   }
 }

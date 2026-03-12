@@ -1,6 +1,12 @@
 import type { PublicClient, TestClient } from 'viem'
+import { erc20Abi } from 'viem'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { createX402r, type X402r } from '../../../sdk/src/index.js'
+import {
+  createMerchantClient,
+  createX402r,
+  type MerchantClient,
+  type X402r,
+} from '../../../sdk/src/index.js'
 import { x402rChains } from '../../src/config/index.js'
 import type { PaymentInfo } from '../../src/types/index.js'
 import { anvilBaseSepolia } from '../setup/anvil.js'
@@ -27,8 +33,10 @@ let publicClient: PublicClient
 let testClient: TestClient
 let fixtures: DeployedFixtures
 let payerClient: X402r
+let merchant: MerchantClient
 
 const AMOUNT = 1_000_000n
+const REFUND_AMOUNT = 500_000n
 
 let paymentInfo: PaymentInfo
 
@@ -48,6 +56,13 @@ beforeAll(async () => {
     escrowPeriodAddress: fixtures.escrowPeriodAddress,
   })
 
+  merchant = createMerchantClient({
+    publicClient,
+    walletClient: anvilBaseSepolia.getWalletClient(testRoles.receiver.address),
+    operatorAddress: fixtures.operatorAddress,
+    escrowPeriodAddress: fixtures.escrowPeriodAddress,
+  })
+
   paymentInfo = {
     operator: fixtures.operatorAddress,
     payer: testRoles.payer.address,
@@ -60,44 +75,78 @@ beforeAll(async () => {
     minFeeBps: 0,
     maxFeeBps: 500,
     feeReceiver: fixtures.operatorAddress,
-    salt: 2n,
+    salt: 7n,
   }
 }, 60_000)
 
 // ---------------------------------------------------------------------------
-// Scenario 2: Escrow period timing
+// Scenario 7: Post-release refund (Flow 4)
 // ---------------------------------------------------------------------------
 
-describe('Scenario 2: Escrow period timing', () => {
-  it('authorization time is recorded and escrow period is active', async () => {
+describe('Scenario 7: Post-release refund (Flow 4)', () => {
+  it('authorize and release payment to receiver', async () => {
     const { collectorData, tokenCollector } = await createCollectorData(
       anvilBaseSepolia.getWalletClient(testRoles.payer.address),
       paymentInfo,
     )
-    const hash = await payerClient.payment.authorize(
+    const authHash = await payerClient.payment.authorize(
       paymentInfo,
       AMOUNT,
       tokenCollector,
       collectorData,
     )
-    await publicClient.waitForTransactionReceipt({ hash })
+    await publicClient.waitForTransactionReceipt({ hash: authHash })
 
-    const authTime = await payerClient.escrow!.getAuthorizationTime(paymentInfo)
-    expect(authTime).toBeGreaterThan(0n)
-
-    const duringEscrow = await payerClient.escrow!.isDuringEscrow(paymentInfo)
-    expect(duringEscrow).toBe(true)
-
-    const duration = await payerClient.escrow!.getDuration()
-    expect(duration).toBe(604800n)
-  }, 60_000)
-
-  it('escrow period becomes inactive after fast-forward', async () => {
     // Fast-forward past escrow period
     await testClient.increaseTime({ seconds: 604801 })
     await testClient.mine({ blocks: 1 })
 
-    const duringEscrow = await payerClient.escrow!.isDuringEscrow(paymentInfo)
-    expect(duringEscrow).toBe(false)
+    const releaseHash = await merchant.payment.release(paymentInfo, AMOUNT)
+    await publicClient.waitForTransactionReceipt({ hash: releaseHash })
+
+    const amounts = await merchant.payment.getAmounts(paymentInfo)
+    expect(amounts.capturableAmount).toBe(0n)
+  }, 60_000)
+
+  it('receiver approves post-escrow refund budget', async () => {
+    const approveHash = await merchant.payment.approvePostEscrowRefund(
+      USDC,
+      REFUND_AMOUNT,
+    )
+    await publicClient.waitForTransactionReceipt({ hash: approveHash })
+
+    const allowance = await merchant.payment.getPostEscrowRefundAllowance(
+      USDC,
+      testRoles.receiver.address,
+    )
+    expect(allowance).toBe(REFUND_AMOUNT)
+  }, 60_000)
+
+  it('refundPostEscrow transfers funds back to payer', async () => {
+    const receiverRefundCollector = baseSepolia.receiverRefundCollector
+
+    const payerBalanceBefore = await publicClient.readContract({
+      address: USDC,
+      abi: erc20Abi,
+      functionName: 'balanceOf',
+      args: [testRoles.payer.address],
+    })
+
+    const refundHash = await merchant.payment.refundPostEscrow(
+      paymentInfo,
+      REFUND_AMOUNT,
+      receiverRefundCollector,
+      '0x',
+    )
+    await publicClient.waitForTransactionReceipt({ hash: refundHash })
+
+    const payerBalanceAfter = await publicClient.readContract({
+      address: USDC,
+      abi: erc20Abi,
+      functionName: 'balanceOf',
+      args: [testRoles.payer.address],
+    })
+
+    expect(payerBalanceAfter - payerBalanceBefore).toBe(REFUND_AMOUNT)
   }, 60_000)
 })

@@ -1,6 +1,12 @@
 import type { PublicClient, TestClient } from 'viem'
+import { erc20Abi } from 'viem'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { createX402r, type X402r } from '../../../sdk/src/index.js'
+import {
+  createMerchantClient,
+  createX402r,
+  type MerchantClient,
+  type X402r,
+} from '../../../sdk/src/index.js'
 import { x402rChains } from '../../src/config/index.js'
 import type { PaymentInfo } from '../../src/types/index.js'
 import { anvilBaseSepolia } from '../setup/anvil.js'
@@ -27,6 +33,7 @@ let publicClient: PublicClient
 let testClient: TestClient
 let fixtures: DeployedFixtures
 let payerClient: X402r
+let merchant: MerchantClient
 
 const AMOUNT = 1_000_000n
 
@@ -45,7 +52,12 @@ beforeAll(async () => {
     publicClient,
     walletClient: anvilBaseSepolia.getWalletClient(testRoles.payer.address),
     operatorAddress: fixtures.operatorAddress,
-    escrowPeriodAddress: fixtures.escrowPeriodAddress,
+  })
+
+  merchant = createMerchantClient({
+    publicClient,
+    walletClient: anvilBaseSepolia.getWalletClient(testRoles.receiver.address),
+    operatorAddress: fixtures.operatorAddress,
   })
 
   paymentInfo = {
@@ -60,21 +72,34 @@ beforeAll(async () => {
     minFeeBps: 0,
     maxFeeBps: 500,
     feeReceiver: fixtures.operatorAddress,
-    salt: 2n,
+    salt: 6n,
   }
 }, 60_000)
 
 // ---------------------------------------------------------------------------
-// Scenario 2: Escrow period timing
+// Scenario 6: Direct Charge — no escrow (Flow 2)
 // ---------------------------------------------------------------------------
 
-describe('Scenario 2: Escrow period timing', () => {
-  it('authorization time is recorded and escrow period is active', async () => {
+describe('Scenario 6: Direct Charge (Flow 2)', () => {
+  it('charge sends funds directly to receiver minus fees', async () => {
+    const payerBalanceBefore = await publicClient.readContract({
+      address: USDC,
+      abi: erc20Abi,
+      functionName: 'balanceOf',
+      args: [testRoles.payer.address],
+    })
+    const receiverBalanceBefore = await publicClient.readContract({
+      address: USDC,
+      abi: erc20Abi,
+      functionName: 'balanceOf',
+      args: [testRoles.receiver.address],
+    })
+
     const { collectorData, tokenCollector } = await createCollectorData(
       anvilBaseSepolia.getWalletClient(testRoles.payer.address),
       paymentInfo,
     )
-    const hash = await payerClient.payment.authorize(
+    const hash = await payerClient.payment.charge(
       paymentInfo,
       AMOUNT,
       tokenCollector,
@@ -82,22 +107,32 @@ describe('Scenario 2: Escrow period timing', () => {
     )
     await publicClient.waitForTransactionReceipt({ hash })
 
-    const authTime = await payerClient.escrow!.getAuthorizationTime(paymentInfo)
-    expect(authTime).toBeGreaterThan(0n)
+    const payerBalanceAfter = await publicClient.readContract({
+      address: USDC,
+      abi: erc20Abi,
+      functionName: 'balanceOf',
+      args: [testRoles.payer.address],
+    })
+    const receiverBalanceAfter = await publicClient.readContract({
+      address: USDC,
+      abi: erc20Abi,
+      functionName: 'balanceOf',
+      args: [testRoles.receiver.address],
+    })
 
-    const duringEscrow = await payerClient.escrow!.isDuringEscrow(paymentInfo)
-    expect(duringEscrow).toBe(true)
+    // Payer should have paid AMOUNT
+    expect(payerBalanceBefore - payerBalanceAfter).toBe(AMOUNT)
 
-    const duration = await payerClient.escrow!.getDuration()
-    expect(duration).toBe(604800n)
+    // Receiver should have received AMOUNT minus operator fees (50 bps = 5000)
+    const receiverGain = receiverBalanceAfter - receiverBalanceBefore
+    expect(receiverGain).toBeGreaterThan(0n)
+    expect(receiverGain).toBeLessThan(AMOUNT) // Fees deducted
   }, 60_000)
 
-  it('escrow period becomes inactive after fast-forward', async () => {
-    // Fast-forward past escrow period
-    await testClient.increaseTime({ seconds: 604801 })
-    await testClient.mine({ blocks: 1 })
-
-    const duringEscrow = await payerClient.escrow!.isDuringEscrow(paymentInfo)
-    expect(duringEscrow).toBe(false)
+  it('fee calculation matches expected 50 bps', async () => {
+    const fees = await merchant.operator.calculateFees(paymentInfo, AMOUNT)
+    expect(fees.operatorFeeBps).toBe(50n)
+    expect(fees.operatorFeeAmount).toBe(5000n) // 1_000_000 * 50 / 10_000
+    expect(fees.netAmount).toBe(995000n)
   }, 60_000)
 })

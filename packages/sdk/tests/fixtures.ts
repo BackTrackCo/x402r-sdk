@@ -28,11 +28,6 @@ export const TEST_EVIDENCE =
 export const TEST_ESCROW_PERIOD =
   '0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef' as const
 export const TEST_FREEZE = '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd' as const
-export const TEST_RECEIVER_REFUND_COLLECTOR =
-  '0xE5500a38BE45a6C598420fbd7867ac85EC451A07' as const
-export const TEST_TOKEN_COLLECTOR =
-  '0xcE66Ab399EDA513BD12760b6427C87D6602344a7' as const
-
 export const mockPaymentInfo = {
   operator: TEST_OPERATOR,
   payer: '0x2234567890abcdef1234567890abcdef12345678',
@@ -61,7 +56,6 @@ export function createTestConfig(
     refundRequestEvidenceAddress: TEST_EVIDENCE,
     escrowPeriodAddress: undefined,
     freezeAddress: undefined,
-    tokenCollector: TEST_TOKEN_COLLECTOR,
     ...overrides,
   }
 }

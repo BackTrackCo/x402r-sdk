@@ -16,6 +16,7 @@ import {
   type DeployedFixtures,
   deployTestFixtures,
 } from '../setup/deploy-fixtures.js'
+import { createCollectorData } from '../setup/erc3009-helper.js'
 
 // ---------------------------------------------------------------------------
 // Config
@@ -56,27 +57,22 @@ beforeAll(async () => {
     operatorAddress: fixtures.operatorWithFreezeAddress,
     escrowPeriodAddress: fixtures.escrowPeriodAddress,
     freezeAddress: fixtures.freezeAddress,
-    tokenCollector: fixtures.preApprovalCollectorAddress,
   })
 
-  // Merchant uses the freeze-enabled operator
   merchant = createMerchantClient({
     publicClient,
     walletClient: anvilBaseSepolia.getWalletClient(testRoles.receiver.address),
     operatorAddress: fixtures.operatorWithFreezeAddress,
     escrowPeriodAddress: fixtures.escrowPeriodAddress,
     freezeAddress: fixtures.freezeAddress,
-    tokenCollector: fixtures.preApprovalCollectorAddress,
   })
 
-  // Arbiter uses the freeze-enabled operator
   arbiter = createArbiterClient({
     publicClient,
     walletClient: anvilBaseSepolia.getWalletClient(testRoles.arbiter.address),
     operatorAddress: fixtures.operatorWithFreezeAddress,
     escrowPeriodAddress: fixtures.escrowPeriodAddress,
     freezeAddress: fixtures.freezeAddress,
-    tokenCollector: fixtures.preApprovalCollectorAddress,
   })
 
   paymentInfo = {
@@ -101,9 +97,15 @@ beforeAll(async () => {
 
 describe('Scenario 4: Freeze blocks release', () => {
   it('authorize creates capturable payment on freeze-enabled operator', async () => {
-    const hash = await payerClient.payment.approveAndAuthorize(
+    const { collectorData, tokenCollector } = await createCollectorData(
+      anvilBaseSepolia.getWalletClient(testRoles.payer.address),
+      paymentInfo,
+    )
+    const hash = await payerClient.payment.authorize(
       paymentInfo,
       AMOUNT,
+      tokenCollector,
+      collectorData,
     )
     await publicClient.waitForTransactionReceipt({ hash })
 
@@ -135,7 +137,7 @@ describe('Scenario 4: Freeze blocks release', () => {
     // refundInEscrow does NOT check freeze — only ReceiverCondition
     const amountsBefore = await merchant.payment.getAmounts(paymentInfo)
 
-    const hash = await merchant.refund.refundInEscrow(
+    const hash = await merchant.payment.refundInEscrow(
       paymentInfo,
       amountsBefore.capturableAmount,
     )

@@ -1,4 +1,5 @@
 import type { PublicClient, TestClient } from 'viem'
+import { erc20Abi } from 'viem'
 import { beforeAll, describe, expect, it } from 'vitest'
 import {
   type ArbiterClient,
@@ -13,6 +14,7 @@ import {
 import { x402rChains } from '../../src/config/index.js'
 import type { PaymentInfo } from '../../src/types/index.js'
 import { anvilBaseSepolia } from '../setup/anvil.js'
+import { signArbiterApproval } from '../setup/arbiter-signature-helper.js'
 import { testRoles } from '../setup/constants.js'
 import {
   type DeployedFixtures,
@@ -41,6 +43,7 @@ let merchant: MerchantClient
 let arbiter: ArbiterClient
 
 const AMOUNT = 1_000_000n
+const REFUND_AMOUNT = 600_000n
 
 let paymentInfo: PaymentInfo
 
@@ -53,36 +56,37 @@ beforeAll(async () => {
 
   fixtures = await deployTestFixtures(publicClient, deployerWallet, testClient)
 
+  // Use arbiterRefundOperator — refundPostEscrow gated by SignatureCondition
   facilitator = createX402r({
     publicClient,
     walletClient: anvilBaseSepolia.getWalletClient(testRoles.payer.address),
-    operatorAddress: fixtures.operatorAddress,
+    operatorAddress: fixtures.arbiterRefundOperatorAddress,
     escrowPeriodAddress: fixtures.escrowPeriodAddress,
   })
 
   payer = createPayerClient({
     publicClient,
     walletClient: anvilBaseSepolia.getWalletClient(testRoles.payer.address),
-    operatorAddress: fixtures.operatorAddress,
+    operatorAddress: fixtures.arbiterRefundOperatorAddress,
     refundRequestAddress: fixtures.signatureRefundRequestAddress,
   })
 
   merchant = createMerchantClient({
     publicClient,
     walletClient: anvilBaseSepolia.getWalletClient(testRoles.receiver.address),
-    operatorAddress: fixtures.operatorAddress,
+    operatorAddress: fixtures.arbiterRefundOperatorAddress,
     escrowPeriodAddress: fixtures.escrowPeriodAddress,
   })
 
   arbiter = createArbiterClient({
     publicClient,
     walletClient: anvilBaseSepolia.getWalletClient(testRoles.arbiter.address),
-    operatorAddress: fixtures.operatorAddress,
+    operatorAddress: fixtures.arbiterRefundOperatorAddress,
     refundRequestAddress: fixtures.signatureRefundRequestAddress,
   })
 
   paymentInfo = {
-    operator: fixtures.operatorAddress,
+    operator: fixtures.arbiterRefundOperatorAddress,
     payer: testRoles.payer.address,
     receiver: testRoles.receiver.address,
     token: USDC,
@@ -92,66 +96,108 @@ beforeAll(async () => {
     refundExpiry: FAR_FUTURE,
     minFeeBps: 0,
     maxFeeBps: 500,
-    feeReceiver: fixtures.operatorAddress,
-    salt: 5n,
+    feeReceiver: fixtures.arbiterRefundOperatorAddress,
+    salt: 8n,
   }
 }, 60_000)
 
 // ---------------------------------------------------------------------------
-// Scenario 5: Payer requests refund, arbiter denies, merchant releases (Flow 6)
+// Scenario 8: Arbiter approves refund request (Flow 7)
 // ---------------------------------------------------------------------------
 
-describe('Scenario 5: Deny refund request', () => {
-  it('authorize creates a capturable payment', async () => {
+describe('Scenario 8: Approve refund request (Flow 7)', () => {
+  it('authorize and release payment', async () => {
     const { collectorData, tokenCollector } = await createCollectorData(
       anvilBaseSepolia.getWalletClient(testRoles.payer.address),
       paymentInfo,
     )
-    const hash = await facilitator.payment.authorize(
+    const authHash = await facilitator.payment.authorize(
       paymentInfo,
       AMOUNT,
       tokenCollector,
       collectorData,
     )
-    await publicClient.waitForTransactionReceipt({ hash })
+    await publicClient.waitForTransactionReceipt({ hash: authHash })
 
-    const amounts = await payer.payment.getAmounts(paymentInfo)
-    expect(amounts.capturableAmount).toBeGreaterThan(0n)
-  }, 60_000)
-
-  it('payer requests refund', async () => {
-    const hash = await payer.refund!.request(paymentInfo, AMOUNT, 0n)
-    await publicClient.waitForTransactionReceipt({ hash })
-
-    const hasRequest = await arbiter.refund!.has(paymentInfo, 0n)
-    expect(hasRequest).toBe(true)
-  }, 60_000)
-
-  it('arbiter denies the refund request', async () => {
-    const hash = await arbiter.refund!.deny(paymentInfo, 0n)
-    await publicClient.waitForTransactionReceipt({ hash })
-
-    const status = await arbiter.refund!.getStatus(paymentInfo, 0n)
-    // Denied = 2 in RefundRequestStatus enum
-    expect(status).toBe(2)
-  }, 60_000)
-
-  it('payment state is unchanged after denial', async () => {
-    const amounts = await payer.payment.getAmounts(paymentInfo)
-    expect(amounts.capturableAmount).toBeGreaterThan(0n)
-    expect(amounts.hasCollectedPayment).toBe(true)
-  }, 60_000)
-
-  it('merchant can release after deny + escrow period passes (Flow 6 completion)', async () => {
-    // Fast-forward past the 7-day escrow period
+    // Fast-forward past escrow period
     await testClient.increaseTime({ seconds: 604801 })
     await testClient.mine({ blocks: 1 })
 
-    const hash = await merchant.payment.release(paymentInfo, AMOUNT)
-    await publicClient.waitForTransactionReceipt({ hash })
+    const releaseHash = await merchant.payment.release(paymentInfo, AMOUNT)
+    await publicClient.waitForTransactionReceipt({ hash: releaseHash })
 
     const amounts = await merchant.payment.getAmounts(paymentInfo)
     expect(amounts.capturableAmount).toBe(0n)
-    expect(amounts.hasCollectedPayment).toBe(true)
+  }, 60_000)
+
+  it('payer requests refund', async () => {
+    const hash = await payer.refund!.request(paymentInfo, REFUND_AMOUNT, 0n)
+    await publicClient.waitForTransactionReceipt({ hash })
+
+    const status = await arbiter.refund!.getStatus(paymentInfo, 0n)
+    // Pending = 0
+    expect(status).toBe(0)
+  }, 60_000)
+
+  it('arbiter signs and submits approval', async () => {
+    const { signature } = await signArbiterApproval({
+      arbiterWallet: anvilBaseSepolia.getWalletClient(
+        testRoles.arbiter.address,
+      ),
+      publicClient,
+      signatureConditionAddress: fixtures.signatureConditionAddress,
+      paymentInfo,
+      amount: REFUND_AMOUNT,
+      expiry: 0, // no expiry
+    })
+
+    const hash = await arbiter.refund!.approveWithSignature(
+      paymentInfo,
+      0n,
+      REFUND_AMOUNT,
+      0, // no expiry
+      signature,
+    )
+    await publicClient.waitForTransactionReceipt({ hash })
+
+    const status = await arbiter.refund!.getStatus(paymentInfo, 0n)
+    // Approved = 1
+    expect(status).toBe(1)
+  }, 60_000)
+
+  it('receiver approves refund budget and refundPostEscrow executes', async () => {
+    const receiverRefundCollector = baseSepolia.receiverRefundCollector
+
+    // Receiver approves refund collector to pull tokens
+    const approveHash = await merchant.payment.approvePostEscrowRefund(
+      USDC,
+      REFUND_AMOUNT,
+    )
+    await publicClient.waitForTransactionReceipt({ hash: approveHash })
+
+    const payerBalanceBefore = await publicClient.readContract({
+      address: USDC,
+      abi: erc20Abi,
+      functionName: 'balanceOf',
+      args: [testRoles.payer.address],
+    })
+
+    // Execute refund — SignatureCondition.check() passes since arbiter approved
+    const refundHash = await merchant.payment.refundPostEscrow(
+      paymentInfo,
+      REFUND_AMOUNT,
+      receiverRefundCollector,
+      '0x',
+    )
+    await publicClient.waitForTransactionReceipt({ hash: refundHash })
+
+    const payerBalanceAfter = await publicClient.readContract({
+      address: USDC,
+      abi: erc20Abi,
+      functionName: 'balanceOf',
+      args: [testRoles.payer.address],
+    })
+
+    expect(payerBalanceAfter - payerBalanceBefore).toBe(REFUND_AMOUNT)
   }, 60_000)
 })
