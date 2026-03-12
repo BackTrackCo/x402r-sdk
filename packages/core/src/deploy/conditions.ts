@@ -116,19 +116,14 @@ export async function resolveCondition(
     }
 
     case 'and': {
-      // Resolve children sequentially for deterministic transaction ordering
-      const childAddresses: Address[] = []
-      const allDeployments: DeployResult[] = []
-      for (const child of node.conditions) {
-        const resolved = await resolveCondition(
-          walletClient,
-          publicClient,
-          factoryAddresses,
-          child,
-        )
-        childAddresses.push(resolved.address)
-        allDeployments.push(...resolved.deployments)
-      }
+      // Resolve children in parallel (Promise.all preserves positional ordering)
+      const childResults = await Promise.all(
+        node.conditions.map((child) =>
+          resolveCondition(walletClient, publicClient, factoryAddresses, child),
+        ),
+      )
+      const childAddresses = childResults.map((r) => r.address)
+      const allDeployments = childResults.flatMap((r) => r.deployments)
       const result = await deployAndCondition(walletClient, publicClient, {
         factoryAddress: factoryAddresses.andCondition,
         conditions: childAddresses,
@@ -140,18 +135,14 @@ export async function resolveCondition(
     }
 
     case 'or': {
-      const childAddresses: Address[] = []
-      const allDeployments: DeployResult[] = []
-      for (const child of node.conditions) {
-        const resolved = await resolveCondition(
-          walletClient,
-          publicClient,
-          factoryAddresses,
-          child,
-        )
-        childAddresses.push(resolved.address)
-        allDeployments.push(...resolved.deployments)
-      }
+      // Resolve children in parallel (Promise.all preserves positional ordering)
+      const childResults = await Promise.all(
+        node.conditions.map((child) =>
+          resolveCondition(walletClient, publicClient, factoryAddresses, child),
+        ),
+      )
+      const childAddresses = childResults.map((r) => r.address)
+      const allDeployments = childResults.flatMap((r) => r.deployments)
       const result = await deployOrCondition(walletClient, publicClient, {
         factoryAddress: factoryAddresses.orCondition,
         conditions: childAddresses,
