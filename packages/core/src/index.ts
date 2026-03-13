@@ -78,6 +78,9 @@ export type {
   GetOperatorConfigReturnType,
   GetOperatorRefundRequestsParameters,
   GetOperatorRefundRequestsReturnType,
+  GetPayerPaymentsByEventsParameters,
+  GetPayerPaymentsFromRecorderParameters,
+  GetPayerPaymentsFromRecorderReturnType,
   GetPayerRefundRequestsParameters,
   GetPayerRefundRequestsReturnType,
   GetPaymentAmountsParameters,
@@ -86,8 +89,12 @@ export type {
   GetPaymentStateReturnType,
   GetPostEscrowRefundAllowanceParameters,
   GetPostEscrowRefundAllowanceReturnType,
+  GetReceiverPaymentsByEventsParameters,
+  GetReceiverPaymentsFromRecorderParameters,
+  GetReceiverPaymentsFromRecorderReturnType,
   GetReceiverRefundRequestsParameters,
   GetReceiverRefundRequestsReturnType,
+  GetRecorderPaymentInfoParameters,
   GetRefundRequestByKeyParameters,
   GetRefundRequestByKeyReturnType,
   GetRefundRequestParameters,
@@ -147,11 +154,16 @@ export {
   getFeeAddresses,
   getOperatorConfig,
   getOperatorRefundRequests,
+  getPayerPaymentsByEvents,
+  getPayerPaymentsFromRecorder,
   getPayerRefundRequests,
   getPaymentAmounts,
   getPaymentState,
   getPostEscrowRefundAllowance,
+  getReceiverPaymentsByEvents,
+  getReceiverPaymentsFromRecorder,
   getReceiverRefundRequests,
+  getRecorderPaymentInfo,
   getRefundRequest,
   getRefundRequestByKey,
   getRefundRequestStatus,
@@ -307,7 +319,24 @@ export {
   toPaymentInfo,
 } from './payment/serialization.js'
 export { validatePaymentInfo } from './payment/validation.js'
-
+// ---------------------------------------------------------------------------
+// Resolver
+// ---------------------------------------------------------------------------
+export type {
+  PaymentInfoProvider,
+  PaymentInfoResolver,
+} from './resolver/index.js'
+export {
+  createEventProvider,
+  createPaymentInfoResolver,
+  createRecorderProvider,
+  createStoreProvider,
+} from './resolver/index.js'
+// ---------------------------------------------------------------------------
+// Store
+// ---------------------------------------------------------------------------
+export type { PaymentStore } from './store/index.js'
+export { createMemoryStore } from './store/index.js'
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------

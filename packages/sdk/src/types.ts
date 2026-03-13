@@ -11,6 +11,7 @@ import type {
   OperatorSlots,
   PaymentAmounts,
   PaymentInfo,
+  PaymentStore,
   RefundRequestData,
   RefundRequestStatus,
   X402rChainConfig,
@@ -40,6 +41,10 @@ export interface X402rConfig {
   // Optional condition plugin addresses (per-operator, not in chain config)
   escrowPeriodAddress?: Address
   freezeAddress?: Address
+
+  // Payment retrieval
+  paymentStore?: PaymentStore
+  paymentIndexRecorderAddress?: Address
 }
 
 // ---------------------------------------------------------------------------
@@ -56,6 +61,8 @@ export interface ResolvedConfig {
   refundRequestEvidenceAddress: Address
   escrowPeriodAddress: Address | undefined
   freezeAddress: Address | undefined
+  paymentStore: PaymentStore | undefined
+  paymentIndexRecorderAddress: Address | undefined
 }
 
 export interface ResolvedWriteConfig extends ResolvedConfig {
@@ -93,6 +100,9 @@ export interface PaymentActions {
     paymentInfo: PaymentInfo,
   ): Promise<readonly [boolean, bigint, bigint]>
   getAmounts(paymentInfo: PaymentInfo): Promise<PaymentAmounts>
+  getPayerPayments(payer: Address): Promise<PaymentInfo[]>
+  getReceiverPayments(receiver: Address): Promise<PaymentInfo[]>
+  getPaymentInfo(hash: Hex): Promise<PaymentInfo | null>
 }
 
 export interface EscrowActions {
@@ -229,7 +239,14 @@ export interface X402r {
 
 export interface PayerClient {
   readonly config: ResolvedWriteConfig
-  readonly payment: Pick<PaymentActions, 'getState' | 'getAmounts'>
+  readonly payment: Pick<
+    PaymentActions,
+    | 'getState'
+    | 'getAmounts'
+    | 'getPayerPayments'
+    | 'getReceiverPayments'
+    | 'getPaymentInfo'
+  >
   readonly escrow:
     | Pick<
         EscrowActions,

@@ -22,6 +22,17 @@ export {
   isDuringEscrowPeriod,
 } from './escrow/index.js'
 // ---------------------------------------------------------------------------
+// Events
+// ---------------------------------------------------------------------------
+export type {
+  GetPayerPaymentsByEventsParameters,
+  GetReceiverPaymentsByEventsParameters,
+} from './events/index.js'
+export {
+  getPayerPaymentsByEvents,
+  getReceiverPaymentsByEvents,
+} from './events/index.js'
+// ---------------------------------------------------------------------------
 // Evidence
 // ---------------------------------------------------------------------------
 export type {
@@ -113,6 +124,21 @@ export {
   getOperatorConfig,
   release,
 } from './operator/index.js'
+// ---------------------------------------------------------------------------
+// Recorder
+// ---------------------------------------------------------------------------
+export type {
+  GetPayerPaymentsFromRecorderParameters,
+  GetPayerPaymentsFromRecorderReturnType,
+  GetReceiverPaymentsFromRecorderParameters,
+  GetReceiverPaymentsFromRecorderReturnType,
+  GetRecorderPaymentInfoParameters,
+} from './recorder/index.js'
+export {
+  getPayerPaymentsFromRecorder,
+  getReceiverPaymentsFromRecorder,
+  getRecorderPaymentInfo,
+} from './recorder/index.js'
 // ---------------------------------------------------------------------------
 // Refund
 // ---------------------------------------------------------------------------

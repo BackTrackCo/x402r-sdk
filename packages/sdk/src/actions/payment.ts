@@ -1,4 +1,4 @@
-import type { PaymentInfo } from '@x402r/core'
+import type { PaymentInfo, PaymentInfoProvider } from '@x402r/core'
 import {
   approvePostEscrowRefund as coreApprovePostEscrowRefund,
   authorize as coreAuthorize,
@@ -7,6 +7,10 @@ import {
   refundInEscrow as coreRefundInEscrow,
   refundPostEscrow as coreRefundPostEscrow,
   release as coreRelease,
+  createEventProvider,
+  createPaymentInfoResolver,
+  createRecorderProvider,
+  createStoreProvider,
   getPaymentAmounts,
   getPaymentState,
 } from '@x402r/core'
@@ -115,5 +119,34 @@ export function createPaymentActions(config: ResolvedConfig): PaymentActions {
         paymentInfo,
       })
     },
+    ...buildResolverMethods(config),
+  }
+}
+
+function buildResolverMethods(config: ResolvedConfig) {
+  const providers: PaymentInfoProvider[] = []
+
+  if (config.paymentStore) {
+    providers.push(createStoreProvider(config.paymentStore))
+  }
+  if (config.paymentIndexRecorderAddress) {
+    providers.push(
+      createRecorderProvider(
+        config.publicClient,
+        config.paymentIndexRecorderAddress,
+      ),
+    )
+  }
+  providers.push(
+    createEventProvider(config.publicClient, config.operatorAddress),
+  )
+
+  const resolver = createPaymentInfoResolver(config.chainId, providers)
+
+  return {
+    getPayerPayments: (payer: Address) => resolver.getByPayer(payer),
+    getReceiverPayments: (receiver: Address) =>
+      resolver.getByReceiver(receiver),
+    getPaymentInfo: (hash: Hex) => resolver.getByHash(hash),
   }
 }

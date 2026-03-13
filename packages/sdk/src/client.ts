@@ -86,6 +86,8 @@ export function resolveConfig(config: X402rConfig): ResolvedConfig {
     refundRequestEvidenceAddress,
     escrowPeriodAddress: config.escrowPeriodAddress,
     freezeAddress: config.freezeAddress,
+    paymentStore: config.paymentStore,
+    paymentIndexRecorderAddress: config.paymentIndexRecorderAddress,
   }
 }
 
