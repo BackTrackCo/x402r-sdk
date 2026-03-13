@@ -120,67 +120,61 @@ export async function previewMarketplaceOperator(
     operatorFeeBps,
   } = resolveOptions(options)
 
-  // 1. EscrowPeriod
-  const escrowPeriodAddress = await computeEscrowPeriodAddress(publicClient, {
-    factoryAddress: factories.escrowPeriod,
-    escrowPeriod: options.escrowPeriodSeconds,
-    authorizedCodehash,
-  })
+  // Batch 1 (parallel): independent computations
+  const [escrowPeriodAddress, signatureConditionAddress, feeCalculatorAddress] =
+    await Promise.all([
+      computeEscrowPeriodAddress(publicClient, {
+        factoryAddress: factories.escrowPeriod,
+        escrowPeriod: options.escrowPeriodSeconds,
+        authorizedCodehash,
+      }),
+      computeSignatureConditionAddress(publicClient, {
+        factoryAddress: factories.signatureCondition,
+        signer: options.arbiter,
+      }),
+      operatorFeeBps > 0n
+        ? computeFeeCalculatorAddress(publicClient, {
+            factoryAddress: factories.staticFeeCalculator,
+            feeBps: operatorFeeBps,
+          })
+        : Promise.resolve(null),
+    ])
 
-  // 2. Freeze + AndCondition (only when freezeDurationSeconds > 0)
-  let freezeAddress: Address | null = null
+  // Batch 2 (parallel): depends on batch 1 results
+  const [
+    freezeAddress,
+    refundInEscrowConditionAddress,
+    signatureRefundRequestAddress,
+  ] = await Promise.all([
+    freezeDurationSeconds > 0n
+      ? computeFreezeAddress(publicClient, {
+          factoryAddress: factories.freeze,
+          freezeCondition: singletons.payer,
+          unfreezeCondition: singletons.receiver,
+          freezeDuration: freezeDurationSeconds,
+          escrowPeriodContract: escrowPeriodAddress,
+        })
+      : Promise.resolve(null),
+    computeOrConditionAddress(publicClient, {
+      factoryAddress: factories.orCondition,
+      conditions: [singletons.receiver, signatureConditionAddress],
+    }),
+    computeSignatureRefundRequestAddress(publicClient, {
+      factoryAddress: factories.signatureRefundRequest,
+      signatureCondition: signatureConditionAddress,
+    }),
+  ])
+
+  // Batch 3: andCondition (only when freeze enabled, depends on batch 2)
   let releaseConditionAddress: Address = escrowPeriodAddress
-
-  if (freezeDurationSeconds > 0n) {
-    freezeAddress = await computeFreezeAddress(publicClient, {
-      factoryAddress: factories.freeze,
-      freezeCondition: singletons.payer,
-      unfreezeCondition: singletons.receiver,
-      freezeDuration: freezeDurationSeconds,
-      escrowPeriodContract: escrowPeriodAddress,
-    })
-
+  if (freezeDurationSeconds > 0n && freezeAddress) {
     releaseConditionAddress = await computeAndConditionAddress(publicClient, {
       factoryAddress: factories.andCondition,
       conditions: [escrowPeriodAddress, freezeAddress],
     })
   }
 
-  // 3. SignatureCondition(arbiter)
-  const signatureConditionAddress = await computeSignatureConditionAddress(
-    publicClient,
-    {
-      factoryAddress: factories.signatureCondition,
-      signer: options.arbiter,
-    },
-  )
-
-  // 4. RefundInEscrow: OR(receiver singleton, signature condition)
-  const refundInEscrowConditionAddress = await computeOrConditionAddress(
-    publicClient,
-    {
-      factoryAddress: factories.orCondition,
-      conditions: [singletons.receiver, signatureConditionAddress],
-    },
-  )
-
-  // 5. SignatureRefundRequest(signatureCondition)
-  const signatureRefundRequestAddress =
-    await computeSignatureRefundRequestAddress(publicClient, {
-      factoryAddress: factories.signatureRefundRequest,
-      signatureCondition: signatureConditionAddress,
-    })
-
-  // 6. FeeCalculator (only if operatorFeeBps > 0)
-  const feeCalculatorAddress =
-    operatorFeeBps > 0n
-      ? await computeFeeCalculatorAddress(publicClient, {
-          factoryAddress: factories.staticFeeCalculator,
-          feeBps: operatorFeeBps,
-        })
-      : null
-
-  // 7. Build OperatorConfig
+  // Batch 4: operator (depends on everything)
   const operatorConfig: OperatorConfig = {
     feeRecipient: options.feeRecipient,
     feeCalculator: feeCalculatorAddress ?? zeroAddress,
@@ -196,7 +190,6 @@ export async function previewMarketplaceOperator(
     refundPostEscrowRecorder: zeroAddress,
   }
 
-  // 8. Compute operator address
   const operatorAddress = await computeOperatorAddress(publicClient, {
     factoryAddress: factories.paymentOperator,
     config: operatorConfig,
@@ -234,86 +227,74 @@ export async function deployMarketplaceOperator(
 
   const deployments: DeployResult[] = []
 
-  // 1. EscrowPeriod
-  const escrowResult = await deployEscrowPeriod(walletClient, publicClient, {
-    factoryAddress: factories.escrowPeriod,
-    escrowPeriod: options.escrowPeriodSeconds,
-    authorizedCodehash,
-  })
-  deployments.push(escrowResult)
+  // Batch 1 (parallel): independent deployments
+  // NOTE: Parallel writeContract calls rely on viem's built-in nonce management
+  // for standard JSON-RPC wallets. Custom signers or AA wallets may need
+  // sequential fallback.
+  const [escrowResult, signatureConditionResult, feeResult] = await Promise.all(
+    [
+      deployEscrowPeriod(walletClient, publicClient, {
+        factoryAddress: factories.escrowPeriod,
+        escrowPeriod: options.escrowPeriodSeconds,
+        authorizedCodehash,
+      }),
+      deploySignatureCondition(walletClient, publicClient, {
+        factoryAddress: factories.signatureCondition,
+        signer: options.arbiter,
+      }),
+      operatorFeeBps > 0n
+        ? deployFeeCalculator(walletClient, publicClient, {
+            factoryAddress: factories.staticFeeCalculator,
+            feeBps: operatorFeeBps,
+          })
+        : Promise.resolve(null),
+    ],
+  )
+  deployments.push(escrowResult, signatureConditionResult)
+  if (feeResult) deployments.push(feeResult)
   const escrowPeriodAddress = escrowResult.address
+  const signatureConditionAddress = signatureConditionResult.address
+  const feeCalculatorAddress = feeResult?.address ?? null
 
-  // 2. Freeze + AndCondition (only when freezeDurationSeconds > 0)
-  let freezeAddress: Address | null = null
+  // Batch 2 (parallel): depends on batch 1
+  const [freezeResult, refundInEscrowResult, signatureRefundRequestResult] =
+    await Promise.all([
+      freezeDurationSeconds > 0n
+        ? deployFreeze(walletClient, publicClient, {
+            factoryAddress: factories.freeze,
+            freezeCondition: singletons.payer,
+            unfreezeCondition: singletons.receiver,
+            freezeDuration: freezeDurationSeconds,
+            escrowPeriodContract: escrowPeriodAddress,
+          })
+        : Promise.resolve(null),
+      deployOrCondition(walletClient, publicClient, {
+        factoryAddress: factories.orCondition,
+        conditions: [singletons.receiver, signatureConditionAddress],
+      }),
+      deploySignatureRefundRequest(walletClient, publicClient, {
+        factoryAddress: factories.signatureRefundRequest,
+        signatureCondition: signatureConditionAddress,
+      }),
+    ])
+  if (freezeResult) deployments.push(freezeResult)
+  deployments.push(refundInEscrowResult, signatureRefundRequestResult)
+  const freezeAddress = freezeResult?.address ?? null
+  const refundInEscrowConditionAddress = refundInEscrowResult.address
+  const signatureRefundRequestAddress = signatureRefundRequestResult.address
+
+  // Batch 3: andCondition (only when freeze enabled, depends on batch 2)
   let releaseConditionAddress: Address = escrowPeriodAddress
-
-  if (freezeDurationSeconds > 0n) {
-    const freezeResult = await deployFreeze(walletClient, publicClient, {
-      factoryAddress: factories.freeze,
-      freezeCondition: singletons.payer,
-      unfreezeCondition: singletons.receiver,
-      freezeDuration: freezeDurationSeconds,
-      escrowPeriodContract: escrowPeriodAddress,
-    })
-    deployments.push(freezeResult)
-    freezeAddress = freezeResult.address
-
+  if (freezeDurationSeconds > 0n && freezeResult) {
     const andResult = await deployAndCondition(walletClient, publicClient, {
       factoryAddress: factories.andCondition,
-      conditions: [escrowPeriodAddress, freezeAddress],
+      conditions: [escrowPeriodAddress, freezeResult.address],
     })
     deployments.push(andResult)
     releaseConditionAddress = andResult.address
   }
 
-  // 3. SignatureCondition(arbiter)
-  const signatureConditionResult = await deploySignatureCondition(
-    walletClient,
-    publicClient,
-    {
-      factoryAddress: factories.signatureCondition,
-      signer: options.arbiter,
-    },
-  )
-  deployments.push(signatureConditionResult)
-  const signatureConditionAddress = signatureConditionResult.address
-
-  // 4. RefundInEscrow: OR(receiver singleton, signature condition)
-  const refundInEscrowResult = await deployOrCondition(
-    walletClient,
-    publicClient,
-    {
-      factoryAddress: factories.orCondition,
-      conditions: [singletons.receiver, signatureConditionAddress],
-    },
-  )
-  deployments.push(refundInEscrowResult)
-  const refundInEscrowConditionAddress = refundInEscrowResult.address
-
-  // 5. SignatureRefundRequest(signatureCondition)
-  const signatureRefundRequestResult = await deploySignatureRefundRequest(
-    walletClient,
-    publicClient,
-    {
-      factoryAddress: factories.signatureRefundRequest,
-      signatureCondition: signatureConditionAddress,
-    },
-  )
-  deployments.push(signatureRefundRequestResult)
-  const signatureRefundRequestAddress = signatureRefundRequestResult.address
-
-  // 6. FeeCalculator (only if operatorFeeBps > 0)
-  let feeCalculatorAddress: Address | null = null
-  if (operatorFeeBps > 0n) {
-    const feeResult = await deployFeeCalculator(walletClient, publicClient, {
-      factoryAddress: factories.staticFeeCalculator,
-      feeBps: operatorFeeBps,
-    })
-    deployments.push(feeResult)
-    feeCalculatorAddress = feeResult.address
-  }
-
-  // 7. Build OperatorConfig
+  // Batch 4: operator (depends on everything)
   const operatorConfig: OperatorConfig = {
     feeRecipient: options.feeRecipient,
     feeCalculator: feeCalculatorAddress ?? zeroAddress,
@@ -329,7 +310,6 @@ export async function deployMarketplaceOperator(
     refundPostEscrowRecorder: zeroAddress,
   }
 
-  // 8. Deploy PaymentOperator
   const operatorResult = await deployOperator(walletClient, publicClient, {
     factoryAddress: factories.paymentOperator,
     config: operatorConfig,
