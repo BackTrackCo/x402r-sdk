@@ -8,7 +8,7 @@ import type {
   VerifyResponse,
 } from '@x402/core/types'
 import { toFacilitatorEvmSigner } from '@x402/evm'
-import { registerEscrowScheme } from '@x402r/evm/escrow/facilitator'
+import { registerEscrowEvmScheme } from '@x402r/evm/escrow/facilitator'
 import dotenv from 'dotenv'
 import express from 'express'
 import { createWalletClient, http, publicActions } from 'viem'
@@ -77,7 +77,7 @@ const evmSigner = toFacilitatorEvmSigner({
 
 const facilitator = new x402Facilitator()
 
-registerEscrowScheme(facilitator, {
+registerEscrowEvmScheme(facilitator, {
   signer: evmSigner,
   networks: 'eip155:84532', // Base Sepolia
 })

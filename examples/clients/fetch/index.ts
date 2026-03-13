@@ -1,5 +1,5 @@
 import { wrapFetchWithPayment, x402Client, x402HTTPClient } from '@x402/fetch'
-import { registerEscrowScheme } from '@x402r/evm/escrow/client'
+import { registerEscrowEvmScheme } from '@x402r/evm/escrow/client'
 import { config } from 'dotenv'
 import { privateKeyToAccount } from 'viem/accounts'
 
@@ -29,7 +29,7 @@ async function main(): Promise<void> {
   const signer = privateKeyToAccount(privateKey)
 
   const client = new x402Client()
-  registerEscrowScheme(client, { signer, networks: networkId })
+  registerEscrowEvmScheme(client, { signer, networks: networkId })
 
   const fetchWithPayment = wrapFetchWithPayment(fetch, client)
 

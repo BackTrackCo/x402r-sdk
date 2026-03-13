@@ -7,9 +7,8 @@
 
 import type { PaymentRequirements } from '@x402/core/types'
 import type { ClientEvmSigner } from '@x402/evm'
+import { type EscrowPayload, isEscrowPayload } from '@x402r/evm'
 import { EscrowEvmScheme } from '@x402r/evm/escrow/client'
-import type { EscrowPayload } from '@x402r/evm/escrow/types'
-import { isEscrowPayload } from '@x402r/evm/escrow/types'
 
 export interface PayOptions {
   url: string

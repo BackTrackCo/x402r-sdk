@@ -24,11 +24,10 @@ import {
   toPaymentInfo,
   type X402rChainConfig,
 } from '@x402r/core'
-import { registerEscrowScheme as registerEscrowClientScheme } from '@x402r/evm/escrow/client'
-import { registerEscrowScheme as registerEscrowFacilitatorScheme } from '@x402r/evm/escrow/facilitator'
-import { registerEscrowServerScheme } from '@x402r/evm/escrow/server'
-import type { EscrowPayload } from '@x402r/evm/escrow/types'
-import { isEscrowPayload } from '@x402r/evm/escrow/types'
+import { type EscrowPayload, isEscrowPayload } from '@x402r/evm'
+import { registerEscrowEvmScheme as registerEscrowClientScheme } from '@x402r/evm/escrow/client'
+import { registerEscrowEvmScheme as registerEscrowFacilitatorScheme } from '@x402r/evm/escrow/facilitator'
+import { registerEscrowEvmScheme as registerEscrowServerScheme } from '@x402r/evm/escrow/server'
 import { refundable } from '@x402r/helpers'
 import { createX402r, type X402r } from '@x402r/sdk'
 import {
