@@ -83,3 +83,16 @@ export const testRoles = {
   arbiter: accounts[4],
   relayer: accounts[5],
 } as const
+
+// ---------------------------------------------------------------------------
+// Shared test constants
+// ---------------------------------------------------------------------------
+
+/** Max uint48 — effectively "never expires" for test paymentInfo */
+export const FAR_FUTURE = 281474976710655
+
+/** 1 USDC (6 decimals) — default amount for test scenarios */
+export const DEFAULT_AMOUNT = 1_000_000n
+
+/** 7 days + 1 second — fast-forward past the default escrow period */
+export const ESCROW_FAST_FORWARD = 604801

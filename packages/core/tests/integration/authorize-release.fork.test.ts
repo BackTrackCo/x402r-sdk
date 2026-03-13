@@ -18,12 +18,15 @@ import {
 import { x402rChains } from '../../src/config/index.js'
 import type { PaymentInfo } from '../../src/types/index.js'
 import { anvilBaseSepolia } from '../setup/anvil.js'
-import { testRoles } from '../setup/constants.js'
 import {
-  type DeployedFixtures,
-  deployTestFixtures,
-} from '../setup/deploy-fixtures.js'
+  DEFAULT_AMOUNT,
+  ESCROW_FAST_FORWARD,
+  FAR_FUTURE,
+  testRoles,
+} from '../setup/constants.js'
+import type { DeployedFixtures } from '../setup/deploy-fixtures.js'
 import { createCollectorData } from '../setup/erc3009-helper.js'
+import { setupScenario } from '../setup/scenario-helper.js'
 
 // ---------------------------------------------------------------------------
 // Config
@@ -31,7 +34,6 @@ import { createCollectorData } from '../setup/erc3009-helper.js'
 
 const baseSepolia = x402rChains[84532]
 const USDC = baseSepolia.usdc
-const FAR_FUTURE = 281474976710655 // max uint48
 
 // ---------------------------------------------------------------------------
 // Shared state
@@ -43,18 +45,12 @@ let fixtures: DeployedFixtures
 let payerClient: X402r
 let merchant: MerchantClient
 
-const AMOUNT = 1_000_000n
-
 let paymentInfo: PaymentInfo
 
 beforeAll(async () => {
-  publicClient = anvilBaseSepolia.getPublicClient()
-  testClient = anvilBaseSepolia.getTestClient()
-  const deployerWallet = anvilBaseSepolia.getWalletClient(
-    testRoles.deployer.address,
-  )
-
-  fixtures = await deployTestFixtures(publicClient, deployerWallet, testClient)
+  ;({ publicClient, testClient, fixtures, paymentInfo } = await setupScenario({
+    salt: 1n,
+  }))
 
   payerClient = createX402r({
     publicClient,
@@ -69,21 +65,6 @@ beforeAll(async () => {
     operatorAddress: fixtures.operatorAddress,
     escrowPeriodAddress: fixtures.escrowPeriodAddress,
   })
-
-  paymentInfo = {
-    operator: fixtures.operatorAddress,
-    payer: testRoles.payer.address,
-    receiver: testRoles.receiver.address,
-    token: USDC,
-    maxAmount: AMOUNT,
-    preApprovalExpiry: FAR_FUTURE,
-    authorizationExpiry: FAR_FUTURE,
-    refundExpiry: FAR_FUTURE,
-    minFeeBps: 0,
-    maxFeeBps: 500,
-    feeReceiver: fixtures.operatorAddress,
-    salt: 1n,
-  }
 }, 60_000)
 
 // ---------------------------------------------------------------------------
@@ -205,7 +186,7 @@ describe('Scenario 1: Authorize -> Release after escrow', () => {
 
     const hash = await payerClient.payment.authorize(
       paymentInfo,
-      AMOUNT,
+      DEFAULT_AMOUNT,
       tokenCollector,
       collectorData,
     )
@@ -218,10 +199,10 @@ describe('Scenario 1: Authorize -> Release after escrow', () => {
 
   it('release after escrow marks payment as collected', async () => {
     // Fast-forward past the 7-day escrow period
-    await testClient.increaseTime({ seconds: 604801 })
+    await testClient.increaseTime({ seconds: ESCROW_FAST_FORWARD })
     await testClient.mine({ blocks: 1 })
 
-    const hash = await merchant.payment.release(paymentInfo, AMOUNT)
+    const hash = await merchant.payment.release(paymentInfo, DEFAULT_AMOUNT)
     await publicClient.waitForTransactionReceipt({ hash })
 
     const amounts = await merchant.payment.getAmounts(paymentInfo)
