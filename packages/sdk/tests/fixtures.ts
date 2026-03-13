@@ -24,7 +24,7 @@ export const TEST_OPERATOR =
 export const TEST_REFUND_REQUEST =
   '0xbEEFbEEFbEEFbEEFbEEFbEEFbEEFbEEFbEEFbEEF' as const
 export const TEST_EVIDENCE =
-  '0xF97aAB816b7cbe53025454ad05b03cf5C361F1BA' as const
+  '0x1F1272258E49825976B264c3EEBe52bd05d1f186' as const
 export const TEST_ESCROW_PERIOD =
   '0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef' as const
 export const TEST_FREEZE = '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd' as const

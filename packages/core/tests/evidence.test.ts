@@ -76,6 +76,7 @@ describe('evidence write functions', () => {
     await expect(
       submitEvidence(createMockWalletWithoutAccount(), {
         contractAddress: MOCK_CONTRACT,
+        refundRequestAddress: MOCK_CONTRACT,
         paymentInfo: makePaymentInfo(),
         nonce: 1n,
         cid: 'QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco',

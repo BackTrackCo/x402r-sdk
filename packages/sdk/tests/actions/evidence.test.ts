@@ -4,6 +4,7 @@ import {
   createTestConfig,
   mockPaymentInfo,
   TEST_EVIDENCE,
+  TEST_REFUND_REQUEST,
 } from '../fixtures.js'
 
 vi.mock('@x402r/core', async (importOriginal) => {
@@ -32,6 +33,7 @@ describe('createEvidenceActions', () => {
 
     expect(submitEvidence).toHaveBeenCalledWith(config.walletClient, {
       contractAddress: TEST_EVIDENCE,
+      refundRequestAddress: TEST_REFUND_REQUEST,
       paymentInfo: mockPaymentInfo,
       nonce: 1n,
       cid: 'QmTest',
