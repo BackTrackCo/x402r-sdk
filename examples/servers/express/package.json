@@ -1,0 +1,22 @@
+{
+  "name": "@x402r/express-server-example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx index.ts"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.18.2",
+    "@x402/core": "^2.3.0",
+    "@x402/express": "^2.3.0",
+    "@x402r/evm": "0.0.3",
+    "@x402r/helpers": "workspace:*",
+    "viem": "^2.46.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.1",
+    "tsx": "^4.7.0",
+    "typescript": "^5.7.0"
+  }
+}
