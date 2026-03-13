@@ -320,24 +320,6 @@ export {
 } from './payment/serialization.js'
 export { validatePaymentInfo } from './payment/validation.js'
 // ---------------------------------------------------------------------------
-// Resolver
-// ---------------------------------------------------------------------------
-export type {
-  PaymentInfoProvider,
-  PaymentInfoResolver,
-} from './resolver/index.js'
-export {
-  createEventProvider,
-  createPaymentInfoResolver,
-  createRecorderProvider,
-  createStoreProvider,
-} from './resolver/index.js'
-// ---------------------------------------------------------------------------
-// Store
-// ---------------------------------------------------------------------------
-export type { PaymentStore } from './store/index.js'
-export { createMemoryStore } from './store/index.js'
-// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 export type {

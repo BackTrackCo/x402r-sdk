@@ -5,6 +5,7 @@ import {
   createFreezeActions,
   createOperatorActions,
   createPaymentActions,
+  createQueryActions,
   createRefundActions,
   createWatchActions,
 } from './actions/index.js'
@@ -54,6 +55,9 @@ export function createX402r(config: X402rConfig): X402r {
     evidence: createEvidenceActions(resolved),
     freeze: resolved.freezeAddress
       ? createFreezeActions(resolved, resolved.freezeAddress)
+      : undefined,
+    query: resolved.paymentIndexRecorderAddress
+      ? createQueryActions(resolved, resolved.paymentIndexRecorderAddress)
       : undefined,
     operator: createOperatorActions(resolved),
     watch: createWatchActions(resolved),

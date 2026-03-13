@@ -1,10 +1,10 @@
+import type { PaymentInfo } from '@x402r/core'
 import type { Address, Hex } from 'viem'
-import type { PaymentInfo } from '../types/index.js'
 import type { PaymentInfoProvider, PaymentInfoResolver } from './types.js'
 
 /**
  * Creates a tiered PaymentInfo resolver that tries providers in order.
- * Resolution order: store → recorder → subgraph → events
+ * Resolution order: store → recorder → events
  * First provider to return results wins.
  */
 export function createPaymentInfoResolver(

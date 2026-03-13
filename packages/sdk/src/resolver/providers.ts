@@ -1,13 +1,11 @@
-import type { Address, PublicClient } from 'viem'
 import {
   getPayerPaymentsByEvents,
-  getReceiverPaymentsByEvents,
-} from '../actions/events/index.js'
-import {
   getPayerPaymentsFromRecorder,
+  getReceiverPaymentsByEvents,
   getReceiverPaymentsFromRecorder,
   getRecorderPaymentInfo,
-} from '../actions/recorder/index.js'
+} from '@x402r/core'
+import type { Address, PublicClient } from 'viem'
 import type { PaymentStore } from '../store/types.js'
 import type { PaymentInfoProvider } from './types.js'
 
@@ -21,27 +19,33 @@ export function createStoreProvider(store: PaymentStore): PaymentInfoProvider {
   }
 }
 
+/** Default page size for recorder pagination. */
+const DEFAULT_PAGE_SIZE = 1000n
+
 export function createRecorderProvider(
   publicClient: PublicClient,
   recorderAddress: Address,
+  pageSize: bigint = DEFAULT_PAGE_SIZE,
 ): PaymentInfoProvider {
   return {
     name: 'recorder',
     async getByPayer(_, payer) {
+      // TODO: implement proper pagination for large datasets
       const result = await getPayerPaymentsFromRecorder(publicClient, {
         recorderAddress,
         payer,
         offset: 0n,
-        count: 1000n,
+        count: pageSize,
       })
       return result.payments
     },
     async getByReceiver(_, receiver) {
+      // TODO: implement proper pagination for large datasets
       const result = await getReceiverPaymentsFromRecorder(publicClient, {
         recorderAddress,
         receiver,
         offset: 0n,
-        count: 1000n,
+        count: pageSize,
       })
       return result.payments
     },

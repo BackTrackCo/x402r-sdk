@@ -1,5 +1,5 @@
+import type { PaymentInfo } from '@x402r/core'
 import type { Address, Hex } from 'viem'
-import type { PaymentInfo } from '../types/index.js'
 
 export interface PaymentInfoProvider {
   name: string

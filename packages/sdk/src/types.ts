@@ -11,12 +11,12 @@ import type {
   OperatorSlots,
   PaymentAmounts,
   PaymentInfo,
-  PaymentStore,
   RefundRequestData,
   RefundRequestStatus,
   X402rChainConfig,
 } from '@x402r/core'
 import type { Address, Hash, Hex, PublicClient, WalletClient } from 'viem'
+import type { PaymentStore } from './store/types.js'
 
 /** Force TypeScript to flatten intersection types for cleaner IDE tooltips. */
 export type Prettify<T> = {
@@ -43,8 +43,8 @@ export interface X402rConfig {
   freezeAddress?: Address
 
   // Payment retrieval
-  paymentStore?: PaymentStore
   paymentIndexRecorderAddress?: Address
+  paymentStore?: PaymentStore
 }
 
 // ---------------------------------------------------------------------------
@@ -61,8 +61,8 @@ export interface ResolvedConfig {
   refundRequestEvidenceAddress: Address
   escrowPeriodAddress: Address | undefined
   freezeAddress: Address | undefined
-  paymentStore: PaymentStore | undefined
   paymentIndexRecorderAddress: Address | undefined
+  paymentStore: PaymentStore | undefined
 }
 
 export interface ResolvedWriteConfig extends ResolvedConfig {
@@ -100,9 +100,6 @@ export interface PaymentActions {
     paymentInfo: PaymentInfo,
   ): Promise<readonly [boolean, bigint, bigint]>
   getAmounts(paymentInfo: PaymentInfo): Promise<PaymentAmounts>
-  getPayerPayments(payer: Address): Promise<PaymentInfo[]>
-  getReceiverPayments(receiver: Address): Promise<PaymentInfo[]>
-  getPaymentInfo(hash: Hex): Promise<PaymentInfo | null>
 }
 
 export interface EscrowActions {
@@ -183,6 +180,12 @@ export interface FreezeActions {
   isFrozen(paymentInfo: PaymentInfo): Promise<boolean>
 }
 
+export interface QueryActions {
+  getPayerPayments(payer: Address): Promise<PaymentInfo[]>
+  getReceiverPayments(receiver: Address): Promise<PaymentInfo[]>
+  getPayment(hash: Hex): Promise<PaymentInfo | null>
+}
+
 export interface OperatorActions {
   getConfig(): Promise<OperatorSlots>
   getFeeAddresses(): Promise<FeeAddresses>
@@ -221,6 +224,7 @@ export interface X402r {
   readonly refund: RefundActions | undefined
   readonly evidence: EvidenceActions
   readonly freeze: FreezeActions | undefined
+  readonly query: QueryActions | undefined
   readonly operator: OperatorActions
   readonly watch: WatchActions
   canExecute(
@@ -239,14 +243,7 @@ export interface X402r {
 
 export interface PayerClient {
   readonly config: ResolvedWriteConfig
-  readonly payment: Pick<
-    PaymentActions,
-    | 'getState'
-    | 'getAmounts'
-    | 'getPayerPayments'
-    | 'getReceiverPayments'
-    | 'getPaymentInfo'
-  >
+  readonly payment: Pick<PaymentActions, 'getState' | 'getAmounts'>
   readonly escrow:
     | Pick<
         EscrowActions,
@@ -270,6 +267,7 @@ export interface PayerClient {
     | undefined
   readonly evidence: EvidenceActions
   readonly freeze: Pick<FreezeActions, 'isFrozen'> | undefined
+  readonly query: QueryActions | undefined
   readonly operator: Pick<OperatorActions, 'getConfig' | 'getFeeAddresses'>
   readonly watch: WatchActions
   canExecute(
@@ -307,6 +305,7 @@ export interface MerchantClient {
     | undefined
   readonly evidence: EvidenceActions
   readonly freeze: Pick<FreezeActions, 'isFrozen'> | undefined
+  readonly query: QueryActions | undefined
   readonly operator: OperatorActions
   readonly watch: WatchActions
   canExecute(
@@ -345,6 +344,7 @@ export interface ArbiterClient {
     | undefined
   readonly evidence: EvidenceActions
   readonly freeze: FreezeActions | undefined
+  readonly query: QueryActions | undefined
   readonly operator: Pick<OperatorActions, 'getConfig' | 'getFeeAddresses'>
   readonly watch: WatchActions
   canExecute(
