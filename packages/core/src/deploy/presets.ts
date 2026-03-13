@@ -228,6 +228,9 @@ export async function deployMarketplaceOperator(
   const deployments: DeployResult[] = []
 
   // Batch 1 (parallel): independent deployments
+  // NOTE: Parallel writeContract calls rely on viem's built-in nonce management
+  // for standard JSON-RPC wallets. Custom signers or AA wallets may need
+  // sequential fallback.
   const [escrowResult, signatureConditionResult, feeResult] = await Promise.all(
     [
       deployEscrowPeriod(walletClient, publicClient, {
@@ -285,7 +288,7 @@ export async function deployMarketplaceOperator(
   if (freezeDurationSeconds > 0n && freezeResult) {
     const andResult = await deployAndCondition(walletClient, publicClient, {
       factoryAddress: factories.andCondition,
-      conditions: [escrowPeriodAddress, freezeAddress!],
+      conditions: [escrowPeriodAddress, freezeResult.address],
     })
     deployments.push(andResult)
     releaseConditionAddress = andResult.address

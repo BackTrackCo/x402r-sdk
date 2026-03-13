@@ -117,6 +117,9 @@ export async function resolveCondition(
 
     case 'and': {
       // Resolve children in parallel (Promise.all preserves positional ordering)
+      // NOTE: Parallel writeContract calls rely on viem's built-in nonce management
+      // for standard JSON-RPC wallets. Custom signers or AA wallets may need
+      // sequential fallback.
       const childResults = await Promise.all(
         node.conditions.map((child) =>
           resolveCondition(walletClient, publicClient, factoryAddresses, child),
@@ -136,6 +139,9 @@ export async function resolveCondition(
 
     case 'or': {
       // Resolve children in parallel (Promise.all preserves positional ordering)
+      // NOTE: Parallel writeContract calls rely on viem's built-in nonce management
+      // for standard JSON-RPC wallets. Custom signers or AA wallets may need
+      // sequential fallback.
       const childResults = await Promise.all(
         node.conditions.map((child) =>
           resolveCondition(walletClient, publicClient, factoryAddresses, child),
