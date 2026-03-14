@@ -1,4 +1,4 @@
-import { paymentOperatorAbi, signatureRefundRequestAbi } from '@x402r/core'
+import { paymentOperatorAbi, refundRequestConditionAbi } from '@x402r/core'
 import type { ResolvedConfig, WatchActions } from '../types.js'
 
 export function createWatchActions(config: ResolvedConfig): WatchActions {
@@ -31,7 +31,7 @@ export function createWatchActions(config: ResolvedConfig): WatchActions {
     onRefundRequest(callback: (log: unknown) => void): () => void {
       const unwatch = config.publicClient.watchContractEvent({
         address: config.refundRequestAddress,
-        abi: signatureRefundRequestAbi,
+        abi: refundRequestConditionAbi,
         onLogs: (logs) => logs.forEach(callback),
       })
       return unwatch

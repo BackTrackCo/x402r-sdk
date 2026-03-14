@@ -1,4 +1,4 @@
-import { paymentOperatorAbi, signatureRefundRequestAbi } from '@x402r/core'
+import { paymentOperatorAbi, refundRequestConditionAbi } from '@x402r/core'
 import { describe, expect, it, vi } from 'vitest'
 import { createWatchActions } from '../../src/actions/watch.js'
 import { createTestConfig } from '../fixtures.js'
@@ -36,7 +36,7 @@ describe('createWatchActions', () => {
     )
   })
 
-  it('onRefundRequest calls watchContractEvent with signatureRefundRequestAbi and refundRequestAddress', () => {
+  it('onRefundRequest calls watchContractEvent with refundRequestConditionAbi and refundRequestAddress', () => {
     const unwatchFn = vi.fn()
     const mockWatchContractEvent = vi.fn().mockReturnValue(unwatchFn)
     const config = createTestConfig()
@@ -52,7 +52,7 @@ describe('createWatchActions', () => {
     expect(mockWatchContractEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         address: config.refundRequestAddress,
-        abi: signatureRefundRequestAbi,
+        abi: refundRequestConditionAbi,
       }),
     )
 

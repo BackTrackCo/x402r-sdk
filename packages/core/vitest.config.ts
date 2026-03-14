@@ -23,7 +23,7 @@ export default defineConfig({
         'src/actions/refund/cancelRefundRequest.ts',
         'src/actions/refund/denyRefundRequest.ts',
         'src/actions/refund/refuseRefundRequest.ts',
-        'src/actions/refund/approveRefundWithSignature.ts',
+        'src/actions/refund/approveRefund.ts',
         'src/actions/refund-budget/approveRefundBudget.ts',
         'src/actions/refund-budget/refundInEscrow.ts',
         'src/actions/refund-budget/refundPostEscrow.ts',

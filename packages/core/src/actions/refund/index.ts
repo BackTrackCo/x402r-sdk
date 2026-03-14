@@ -1,8 +1,8 @@
 export type {
-  ApproveRefundWithSignatureParameters,
-  ApproveRefundWithSignatureReturnType,
-} from './approveRefundWithSignature.js'
-export { approveRefundWithSignature } from './approveRefundWithSignature.js'
+  ApproveRefundParameters,
+  ApproveRefundReturnType,
+} from './approveRefund.js'
+export { approveRefund } from './approveRefund.js'
 
 export type {
   CancelRefundRequestParameters,

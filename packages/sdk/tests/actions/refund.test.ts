@@ -20,7 +20,7 @@ vi.mock('@x402r/core', async (importOriginal) => {
     cancelRefundRequest: vi.fn().mockResolvedValue('0xhash'),
     denyRefundRequest: vi.fn().mockResolvedValue('0xhash'),
     refuseRefundRequest: vi.fn().mockResolvedValue('0xhash'),
-    approveRefundWithSignature: vi.fn().mockResolvedValue('0xhash'),
+    approveRefund: vi.fn().mockResolvedValue('0xhash'),
     getRefundRequest: vi.fn().mockResolvedValue({
       paymentInfoHash: '0x0',
       nonce: 0n,
@@ -53,8 +53,8 @@ vi.mock('@x402r/core', async (importOriginal) => {
 })
 
 import {
+  approveRefund,
   approveRefundBudget,
-  approveRefundWithSignature,
   cancelRefundRequest,
   refundInEscrow as coreRefundInEscrow,
   refundPostEscrow as coreRefundPostEscrow,
@@ -159,30 +159,17 @@ describe('createRefundActions', () => {
     expect(hash).toBe('0xhash')
   })
 
-  it('approveWithSignature delegates all 5 args correctly', async () => {
+  it('approve delegates paymentInfo and nonce correctly', async () => {
     const config = createTestConfig()
     const actions = createRefundActions(config)
-    const signature = '0xsig' as `0x${string}`
 
-    await actions.approveWithSignature(
-      mockPaymentInfo,
-      1n,
-      200n,
-      1700000000,
-      signature,
-    )
+    await actions.approve(mockPaymentInfo, 1n)
 
-    expect(approveRefundWithSignature).toHaveBeenCalledWith(
-      config.walletClient,
-      {
-        contractAddress: TEST_REFUND_REQUEST,
-        paymentInfo: mockPaymentInfo,
-        nonce: 1n,
-        amount: 200n,
-        expiry: 1700000000,
-        signature,
-      },
-    )
+    expect(approveRefund).toHaveBeenCalledWith(config.walletClient, {
+      contractAddress: TEST_REFUND_REQUEST,
+      paymentInfo: mockPaymentInfo,
+      nonce: 1n,
+    })
   })
 
   it('cancel delegates with refundRequestAddress', async () => {

@@ -6,25 +6,25 @@ import {
   wrapContractCall,
 } from '../_internal/error-wrapping.js'
 
-export interface RefuseRefundRequestParameters {
+export interface ApproveRefundParameters {
   contractAddress: Address
   paymentInfo: PaymentInfo
   nonce: bigint
 }
-export type RefuseRefundRequestReturnType = Hash
+export type ApproveRefundReturnType = Hash
 
-export async function refuseRefundRequest(
+export async function approveRefund(
   walletClient: WalletClient,
-  parameters: RefuseRefundRequestParameters,
-): Promise<RefuseRefundRequestReturnType> {
+  parameters: ApproveRefundParameters,
+): Promise<ApproveRefundReturnType> {
   const { contractAddress, paymentInfo, nonce } = parameters
-  requireAccount(walletClient, 'refuseRefundRequest')
+  requireAccount(walletClient, 'approveRefund')
 
-  return wrapContractCall('refuseRefundRequest', () =>
+  return wrapContractCall('approveRefund', () =>
     walletClient.writeContract({
       address: contractAddress,
       abi: refundRequestConditionAbi,
-      functionName: 'refuse',
+      functionName: 'approve',
       args: [paymentInfo, nonce],
       chain: walletClient.chain,
       account: walletClient.account,

@@ -26,8 +26,8 @@ export * from './abis/generated.js'
 export type {
   ApproveRefundBudgetParameters,
   ApproveRefundBudgetReturnType,
-  ApproveRefundWithSignatureParameters,
-  ApproveRefundWithSignatureReturnType,
+  ApproveRefundParameters,
+  ApproveRefundReturnType,
   AuthorizeParameters,
   AuthorizeReturnType,
   CalculateOperatorFeeBpsParameters,
@@ -121,8 +121,8 @@ export type {
   UnfreezePaymentReturnType,
 } from './actions/index.js'
 export {
+  approveRefund,
   approveRefundBudget,
-  approveRefundWithSignature,
   authorize,
   calculateOperatorFeeBps,
   calculateProtocolFeeBps,

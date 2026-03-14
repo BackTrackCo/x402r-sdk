@@ -41,7 +41,7 @@ Role presets (`createPayerClient`, `createMerchantClient`, `createArbiterClient`
 The client organizes operations into action groups by protocol domain:
 
 - **payment** — `authorize`, `charge`, `release`, `getState`, `getAmounts`
-- **refund** — `request`, `cancel`, `deny`, `refuse`, `approveWithSignature`, `approveBudget`, `refundInEscrow`, `refundPostEscrow`, and read helpers
+- **refund** — `request`, `cancel`, `deny`, `refuse`, `approve`, `approveBudget`, `refundInEscrow`, `refundPostEscrow`, and read helpers
 - **evidence** — `submit`, `get`, `getBatch`, `count`
 - **escrow** — `isDuringEscrow`, `getAuthorizationTime`, `getDuration` (requires `escrowPeriodAddress`)
 - **freeze** — `freeze`, `unfreeze`, `isFrozen` (requires `freezeAddress`)

@@ -47,8 +47,8 @@ describe('PayerClient type narrowing', () => {
     payer.refund.deny
     // @ts-expect-error — payer cannot refuse
     payer.refund.refuse
-    // @ts-expect-error — payer cannot approveWithSignature
-    payer.refund.approveWithSignature
+    // @ts-expect-error — payer cannot approve
+    payer.refund.approve
     // @ts-expect-error — payer cannot getReceiverRequests
     payer.refund.getReceiverRequests
     // @ts-expect-error — payer cannot getOperatorRequests
@@ -114,8 +114,8 @@ describe('MerchantClient type narrowing', () => {
     merchant.refund.cancel
     // @ts-expect-error — merchant cannot deny
     merchant.refund.deny
-    // @ts-expect-error — merchant cannot approveWithSignature
-    merchant.refund.approveWithSignature
+    // @ts-expect-error — merchant cannot approve
+    merchant.refund.approve
     // @ts-expect-error — merchant cannot getPayerRequests
     merchant.refund.getPayerRequests
     // @ts-expect-error — merchant cannot getOperatorRequests
@@ -151,7 +151,7 @@ describe('ArbiterClient type narrowing', () => {
 
   it('refund exposes arbiter methods', () => {
     expectTypeOf(arbiter.refund.deny).toBeFunction()
-    expectTypeOf(arbiter.refund.approveWithSignature).toBeFunction()
+    expectTypeOf(arbiter.refund.approve).toBeFunction()
     expectTypeOf(arbiter.refund.getOperatorRequests).toBeFunction()
   })
 

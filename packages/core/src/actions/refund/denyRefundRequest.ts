@@ -1,5 +1,5 @@
 import type { Address, Hash, WalletClient } from 'viem'
-import { signatureRefundRequestAbi } from '../../abis/generated.js'
+import { refundRequestConditionAbi } from '../../abis/generated.js'
 import type { PaymentInfo } from '../../types/index.js'
 import {
   requireAccount,
@@ -23,7 +23,7 @@ export async function denyRefundRequest(
   return wrapContractCall('denyRefundRequest', () =>
     walletClient.writeContract({
       address: contractAddress,
-      abi: signatureRefundRequestAbi,
+      abi: refundRequestConditionAbi,
       functionName: 'deny',
       args: [paymentInfo, nonce],
       chain: walletClient.chain,

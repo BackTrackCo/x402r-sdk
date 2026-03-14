@@ -1,5 +1,5 @@
 import type { Address, PublicClient } from 'viem'
-import { signatureRefundRequestAbi } from '../../abis/generated.js'
+import { refundRequestConditionAbi } from '../../abis/generated.js'
 import type { PaymentInfo } from '../../types/index.js'
 import { wrapContractCall } from '../_internal/error-wrapping.js'
 import type { RefundRequestStatus } from './types.js'
@@ -20,7 +20,7 @@ export async function getRefundRequestStatus(
   return wrapContractCall('getRefundRequestStatus', () =>
     publicClient.readContract({
       address: contractAddress,
-      abi: signatureRefundRequestAbi,
+      abi: refundRequestConditionAbi,
       functionName: 'getRefundRequestStatus',
       args: [paymentInfo, nonce],
     }),
