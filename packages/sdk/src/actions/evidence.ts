@@ -18,11 +18,15 @@ export function createEvidenceActions(config: ResolvedConfig): EvidenceActions {
       cid: string,
     ): Promise<Hash> {
       const wallet = requireWallet(config)
+      if (!config.refundRequestAddress) {
+        throw new Error('refundRequestAddress is required to submit evidence')
+      }
       return submitEvidence(wallet, {
         contractAddress,
         paymentInfo,
         nonce,
         cid,
+        refundRequestAddress: config.refundRequestAddress,
       })
     },
     async get(paymentInfo: PaymentInfo, nonce: bigint, index: bigint) {
