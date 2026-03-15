@@ -28,6 +28,7 @@ export async function getRefundRequest(
       paymentInfoHash: result.paymentInfoHash,
       nonce: result.nonce,
       amount: result.amount,
+      approvedAmount: result.approvedAmount,
       status: result.status as RefundRequestStatus,
     }
   })

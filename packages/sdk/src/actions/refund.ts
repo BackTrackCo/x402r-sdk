@@ -59,11 +59,12 @@ export function createRefundActions(config: ResolvedConfig): RefundActions {
         nonce,
       }),
 
-    approve: (paymentInfo, nonce) =>
+    approve: (paymentInfo, nonce, amount) =>
       approveRefund(requireWallet(config), {
         contractAddress: refundRequestAddress,
         paymentInfo,
         nonce,
+        amount,
       }),
 
     // -----------------------------------------------------------------------

@@ -25,12 +25,14 @@ vi.mock('@x402r/core', async (importOriginal) => {
       paymentInfoHash: '0x0',
       nonce: 0n,
       amount: 0n,
+      approvedAmount: 0n,
       status: 0,
     }),
     getRefundRequestByKey: vi.fn().mockResolvedValue({
       paymentInfoHash: '0x0',
       nonce: 0n,
       amount: 0n,
+      approvedAmount: 0n,
       status: 0,
     }),
     getRefundRequestStatus: vi.fn().mockResolvedValue(0),
@@ -159,16 +161,17 @@ describe('createRefundActions', () => {
     expect(hash).toBe('0xhash')
   })
 
-  it('approve delegates paymentInfo and nonce correctly', async () => {
+  it('approve delegates paymentInfo, nonce, and amount correctly', async () => {
     const config = createTestConfig()
     const actions = createRefundActions(config)
 
-    await actions.approve(mockPaymentInfo, 1n)
+    await actions.approve(mockPaymentInfo, 1n, 500n)
 
     expect(approveRefund).toHaveBeenCalledWith(config.walletClient, {
       contractAddress: TEST_REFUND_REQUEST,
       paymentInfo: mockPaymentInfo,
       nonce: 1n,
+      amount: 500n,
     })
   })
 

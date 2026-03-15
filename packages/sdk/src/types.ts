@@ -102,7 +102,11 @@ export interface RefundActions {
   cancel(paymentInfo: PaymentInfo, nonce: bigint): Promise<Hash>
   deny(paymentInfo: PaymentInfo, nonce: bigint): Promise<Hash>
   refuse(paymentInfo: PaymentInfo, nonce: bigint): Promise<Hash>
-  approve(paymentInfo: PaymentInfo, nonce: bigint): Promise<Hash>
+  approve(
+    paymentInfo: PaymentInfo,
+    nonce: bigint,
+    amount: bigint,
+  ): Promise<Hash>
 
   // Read operations
   get(paymentInfo: PaymentInfo, nonce: bigint): Promise<RefundRequestData>

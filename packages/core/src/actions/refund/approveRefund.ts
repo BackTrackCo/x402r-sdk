@@ -10,6 +10,7 @@ export interface ApproveRefundParameters {
   contractAddress: Address
   paymentInfo: PaymentInfo
   nonce: bigint
+  amount: bigint
 }
 export type ApproveRefundReturnType = Hash
 
@@ -17,7 +18,7 @@ export async function approveRefund(
   walletClient: WalletClient,
   parameters: ApproveRefundParameters,
 ): Promise<ApproveRefundReturnType> {
-  const { contractAddress, paymentInfo, nonce } = parameters
+  const { contractAddress, paymentInfo, nonce, amount } = parameters
   requireAccount(walletClient, 'approveRefund')
 
   return wrapContractCall('approveRefund', () =>
@@ -25,7 +26,7 @@ export async function approveRefund(
       address: contractAddress,
       abi: refundRequestConditionAbi,
       functionName: 'approve',
-      args: [paymentInfo, nonce],
+      args: [paymentInfo, nonce, amount],
       chain: walletClient.chain,
       account: walletClient.account,
     }),
