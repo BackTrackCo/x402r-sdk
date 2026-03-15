@@ -11,7 +11,6 @@ export interface SubmitEvidenceParameters {
   paymentInfo: PaymentInfo
   nonce: bigint
   cid: string
-  refundRequestAddress: Address
 }
 export type SubmitEvidenceReturnType = Hash
 
@@ -19,8 +18,7 @@ export async function submitEvidence(
   walletClient: WalletClient,
   parameters: SubmitEvidenceParameters,
 ): Promise<SubmitEvidenceReturnType> {
-  const { contractAddress, paymentInfo, nonce, cid, refundRequestAddress } =
-    parameters
+  const { contractAddress, paymentInfo, nonce, cid } = parameters
   requireAccount(walletClient, 'submitEvidence')
 
   return wrapContractCall('submitEvidence', () =>
@@ -28,7 +26,7 @@ export async function submitEvidence(
       address: contractAddress,
       abi: refundRequestEvidenceAbi,
       functionName: 'submitEvidence',
-      args: [paymentInfo, nonce, cid, refundRequestAddress],
+      args: [paymentInfo, nonce, cid],
       chain: walletClient.chain,
       account: walletClient.account,
     }),

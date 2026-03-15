@@ -79,7 +79,6 @@ describe('evidence write functions', () => {
         paymentInfo: makePaymentInfo(),
         nonce: 1n,
         cid: 'QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco',
-        refundRequestAddress: MOCK_CONTRACT,
       }),
     ).rejects.toThrow(ContractCallError)
   })
