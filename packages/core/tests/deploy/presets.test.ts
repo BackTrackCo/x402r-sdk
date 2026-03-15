@@ -516,4 +516,27 @@ describe('deployArbiterSetup', () => {
       deployArbiterSetup(walletClient, publicClient, makeArbiterOptions()),
     ).rejects.toThrow(ConfigError)
   })
+
+  it('throws ConfigError when a batch call fails in simulation', async () => {
+    const addresses = [
+      '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa',
+      '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB',
+    ] as Address[]
+    const publicClient = createSequentialMockPublicClient(addresses)
+    // Override simulateContract to return a failed batch result
+    ;(
+      publicClient.simulateContract as ReturnType<typeof import('vitest').vi.fn>
+    ).mockResolvedValueOnce({
+      request: {},
+      result: [
+        { success: true, returnData: '0x' },
+        { success: false, returnData: '0x' }, // second call fails
+      ],
+    })
+    const walletClient = createMockWalletClient()
+
+    await expect(
+      deployArbiterSetup(walletClient, publicClient, makeArbiterOptions()),
+    ).rejects.toThrow('call 1 failed in simulation')
+  })
 })
