@@ -18,14 +18,8 @@ export function createEvidenceActions(config: ResolvedConfig): EvidenceActions {
       cid: string,
     ): Promise<Hash> {
       const wallet = requireWallet(config)
-      if (!config.refundRequestAddress) {
-        throw new Error(
-          'refundRequestAddress is required for evidence submission',
-        )
-      }
       return submitEvidence(wallet, {
         contractAddress,
-        refundRequestAddress: config.refundRequestAddress,
         paymentInfo,
         nonce,
         cid,

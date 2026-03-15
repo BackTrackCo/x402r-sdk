@@ -4271,6 +4271,26 @@ export const recorderCombinatorFactoryAbi = [
 
 export const refundRequestEvidenceAbi = [
   {
+    type: 'constructor',
+    inputs: [
+      { name: 'refundRequest', internalType: 'address', type: 'address' },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'REFUND_REQUEST',
+    outputs: [
+      {
+        name: '',
+        internalType: 'contract SignatureRefundRequest',
+        type: 'address',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
     type: 'function',
     inputs: [
       {
@@ -4422,7 +4442,6 @@ export const refundRequestEvidenceAbi = [
       },
       { name: 'nonce', internalType: 'uint256', type: 'uint256' },
       { name: 'cid', internalType: 'string', type: 'string' },
-      { name: 'refundRequest', internalType: 'address', type: 'address' },
     ],
     name: 'submitEvidence',
     outputs: [],

@@ -51,7 +51,7 @@ const PROTOCOL_ADDRESSES = {
   usdcTvlLimit: '0x0F1F26719219CfAdC8a1C80D2216098A0534a091',
   arbiterRegistry: '0x1c2d7d5978d46a943FA98aC9a649519C1424FB3e',
   receiverRefundCollector: '0xE5500a38BE45a6C598420fbd7867ac85EC451A07',
-  refundRequestEvidence: '0x1F1272258E49825976B264c3EEBe52bd05d1f186',
+  refundRequestEvidence: '0xF97aAB816b7cbe53025454ad05b03cf5C361F1BA',
   factories: {
     paymentOperator: '0x4D9BC2Ba2D0d9AFb6B63E3afBbfC95143E6E8Da9',
     escrowPeriod: '0x15DB06aADEB3a39D47756Bf864a173cc48bafe24',
