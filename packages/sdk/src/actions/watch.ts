@@ -37,6 +37,24 @@ export function createWatchActions(config: ResolvedConfig): WatchActions {
       })
       return unwatch
     },
+    onRefundExecuted(callback: (log: unknown) => void): () => void {
+      const unwatchInEscrow = config.publicClient.watchContractEvent({
+        address: config.operatorAddress,
+        abi: paymentOperatorAbi,
+        eventName: 'RefundInEscrowExecuted',
+        onLogs: (logs) => logs.forEach(callback),
+      })
+      const unwatchPostEscrow = config.publicClient.watchContractEvent({
+        address: config.operatorAddress,
+        abi: paymentOperatorAbi,
+        eventName: 'RefundPostEscrowExecuted',
+        onLogs: (logs) => logs.forEach(callback),
+      })
+      return () => {
+        unwatchInEscrow()
+        unwatchPostEscrow()
+      }
+    },
     onFeeDistribution(callback: (log: unknown) => void): () => void {
       const unwatch = config.publicClient.watchContractEvent({
         address: config.operatorAddress,

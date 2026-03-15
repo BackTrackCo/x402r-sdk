@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { createX402r } from '../src/client.js'
-import { escrowPeriodActions, freezeActions } from '../src/plugins/index.js'
+import {
+  escrowPeriodActions,
+  freezeActions,
+  queryActions,
+} from '../src/plugins/index.js'
 import type { X402rConfig } from '../src/types.js'
 import {
   TEST_ESCROW_PERIOD as escrowPeriodAddress,
@@ -8,6 +12,7 @@ import {
   TEST_OPERATOR as operatorAddress,
   publicClient,
   TEST_REFUND_REQUEST as refundRequestAddress,
+  TEST_RECORDER,
   walletClient,
 } from './fixtures.js'
 
@@ -60,5 +65,30 @@ describe('freezeActions plugin', () => {
     const originalFreeze = client.freeze
     const extended = client.extend(freezeActions(freezeAddress))
     expect(extended.freeze).toBe(originalFreeze)
+  })
+})
+
+describe('queryActions plugin', () => {
+  it('fills query slot via extend', () => {
+    const client = createX402r(baseConfig)
+    expect(client.query).toBeUndefined()
+
+    const extended = client.extend(queryActions(TEST_RECORDER))
+    expect(extended.query).toBeDefined()
+    expect(extended.query!.getPayerPayments).toBeTypeOf('function')
+    expect(extended.query!.getReceiverPayments).toBeTypeOf('function')
+    expect(extended.query!.getPayment).toBeTypeOf('function')
+  })
+
+  it('does not override query when already configured', () => {
+    const client = createX402r({
+      ...baseConfig,
+      paymentIndexRecorderAddress: TEST_RECORDER,
+    })
+    expect(client.query).toBeDefined()
+
+    const originalQuery = client.query
+    const extended = client.extend(queryActions(TEST_RECORDER))
+    expect(extended.query).toBe(originalQuery)
   })
 })

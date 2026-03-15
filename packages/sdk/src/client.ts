@@ -5,6 +5,7 @@ import {
   createFreezeActions,
   createOperatorActions,
   createPaymentActions,
+  createQueryActions,
   createRefundActions,
   createWatchActions,
 } from './actions/index.js'
@@ -55,6 +56,9 @@ export function createX402r(config: X402rConfig): X402r {
     freeze: resolved.freezeAddress
       ? createFreezeActions(resolved, resolved.freezeAddress)
       : undefined,
+    query: resolved.paymentIndexRecorderAddress
+      ? createQueryActions(resolved, resolved.paymentIndexRecorderAddress)
+      : undefined,
     operator: createOperatorActions(resolved),
     watch: createWatchActions(resolved),
     canExecute: (slot, paymentInfo, amount) =>
@@ -86,6 +90,9 @@ export function resolveConfig(config: X402rConfig): ResolvedConfig {
     refundRequestEvidenceAddress,
     escrowPeriodAddress: config.escrowPeriodAddress,
     freezeAddress: config.freezeAddress,
+    paymentStore: config.paymentStore,
+    paymentIndexRecorderAddress: config.paymentIndexRecorderAddress,
+    eventFromBlock: config.eventFromBlock,
   }
 }
 

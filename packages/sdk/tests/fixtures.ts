@@ -28,6 +28,8 @@ export const TEST_EVIDENCE =
 export const TEST_ESCROW_PERIOD =
   '0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef' as const
 export const TEST_FREEZE = '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd' as const
+export const TEST_RECORDER =
+  '0xcafecafecafecafecafecafecafecafecafecafe' as const
 export const mockPaymentInfo = {
   operator: TEST_OPERATOR,
   payer: '0x2234567890abcdef1234567890abcdef12345678',
@@ -56,6 +58,9 @@ export function createTestConfig(
     refundRequestEvidenceAddress: TEST_EVIDENCE,
     escrowPeriodAddress: undefined,
     freezeAddress: undefined,
+    paymentIndexRecorderAddress: undefined,
+    paymentStore: undefined,
+    eventFromBlock: undefined,
     ...overrides,
   }
 }
