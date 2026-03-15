@@ -137,3 +137,44 @@ describe('getRecorderPaymentInfo', () => {
     expect(result).toBeNull()
   })
 })
+
+describe('getPayerPaymentsFromRecorder — empty results', () => {
+  it('returns empty payments and total 0', async () => {
+    const client = createMockPublicClient({
+      getPayerPayments: [[], 0n],
+    })
+
+    const result = await getPayerPaymentsFromRecorder(client, {
+      recorderAddress: RECORDER_ADDRESS,
+      payer: TEST_ADDRESSES.payer,
+      offset: 0n,
+      count: 100n,
+    })
+
+    expect(result.payments).toEqual([])
+    expect(result.total).toBe(0n)
+  })
+})
+
+describe('getPayerPayment — large index', () => {
+  it('forwards large index correctly', async () => {
+    const client = createMockPublicClient({
+      getPayerPayment: paymentInfo,
+    })
+
+    const result = await getPayerPayment(client, {
+      recorderAddress: RECORDER_ADDRESS,
+      payer: TEST_ADDRESSES.payer,
+      index: 999n,
+    })
+
+    expect(result).toEqual(paymentInfo)
+    expect(client.readContract).toHaveBeenCalledWith(
+      expect.objectContaining({
+        address: RECORDER_ADDRESS,
+        functionName: 'getPayerPayment',
+        args: [TEST_ADDRESSES.payer, 999n],
+      }),
+    )
+  })
+})

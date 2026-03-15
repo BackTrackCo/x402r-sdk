@@ -86,4 +86,43 @@ describe('createPaymentInfoResolver', () => {
     expect(results).toEqual([mockPaymentInfo])
     expect(second.getByPayer).not.toHaveBeenCalled()
   })
+
+  it('all providers throw — returns empty array / null', async () => {
+    const a = createMockProvider('err1', {
+      getByPayer: vi.fn().mockRejectedValue(new Error('fail1')),
+      getByReceiver: vi.fn().mockRejectedValue(new Error('fail1')),
+      getByHash: vi.fn().mockRejectedValue(new Error('fail1')),
+    })
+    const b = createMockProvider('err2', {
+      getByPayer: vi.fn().mockRejectedValue(new Error('fail2')),
+      getByReceiver: vi.fn().mockRejectedValue(new Error('fail2')),
+      getByHash: vi.fn().mockRejectedValue(new Error('fail2')),
+    })
+    const resolver = createPaymentInfoResolver(84532, [a, b])
+
+    expect(await resolver.getByPayer(mockPaymentInfo.payer)).toEqual([])
+    expect(await resolver.getByReceiver(mockPaymentInfo.receiver)).toEqual([])
+    expect(await resolver.getByHash('0xdeadbeef')).toBeNull()
+  })
+
+  it('mix of errors and empty — data provider wins', async () => {
+    const throwing = createMockProvider('throwing', {
+      getByPayer: vi.fn().mockRejectedValue(new Error('boom')),
+    })
+    const empty = createMockProvider('empty', {
+      getByPayer: vi.fn().mockResolvedValue([]),
+    })
+    const hasData = createMockProvider('data', {
+      getByPayer: vi.fn().mockResolvedValue([mockPaymentInfo]),
+    })
+    const resolver = createPaymentInfoResolver(84532, [
+      throwing,
+      empty,
+      hasData,
+    ])
+
+    const results = await resolver.getByPayer(mockPaymentInfo.payer)
+
+    expect(results).toEqual([mockPaymentInfo])
+  })
 })

@@ -41,6 +41,7 @@ export function createRecorderProvider(
           offset,
           count: pageSize,
         })
+        if (result.payments.length === 0) break
         all.push(...result.payments)
         total = result.total
         offset += BigInt(result.payments.length)
@@ -58,6 +59,7 @@ export function createRecorderProvider(
           offset,
           count: pageSize,
         })
+        if (result.payments.length === 0) break
         all.push(...result.payments)
         total = result.total
         offset += BigInt(result.payments.length)

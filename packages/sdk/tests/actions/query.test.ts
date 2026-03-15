@@ -185,4 +185,33 @@ describe('createQueryActions', () => {
       500n,
     )
   })
+
+  it('all providers return empty — query returns empty array', async () => {
+    mockRecorderGetByPayer.mockResolvedValueOnce([])
+    mockEventGetByPayer.mockResolvedValueOnce([])
+
+    const config = createTestConfig({
+      paymentIndexRecorderAddress: TEST_RECORDER,
+      eventFromBlock: 1000n,
+    })
+    const query = createQueryActions(config, TEST_RECORDER)
+
+    const results = await query.getPayerPayments(mockPaymentInfo.payer)
+
+    expect(results).toEqual([])
+  })
+
+  it('hash lookup miss across all providers — returns null', async () => {
+    mockRecorderGetByHash.mockResolvedValueOnce(null)
+
+    const config = createTestConfig({
+      paymentIndexRecorderAddress: TEST_RECORDER,
+      eventFromBlock: 1000n,
+    })
+    const query = createQueryActions(config, TEST_RECORDER)
+
+    const result = await query.getPayment('0xnonexistent')
+
+    expect(result).toBeNull()
+  })
 })

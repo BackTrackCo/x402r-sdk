@@ -177,6 +177,71 @@ describe('createRecorderProvider', () => {
       expect.objectContaining({ offset: 2n, count: 2n }),
     )
   })
+
+  it('returns empty array when total is 0', async () => {
+    mockGetPayerPaymentsFromRecorder.mockResolvedValueOnce({
+      payments: [],
+      total: 0n,
+    })
+    const provider = createRecorderProvider(mockPublicClient, RECORDER)
+
+    const result = await provider.getByPayer(84532, PAYER)
+
+    expect(result).toEqual([])
+    expect(mockGetPayerPaymentsFromRecorder).toHaveBeenCalledTimes(1)
+  })
+
+  it('exactly page-size results — no extra page fetch', async () => {
+    const info1 = { ...mockPaymentInfo, salt: 1n } as PaymentInfo
+    const info2 = { ...mockPaymentInfo, salt: 2n } as PaymentInfo
+
+    mockGetPayerPaymentsFromRecorder.mockResolvedValueOnce({
+      payments: [info1, info2],
+      total: 2n,
+    })
+
+    const provider = createRecorderProvider(mockPublicClient, RECORDER, 2n)
+    const result = await provider.getByPayer(84532, PAYER)
+
+    expect(result).toEqual([info1, info2])
+    expect(mockGetPayerPaymentsFromRecorder).toHaveBeenCalledTimes(1)
+  })
+
+  it('pagination stall guard — stops when page returns empty', async () => {
+    mockGetPayerPaymentsFromRecorder
+      .mockResolvedValueOnce({
+        payments: [mockPaymentInfo],
+        total: 5n,
+      })
+      .mockResolvedValueOnce({ payments: [], total: 5n })
+
+    const provider = createRecorderProvider(mockPublicClient, RECORDER, 1n)
+    const result = await provider.getByPayer(84532, PAYER)
+
+    expect(result).toEqual([mockPaymentInfo])
+    expect(mockGetPayerPaymentsFromRecorder).toHaveBeenCalledTimes(2)
+  })
+
+  it('multi-page receiver pagination', async () => {
+    const info1 = { ...mockPaymentInfo, salt: 10n } as PaymentInfo
+    const info2 = { ...mockPaymentInfo, salt: 20n } as PaymentInfo
+    const info3 = { ...mockPaymentInfo, salt: 30n } as PaymentInfo
+
+    mockGetReceiverPaymentsFromRecorder
+      .mockResolvedValueOnce({ payments: [info1, info2], total: 3n })
+      .mockResolvedValueOnce({ payments: [info3], total: 3n })
+
+    const provider = createRecorderProvider(mockPublicClient, RECORDER, 2n)
+    const result = await provider.getByReceiver(84532, RECEIVER)
+
+    expect(result).toEqual([info1, info2, info3])
+    expect(mockGetReceiverPaymentsFromRecorder).toHaveBeenCalledTimes(2)
+    expect(mockGetReceiverPaymentsFromRecorder).toHaveBeenNthCalledWith(
+      2,
+      mockPublicClient,
+      expect.objectContaining({ offset: 2n, count: 2n }),
+    )
+  })
 })
 
 // ---------------------------------------------------------------------------
