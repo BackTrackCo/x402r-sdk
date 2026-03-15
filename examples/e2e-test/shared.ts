@@ -52,12 +52,12 @@ import { baseSepolia } from 'viem/chains'
 
 // ============ Config Constants ============
 
-export const NETWORK_ID = process.env.NETWORK_ID ?? 'eip155:84532'
-export const RPC_URL = process.env.RPC_URL ?? 'https://sepolia.base.org'
+const NETWORK_ID = process.env.NETWORK_ID ?? 'eip155:84532'
+const RPC_URL = process.env.RPC_URL ?? 'https://sepolia.base.org'
 export const USDC_ADDRESS =
   '0x036CbD53842c5426634e7929541eC2318f3dCF7e' as Address
 export const PAYMENT_AMOUNT = 10000n // 0.01 USDC (6 decimals)
-export const GAS_FUNDING = 10000000000000n // 0.00001 ETH per derived account
+const GAS_FUNDING = 10000000000000n // 0.00001 ETH per derived account
 export const SCANNER = 'https://sepolia.basescan.org'
 
 // ============ Step Runner ============
@@ -143,7 +143,7 @@ export function shortAddr(addr: string): string {
   return `${addr.slice(0, 10)}...${addr.slice(-8)}`
 }
 
-export function sleep(ms: number): Promise<void> {
+function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
@@ -164,7 +164,7 @@ export async function waitForTx(
 
 // ============ Account Setup ============
 
-export interface E2EAccounts {
+interface E2EAccounts {
   payerAccount: ReturnType<typeof privateKeyToAccount>
   merchantAccount: ReturnType<typeof mnemonicToAccount>
   arbiterAccount?: ReturnType<typeof mnemonicToAccount>
@@ -301,7 +301,7 @@ export async function fundDerivedAccounts(
 
 // ============ Operator Deployment ============
 
-export interface DeployResult {
+interface DeployResult {
   operatorAddress: Address
   escrowPeriodAddress: Address
   freezeAddress: Address | null
@@ -393,7 +393,7 @@ function createInProcessFacilitator<
   return { facilitator, client }
 }
 
-export interface HTTP402Infrastructure {
+interface HTTP402Infrastructure {
   httpServer: x402HTTPResourceServer
   httpClient: x402HTTPClient
   facilitatorClient: FacilitatorClientLike
@@ -488,7 +488,7 @@ export async function setupHTTP402(
 
 // ============ HTTP 402 Payment Flow ============
 
-export interface HTTP402PaymentResult {
+interface HTTP402PaymentResult {
   paymentInfo: PaymentInfo
   escrowHash: `0x${string}`
   settleTxHash: string
@@ -616,7 +616,7 @@ export async function performHTTP402Payment(
 
 // ============ SDK Instance Creation ============
 
-export interface SDKInstances {
+interface SDKInstances {
   payer: X402r
   merchant: X402r
   arbiter?: X402r
@@ -661,15 +661,8 @@ export function createSDKInstances(
   return { payer, merchant, arbiter }
 }
 
-// Re-export types used by test files
-export type {
-  PaymentInfo,
-  Address,
-  PublicClient,
-  EscrowPayload,
-  PaymentPayload,
-  PaymentRequirements,
-}
+// Re-export values and types used by test files
+export type { Address }
 export {
   authCaptureEscrowAbi,
   computePaymentInfoHash,
@@ -677,4 +670,4 @@ export {
   RefundRequestStatus,
   signatureConditionAbi,
 } from '@x402r/core'
-export { erc20Abi, formatEther, formatUnits } from 'viem'
+export { erc20Abi, formatUnits } from 'viem'
