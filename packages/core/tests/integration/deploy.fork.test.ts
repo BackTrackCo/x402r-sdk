@@ -103,8 +103,9 @@ describe('Deploy Module (Fork)', () => {
     expect(deployment.summary.newCount + deployment.summary.existingCount).toBe(
       6,
     )
+    // Multicall3 batches all deploys into a single tx
     expect(deployment.summary.txHashes).toHaveLength(
-      deployment.summary.newCount,
+      deployment.summary.newCount > 0 ? 1 : 0,
     )
   })
 
