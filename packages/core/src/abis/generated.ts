@@ -1146,12 +1146,6 @@ export const authorizationTimeRecorderAbi = [
         ],
         indexed: false,
       },
-      {
-        name: 'authorizationTime',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
     ],
     name: 'AuthorizationRecorded',
   },
@@ -1603,12 +1597,6 @@ export const escrowPeriodAbi = [
           { name: 'feeReceiver', internalType: 'address', type: 'address' },
           { name: 'salt', internalType: 'uint256', type: 'uint256' },
         ],
-        indexed: false,
-      },
-      {
-        name: 'authorizationTime',
-        internalType: 'uint256',
-        type: 'uint256',
         indexed: false,
       },
     ],
@@ -3312,12 +3300,6 @@ export const paymentOperatorAbi = [
         type: 'uint256',
         indexed: false,
       },
-      {
-        name: 'timestamp',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
     ],
     name: 'AuthorizationCreated',
   },
@@ -3369,12 +3351,6 @@ export const paymentOperatorAbi = [
       },
       {
         name: 'amount',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-      {
-        name: 'timestamp',
         internalType: 'uint256',
         type: 'uint256',
         indexed: false,
@@ -3569,12 +3545,6 @@ export const paymentOperatorAbi = [
         type: 'uint256',
         indexed: false,
       },
-      {
-        name: 'timestamp',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
     ],
     name: 'ReleaseExecuted',
   },
@@ -3734,6 +3704,37 @@ export const paymentOperatorFactoryAbi = [
   },
   {
     type: 'function',
+    inputs: [{ name: '', internalType: 'address', type: 'address' }],
+    name: 'deployerOperatorCount',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'deployer', internalType: 'address', type: 'address' },
+      { name: 'index', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'getDeployerOperator',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'deployer', internalType: 'address', type: 'address' },
+      { name: 'offset', internalType: 'uint256', type: 'uint256' },
+      { name: 'count', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'getDeployerOperators',
+    outputs: [
+      { name: 'ops', internalType: 'address[]', type: 'address[]' },
+      { name: 'total', internalType: 'uint256', type: 'uint256' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     inputs: [
       {
         name: 'config',
@@ -3789,37 +3790,6 @@ export const paymentOperatorFactoryAbi = [
   },
   {
     type: 'function',
-    inputs: [{ name: '', internalType: 'address', type: 'address' }],
-    name: 'deployerOperatorCount',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'deployer', internalType: 'address', type: 'address' },
-      { name: 'index', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'getDeployerOperator',
-    outputs: [{ name: '', internalType: 'address', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'deployer', internalType: 'address', type: 'address' },
-      { name: 'offset', internalType: 'uint256', type: 'uint256' },
-      { name: 'count', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'getDeployerOperators',
-    outputs: [
-      { name: 'result', internalType: 'address[]', type: 'address[]' },
-      { name: 'total', internalType: 'uint256', type: 'uint256' },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     inputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
     name: 'operators',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
@@ -3846,12 +3816,6 @@ export const paymentOperatorFactoryAbi = [
         internalType: 'address',
         type: 'address',
         indexed: true,
-      },
-      {
-        name: 'releaseCondition',
-        internalType: 'address',
-        type: 'address',
-        indexed: false,
       },
       {
         name: 'deployerIndex',

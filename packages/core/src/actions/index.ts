@@ -54,6 +54,20 @@ export {
   submitEvidence,
 } from './evidence/index.js'
 // ---------------------------------------------------------------------------
+// Factory
+// ---------------------------------------------------------------------------
+export type {
+  GetDeployerOperatorCountParameters,
+  GetDeployerOperatorParameters,
+  GetDeployerOperatorsParameters,
+  GetDeployerOperatorsReturnType,
+} from './factory/index.js'
+export {
+  getDeployerOperator,
+  getDeployerOperatorCount,
+  getDeployerOperators,
+} from './factory/index.js'
+// ---------------------------------------------------------------------------
 // Fees
 // ---------------------------------------------------------------------------
 export type {

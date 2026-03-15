@@ -1,5 +1,6 @@
 export { createEscrowActions } from './escrow.js'
 export { createEvidenceActions } from './evidence.js'
+export { createFactoryActions } from './factory.js'
 export { createFreezeActions } from './freeze.js'
 export { createOperatorActions } from './operator.js'
 export { createPaymentActions } from './payment.js'

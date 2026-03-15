@@ -2,6 +2,7 @@ import { fromNetworkId, getChainConfig, ValidationError } from '@x402r/core'
 import {
   createEscrowActions,
   createEvidenceActions,
+  createFactoryActions,
   createFreezeActions,
   createOperatorActions,
   createPaymentActions,
@@ -60,6 +61,7 @@ export function createX402r(config: X402rConfig): X402r {
       ? createQueryActions(resolved, resolved.paymentIndexRecorderAddress)
       : undefined,
     operator: createOperatorActions(resolved),
+    factory: createFactoryActions(resolved),
     watch: createWatchActions(resolved),
     canExecute: (slot, paymentInfo, amount) =>
       canExecute(resolved, slot, paymentInfo, amount),
