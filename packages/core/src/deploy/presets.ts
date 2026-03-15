@@ -396,7 +396,36 @@ export async function deployMarketplaceOperator(
 
   // If operator already deployed, return immediately
   if (exists.operator) {
-    const allEntries = Object.values(exists)
+    const existingDeployments: DeployResult[] = [
+      { address: escrowPeriodAddress, hash: null, isNew: false },
+      { address: signatureConditionAddress, hash: null, isNew: false },
+      { address: refundInEscrowConditionAddress, hash: null, isNew: false },
+      { address: signatureRefundRequestAddress, hash: null, isNew: false },
+    ]
+    if (hasFreeze && freezeAddress) {
+      existingDeployments.push({
+        address: freezeAddress,
+        hash: null,
+        isNew: false,
+      })
+      existingDeployments.push({
+        address: preview.operatorConfig.releaseCondition,
+        hash: null,
+        isNew: false,
+      })
+    }
+    if (hasFee && feeCalculatorAddress) {
+      existingDeployments.push({
+        address: feeCalculatorAddress,
+        hash: null,
+        isNew: false,
+      })
+    }
+    existingDeployments.push({
+      address: operatorAddress,
+      hash: null,
+      isNew: false,
+    })
     return {
       operatorAddress,
       escrowPeriodAddress,
@@ -406,10 +435,10 @@ export async function deployMarketplaceOperator(
       signatureRefundRequestAddress,
       feeCalculatorAddress,
       operatorConfig,
-      deployments: [],
+      deployments: existingDeployments,
       summary: {
         newCount: 0,
-        existingCount: allEntries.length,
+        existingCount: existingDeployments.length,
         txHashes: [],
       },
     }
