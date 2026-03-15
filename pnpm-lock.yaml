@@ -54,15 +54,39 @@ importers:
         specifier: ^4.0.18
         version: 4.0.18(@types/node@22.7.5)(jiti@2.6.1)
 
+  examples/e2e-test:
+    dependencies:
+      '@x402/core':
+        specifier: ^2.3.0
+        version: 2.5.0
+      '@x402/evm':
+        specifier: ^2.3.0
+        version: 2.5.0(ethers@6.16.0)(typescript@5.9.3)
+      '@x402r/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@x402r/evm':
+        specifier: 0.0.3
+        version: 0.0.3(@x402/core@2.5.0)(@x402/evm@2.5.0(ethers@6.16.0)(typescript@5.9.3))(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))
+      '@x402r/helpers':
+        specifier: workspace:*
+        version: link:../../packages/helpers
+      '@x402r/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
+      viem:
+        specifier: ^2.46.3
+        version: 2.47.1(typescript@5.9.3)(zod@3.25.76)
+
   packages/core:
     dependencies:
       viem:
         specifier: ^2.46.3
-        version: 2.47.1(typescript@5.9.3)(zod@3.25.76)
+        version: 2.47.1(typescript@5.9.3)(zod@4.3.6)
     devDependencies:
       '@x402r/evm':
         specifier: 0.0.3
-        version: 0.0.3(@x402/core@2.5.0)(@x402/evm@2.5.0(ethers@6.16.0)(typescript@5.9.3))(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))
+        version: 0.0.3(@x402/core@2.5.0)(@x402/evm@2.5.0(ethers@6.16.0)(typescript@5.9.3))(viem@2.47.1(typescript@5.9.3)(zod@4.3.6))
       prool:
         specifier: ^0.2.3
         version: 0.2.3
