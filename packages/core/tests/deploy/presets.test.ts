@@ -14,6 +14,7 @@ import { ConfigError } from '../../src/errors/index.js'
 import {
   createMockPublicClient,
   createMockWalletClient,
+  createMockWalletWithoutAccount,
   createSequentialMockPublicClient,
 } from '../fixtures.js'
 
@@ -235,6 +236,101 @@ describe('deployMarketplaceOperator', () => {
     expect(result.signatureRefundRequestAddress).toBe(sigRefundAddr)
   })
 
+  it('returns all existing when operator already deployed (no freeze, no fee)', async () => {
+    const escrowAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
+    const sigCondAddr = '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
+    const orAddr = '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
+    const sigRefundAddr =
+      '0xDDdDddDdDdddDDddDDddDDDDdDdDDdDDdDDDDDDd' as Address
+    const operatorAddr = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' as Address
+    const publicClient = createMockPublicClient({
+      [`${F.escrowPeriod}:computeAddress`]: escrowAddr,
+      [`${F.signatureCondition}:computeAddress`]: sigCondAddr,
+      [`${F.orCondition}:computeAddress`]: orAddr,
+      [`${F.signatureRefundRequest}:computeAddress`]: sigRefundAddr,
+      [`${F.paymentOperator}:computeAddress`]: operatorAddr,
+      [`${F.escrowPeriod}:getDeployed`]: escrowAddr,
+      [`${F.signatureCondition}:getDeployed`]: sigCondAddr,
+      [`${F.orCondition}:getDeployed`]: orAddr,
+      [`${F.signatureRefundRequest}:getDeployed`]: sigRefundAddr,
+      [`${F.paymentOperator}:getOperator`]: operatorAddr,
+    })
+    const walletClient = createMockWalletClient()
+
+    const result = await deployMarketplaceOperator(
+      walletClient,
+      publicClient,
+      makeOptions(),
+    )
+
+    expect(result.deployments).toHaveLength(5)
+    expect(result.summary.newCount).toBe(0)
+    expect(result.summary.existingCount).toBe(5)
+    expect(result.summary.txHashes).toHaveLength(0)
+    for (const d of result.deployments) {
+      expect(d.isNew).toBe(false)
+      expect(d.hash).toBeNull()
+    }
+  })
+
+  it('returns all existing including freeze + fee when operator already deployed', async () => {
+    const escrowAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
+    const freezeAddr = '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
+    const andAddr = '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
+    const sigCondAddr = '0xDDdDddDdDdddDDddDDddDDDDdDdDDdDDdDDDDDDd' as Address
+    const orAddr = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' as Address
+    const sigRefundAddr =
+      '0x1111111111111111111111111111111111111111' as Address
+    const feeAddr = '0x2222222222222222222222222222222222222222' as Address
+    const operatorAddr = '0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF' as Address
+    const publicClient = createMockPublicClient({
+      [`${F.escrowPeriod}:computeAddress`]: escrowAddr,
+      [`${F.signatureCondition}:computeAddress`]: sigCondAddr,
+      [`${F.freeze}:computeAddress`]: freezeAddr,
+      [`${F.orCondition}:computeAddress`]: orAddr,
+      [`${F.signatureRefundRequest}:computeAddress`]: sigRefundAddr,
+      [`${F.andCondition}:computeAddress`]: andAddr,
+      [`${F.staticFeeCalculator}:computeAddress`]: feeAddr,
+      [`${F.paymentOperator}:computeAddress`]: operatorAddr,
+      [`${F.escrowPeriod}:getDeployed`]: escrowAddr,
+      [`${F.signatureCondition}:getDeployed`]: sigCondAddr,
+      [`${F.freeze}:getDeployed`]: freezeAddr,
+      [`${F.orCondition}:getDeployed`]: orAddr,
+      [`${F.signatureRefundRequest}:getDeployed`]: sigRefundAddr,
+      [`${F.andCondition}:getDeployed`]: andAddr,
+      [`${F.staticFeeCalculator}:getDeployed`]: feeAddr,
+      [`${F.paymentOperator}:getOperator`]: operatorAddr,
+    })
+    const walletClient = createMockWalletClient()
+
+    const result = await deployMarketplaceOperator(
+      walletClient,
+      publicClient,
+      makeOptions({ freezeDurationSeconds: 86400n, operatorFeeBps: 100n }),
+    )
+
+    // escrow + sigCond + orCond + sigRefund + freeze + andCond + feeCal + operator
+    expect(result.deployments).toHaveLength(8)
+    expect(result.summary.newCount).toBe(0)
+    expect(result.summary.existingCount).toBe(8)
+    expect(result.summary.txHashes).toHaveLength(0)
+    expect(result.freezeAddress).toBe(freezeAddr)
+    expect(result.feeCalculatorAddress).toBe(feeAddr)
+  })
+
+  it('throws ConfigError when walletClient has no account', async () => {
+    const publicClient = createMockPublicClient({
+      getDeployed: zeroAddress,
+      getOperator: zeroAddress,
+      computeAddress: COMPUTED_ADDR,
+    })
+    const walletClient = createMockWalletWithoutAccount()
+
+    await expect(
+      deployMarketplaceOperator(walletClient, publicClient, makeOptions()),
+    ).rejects.toThrow(ConfigError)
+  })
+
   it('skips freeze when freezeDurationSeconds omitted', async () => {
     const escrowAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
     const sigCondAddr = '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
@@ -353,5 +449,47 @@ describe('deployArbiterSetup', () => {
     expect(result.summary.newCount).toBe(0)
     expect(result.summary.existingCount).toBe(2)
     expect(result.summary.txHashes).toHaveLength(0)
+  })
+
+  it('deploys only signatureRefundRequest when signatureCondition already exists', async () => {
+    const sigCondAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
+    const sigRefundAddr =
+      '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
+    const publicClient = createSequentialMockPublicClient(
+      [sigCondAddr, sigRefundAddr],
+      {
+        getDeployedBehavior: (callIndex) =>
+          callIndex === 0 ? sigCondAddr : zeroAddress,
+      },
+    )
+    const walletClient = createMockWalletClient()
+
+    const result = await deployArbiterSetup(
+      walletClient,
+      publicClient,
+      makeArbiterOptions(),
+    )
+
+    expect(result.deployments).toHaveLength(2)
+    expect(result.summary.newCount).toBe(1)
+    expect(result.summary.existingCount).toBe(1)
+    expect(result.summary.txHashes).toHaveLength(1)
+    expect(result.deployments[0].isNew).toBe(false)
+    expect(result.deployments[0].address).toBe(sigCondAddr)
+    expect(result.deployments[1].isNew).toBe(true)
+    expect(result.deployments[1].address).toBe(sigRefundAddr)
+  })
+
+  it('throws ConfigError when walletClient has no account', async () => {
+    const addresses = [
+      '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa',
+      '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB',
+    ] as Address[]
+    const publicClient = createSequentialMockPublicClient(addresses)
+    const walletClient = createMockWalletWithoutAccount()
+
+    await expect(
+      deployArbiterSetup(walletClient, publicClient, makeArbiterOptions()),
+    ).rejects.toThrow(ConfigError)
   })
 })
