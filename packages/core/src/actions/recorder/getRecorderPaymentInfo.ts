@@ -1,4 +1,5 @@
 import type { Address, Hex, PublicClient } from 'viem'
+import { zeroAddress } from 'viem'
 import { paymentIndexRecorderAbi } from '../../abis/generated.js'
 import type { PaymentInfo } from '../../types/index.js'
 import { wrapContractCall } from '../_internal/error-wrapping.js'
@@ -25,7 +26,7 @@ export async function getRecorderPaymentInfo(
 
   const info = result as unknown as PaymentInfo
   // If operator is zero address, the payment was not found
-  if (info.operator === '0x0000000000000000000000000000000000000000') {
+  if (info.operator === zeroAddress) {
     return null
   }
   return info

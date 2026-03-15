@@ -45,6 +45,8 @@ export interface X402rConfig {
   // Payment retrieval
   paymentIndexRecorderAddress?: Address
   paymentStore?: PaymentStore
+  /** Starting block for event-based payment lookups. Required to enable the event fallback provider. */
+  eventFromBlock?: bigint
 }
 
 // ---------------------------------------------------------------------------
@@ -63,6 +65,7 @@ export interface ResolvedConfig {
   freezeAddress: Address | undefined
   paymentIndexRecorderAddress: Address | undefined
   paymentStore: PaymentStore | undefined
+  eventFromBlock: bigint | undefined
 }
 
 export interface ResolvedWriteConfig extends ResolvedConfig {
@@ -206,16 +209,6 @@ export interface OperatorActions {
   distributeFees(token: Address): Promise<Hash>
 }
 
-export interface FactoryActions {
-  getDeployerOperatorCount(deployer: Address): Promise<bigint>
-  getDeployerOperator(deployer: Address, index: bigint): Promise<Address>
-  getDeployerOperators(
-    deployer: Address,
-    offset: bigint,
-    count: bigint,
-  ): Promise<{ operators: Address[]; total: bigint }>
-}
-
 // TODO: type event logs per-event (e.g. AuthorizationCreatedLog) once ABI event inference is added
 export interface WatchActions {
   onPayment(callback: (log: unknown) => void): () => void
@@ -237,7 +230,7 @@ export interface X402r {
   readonly freeze: FreezeActions | undefined
   readonly query: QueryActions | undefined
   readonly operator: OperatorActions
-  readonly factory: FactoryActions
+
   readonly watch: WatchActions
   canExecute(
     slot: ConditionSlot,
@@ -281,7 +274,7 @@ export interface PayerClient {
   readonly freeze: Pick<FreezeActions, 'isFrozen'> | undefined
   readonly query: QueryActions | undefined
   readonly operator: Pick<OperatorActions, 'getConfig' | 'getFeeAddresses'>
-  readonly factory: FactoryActions
+
   readonly watch: WatchActions
   canExecute(
     slot: ConditionSlot,
@@ -320,7 +313,7 @@ export interface MerchantClient {
   readonly freeze: Pick<FreezeActions, 'isFrozen'> | undefined
   readonly query: QueryActions | undefined
   readonly operator: OperatorActions
-  readonly factory: FactoryActions
+
   readonly watch: WatchActions
   canExecute(
     slot: ConditionSlot,
@@ -360,7 +353,7 @@ export interface ArbiterClient {
   readonly freeze: FreezeActions | undefined
   readonly query: QueryActions | undefined
   readonly operator: Pick<OperatorActions, 'getConfig' | 'getFeeAddresses'>
-  readonly factory: FactoryActions
+
   readonly watch: WatchActions
   canExecute(
     slot: ConditionSlot,

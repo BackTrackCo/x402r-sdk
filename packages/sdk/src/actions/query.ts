@@ -19,9 +19,16 @@ export function createQueryActions(
   }
 
   providers.push(createRecorderProvider(config.publicClient, recorderAddress))
-  providers.push(
-    createEventProvider(config.publicClient, config.operatorAddress),
-  )
+
+  if (config.eventFromBlock !== undefined) {
+    providers.push(
+      createEventProvider(
+        config.publicClient,
+        config.operatorAddress,
+        config.eventFromBlock,
+      ),
+    )
+  }
 
   const resolver = createPaymentInfoResolver(config.chainId, providers)
 

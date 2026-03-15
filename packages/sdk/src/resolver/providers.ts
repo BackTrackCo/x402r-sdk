@@ -4,6 +4,7 @@ import {
   getReceiverPaymentsByEvents,
   getReceiverPaymentsFromRecorder,
   getRecorderPaymentInfo,
+  type PaymentInfo,
 } from '@x402r/core'
 import type { Address, PublicClient } from 'viem'
 import type { PaymentStore } from '../store/types.js'
@@ -30,24 +31,38 @@ export function createRecorderProvider(
   return {
     name: 'recorder',
     async getByPayer(_, payer) {
-      // TODO: implement proper pagination for large datasets
-      const result = await getPayerPaymentsFromRecorder(publicClient, {
-        recorderAddress,
-        payer,
-        offset: 0n,
-        count: pageSize,
-      })
-      return result.payments
+      const all: PaymentInfo[] = []
+      let offset = 0n
+      let total: bigint
+      do {
+        const result = await getPayerPaymentsFromRecorder(publicClient, {
+          recorderAddress,
+          payer,
+          offset,
+          count: pageSize,
+        })
+        all.push(...result.payments)
+        total = result.total
+        offset += BigInt(result.payments.length)
+      } while (offset < total)
+      return all
     },
     async getByReceiver(_, receiver) {
-      // TODO: implement proper pagination for large datasets
-      const result = await getReceiverPaymentsFromRecorder(publicClient, {
-        recorderAddress,
-        receiver,
-        offset: 0n,
-        count: pageSize,
-      })
-      return result.payments
+      const all: PaymentInfo[] = []
+      let offset = 0n
+      let total: bigint
+      do {
+        const result = await getReceiverPaymentsFromRecorder(publicClient, {
+          recorderAddress,
+          receiver,
+          offset,
+          count: pageSize,
+        })
+        all.push(...result.payments)
+        total = result.total
+        offset += BigInt(result.payments.length)
+      } while (offset < total)
+      return all
     },
     async getByHash(_, hash) {
       return getRecorderPaymentInfo(publicClient, {
@@ -61,6 +76,7 @@ export function createRecorderProvider(
 export function createEventProvider(
   publicClient: PublicClient,
   operatorAddress: Address,
+  fromBlock: bigint,
 ): PaymentInfoProvider {
   return {
     name: 'events',
@@ -68,12 +84,14 @@ export function createEventProvider(
       return getPayerPaymentsByEvents(publicClient, {
         operatorAddress,
         payer,
+        fromBlock,
       })
     },
     async getByReceiver(_, receiver) {
       return getReceiverPaymentsByEvents(publicClient, {
         operatorAddress,
         receiver,
+        fromBlock,
       })
     },
     async getByHash() {

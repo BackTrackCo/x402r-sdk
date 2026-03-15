@@ -1,8 +1,14 @@
+export type { GetPayerPaymentParameters } from './getPayerPayment.js'
+export { getPayerPayment } from './getPayerPayment.js'
+
 export type {
   GetPayerPaymentsFromRecorderParameters,
   GetPayerPaymentsFromRecorderReturnType,
 } from './getPayerPayments.js'
 export { getPayerPaymentsFromRecorder } from './getPayerPayments.js'
+
+export type { GetReceiverPaymentParameters } from './getReceiverPayment.js'
+export { getReceiverPayment } from './getReceiverPayment.js'
 
 export type {
   GetReceiverPaymentsFromRecorderParameters,

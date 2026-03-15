@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import { getPayerPayment } from '../src/actions/recorder/getPayerPayment.js'
 import { getPayerPaymentsFromRecorder } from '../src/actions/recorder/getPayerPayments.js'
+import { getReceiverPayment } from '../src/actions/recorder/getReceiverPayment.js'
 import { getReceiverPaymentsFromRecorder } from '../src/actions/recorder/getReceiverPayments.js'
 import { getRecorderPaymentInfo } from '../src/actions/recorder/getRecorderPaymentInfo.js'
 import {
@@ -56,6 +58,52 @@ describe('getReceiverPaymentsFromRecorder', () => {
       expect.objectContaining({
         functionName: 'getReceiverPayments',
         args: [TEST_ADDRESSES.receiver, 0n, 50n],
+      }),
+    )
+  })
+})
+
+describe('getPayerPayment', () => {
+  it('passes correct args and returns PaymentInfo', async () => {
+    const client = createMockPublicClient({
+      getPayerPayment: paymentInfo,
+    })
+
+    const result = await getPayerPayment(client, {
+      recorderAddress: RECORDER_ADDRESS,
+      payer: TEST_ADDRESSES.payer,
+      index: 0n,
+    })
+
+    expect(result).toEqual(paymentInfo)
+    expect(client.readContract).toHaveBeenCalledWith(
+      expect.objectContaining({
+        address: RECORDER_ADDRESS,
+        functionName: 'getPayerPayment',
+        args: [TEST_ADDRESSES.payer, 0n],
+      }),
+    )
+  })
+})
+
+describe('getReceiverPayment', () => {
+  it('passes correct args and returns PaymentInfo', async () => {
+    const client = createMockPublicClient({
+      getReceiverPayment: paymentInfo,
+    })
+
+    const result = await getReceiverPayment(client, {
+      recorderAddress: RECORDER_ADDRESS,
+      receiver: TEST_ADDRESSES.receiver,
+      index: 2n,
+    })
+
+    expect(result).toEqual(paymentInfo)
+    expect(client.readContract).toHaveBeenCalledWith(
+      expect.objectContaining({
+        address: RECORDER_ADDRESS,
+        functionName: 'getReceiverPayment',
+        args: [TEST_ADDRESSES.receiver, 2n],
       }),
     )
   })

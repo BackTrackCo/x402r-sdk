@@ -66,6 +66,7 @@ describe('createQueryActions', () => {
   it('recorder is primary source — events not called when recorder returns results', async () => {
     const config = createTestConfig({
       paymentIndexRecorderAddress: TEST_RECORDER,
+      eventFromBlock: 1000n,
     })
     const query = createQueryActions(config, TEST_RECORDER)
 
@@ -81,6 +82,7 @@ describe('createQueryActions', () => {
 
     const config = createTestConfig({
       paymentIndexRecorderAddress: TEST_RECORDER,
+      eventFromBlock: 1000n,
     })
     const query = createQueryActions(config, TEST_RECORDER)
 
@@ -96,6 +98,7 @@ describe('createQueryActions', () => {
 
     const config = createTestConfig({
       paymentIndexRecorderAddress: TEST_RECORDER,
+      eventFromBlock: 1000n,
     })
     const query = createQueryActions(config, TEST_RECORDER)
 
@@ -147,6 +150,20 @@ describe('createQueryActions', () => {
     expect(result).toBeNull()
   })
 
+  it('event provider not added when eventFromBlock is undefined', async () => {
+    mockRecorderGetByPayer.mockResolvedValueOnce([])
+
+    const config = createTestConfig({
+      paymentIndexRecorderAddress: TEST_RECORDER,
+    })
+    const query = createQueryActions(config, TEST_RECORDER)
+
+    const results = await query.getPayerPayments(mockPaymentInfo.payer)
+
+    expect(results).toEqual([])
+    expect(mockEventGetByPayer).not.toHaveBeenCalled()
+  })
+
   it('passes config correctly to provider factories', async () => {
     const { createRecorderProvider, createEventProvider } = await import(
       '../../src/resolver/providers.js'
@@ -154,6 +171,7 @@ describe('createQueryActions', () => {
 
     const config = createTestConfig({
       paymentIndexRecorderAddress: TEST_RECORDER,
+      eventFromBlock: 500n,
     })
     createQueryActions(config, TEST_RECORDER)
 
@@ -164,6 +182,7 @@ describe('createQueryActions', () => {
     expect(createEventProvider).toHaveBeenCalledWith(
       config.publicClient,
       config.operatorAddress,
+      500n,
     )
   })
 })

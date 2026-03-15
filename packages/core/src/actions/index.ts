@@ -142,14 +142,18 @@ export {
 // Recorder
 // ---------------------------------------------------------------------------
 export type {
+  GetPayerPaymentParameters,
   GetPayerPaymentsFromRecorderParameters,
   GetPayerPaymentsFromRecorderReturnType,
+  GetReceiverPaymentParameters,
   GetReceiverPaymentsFromRecorderParameters,
   GetReceiverPaymentsFromRecorderReturnType,
   GetRecorderPaymentInfoParameters,
 } from './recorder/index.js'
 export {
+  getPayerPayment,
   getPayerPaymentsFromRecorder,
+  getReceiverPayment,
   getReceiverPaymentsFromRecorder,
   getRecorderPaymentInfo,
 } from './recorder/index.js'

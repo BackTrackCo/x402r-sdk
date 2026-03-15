@@ -60,6 +60,7 @@ export function createTestConfig(
     freezeAddress: undefined,
     paymentIndexRecorderAddress: undefined,
     paymentStore: undefined,
+    eventFromBlock: undefined,
     ...overrides,
   }
 }
