@@ -331,6 +331,30 @@ describe('deployMarketplaceOperator', () => {
     ).rejects.toThrow(ConfigError)
   })
 
+  it('throws ConfigError when a batch call fails in simulation', async () => {
+    const publicClient = createMockPublicClient({
+      getDeployed: zeroAddress,
+      getOperator: zeroAddress,
+      computeAddress: COMPUTED_ADDR,
+    })
+    // Override simulateContract to return a failed batch result
+    ;(
+      publicClient.simulateContract as ReturnType<typeof import('vitest').vi.fn>
+    ).mockResolvedValueOnce({
+      request: {},
+      result: [
+        { success: true, returnData: '0x' },
+        { success: false, returnData: '0x' }, // second call fails
+        { success: true, returnData: '0x' },
+      ],
+    })
+    const walletClient = createMockWalletClient()
+
+    await expect(
+      deployMarketplaceOperator(walletClient, publicClient, makeOptions()),
+    ).rejects.toThrow('call 1 failed in simulation')
+  })
+
   it('skips freeze when freezeDurationSeconds omitted', async () => {
     const escrowAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
     const sigCondAddr = '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address

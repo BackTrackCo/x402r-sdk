@@ -87,7 +87,14 @@ export function createMockPublicClient(
         return Promise.resolve(results)
       },
     ),
-    simulateContract: vi.fn().mockResolvedValue({ request: {} }),
+    simulateContract: vi
+      .fn()
+      .mockImplementation(({ args }: { args?: unknown[] }) => {
+        // Return success for each call in the aggregate3 batch
+        const calls = Array.isArray(args?.[0]) ? args[0] : []
+        const result = calls.map(() => ({ success: true, returnData: '0x' }))
+        return Promise.resolve({ request: {}, result })
+      }),
     waitForTransactionReceipt: vi.fn().mockResolvedValue({ status: 'success' }),
   } as unknown as PublicClient
 }
