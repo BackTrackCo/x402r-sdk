@@ -1,0 +1,16 @@
+{
+  "name": "e2e-test",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "End-to-end integration test for x402r payment lifecycle on Base Sepolia",
+  "dependencies": {
+    "@x402/core": "^2.3.0",
+    "@x402/evm": "^2.3.0",
+    "@x402r/core": "workspace:*",
+    "@x402r/sdk": "workspace:*",
+    "@x402r/evm": "0.0.3",
+    "@x402r/helpers": "workspace:*",
+    "viem": "^2.46.3"
+  }
+}
