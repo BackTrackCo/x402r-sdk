@@ -492,6 +492,35 @@ describe('deployArbiterSetup', () => {
     expect(result.deployments[1].address).toBe(refundReqAddr)
   })
 
+  it('deploys only signatureCondition when refundRequest already exists', async () => {
+    const sigCondAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
+    const refundReqAddr =
+      '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
+    const publicClient = createSequentialMockPublicClient(
+      [sigCondAddr, refundReqAddr],
+      {
+        getDeployedBehavior: (callIndex) =>
+          callIndex === 1 ? refundReqAddr : zeroAddress,
+      },
+    )
+    const walletClient = createMockWalletClient()
+
+    const result = await deployArbiterSetup(
+      walletClient,
+      publicClient,
+      makeArbiterOptions(),
+    )
+
+    expect(result.deployments).toHaveLength(2)
+    expect(result.summary.newCount).toBe(1)
+    expect(result.summary.existingCount).toBe(1)
+    expect(result.summary.txHashes).toHaveLength(1)
+    expect(result.deployments[0].isNew).toBe(true)
+    expect(result.deployments[0].address).toBe(sigCondAddr)
+    expect(result.deployments[1].isNew).toBe(false)
+    expect(result.deployments[1].address).toBe(refundReqAddr)
+  })
+
   it('throws ConfigError when walletClient has no account', async () => {
     const addresses = [
       '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa',

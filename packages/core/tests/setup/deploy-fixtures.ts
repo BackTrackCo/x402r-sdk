@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import type { Address, PublicClient, TestClient, WalletClient } from 'viem'
 import {
   encodeAbiParameters,
@@ -11,6 +14,7 @@ import {
   escrowPeriodFactoryAbi,
   freezeFactoryAbi,
   paymentOperatorFactoryAbi,
+  signatureConditionFactoryAbi,
   staticAddressConditionFactoryAbi,
   staticFeeCalculatorFactoryAbi,
 } from '../../src/abis/generated.js'
@@ -255,14 +259,66 @@ export async function deployTestFixtures(
   })
 
   // ---------------------------------------------------------------------------
-  // 3e. Deploy SignatureCondition + RefundRequest via arbiter preset
+  // 3e. Deploy SignatureCondition + RefundRequest
   // ---------------------------------------------------------------------------
-  const arbiterSetup = await deployArbiterSetup(walletClient, publicClient, {
-    chainId: 84532,
-    arbiter: testRoles.arbiter.address,
-  })
-  const signatureConditionAddress = arbiterSetup.signatureConditionAddress
-  const refundRequestAddress = arbiterSetup.refundRequestAddress
+  let signatureConditionAddress: Address
+  let refundRequestAddress: Address
+
+  if (factories.refundRequest !== zeroAddress) {
+    // Normal path: RefundRequestFactory is deployed on-chain
+    const arbiterSetup = await deployArbiterSetup(walletClient, publicClient, {
+      chainId: 84532,
+      arbiter: testRoles.arbiter.address,
+    })
+    signatureConditionAddress = arbiterSetup.signatureConditionAddress
+    refundRequestAddress = arbiterSetup.refundRequestAddress
+  } else {
+    // Fallback: RefundRequestFactory not deployed yet — deploy from bytecode
+    // Deploy SignatureCondition via on-chain factory
+    const sigCondHash = await walletClient.writeContract({
+      address: factories.signatureCondition,
+      abi: signatureConditionFactoryAbi,
+      functionName: 'deploy',
+      args: [testRoles.arbiter.address],
+      account: deployer,
+      chain: walletClient.chain,
+    })
+    await publicClient.waitForTransactionReceipt({ hash: sigCondHash })
+    signatureConditionAddress = await publicClient.readContract({
+      address: factories.signatureCondition,
+      abi: signatureConditionFactoryAbi,
+      functionName: 'computeAddress',
+      args: [testRoles.arbiter.address],
+    })
+
+    // Deploy RefundRequest directly from contracts build artifacts
+    const contractsOut = resolve(
+      dirname(fileURLToPath(import.meta.url)),
+      '../../../../../x402r-contracts/out',
+    )
+    const artifact = JSON.parse(
+      readFileSync(
+        resolve(contractsOut, 'RefundRequest.sol/RefundRequest.json'),
+        'utf-8',
+      ),
+    )
+    const deployHash = await walletClient.deployContract({
+      abi: artifact.abi,
+      bytecode: artifact.bytecode.object as `0x${string}`,
+      args: [testRoles.arbiter.address],
+      account: deployer,
+      chain: walletClient.chain,
+    })
+    const receipt = await publicClient.waitForTransactionReceipt({
+      hash: deployHash,
+    })
+    if (!receipt.contractAddress) {
+      throw new Error(
+        'RefundRequest deployment failed: no contract address in receipt',
+      )
+    }
+    refundRequestAddress = receipt.contractAddress
+  }
 
   // ---------------------------------------------------------------------------
   // 3f. Deploy PaymentOperator for arbiter refund (Flow 7)

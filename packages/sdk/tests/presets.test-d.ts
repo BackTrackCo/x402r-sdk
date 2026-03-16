@@ -56,11 +56,11 @@ describe('PayerClient type narrowing', () => {
     // @ts-expect-error — payer cannot refuse
     payer.refund.refuse
     // @ts-expect-error — payer cannot approve
-    payer.refund.approve
+    void payer.refund.approve
     // @ts-expect-error — payer cannot getReceiverRequests
-    payer.refund.getReceiverRequests
+    void payer.refund.getReceiverRequests
     // @ts-expect-error — payer cannot getOperatorRequests
-    payer.refund.getOperatorRequests
+    void payer.refund.getOperatorRequests
   })
 
   it('operator hides fee calculation methods', () => {
@@ -118,11 +118,11 @@ describe('MerchantClient type narrowing', () => {
     // @ts-expect-error — merchant cannot deny
     merchant.refund.deny
     // @ts-expect-error — merchant cannot approve
-    merchant.refund.approve
+    void merchant.refund.approve
     // @ts-expect-error — merchant cannot getPayerRequests
-    merchant.refund.getPayerRequests
+    void merchant.refund.getPayerRequests
     // @ts-expect-error — merchant cannot getOperatorRequests
-    merchant.refund.getOperatorRequests
+    void merchant.refund.getOperatorRequests
   })
 
   it('operator exposes all methods', () => {

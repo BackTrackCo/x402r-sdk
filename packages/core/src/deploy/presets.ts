@@ -122,6 +122,7 @@ export interface MarketplaceOperatorDeployment {
 
 function resolveOptions(options: MarketplaceOperatorOptions) {
   const config = getChainConfig(options.chainId)
+  /* v8 ignore start -- defensive: all current chains have factories & conditions */
   if (!config.factories) {
     throw new ConfigError(
       `Factories are not deployed on ${config.name} (chainId: ${options.chainId})`,
@@ -132,6 +133,7 @@ function resolveOptions(options: MarketplaceOperatorOptions) {
       `Condition singletons are not deployed on ${config.name} (chainId: ${options.chainId})`,
     )
   }
+  /* v8 ignore stop */
 
   const factories = getFactoryAddresses(options.chainId)
   const singletons = getConditionSingletons(options.chainId)
