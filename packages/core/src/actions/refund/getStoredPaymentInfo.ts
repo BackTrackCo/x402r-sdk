@@ -1,5 +1,5 @@
 import type { Address, Hex, PublicClient } from 'viem'
-import { signatureRefundRequestAbi } from '../../abis/generated.js'
+import { refundRequestAbi } from '../../abis/generated.js'
 import type { PaymentInfo } from '../../types/index.js'
 import { wrapContractCall } from '../_internal/error-wrapping.js'
 
@@ -18,7 +18,7 @@ export async function getStoredPaymentInfo(
   return wrapContractCall('getStoredPaymentInfo', () =>
     publicClient.readContract({
       address: contractAddress,
-      abi: signatureRefundRequestAbi,
+      abi: refundRequestAbi,
       functionName: 'getPaymentInfo',
       args: [paymentInfoHash],
     }),

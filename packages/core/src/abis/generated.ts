@@ -4936,28 +4936,20 @@ export const signatureConditionFactoryAbi = [
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// SignatureRefundRequest
+// RefundRequest
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-export const signatureRefundRequestAbi = [
+export const refundRequestAbi = [
   {
     type: 'constructor',
-    inputs: [
-      { name: '_signatureCondition', internalType: 'address', type: 'address' },
-    ],
+    inputs: [{ name: '_arbiter', internalType: 'address', type: 'address' }],
     stateMutability: 'nonpayable',
   },
   {
     type: 'function',
     inputs: [],
-    name: 'SIGNATURE_CONDITION',
-    outputs: [
-      {
-        name: '',
-        internalType: 'contract SignatureCondition',
-        type: 'address',
-      },
-    ],
+    name: 'ARBITER',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
     stateMutability: 'view',
   },
   {
@@ -4987,11 +4979,9 @@ export const signatureRefundRequestAbi = [
         ],
       },
       { name: 'nonce', internalType: 'uint256', type: 'uint256' },
-      { name: 'amount', internalType: 'uint256', type: 'uint256' },
-      { name: 'expiry', internalType: 'uint48', type: 'uint48' },
-      { name: 'signature', internalType: 'bytes', type: 'bytes' },
+      { name: 'amount', internalType: 'uint120', type: 'uint120' },
     ],
-    name: 'approveWithSignature',
+    name: 'approve',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -5268,12 +5258,13 @@ export const signatureRefundRequestAbi = [
     outputs: [
       {
         name: '',
-        internalType: 'struct SignatureRefundRequest.RefundRequestData',
+        internalType: 'struct RefundRequest.RefundRequestData',
         type: 'tuple',
         components: [
           { name: 'paymentInfoHash', internalType: 'bytes32', type: 'bytes32' },
           { name: 'nonce', internalType: 'uint256', type: 'uint256' },
           { name: 'amount', internalType: 'uint120', type: 'uint120' },
+          { name: 'approvedAmount', internalType: 'uint120', type: 'uint120' },
           { name: 'status', internalType: 'enum RequestStatus', type: 'uint8' },
         ],
       },
@@ -5289,12 +5280,13 @@ export const signatureRefundRequestAbi = [
     outputs: [
       {
         name: '',
-        internalType: 'struct SignatureRefundRequest.RefundRequestData',
+        internalType: 'struct RefundRequest.RefundRequestData',
         type: 'tuple',
         components: [
           { name: 'paymentInfoHash', internalType: 'bytes32', type: 'bytes32' },
           { name: 'nonce', internalType: 'uint256', type: 'uint256' },
           { name: 'amount', internalType: 'uint120', type: 'uint120' },
+          { name: 'approvedAmount', internalType: 'uint120', type: 'uint120' },
           { name: 'status', internalType: 'enum RequestStatus', type: 'uint8' },
         ],
       },
@@ -5459,6 +5451,7 @@ export const signatureRefundRequestAbi = [
         name: 'paymentInfo',
         internalType: 'struct AuthCaptureEscrow.PaymentInfo',
         type: 'tuple',
+        indexed: false,
         components: [
           { name: 'operator', internalType: 'address', type: 'address' },
           { name: 'payer', internalType: 'address', type: 'address' },
@@ -5477,7 +5470,6 @@ export const signatureRefundRequestAbi = [
           { name: 'feeReceiver', internalType: 'address', type: 'address' },
           { name: 'salt', internalType: 'uint256', type: 'uint256' },
         ],
-        indexed: false,
       },
       {
         name: 'payer',
@@ -5502,6 +5494,7 @@ export const signatureRefundRequestAbi = [
         name: 'paymentInfo',
         internalType: 'struct AuthCaptureEscrow.PaymentInfo',
         type: 'tuple',
+        indexed: false,
         components: [
           { name: 'operator', internalType: 'address', type: 'address' },
           { name: 'payer', internalType: 'address', type: 'address' },
@@ -5520,7 +5513,6 @@ export const signatureRefundRequestAbi = [
           { name: 'feeReceiver', internalType: 'address', type: 'address' },
           { name: 'salt', internalType: 'uint256', type: 'uint256' },
         ],
-        indexed: false,
       },
       {
         name: 'oldStatus',
@@ -5546,6 +5538,12 @@ export const signatureRefundRequestAbi = [
         type: 'uint256',
         indexed: false,
       },
+      {
+        name: 'approvedAmount',
+        internalType: 'uint120',
+        type: 'uint120',
+        indexed: false,
+      },
     ],
     name: 'RefundRequestStatusUpdated',
   },
@@ -5557,6 +5555,7 @@ export const signatureRefundRequestAbi = [
         name: 'paymentInfo',
         internalType: 'struct AuthCaptureEscrow.PaymentInfo',
         type: 'tuple',
+        indexed: false,
         components: [
           { name: 'operator', internalType: 'address', type: 'address' },
           { name: 'payer', internalType: 'address', type: 'address' },
@@ -5575,7 +5574,6 @@ export const signatureRefundRequestAbi = [
           { name: 'feeReceiver', internalType: 'address', type: 'address' },
           { name: 'salt', internalType: 'uint256', type: 'uint256' },
         ],
-        indexed: false,
       },
       {
         name: 'payer',
@@ -5604,28 +5602,28 @@ export const signatureRefundRequestAbi = [
     ],
     name: 'RefundRequested',
   },
+  { type: 'error', inputs: [], name: 'ApproveAmountExceedsRequest' },
   { type: 'error', inputs: [], name: 'IndexOutOfBounds' },
   { type: 'error', inputs: [], name: 'InvalidOperator' },
   { type: 'error', inputs: [], name: 'NotArbiter' },
+  { type: 'error', inputs: [], name: 'NotArbiterOrReceiver' },
   { type: 'error', inputs: [], name: 'NotPayer' },
   { type: 'error', inputs: [], name: 'Reentrancy' },
   { type: 'error', inputs: [], name: 'RequestAlreadyExists' },
   { type: 'error', inputs: [], name: 'RequestDoesNotExist' },
   { type: 'error', inputs: [], name: 'RequestNotPending' },
-  { type: 'error', inputs: [], name: 'ZeroCondition' },
+  { type: 'error', inputs: [], name: 'ZeroArbiter' },
   { type: 'error', inputs: [], name: 'ZeroRefundAmount' },
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// SignatureRefundRequestFactory
+// RefundRequestFactory
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-export const signatureRefundRequestFactoryAbi = [
+export const refundRequestFactoryAbi = [
   {
     type: 'function',
-    inputs: [
-      { name: 'signatureCondition', internalType: 'address', type: 'address' },
-    ],
+    inputs: [{ name: 'arbiter', internalType: 'address', type: 'address' }],
     name: 'computeAddress',
     outputs: [
       { name: 'refundRequest', internalType: 'address', type: 'address' },
@@ -5634,9 +5632,7 @@ export const signatureRefundRequestFactoryAbi = [
   },
   {
     type: 'function',
-    inputs: [
-      { name: 'signatureCondition', internalType: 'address', type: 'address' },
-    ],
+    inputs: [{ name: 'arbiter', internalType: 'address', type: 'address' }],
     name: 'deploy',
     outputs: [
       { name: 'refundRequest', internalType: 'address', type: 'address' },
@@ -5645,9 +5641,7 @@ export const signatureRefundRequestFactoryAbi = [
   },
   {
     type: 'function',
-    inputs: [
-      { name: 'signatureCondition', internalType: 'address', type: 'address' },
-    ],
+    inputs: [{ name: 'arbiter', internalType: 'address', type: 'address' }],
     name: 'getDeployed',
     outputs: [
       { name: 'refundRequest', internalType: 'address', type: 'address' },
@@ -5656,9 +5650,7 @@ export const signatureRefundRequestFactoryAbi = [
   },
   {
     type: 'function',
-    inputs: [
-      { name: 'signatureCondition', internalType: 'address', type: 'address' },
-    ],
+    inputs: [{ name: 'arbiter', internalType: 'address', type: 'address' }],
     name: 'getKey',
     outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
     stateMutability: 'pure',
@@ -5681,15 +5673,15 @@ export const signatureRefundRequestFactoryAbi = [
         indexed: true,
       },
       {
-        name: 'signatureCondition',
+        name: 'arbiter',
         internalType: 'address',
         type: 'address',
         indexed: true,
       },
     ],
-    name: 'SignatureRefundRequestDeployed',
+    name: 'RefundRequestDeployed',
   },
-  { type: 'error', inputs: [], name: 'ZeroCondition' },
+  { type: 'error', inputs: [], name: 'ZeroArbiter' },
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

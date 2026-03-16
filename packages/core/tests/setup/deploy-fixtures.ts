@@ -30,7 +30,7 @@ export interface DeployedFixtures {
   operatorWithFreezeAddress: Address
   arbiterConditionAddress: Address
   signatureConditionAddress: Address
-  signatureRefundRequestAddress: Address
+  refundRequestAddress: Address
   arbiterRefundOperatorAddress: Address
 }
 
@@ -255,15 +255,14 @@ export async function deployTestFixtures(
   })
 
   // ---------------------------------------------------------------------------
-  // 3e. Deploy SignatureCondition + SignatureRefundRequest via arbiter preset
+  // 3e. Deploy SignatureCondition + RefundRequest via arbiter preset
   // ---------------------------------------------------------------------------
   const arbiterSetup = await deployArbiterSetup(walletClient, publicClient, {
     chainId: 84532,
     arbiter: testRoles.arbiter.address,
   })
   const signatureConditionAddress = arbiterSetup.signatureConditionAddress
-  const signatureRefundRequestAddress =
-    arbiterSetup.signatureRefundRequestAddress
+  const refundRequestAddress = arbiterSetup.refundRequestAddress
 
   // ---------------------------------------------------------------------------
   // 3f. Deploy PaymentOperator for arbiter refund (Flow 7)
@@ -348,7 +347,7 @@ export async function deployTestFixtures(
     operatorWithFreezeAddress,
     arbiterConditionAddress,
     signatureConditionAddress,
-    signatureRefundRequestAddress,
+    refundRequestAddress,
     arbiterRefundOperatorAddress,
   }
 }

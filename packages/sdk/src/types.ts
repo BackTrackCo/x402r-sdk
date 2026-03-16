@@ -121,12 +121,10 @@ export interface RefundActions {
   cancel(paymentInfo: PaymentInfo, nonce: bigint): Promise<Hash>
   deny(paymentInfo: PaymentInfo, nonce: bigint): Promise<Hash>
   refuse(paymentInfo: PaymentInfo, nonce: bigint): Promise<Hash>
-  approveWithSignature(
+  approve(
     paymentInfo: PaymentInfo,
     nonce: bigint,
     amount: bigint,
-    expiry: number,
-    signature: Hex,
   ): Promise<Hash>
 
   // Read operations
@@ -338,7 +336,7 @@ export interface ArbiterClient {
     | Pick<
         RefundActions,
         | 'deny'
-        | 'approveWithSignature'
+        | 'approve'
         | 'get'
         | 'getByKey'
         | 'getStatus'

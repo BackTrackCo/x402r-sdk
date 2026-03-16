@@ -14,7 +14,7 @@ import {
 import { x402rChains } from '../../src/config/index.js'
 import type { PaymentInfo } from '../../src/types/index.js'
 import { anvilBaseSepolia } from '../setup/anvil.js'
-import { signArbiterApproval } from '../setup/arbiter-signature-helper.js'
+
 import {
   DEFAULT_AMOUNT,
   ESCROW_FAST_FORWARD,
@@ -65,7 +65,7 @@ beforeAll(async () => {
     publicClient,
     walletClient: anvilBaseSepolia.getWalletClient(testRoles.payer.address),
     operatorAddress: fixtures.arbiterRefundOperatorAddress,
-    refundRequestAddress: fixtures.signatureRefundRequestAddress,
+    refundRequestAddress: fixtures.refundRequestAddress,
   })
 
   merchant = createMerchantClient({
@@ -79,7 +79,7 @@ beforeAll(async () => {
     publicClient,
     walletClient: anvilBaseSepolia.getWalletClient(testRoles.arbiter.address),
     operatorAddress: fixtures.arbiterRefundOperatorAddress,
-    refundRequestAddress: fixtures.signatureRefundRequestAddress,
+    refundRequestAddress: fixtures.refundRequestAddress,
   })
 }, 60_000)
 
@@ -124,25 +124,8 @@ describe('Scenario 8: Approve refund request (Flow 7)', () => {
     expect(status).toBe(0)
   }, 60_000)
 
-  it('arbiter signs and submits approval', async () => {
-    const { signature } = await signArbiterApproval({
-      arbiterWallet: anvilBaseSepolia.getWalletClient(
-        testRoles.arbiter.address,
-      ),
-      publicClient,
-      signatureConditionAddress: fixtures.signatureConditionAddress,
-      paymentInfo,
-      amount: REFUND_AMOUNT,
-      expiry: 0, // no expiry
-    })
-
-    const hash = await arbiter.refund!.approveWithSignature(
-      paymentInfo,
-      0n,
-      REFUND_AMOUNT,
-      0, // no expiry
-      signature,
-    )
+  it('arbiter approves refund request', async () => {
+    const hash = await arbiter.refund!.approve(paymentInfo, 0n, REFUND_AMOUNT)
     await publicClient.waitForTransactionReceipt({ hash })
 
     const status = await arbiter.refund!.getStatus(paymentInfo, 0n)
