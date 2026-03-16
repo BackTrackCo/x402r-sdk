@@ -15,7 +15,6 @@ import {
   staticFeeCalculatorFactoryAbi,
 } from '../../src/abis/generated.js'
 import { x402rChains } from '../../src/config/index.js'
-import { deployArbiterSetup } from '../../src/deploy/index.js'
 import { accounts, testRoles } from './constants.js'
 
 // ---------------------------------------------------------------------------
@@ -29,9 +28,6 @@ export interface DeployedFixtures {
   freezeAddress: Address
   operatorWithFreezeAddress: Address
   arbiterConditionAddress: Address
-  signatureConditionAddress: Address
-  signatureRefundRequestAddress: Address
-  arbiterRefundOperatorAddress: Address
 }
 
 // ---------------------------------------------------------------------------
@@ -255,53 +251,6 @@ export async function deployTestFixtures(
   })
 
   // ---------------------------------------------------------------------------
-  // 3e. Deploy SignatureCondition + SignatureRefundRequest via arbiter preset
-  // ---------------------------------------------------------------------------
-  const arbiterSetup = await deployArbiterSetup(walletClient, publicClient, {
-    chainId: 84532,
-    arbiter: testRoles.arbiter.address,
-  })
-  const signatureConditionAddress = arbiterSetup.signatureConditionAddress
-  const signatureRefundRequestAddress =
-    arbiterSetup.signatureRefundRequestAddress
-
-  // ---------------------------------------------------------------------------
-  // 3f. Deploy PaymentOperator for arbiter refund (Flow 7)
-  //     refundPostEscrowCondition = signatureCondition
-  // ---------------------------------------------------------------------------
-  const arbiterRefundOperatorConfig = {
-    feeRecipient: testRoles.operatorFeeRecipient.address,
-    feeCalculator: feeCalculatorAddress,
-    authorizeCondition: zeroAddress,
-    authorizeRecorder: escrowPeriodAddress,
-    chargeCondition: zeroAddress,
-    chargeRecorder: zeroAddress,
-    releaseCondition: escrowPeriodAddress,
-    releaseRecorder: zeroAddress,
-    refundInEscrowCondition: baseSepolia.conditions.receiver,
-    refundInEscrowRecorder: zeroAddress,
-    refundPostEscrowCondition: signatureConditionAddress,
-    refundPostEscrowRecorder: zeroAddress,
-  } as const
-
-  const arbiterRefundOpHash = await walletClient.writeContract({
-    address: factories.paymentOperator,
-    abi: paymentOperatorFactoryAbi,
-    functionName: 'deployOperator',
-    args: [arbiterRefundOperatorConfig],
-    account: deployer,
-    chain: walletClient.chain,
-  })
-  await publicClient.waitForTransactionReceipt({ hash: arbiterRefundOpHash })
-
-  const arbiterRefundOperatorAddress = await publicClient.readContract({
-    address: factories.paymentOperator,
-    abi: paymentOperatorFactoryAbi,
-    functionName: 'computeAddress',
-    args: [arbiterRefundOperatorConfig],
-  })
-
-  // ---------------------------------------------------------------------------
   // 4. Fund payer with USDC via storage slot manipulation
   // ---------------------------------------------------------------------------
   const payerUsdcAmount = 10_000_000_000n // 10,000 USDC (6 decimals)
@@ -347,8 +296,5 @@ export async function deployTestFixtures(
     freezeAddress,
     operatorWithFreezeAddress,
     arbiterConditionAddress,
-    signatureConditionAddress,
-    signatureRefundRequestAddress,
-    arbiterRefundOperatorAddress,
   }
 }
