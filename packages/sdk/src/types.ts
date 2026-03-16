@@ -16,6 +16,7 @@ import type {
   X402rChainConfig,
 } from '@x402r/core'
 import type { Address, Hash, Hex, PublicClient, WalletClient } from 'viem'
+import type { PaymentStore } from './store/types.js'
 
 /** Force TypeScript to flatten intersection types for cleaner IDE tooltips. */
 export type Prettify<T> = {
@@ -40,6 +41,12 @@ export interface X402rConfig {
   // Optional condition plugin addresses (per-operator, not in chain config)
   escrowPeriodAddress?: Address
   freezeAddress?: Address
+
+  // Payment retrieval
+  paymentIndexRecorderAddress?: Address
+  paymentStore?: PaymentStore
+  /** Starting block for event-based payment lookups. Required to enable the event fallback provider. */
+  eventFromBlock?: bigint
 }
 
 // ---------------------------------------------------------------------------
@@ -56,6 +63,9 @@ export interface ResolvedConfig {
   refundRequestEvidenceAddress: Address
   escrowPeriodAddress: Address | undefined
   freezeAddress: Address | undefined
+  paymentIndexRecorderAddress: Address | undefined
+  paymentStore: PaymentStore | undefined
+  eventFromBlock: bigint | undefined
 }
 
 export interface ResolvedWriteConfig extends ResolvedConfig {
@@ -173,6 +183,12 @@ export interface FreezeActions {
   isFrozen(paymentInfo: PaymentInfo): Promise<boolean>
 }
 
+export interface QueryActions {
+  getPayerPayments(payer: Address): Promise<PaymentInfo[]>
+  getReceiverPayments(receiver: Address): Promise<PaymentInfo[]>
+  getPayment(hash: Hex): Promise<PaymentInfo | null>
+}
+
 export interface OperatorActions {
   getConfig(): Promise<OperatorSlots>
   getFeeAddresses(): Promise<FeeAddresses>
@@ -197,6 +213,7 @@ export interface OperatorActions {
 export interface WatchActions {
   onPayment(callback: (log: unknown) => void): () => void
   onRefundRequest(callback: (log: unknown) => void): () => void
+  onRefundExecuted(callback: (log: unknown) => void): () => void
   onFeeDistribution(callback: (log: unknown) => void): () => void
 }
 
@@ -211,7 +228,9 @@ export interface X402r {
   readonly refund: RefundActions
   readonly evidence: EvidenceActions
   readonly freeze: FreezeActions | undefined
+  readonly query: QueryActions | undefined
   readonly operator: OperatorActions
+
   readonly watch: WatchActions
   canExecute(
     slot: ConditionSlot,
@@ -251,7 +270,9 @@ export interface PayerClient {
   >
   readonly evidence: EvidenceActions
   readonly freeze: Pick<FreezeActions, 'isFrozen'> | undefined
+  readonly query: QueryActions | undefined
   readonly operator: Pick<OperatorActions, 'getConfig' | 'getFeeAddresses'>
+
   readonly watch: WatchActions
   canExecute(
     slot: ConditionSlot,
@@ -290,7 +311,9 @@ export interface MerchantClient {
   >
   readonly evidence: EvidenceActions
   readonly freeze: Pick<FreezeActions, 'isFrozen'> | undefined
+  readonly query: QueryActions | undefined
   readonly operator: OperatorActions
+
   readonly watch: WatchActions
   canExecute(
     slot: ConditionSlot,
@@ -326,7 +349,9 @@ export interface ArbiterClient {
   >
   readonly evidence: EvidenceActions
   readonly freeze: FreezeActions | undefined
+  readonly query: QueryActions | undefined
   readonly operator: Pick<OperatorActions, 'getConfig' | 'getFeeAddresses'>
+
   readonly watch: WatchActions
   canExecute(
     slot: ConditionSlot,

@@ -28,6 +28,8 @@ export const TEST_EVIDENCE =
 export const TEST_ESCROW_PERIOD =
   '0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef' as const
 export const TEST_FREEZE = '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd' as const
+export const TEST_RECORDER =
+  '0xcafecafecafecafecafecafecafecafecafecafe' as const
 
 export const mockPaymentInfo = {
   operator: TEST_OPERATOR,
@@ -52,11 +54,16 @@ export function createTestConfig(
     walletClient,
     operatorAddress: TEST_OPERATOR,
     chainId: 84532,
-    chainConfig: {} as X402rChainConfig,
+    chainConfig: {
+      receiverRefundCollector: '0xE5500a38BE45a6C598420fbd7867ac85EC451A07',
+    } as X402rChainConfig,
     refundRequestAddress: TEST_REFUND_REQUEST,
     refundRequestEvidenceAddress: TEST_EVIDENCE,
     escrowPeriodAddress: undefined,
     freezeAddress: undefined,
+    paymentIndexRecorderAddress: undefined,
+    paymentStore: undefined,
+    eventFromBlock: undefined,
     ...overrides,
   }
 }

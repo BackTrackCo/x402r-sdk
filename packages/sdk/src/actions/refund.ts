@@ -1,14 +1,14 @@
 import {
+  approvePostEscrowRefund,
   approveRefund,
-  approveRefundBudget,
   cancelRefundRequest,
   denyRefundRequest,
   getCancelCount,
   getCancelledAmount,
   getOperatorRefundRequests,
   getPayerRefundRequests,
+  getPostEscrowRefundAllowance,
   getReceiverRefundRequests,
-  getRefundBudget,
   getRefundRequest,
   getRefundRequestByKey,
   getRefundRequestStatus,
@@ -144,21 +144,21 @@ export function createRefundActions(config: ResolvedConfig): RefundActions {
       }),
 
     // -----------------------------------------------------------------------
-    // Budget ops (operatorAddress)
+    // Budget ops (receiverRefundCollector)
     // -----------------------------------------------------------------------
 
     approveBudget: (token, amount) =>
-      approveRefundBudget(requireWallet(config), {
+      approvePostEscrowRefund(requireWallet(config), {
         token,
-        operatorAddress,
+        collectorAddress: config.chainConfig.receiverRefundCollector,
         amount,
       }),
 
     getBudget: (token, owner) =>
-      getRefundBudget(publicClient, {
+      getPostEscrowRefundAllowance(publicClient, {
         token,
         owner,
-        operatorAddress,
+        collectorAddress: config.chainConfig.receiverRefundCollector,
       }),
 
     refundInEscrow: (paymentInfo, amount) =>

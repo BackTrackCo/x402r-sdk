@@ -1,14 +1,14 @@
 export type {
-  ApproveRefundBudgetParameters,
-  ApproveRefundBudgetReturnType,
-} from './approveRefundBudget.js'
-export { approveRefundBudget } from './approveRefundBudget.js'
+  ApprovePostEscrowRefundParameters,
+  ApprovePostEscrowRefundReturnType,
+} from './approvePostEscrowRefund.js'
+export { approvePostEscrowRefund } from './approvePostEscrowRefund.js'
 
 export type {
-  GetRefundBudgetParameters,
-  GetRefundBudgetReturnType,
-} from './getRefundBudget.js'
-export { getRefundBudget } from './getRefundBudget.js'
+  GetPostEscrowRefundAllowanceParameters,
+  GetPostEscrowRefundAllowanceReturnType,
+} from './getPostEscrowRefundAllowance.js'
+export { getPostEscrowRefundAllowance } from './getPostEscrowRefundAllowance.js'
 
 export type {
   RefundInEscrowParameters,

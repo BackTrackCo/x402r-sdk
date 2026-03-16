@@ -42,11 +42,14 @@ export {
   X402rError,
 } from '@x402r/core'
 export { createX402r } from './client.js'
+export { queryActions } from './plugins/index.js'
 export {
   createArbiterClient,
   createMerchantClient,
   createPayerClient,
 } from './presets.js'
+export { createMemoryStore } from './store/index.js'
+export type { PaymentStore } from './store/types.js'
 export type {
   ArbiterClient,
   EscrowActions,
@@ -57,6 +60,7 @@ export type {
   PayerClient,
   PaymentActions,
   Prettify,
+  QueryActions,
   RefundActions,
   ResolvedConfig,
   ResolvedWriteConfig,

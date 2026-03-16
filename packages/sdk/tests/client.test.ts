@@ -8,6 +8,7 @@ import {
   TEST_FREEZE as freezeAddress,
   TEST_OPERATOR as operatorAddress,
   publicClient,
+  TEST_RECORDER,
   walletClient,
 } from './fixtures.js'
 
@@ -137,6 +138,22 @@ describe('createX402r', () => {
     expect(client.freeze!.freeze).toBeTypeOf('function')
     expect(client.freeze!.unfreeze).toBeTypeOf('function')
     expect(client.freeze!.isFrozen).toBeTypeOf('function')
+  })
+
+  it('query is undefined when no paymentIndexRecorderAddress', () => {
+    const client = createX402r(baseConfig)
+    expect(client.query).toBeUndefined()
+  })
+
+  it('query is defined when paymentIndexRecorderAddress provided', () => {
+    const client = createX402r({
+      ...baseConfig,
+      paymentIndexRecorderAddress: TEST_RECORDER,
+    })
+    expect(client.query).toBeDefined()
+    expect(client.query!.getPayerPayments).toBeTypeOf('function')
+    expect(client.query!.getReceiverPayments).toBeTypeOf('function')
+    expect(client.query!.getPayment).toBeTypeOf('function')
   })
 })
 

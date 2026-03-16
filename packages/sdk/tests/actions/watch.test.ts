@@ -116,6 +116,85 @@ describe('createWatchActions', () => {
     ])
   })
 
+  it('onRefundExecuted calls watchContractEvent with both refund event names', () => {
+    const unwatchFn = vi.fn()
+    const mockWatchContractEvent = vi.fn().mockReturnValue(unwatchFn)
+    const config = createTestConfig()
+    ;(config as any).publicClient = {
+      ...config.publicClient,
+      watchContractEvent: mockWatchContractEvent,
+    }
+
+    const actions = createWatchActions(config)
+    actions.onRefundExecuted(() => {})
+
+    expect(mockWatchContractEvent).toHaveBeenCalledTimes(2)
+    expect(mockWatchContractEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        address: config.operatorAddress,
+        abi: paymentOperatorAbi,
+        eventName: 'RefundInEscrowExecuted',
+      }),
+    )
+    expect(mockWatchContractEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        address: config.operatorAddress,
+        abi: paymentOperatorAbi,
+        eventName: 'RefundPostEscrowExecuted',
+      }),
+    )
+  })
+
+  it('onRefundExecuted forwards each log to callback individually', () => {
+    const capturedOnLogs: Array<(logs: unknown[]) => void> = []
+    const mockWatchContractEvent = vi.fn().mockImplementation((args) => {
+      capturedOnLogs.push(args.onLogs)
+      return vi.fn()
+    })
+    const config = createTestConfig()
+    ;(config as any).publicClient = {
+      ...config.publicClient,
+      watchContractEvent: mockWatchContractEvent,
+    }
+
+    const actions = createWatchActions(config)
+    const received: unknown[] = []
+    actions.onRefundExecuted((log) => received.push(log))
+
+    expect(capturedOnLogs).toHaveLength(2)
+    capturedOnLogs[0]([{ event: 'RefundInEscrowExecuted' }])
+    capturedOnLogs[1]([{ event: 'RefundPostEscrowExecuted' }])
+
+    expect(received).toEqual([
+      { event: 'RefundInEscrowExecuted' },
+      { event: 'RefundPostEscrowExecuted' },
+    ])
+  })
+
+  it('onRefundExecuted combined unwatch calls both individual unwatchers', () => {
+    const unwatchFns = [vi.fn(), vi.fn()]
+    let callIdx = 0
+    const mockWatchContractEvent = vi.fn().mockImplementation(() => {
+      return unwatchFns[callIdx++]
+    })
+    const config = createTestConfig()
+    ;(config as any).publicClient = {
+      ...config.publicClient,
+      watchContractEvent: mockWatchContractEvent,
+    }
+
+    const actions = createWatchActions(config)
+    const unwatch = actions.onRefundExecuted(() => {})
+
+    expect(unwatchFns[0]).not.toHaveBeenCalled()
+    expect(unwatchFns[1]).not.toHaveBeenCalled()
+
+    unwatch()
+
+    expect(unwatchFns[0]).toHaveBeenCalledOnce()
+    expect(unwatchFns[1]).toHaveBeenCalledOnce()
+  })
+
   it('onFeeDistribution watches FeesDistributed and forwards logs', () => {
     let capturedOnLogs: (logs: unknown[]) => void
     const unwatchFn = vi.fn()
