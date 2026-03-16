@@ -11,7 +11,6 @@ import {
   escrowPeriodFactoryAbi,
   freezeFactoryAbi,
   paymentOperatorFactoryAbi,
-  signatureConditionFactoryAbi,
   staticAddressConditionFactoryAbi,
   staticFeeCalculatorFactoryAbi,
 } from '../../src/abis/generated.js'
@@ -258,15 +257,12 @@ export async function deployTestFixtures(
   // ---------------------------------------------------------------------------
   // 3e. Deploy SignatureCondition + RefundRequest
   // ---------------------------------------------------------------------------
-  let signatureConditionAddress: Address
-  let refundRequestAddress: Address
-
   const arbiterSetup = await deployArbiterSetup(walletClient, publicClient, {
     chainId: 84532,
     arbiter: testRoles.arbiter.address,
   })
-  signatureConditionAddress = arbiterSetup.signatureConditionAddress
-  refundRequestAddress = arbiterSetup.refundRequestAddress
+  const signatureConditionAddress = arbiterSetup.signatureConditionAddress
+  const refundRequestAddress = arbiterSetup.refundRequestAddress
 
   // ---------------------------------------------------------------------------
   // 3f. Deploy PaymentOperator for arbiter refund (Flow 7)
