@@ -286,7 +286,7 @@ export interface PayerClient {
 
 export interface MerchantClient {
   readonly config: ResolvedWriteConfig
-  readonly payment: PaymentActions
+  readonly payment: Omit<PaymentActions, 'refundInEscrow'>
   readonly escrow:
     | Pick<
         EscrowActions,

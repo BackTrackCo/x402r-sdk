@@ -130,6 +130,87 @@ describe('Scenario 5: Deny refund request', () => {
 })
 
 // ---------------------------------------------------------------------------
+// Scenario 5a-neg: approve() reverts after deny on gated operator
+// ---------------------------------------------------------------------------
+
+describe('Scenario 5a-neg: Approve reverts after deny', () => {
+  let gatedPaymentInfo: PaymentInfo
+  let gatedFacilitator: X402r
+  let gatedPayer: PayerClient
+  let gatedArbiter: ArbiterClient
+
+  beforeAll(async () => {
+    // Use arbiterRefund operator — gated by StaticAddressCondition(refundRequest)
+    const gatedScenario = await setupScenario({
+      salt: 6n,
+      operator: 'arbiterRefund',
+    })
+    gatedPaymentInfo = gatedScenario.paymentInfo
+
+    gatedFacilitator = createX402r({
+      publicClient,
+      walletClient: anvilBaseSepolia.getWalletClient(testRoles.payer.address),
+      operatorAddress: fixtures.arbiterRefundOperatorAddress,
+      escrowPeriodAddress: fixtures.escrowPeriodAddress,
+    })
+
+    gatedPayer = createPayerClient({
+      publicClient,
+      walletClient: anvilBaseSepolia.getWalletClient(testRoles.payer.address),
+      operatorAddress: fixtures.arbiterRefundOperatorAddress,
+      refundRequestAddress: fixtures.refundRequestAddress,
+    })
+
+    gatedArbiter = createArbiterClient({
+      publicClient,
+      walletClient: anvilBaseSepolia.getWalletClient(testRoles.arbiter.address),
+      operatorAddress: fixtures.arbiterRefundOperatorAddress,
+      refundRequestAddress: fixtures.refundRequestAddress,
+    })
+  }, 60_000)
+
+  it('authorize + payer requests refund', async () => {
+    const { collectorData, tokenCollector } = await createCollectorData(
+      anvilBaseSepolia.getWalletClient(testRoles.payer.address),
+      gatedPaymentInfo,
+    )
+    const hash = await gatedFacilitator.payment.authorize(
+      gatedPaymentInfo,
+      DEFAULT_AMOUNT,
+      tokenCollector,
+      collectorData,
+    )
+    await publicClient.waitForTransactionReceipt({ hash })
+
+    const reqHash = await gatedPayer.refund!.request(
+      gatedPaymentInfo,
+      DEFAULT_AMOUNT,
+      0n,
+    )
+    await publicClient.waitForTransactionReceipt({ hash: reqHash })
+  }, 60_000)
+
+  it('arbiter denies the refund request', async () => {
+    const hash = await gatedArbiter.refund!.deny(gatedPaymentInfo, 0n)
+    await publicClient.waitForTransactionReceipt({ hash })
+
+    const status = await gatedArbiter.refund!.getStatus(gatedPaymentInfo, 0n)
+    expect(status).toBe(2) // Denied
+  }, 60_000)
+
+  it('approve() reverts after deny (RequestNotApprovable)', async () => {
+    // approve() should revert because the request is already Denied
+    const hash = await gatedArbiter.refund!.approve(
+      gatedPaymentInfo,
+      0n,
+      DEFAULT_AMOUNT,
+    )
+    const receipt = await publicClient.waitForTransactionReceipt({ hash })
+    expect(receipt.status).toBe('reverted')
+  }, 60_000)
+})
+
+// ---------------------------------------------------------------------------
 // Scenario 5b: Arbiter refuses refund request
 // ---------------------------------------------------------------------------
 

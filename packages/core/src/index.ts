@@ -26,8 +26,8 @@ export * from './abis/generated.js'
 export type {
   ApprovePostEscrowRefundParameters,
   ApprovePostEscrowRefundReturnType,
-  ApproveRefundParameters,
-  ApproveRefundReturnType,
+  ApproveRefundRequestParameters,
+  ApproveRefundRequestReturnType,
   AuthorizeParameters,
   AuthorizeReturnType,
   CalculateOperatorFeeBpsParameters,
