@@ -21,7 +21,6 @@ import {
   type Address,
   authCaptureEscrowAbi,
   checkAndLogBalances,
-  computePaymentInfoHash,
   createSDKInstances,
   deployTestOperator,
   distributeFees,
@@ -36,7 +35,6 @@ import {
   setupE2EAccounts,
   setupHTTP402,
   shortAddr,
-  signatureConditionAbi,
   USDC_ADDRESS,
   waitForTx,
 } from './shared.js'
@@ -90,9 +88,12 @@ async function main() {
 
   runner.log(`EscrowPeriod: ${deployResult.escrowPeriodAddress}`)
   runner.log(`Freeze: ${deployResult.freezeAddress}`)
-  runner.log(`SignatureCondition: ${deployResult.signatureConditionAddress}`)
+  runner.log(`RefundRequest: ${deployResult.refundRequestAddress}`)
   runner.log(
-    `SignatureRefundRequest: ${deployResult.signatureRefundRequestAddress}`,
+    `RefundInEscrowCondition: ${deployResult.refundInEscrowConditionAddress}`,
+  )
+  runner.log(
+    `RefundRequestEvidence: ${deployResult.refundRequestEvidenceAddress}`,
   )
 
   // ---- Step 3: Setup HTTP 402 Infrastructure ----
@@ -315,63 +316,23 @@ async function main() {
     )
   }
 
-  // ---- Step 10: Arbiter Approves Refund (EIP-712 signature) ----
+  // ---- Step 10: Arbiter Approves Refund (atomic in-escrow refund) ----
   runner.step(
-    '10. Arbiter Approves Refund (EIP-712 signature based on evidence review)',
+    '10. Arbiter Approves Refund (approve() atomically calls refundInEscrow)',
   )
 
-  runner.log('Computing EIP-712 approval signature...')
-
-  // 1. Compute paymentInfoHash
-  const paymentInfoHash = computePaymentInfoHash(
-    accounts.chainId,
-    accounts.chainConfig.authCaptureEscrow as Address,
-    paymentInfo,
-  )
-
-  // 2. Read the approval nonce from the SignatureCondition contract
-  const approvalNonce = await accounts.publicClient.readContract({
-    address: deployResult.signatureConditionAddress,
-    abi: signatureConditionAbi,
-    functionName: 'approvalNonces',
-    args: [paymentInfoHash],
+  const payerUsdcBefore = await accounts.publicClient.readContract({
+    address: USDC_ADDRESS,
+    abi: erc20Abi,
+    functionName: 'balanceOf',
+    args: [accounts.payerAccount.address],
   })
-  runner.log(`Approval nonce: ${approvalNonce}`)
 
-  // 3. Arbiter signs EIP-712 typed data
-  const approvalSignature = await accounts.arbiterWallet!.signTypedData({
-    account: accounts.arbiterAccount!,
-    domain: {
-      name: 'SignatureCondition',
-      version: '1',
-      chainId: accounts.chainId,
-      verifyingContract: deployResult.signatureConditionAddress,
-    },
-    types: {
-      Approval: [
-        { name: 'paymentInfoHash', type: 'bytes32' },
-        { name: 'amount', type: 'uint256' },
-        { name: 'expiry', type: 'uint48' },
-        { name: 'nonce', type: 'uint256' },
-      ],
-    },
-    primaryType: 'Approval',
-    message: {
-      paymentInfoHash,
-      amount: PAYMENT_AMOUNT,
-      expiry: 0,
-      nonce: approvalNonce as bigint,
-    },
-  })
-  runner.log(`Approval signature obtained`)
-
-  // 4. Submit approval with signature
-  const approveTxHash = await arbiter!.refund!.approveWithSignature(
+  runner.log('Submitting arbiter approval (triggers atomic refund)...')
+  const approveTxHash = await arbiter!.refund!.approve(
     paymentInfo,
     0n,
     PAYMENT_AMOUNT,
-    0,
-    approvalSignature,
   )
   await waitForTx(accounts.publicClient, approveTxHash)
   runner.log(`  Approve tx: ${SCANNER}/tx/${approveTxHash}`)
@@ -390,23 +351,8 @@ async function main() {
     )
   }
 
-  // ---- Step 11: Arbiter Executes Refund ----
-  runner.step('11. Arbiter Executes Refund')
-
-  const payerUsdcBefore = await accounts.publicClient.readContract({
-    address: USDC_ADDRESS,
-    abi: erc20Abi,
-    functionName: 'balanceOf',
-    args: [accounts.payerAccount.address],
-  })
-
-  runner.log('Executing refund in escrow...')
-  const executeTx = await arbiter!.payment.refundInEscrow(
-    paymentInfo,
-    PAYMENT_AMOUNT,
-  )
-  await waitForTx(accounts.publicClient, executeTx)
-  runner.log(`  Execute tx: ${SCANNER}/tx/${executeTx}`)
+  // ---- Step 11: Verify Atomic Refund Executed ----
+  runner.step('11. Verify Atomic Refund Executed')
 
   const escrowStateAfter = await accounts.publicClient.readContract({
     address: accounts.chainConfig.authCaptureEscrow as Address,
@@ -436,12 +382,12 @@ async function main() {
 
   if (capturableAfter === 0n && usdcRecovered > 0n) {
     runner.pass(
-      'Execute refund (escrow emptied, USDC returned to payer)',
-      executeTx,
+      'Atomic refund verified (escrow emptied, USDC returned to payer)',
+      approveTxHash,
     )
   } else {
     runner.fail(
-      'Execute refund',
+      'Atomic refund verification',
       `capturable=${capturableAfter} (expected 0), recovered=${usdcRecovered} (expected > 0)`,
     )
   }

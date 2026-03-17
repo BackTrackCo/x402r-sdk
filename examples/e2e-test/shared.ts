@@ -5,6 +5,9 @@
  *   - index.ts (full payment lifecycle)
  */
 
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { x402Client } from '@x402/core/client'
 import { x402Facilitator } from '@x402/core/facilitator'
 import { x402HTTPClient } from '@x402/core/http'
@@ -21,6 +24,7 @@ import {
   fromNetworkId,
   getChainConfig,
   type PaymentInfo,
+  refundRequestEvidenceAbi,
   toPaymentInfo,
   type X402rChainConfig,
 } from '@x402r/core'
@@ -49,6 +53,20 @@ import {
   privateKeyToAccount,
 } from 'viem/accounts'
 import { baseSepolia } from 'viem/chains'
+
+// ============ Contract Bytecodes ============
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const evidenceArtifact = JSON.parse(
+  readFileSync(
+    resolve(
+      __dirname,
+      '../../../x402r-contracts/out/RefundRequestEvidence.sol/RefundRequestEvidence.json',
+    ),
+    'utf-8',
+  ),
+)
+const EVIDENCE_BYTECODE = evidenceArtifact.bytecode.object as `0x${string}`
 
 // ============ Config Constants ============
 
@@ -305,8 +323,9 @@ interface DeployResult {
   operatorAddress: Address
   escrowPeriodAddress: Address
   freezeAddress: Address | null
-  signatureConditionAddress: Address
-  signatureRefundRequestAddress: Address
+  refundRequestAddress: Address
+  refundInEscrowConditionAddress: Address
+  refundRequestEvidenceAddress: Address
   feeCalculatorAddress: Address | null
   summary: {
     newCount: number
@@ -343,12 +362,36 @@ export async function deployTestOperator(
       : undefined,
   )
 
+  // Deploy RefundRequestEvidence bound to the per-arbiter RefundRequest
+  // Use a fresh wallet client to avoid stale nonce from prior multicall batch
+  runner.log('Deploying RefundRequestEvidence...')
+  const freshPayerWallet = createWalletClient({
+    account: payerAccount,
+    chain: payerWallet.chain,
+    transport: http(RPC_URL),
+  })
+  const evidenceDeployTx = await freshPayerWallet.deployContract({
+    abi: refundRequestEvidenceAbi,
+    bytecode: EVIDENCE_BYTECODE,
+    args: [deployResult.refundRequestAddress],
+    account: payerAccount,
+    chain: payerWallet.chain,
+  })
+  await waitForTx(publicClient, evidenceDeployTx)
+  const evidenceReceipt = await publicClient.getTransactionReceipt({
+    hash: evidenceDeployTx,
+  })
+  const evidenceAddress = evidenceReceipt.contractAddress as Address
+  runner.log(`  RefundRequestEvidence: ${evidenceAddress}`)
+  runner.pass('Deploy RefundRequestEvidence', evidenceDeployTx)
+
   return {
     operatorAddress: deployResult.operatorAddress,
     escrowPeriodAddress: deployResult.escrowPeriodAddress,
     freezeAddress: deployResult.freezeAddress,
-    signatureConditionAddress: deployResult.signatureConditionAddress,
-    signatureRefundRequestAddress: deployResult.signatureRefundRequestAddress,
+    refundRequestAddress: deployResult.refundRequestAddress,
+    refundInEscrowConditionAddress: deployResult.refundInEscrowConditionAddress,
+    refundRequestEvidenceAddress: evidenceAddress,
     feeCalculatorAddress: deployResult.feeCalculatorAddress,
     summary: deployResult.summary,
   }
@@ -626,16 +669,10 @@ export function createSDKInstances(
   accounts: E2EAccounts,
   deployResult: DeployResult,
 ): SDKInstances {
-  const {
-    publicClient,
-    payerWallet,
-    merchantWallet,
-    arbiterWallet,
-    chainConfig,
-    chainId,
-  } = accounts
+  const { publicClient, payerWallet, merchantWallet, arbiterWallet, chainId } =
+    accounts
   const opAddr = deployResult.operatorAddress
-  const refundRequestAddress = deployResult.signatureRefundRequestAddress
+  const refundRequestAddress = deployResult.refundRequestAddress
   const freezeAddr = deployResult.freezeAddress ?? undefined
   const escrowPeriodAddr = deployResult.escrowPeriodAddress
 
@@ -644,7 +681,7 @@ export function createSDKInstances(
     operatorAddress: opAddr,
     chainId,
     refundRequestAddress,
-    refundRequestEvidenceAddress: chainConfig.refundRequestEvidence as Address,
+    refundRequestEvidenceAddress: deployResult.refundRequestEvidenceAddress,
     escrowPeriodAddress: escrowPeriodAddr,
     freezeAddress: freezeAddr,
   }
@@ -668,6 +705,5 @@ export {
   computePaymentInfoHash,
   distributeFees,
   RefundRequestStatus,
-  signatureConditionAbi,
 } from '@x402r/core'
 export { erc20Abi, formatUnits } from 'viem'
