@@ -14,7 +14,6 @@ import {
 import { x402rChains } from '../../src/config/index.js'
 import type { PaymentInfo } from '../../src/types/index.js'
 import { anvilBaseSepolia } from '../setup/anvil.js'
-
 import {
   DEFAULT_AMOUNT,
   ESCROW_FAST_FORWARD,
@@ -131,6 +130,9 @@ describe('Scenario 8: Approve refund request (Flow 7)', () => {
     const status = await arbiter.refund!.getStatus(paymentInfo, 0n)
     // Approved = 1
     expect(status).toBe(1)
+
+    const request = await arbiter.refund!.get(paymentInfo, 0n)
+    expect(request.approvedAmount).toBe(REFUND_AMOUNT)
   }, 60_000)
 
   it('receiver approves refund budget and refundPostEscrow executes', async () => {

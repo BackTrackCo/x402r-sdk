@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { approveRefund } from '../src/actions/refund/approveRefund.js'
 import { getOperatorRefundRequests } from '../src/actions/refund/getOperatorRefundRequests.js'
 import { getPayerRefundRequests } from '../src/actions/refund/getPayerRefundRequests.js'
 import { getReceiverRefundRequests } from '../src/actions/refund/getReceiverRefundRequests.js'
@@ -7,6 +8,7 @@ import { getRefundRequestByKey } from '../src/actions/refund/getRefundRequestByK
 import { RefundRequestStatus } from '../src/actions/refund/types.js'
 import {
   createMockPublicClient,
+  createMockWalletClient,
   makePaymentInfo,
   TEST_ADDRESSES,
 } from './fixtures.js'
@@ -24,6 +26,26 @@ describe('RefundRequestStatus', () => {
   })
 })
 
+describe('refund write functions', () => {
+  const pi = makePaymentInfo()
+
+  it('approveRefund writes to contract with correct args', async () => {
+    const walletClient = createMockWalletClient()
+    await approveRefund(walletClient, {
+      contractAddress: MOCK_CONTRACT,
+      paymentInfo: pi,
+      nonce: 1n,
+      amount: 500n,
+    })
+    expect(walletClient.writeContract).toHaveBeenCalledWith(
+      expect.objectContaining({
+        functionName: 'approve',
+        args: [pi, 1n, 500n],
+      }),
+    )
+  })
+})
+
 describe('refund read functions', () => {
   const pi = makePaymentInfo()
 
@@ -32,6 +54,7 @@ describe('refund read functions', () => {
       paymentInfoHash: '0xabc' as const,
       nonce: 1n,
       amount: 100n,
+      approvedAmount: 0n,
       status: 0,
     }
     const client = createMockPublicClient({ getRefundRequest: mockData })
@@ -91,6 +114,7 @@ describe('refund read functions', () => {
       paymentInfoHash: '0xabc' as const,
       nonce: 0n,
       amount: 200n,
+      approvedAmount: 0n,
       status: 1,
     }
     const client = createMockPublicClient({ getRefundRequestByKey: mockData })

@@ -190,6 +190,10 @@ export async function previewMarketplaceOperator(
     ])
 
   // Batch 2 (parallel): depends on batch 1 results
+  // refundInEscrowCondition: Only the RefundRequest contract can call refundInEscrow().
+  // RefundRequest.approve() atomically calls operator.refundInEscrow() — the condition
+  // gate ensures only approved refund requests trigger escrow release.
+  // This replaces the old OR(receiver, signatureCondition) model.
   const [freezeAddress, refundInEscrowConditionAddress] = await Promise.all([
     freezeDurationSeconds > 0n
       ? computeFreezeAddress(publicClient, {
@@ -650,6 +654,10 @@ export async function previewArbiterSetup(
 // deployArbiterSetup — single-tx via Multicall3
 // ---------------------------------------------------------------------------
 
+// SignatureCondition is co-deployed because it is still needed for operator
+// condition slots (AUTHORIZE/CHARGE/RELEASE gating). RefundRequest uses the
+// arbiter address directly — they are independent contracts bundled here
+// for deployment convenience.
 export async function deployArbiterSetup(
   walletClient: WalletClient,
   publicClient: PublicClient,
