@@ -161,8 +161,8 @@ export {
 // Refund
 // ---------------------------------------------------------------------------
 export type {
-  ApproveRefundParameters,
-  ApproveRefundReturnType,
+  ApproveRefundRequestParameters,
+  ApproveRefundRequestReturnType,
   CancelRefundRequestParameters,
   CancelRefundRequestReturnType,
   DenyRefundRequestParameters,

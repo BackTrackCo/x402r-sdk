@@ -90,7 +90,7 @@ describe('Deploy Module (Fork)', () => {
     )
     expect(deployment.feeCalculatorAddress).toBe(preview.feeCalculatorAddress)
 
-    // No freeze, with fee: escrow + refundRequest + staticAddressCondition + feeCalc + operator = 5
+    // No freeze, with fee: escrow + refundRequest + staticAddrCond + feeCalc + operator = 5
     expect(deployment.deployments).toHaveLength(5)
     // Some components may already exist on the forked chain — assert totals add up
     expect(deployment.summary.newCount + deployment.summary.existingCount).toBe(
@@ -140,7 +140,7 @@ describe('Deploy Module (Fork)', () => {
       deployment.escrowPeriodAddress,
     )
 
-    // freeze + andCondition + escrow + refundRequest + staticAddressCondition + feeCalc + operator = 7
+    // freeze + andCondition + escrow + refundRequest + staticAddrCond + feeCalc + operator = 7
     expect(deployment.deployments).toHaveLength(7)
     expect(deployment.summary.newCount + deployment.summary.existingCount).toBe(
       7,

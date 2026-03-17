@@ -84,6 +84,7 @@ describe('previewMarketplaceOperator', () => {
     expect(result.operatorConfig.releaseCondition).toBe(escrowAddr)
     expect(result.escrowPeriodAddress).toBe(escrowAddr)
     expect(result.refundRequestAddress).toBe(refundReqAddr)
+    expect(result.refundInEscrowConditionAddress).toBe(staticAddrCondAddr)
   })
 
   it('freezeAddress is non-null and releaseCondition is AndCondition when freeze enabled', async () => {
@@ -115,6 +116,7 @@ describe('previewMarketplaceOperator', () => {
       result.escrowPeriodAddress,
     )
     expect(result.refundRequestAddress).toBe(refundReqAddr)
+    expect(result.refundInEscrowConditionAddress).toBe(staticAddrCondAddr)
   })
 
   it('feeCalculatorAddress is non-null when operatorFeeBps > 0', async () => {
@@ -159,7 +161,7 @@ describe('deployMarketplaceOperator', () => {
       makeOptions(),
     )
 
-    // Without freeze or fee calculator: escrow + refundRequest + staticAddressCondition + operator = 4
+    // Without freeze or fee calculator: escrow + refundRequest + staticAddrCond + operator = 4
     expect(result.deployments).toHaveLength(4)
     expect(result.freezeAddress).toBeNull()
     expect(result.operatorConfig.releaseCondition).toBe(escrowAddr)
@@ -185,7 +187,7 @@ describe('deployMarketplaceOperator', () => {
       makeOptions({ operatorFeeBps: 100n }),
     )
 
-    // Without freeze, with fee calculator: escrow + refundRequest + staticAddressCondition + feeCalc + operator = 5
+    // Without freeze, with fee calculator: escrow + refundRequest + staticAddrCond + feeCalc + operator = 5
     expect(result.deployments).toHaveLength(5)
     expect(result.feeCalculatorAddress).toBe(COMPUTED_ADDR)
   })
@@ -221,7 +223,7 @@ describe('deployMarketplaceOperator', () => {
       makeOptions({ freezeDurationSeconds: 86400n }),
     )
 
-    // With freeze: escrow + refundRequest + staticAddressCondition + freeze + andCondition + operator = 6
+    // With freeze: escrow + refundRequest + staticAddrCond + freeze + andCond + operator = 6
     expect(result.deployments).toHaveLength(6)
     expect(result.freezeAddress).not.toBeNull()
     expect(result.operatorConfig.releaseCondition).not.toBe(

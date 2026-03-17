@@ -29,7 +29,6 @@ export interface DeployedFixtures {
   freezeAddress: Address
   operatorWithFreezeAddress: Address
   arbiterConditionAddress: Address
-  signatureConditionAddress: Address
   refundRequestAddress: Address
   arbiterRefundOperatorAddress: Address
 }
@@ -220,7 +219,35 @@ export async function deployTestFixtures(
   })
 
   // ---------------------------------------------------------------------------
-  // 3d. Deploy PaymentOperator with freeze
+  // 3d. Deploy SignatureCondition + RefundRequest
+  // ---------------------------------------------------------------------------
+  const arbiterSetup = await deployArbiterSetup(walletClient, publicClient, {
+    chainId: 84532,
+    arbiter: testRoles.arbiter.address,
+  })
+  const refundRequestAddress = arbiterSetup.refundRequestAddress
+
+  // Deploy StaticAddressCondition(refundRequest) — gates refundInEscrow so
+  // only the RefundRequest contract can call operator.refundInEscrow().
+  const refundInEscrowCondHash = await walletClient.writeContract({
+    address: factories.staticAddressCondition,
+    abi: staticAddressConditionFactoryAbi,
+    functionName: 'deploy',
+    args: [refundRequestAddress],
+    account: deployer,
+    chain: walletClient.chain,
+  })
+  await publicClient.waitForTransactionReceipt({ hash: refundInEscrowCondHash })
+
+  const staticAddrCondAddress = await publicClient.readContract({
+    address: factories.staticAddressCondition,
+    abi: staticAddressConditionFactoryAbi,
+    functionName: 'computeAddress',
+    args: [refundRequestAddress],
+  })
+
+  // ---------------------------------------------------------------------------
+  // 3e. Deploy PaymentOperator with freeze
   // ---------------------------------------------------------------------------
   const freezeOperatorConfig = {
     feeRecipient: testRoles.operatorFeeRecipient.address,
@@ -255,37 +282,9 @@ export async function deployTestFixtures(
   })
 
   // ---------------------------------------------------------------------------
-  // 3e. Deploy SignatureCondition + RefundRequest
-  // ---------------------------------------------------------------------------
-  const arbiterSetup = await deployArbiterSetup(walletClient, publicClient, {
-    chainId: 84532,
-    arbiter: testRoles.arbiter.address,
-  })
-  const signatureConditionAddress = arbiterSetup.signatureConditionAddress
-  const refundRequestAddress = arbiterSetup.refundRequestAddress
-
-  // Deploy StaticAddressCondition(refundRequest) — gates refundInEscrow so
-  // only the RefundRequest contract can call operator.refundInEscrow().
-  const refundInEscrowCondHash = await walletClient.writeContract({
-    address: factories.staticAddressCondition,
-    abi: staticAddressConditionFactoryAbi,
-    functionName: 'deploy',
-    args: [refundRequestAddress],
-    account: deployer,
-    chain: walletClient.chain,
-  })
-  await publicClient.waitForTransactionReceipt({ hash: refundInEscrowCondHash })
-
-  const refundInEscrowConditionAddress = await publicClient.readContract({
-    address: factories.staticAddressCondition,
-    abi: staticAddressConditionFactoryAbi,
-    functionName: 'computeAddress',
-    args: [refundRequestAddress],
-  })
-
-  // ---------------------------------------------------------------------------
   // 3f. Deploy PaymentOperator for arbiter refund (Flow 7)
   //     refundInEscrowCondition = StaticAddressCondition(refundRequest)
+  //     All in-escrow refunds require payer request first, then
   //     RefundRequest.approve() atomically calls operator.refundInEscrow()
   // ---------------------------------------------------------------------------
   const arbiterRefundOperatorConfig = {
@@ -297,7 +296,7 @@ export async function deployTestFixtures(
     chargeRecorder: zeroAddress,
     releaseCondition: escrowPeriodAddress,
     releaseRecorder: zeroAddress,
-    refundInEscrowCondition: refundInEscrowConditionAddress,
+    refundInEscrowCondition: staticAddrCondAddress,
     refundInEscrowRecorder: zeroAddress,
     refundPostEscrowCondition: baseSepolia.conditions.receiver,
     refundPostEscrowRecorder: zeroAddress,
@@ -366,7 +365,6 @@ export async function deployTestFixtures(
     freezeAddress,
     operatorWithFreezeAddress,
     arbiterConditionAddress,
-    signatureConditionAddress,
     refundRequestAddress,
     arbiterRefundOperatorAddress,
   }
