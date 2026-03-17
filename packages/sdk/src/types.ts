@@ -90,6 +90,7 @@ export interface PaymentActions {
     collectorData: Hex,
   ): Promise<Hash>
   release(paymentInfo: PaymentInfo, amount: bigint): Promise<Hash>
+  /** @internal Gated by StaticAddressCondition — use `refund.approve()` on role clients instead. */
   refundInEscrow(paymentInfo: PaymentInfo, amount: bigint): Promise<Hash>
   refundPostEscrow(
     paymentInfo: PaymentInfo,
