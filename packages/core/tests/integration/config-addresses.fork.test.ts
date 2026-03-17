@@ -19,8 +19,8 @@ import {
   computeOperatorAddress,
   computeOrConditionAddress,
   computeRecorderCombinatorAddress,
+  computeRefundRequestAddress,
   computeSignatureConditionAddress,
-  computeSignatureRefundRequestAddress,
   computeStaticAddressConditionAddress,
 } from '../../src/deploy/index.js'
 import type { OperatorConfig } from '../../src/types/index.js'
@@ -212,14 +212,17 @@ describe('Config Address Smoke Tests (Fork)', () => {
     expect(addr).not.toBe(zeroAddress)
   })
 
-  it('signatureRefundRequest factory responds to computeAddress', async () => {
-    const addr = await computeSignatureRefundRequestAddress(publicClient, {
-      factoryAddress: config.factories.signatureRefundRequest,
-      signatureCondition: zeroAddress,
-    })
-    expect(addr).toMatch(/^0x[0-9a-fA-F]{40}$/)
-    expect(addr).not.toBe(zeroAddress)
-  })
+  it.skipIf(config.factories.refundRequest === zeroAddress)(
+    'refundRequest factory responds to computeAddress',
+    async () => {
+      const addr = await computeRefundRequestAddress(publicClient, {
+        factoryAddress: config.factories.refundRequest,
+        arbiter: zeroAddress,
+      })
+      expect(addr).toMatch(/^0x[0-9a-fA-F]{40}$/)
+      expect(addr).not.toBe(zeroAddress)
+    },
+  )
 
   // ---------------------------------------------------------------------------
   // Condition singletons — verify bytecode exists at each address

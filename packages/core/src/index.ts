@@ -26,8 +26,8 @@ export * from './abis/generated.js'
 export type {
   ApprovePostEscrowRefundParameters,
   ApprovePostEscrowRefundReturnType,
-  ApproveRefundWithSignatureParameters,
-  ApproveRefundWithSignatureReturnType,
+  ApproveRefundRequestParameters,
+  ApproveRefundRequestReturnType,
   AuthorizeParameters,
   AuthorizeReturnType,
   CalculateOperatorFeeBpsParameters,
@@ -135,7 +135,7 @@ export type {
 } from './actions/index.js'
 export {
   approvePostEscrowRefund,
-  approveRefundWithSignature,
+  approveRefund,
   authorize,
   calculateOperatorFeeBps,
   calculateProtocolFeeBps,
@@ -246,6 +246,8 @@ export {
   type ComputeOrConditionAddressReturnType,
   type ComputeRecorderCombinatorAddressParameters,
   type ComputeRecorderCombinatorAddressReturnType,
+  type ComputeRefundRequestAddressParameters,
+  type ComputeRefundRequestAddressReturnType,
   type ComputeStaticAddressConditionAddressParameters,
   type ComputeStaticAddressConditionAddressReturnType,
   computeAndConditionAddress,
@@ -256,6 +258,7 @@ export {
   computeOperatorAddress,
   computeOrConditionAddress,
   computeRecorderCombinatorAddress,
+  computeRefundRequestAddress,
   computeStaticAddressConditionAddress,
   type DeployAndConditionParameters,
   type DeployAndConditionReturnType,
@@ -273,6 +276,8 @@ export {
   type DeployOrConditionReturnType,
   type DeployRecorderCombinatorParameters,
   type DeployRecorderCombinatorReturnType,
+  type DeployRefundRequestParameters,
+  type DeployRefundRequestReturnType,
   type DeployStaticAddressConditionParameters,
   type DeployStaticAddressConditionReturnType,
   deployAndCondition,
@@ -283,6 +288,7 @@ export {
   deployOperator,
   deployOrCondition,
   deployRecorderCombinator,
+  deployRefundRequest,
   deployStaticAddressCondition,
 } from './deploy/factories.js'
 export {

@@ -27,6 +27,7 @@ let publicClient: PublicClient
 let testClient: TestClient
 let fixtures: DeployedFixtures
 let payerClient: X402r
+let receiverClient: X402r
 let merchant: MerchantClient
 let arbiter: ArbiterClient
 
@@ -42,6 +43,15 @@ beforeAll(async () => {
   payerClient = createX402r({
     publicClient,
     walletClient: anvilBaseSepolia.getWalletClient(testRoles.payer.address),
+    operatorAddress: fixtures.operatorWithFreezeAddress,
+    escrowPeriodAddress: fixtures.escrowPeriodAddress,
+    freezeAddress: fixtures.freezeAddress,
+  })
+
+  // Full X402r for receiver — needed for refundInEscrow (hidden from MerchantClient)
+  receiverClient = createX402r({
+    publicClient,
+    walletClient: anvilBaseSepolia.getWalletClient(testRoles.receiver.address),
     operatorAddress: fixtures.operatorWithFreezeAddress,
     escrowPeriodAddress: fixtures.escrowPeriodAddress,
     freezeAddress: fixtures.freezeAddress,
@@ -107,16 +117,17 @@ describe('Scenario 4: Freeze blocks release', () => {
   }, 60_000)
 
   it('receiver can refundInEscrow even while frozen', async () => {
-    // refundInEscrow does NOT check freeze — only ReceiverCondition
-    const amountsBefore = await merchant.payment.getAmounts(paymentInfo)
+    // refundInEscrow does NOT check freeze — only ReceiverCondition (on this fixture)
+    // Note: refundInEscrow is hidden from MerchantClient — use full X402r client
+    const amountsBefore = await receiverClient.payment.getAmounts(paymentInfo)
 
-    const hash = await merchant.payment.refundInEscrow(
+    const hash = await receiverClient.payment.refundInEscrow(
       paymentInfo,
       amountsBefore.capturableAmount,
     )
     await publicClient.waitForTransactionReceipt({ hash })
 
-    const amountsAfter = await merchant.payment.getAmounts(paymentInfo)
+    const amountsAfter = await receiverClient.payment.getAmounts(paymentInfo)
     expect(amountsAfter.capturableAmount).toBe(0n)
   }, 60_000)
 })

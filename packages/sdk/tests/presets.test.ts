@@ -69,7 +69,6 @@ describe('presets', () => {
     expect(client.config.walletClient).toBeDefined()
     expect(client.payment.authorize).toBeTypeOf('function')
     expect(client.payment.charge).toBeTypeOf('function')
-    expect(client.payment.refundInEscrow).toBeTypeOf('function')
     expect(client.payment.approvePostEscrowRefund).toBeTypeOf('function')
     expect(client.refund!.refuse).toBeTypeOf('function')
     expect(client.operator.calculateFees).toBeTypeOf('function')
@@ -83,7 +82,7 @@ describe('presets', () => {
     expect(client.config.walletClient).toBeDefined()
     expect(client.payment.getState).toBeTypeOf('function')
     expect(client.refund!.deny).toBeTypeOf('function')
-    expect(client.refund!.approveWithSignature).toBeTypeOf('function')
+    expect(client.refund!.approve).toBeTypeOf('function')
     expect(client.freeze).toBeUndefined() // no freezeAddress in config
     expect(client.canExecute).toBeTypeOf('function')
     expect(client.extend).toBeTypeOf('function')

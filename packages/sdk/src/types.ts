@@ -90,6 +90,7 @@ export interface PaymentActions {
     collectorData: Hex,
   ): Promise<Hash>
   release(paymentInfo: PaymentInfo, amount: bigint): Promise<Hash>
+  /** @internal Gated by StaticAddressCondition — use `refund.approve()` on role clients instead. */
   refundInEscrow(paymentInfo: PaymentInfo, amount: bigint): Promise<Hash>
   refundPostEscrow(
     paymentInfo: PaymentInfo,
@@ -121,12 +122,10 @@ export interface RefundActions {
   cancel(paymentInfo: PaymentInfo, nonce: bigint): Promise<Hash>
   deny(paymentInfo: PaymentInfo, nonce: bigint): Promise<Hash>
   refuse(paymentInfo: PaymentInfo, nonce: bigint): Promise<Hash>
-  approveWithSignature(
+  approve(
     paymentInfo: PaymentInfo,
     nonce: bigint,
     amount: bigint,
-    expiry: number,
-    signature: Hex,
   ): Promise<Hash>
 
   // Read operations
@@ -286,9 +285,24 @@ export interface PayerClient {
   ): Prettify<this & T>
 }
 
+/**
+ * Merchant role client. In-escrow refunds go through `refund.approve()` —
+ * `payment.refundInEscrow` is gated by StaticAddressCondition on marketplace
+ * operators and not exposed here. Use `createX402r()` for full access.
+ */
 export interface MerchantClient {
   readonly config: ResolvedWriteConfig
-  readonly payment: PaymentActions
+  readonly payment: Pick<
+    PaymentActions,
+    | 'authorize'
+    | 'charge'
+    | 'release'
+    | 'refundPostEscrow'
+    | 'approvePostEscrowRefund'
+    | 'getPostEscrowRefundAllowance'
+    | 'getState'
+    | 'getAmounts'
+  >
   readonly escrow:
     | Pick<
         EscrowActions,
@@ -298,6 +312,7 @@ export interface MerchantClient {
   readonly refund:
     | Pick<
         RefundActions,
+        | 'approve'
         | 'refuse'
         | 'get'
         | 'getByKey'
@@ -338,7 +353,7 @@ export interface ArbiterClient {
     | Pick<
         RefundActions,
         | 'deny'
-        | 'approveWithSignature'
+        | 'approve'
         | 'get'
         | 'getByKey'
         | 'getStatus'
