@@ -6,9 +6,11 @@ import { getReceiverRefundRequests } from '../src/actions/refund/getReceiverRefu
 import { getRefundRequest } from '../src/actions/refund/getRefundRequest.js'
 import { getRefundRequestByKey } from '../src/actions/refund/getRefundRequestByKey.js'
 import { RefundRequestStatus } from '../src/actions/refund/types.js'
+import { ContractCallError } from '../src/errors/index.js'
 import {
   createMockPublicClient,
   createMockWalletClient,
+  createMockWalletWithoutAccount,
   makePaymentInfo,
   TEST_ADDRESSES,
 } from './fixtures.js'
@@ -28,6 +30,17 @@ describe('RefundRequestStatus', () => {
 
 describe('refund write functions', () => {
   const pi = makePaymentInfo()
+
+  it('approveRefund throws ContractCallError without account', async () => {
+    await expect(
+      approveRefund(createMockWalletWithoutAccount(), {
+        contractAddress: MOCK_CONTRACT,
+        paymentInfo: pi,
+        nonce: 1n,
+        amount: 500n,
+      }),
+    ).rejects.toThrow(ContractCallError)
+  })
 
   it('approveRefund writes to contract with correct args', async () => {
     const walletClient = createMockWalletClient()

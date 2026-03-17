@@ -30,19 +30,19 @@ describe('PayerClient type narrowing', () => {
 
   it('payment hides write methods', () => {
     // @ts-expect-error — payer cannot authorize
-    payer.payment.authorize
+    void payer.payment.authorize
     // @ts-expect-error — payer cannot charge
-    payer.payment.charge
+    void payer.payment.charge
     // @ts-expect-error — payer cannot release
-    payer.payment.release
+    void payer.payment.release
     // @ts-expect-error — payer cannot refundInEscrow
-    payer.payment.refundInEscrow
+    void payer.payment.refundInEscrow
     // @ts-expect-error — payer cannot refundPostEscrow
-    payer.payment.refundPostEscrow
+    void payer.payment.refundPostEscrow
     // @ts-expect-error — payer cannot approvePostEscrowRefund
-    payer.payment.approvePostEscrowRefund
+    void payer.payment.approvePostEscrowRefund
     // @ts-expect-error — payer cannot getPostEscrowRefundAllowance
-    payer.payment.getPostEscrowRefundAllowance
+    void payer.payment.getPostEscrowRefundAllowance
   })
 
   it('refund exposes payer methods', () => {
@@ -52,9 +52,9 @@ describe('PayerClient type narrowing', () => {
 
   it('refund hides non-payer methods', () => {
     // @ts-expect-error — payer cannot deny
-    payer.refund.deny
+    void payer.refund.deny
     // @ts-expect-error — payer cannot refuse
-    payer.refund.refuse
+    void payer.refund.refuse
     // @ts-expect-error — payer cannot approve
     void payer.refund.approve
     // @ts-expect-error — payer cannot getReceiverRequests
@@ -65,24 +65,24 @@ describe('PayerClient type narrowing', () => {
 
   it('operator hides fee calculation methods', () => {
     // @ts-expect-error — payer cannot calculateFees
-    payer.operator.calculateFees
+    void payer.operator.calculateFees
     // @ts-expect-error — payer cannot calculateOperatorFeeBps
-    payer.operator.calculateOperatorFeeBps
+    void payer.operator.calculateOperatorFeeBps
     // @ts-expect-error — payer cannot calculateProtocolFeeBps
-    payer.operator.calculateProtocolFeeBps
+    void payer.operator.calculateProtocolFeeBps
     // @ts-expect-error — payer cannot getAuthorizedFees
-    payer.operator.getAuthorizedFees
+    void payer.operator.getAuthorizedFees
     // @ts-expect-error — payer cannot getAccumulatedProtocolFees
-    payer.operator.getAccumulatedProtocolFees
+    void payer.operator.getAccumulatedProtocolFees
     // @ts-expect-error — payer cannot distributeFees
-    payer.operator.distributeFees
+    void payer.operator.distributeFees
   })
 
   it('freeze hides write methods', () => {
     // @ts-expect-error — payer cannot freeze
-    payer.freeze!.freeze
+    void payer.freeze!.freeze
     // @ts-expect-error — payer cannot unfreeze
-    payer.freeze!.unfreeze
+    void payer.freeze!.unfreeze
   })
 })
 
@@ -101,7 +101,7 @@ describe('MerchantClient type narrowing', () => {
     expectTypeOf(merchant.payment.approvePostEscrowRefund).toBeFunction()
     expectTypeOf(merchant.payment.getPostEscrowRefundAllowance).toBeFunction()
     // @ts-expect-error — merchant cannot refundInEscrow
-    merchant.payment.refundInEscrow
+    void merchant.payment.refundInEscrow
   })
 
   it('refund exposes merchant dispute methods', () => {
@@ -114,11 +114,11 @@ describe('MerchantClient type narrowing', () => {
 
   it('refund hides non-merchant methods', () => {
     // @ts-expect-error — merchant cannot request
-    merchant.refund.request
+    void merchant.refund.request
     // @ts-expect-error — merchant cannot cancel
-    merchant.refund.cancel
+    void merchant.refund.cancel
     // @ts-expect-error — merchant cannot deny
-    merchant.refund.deny
+    void merchant.refund.deny
     // @ts-expect-error — merchant cannot getPayerRequests
     void merchant.refund.getPayerRequests
     // @ts-expect-error — merchant cannot getOperatorRequests
@@ -132,9 +132,9 @@ describe('MerchantClient type narrowing', () => {
 
   it('freeze hides write methods', () => {
     // @ts-expect-error — merchant cannot freeze
-    merchant.freeze!.freeze
+    void merchant.freeze!.freeze
     // @ts-expect-error — merchant cannot unfreeze
-    merchant.freeze!.unfreeze
+    void merchant.freeze!.unfreeze
   })
 })
 
@@ -145,17 +145,17 @@ describe('MerchantClient type narrowing', () => {
 describe('ArbiterClient type narrowing', () => {
   it('payment hides write methods', () => {
     // @ts-expect-error — arbiter cannot authorize
-    arbiter.payment.authorize
+    void arbiter.payment.authorize
     // @ts-expect-error — arbiter cannot charge
-    arbiter.payment.charge
+    void arbiter.payment.charge
     // @ts-expect-error — arbiter cannot release
-    arbiter.payment.release
+    void arbiter.payment.release
     // @ts-expect-error — arbiter cannot refundInEscrow
-    arbiter.payment.refundInEscrow
+    void arbiter.payment.refundInEscrow
     // @ts-expect-error — arbiter cannot refundPostEscrow
-    arbiter.payment.refundPostEscrow
+    void arbiter.payment.refundPostEscrow
     // @ts-expect-error — arbiter cannot approvePostEscrowRefund
-    arbiter.payment.approvePostEscrowRefund
+    void arbiter.payment.approvePostEscrowRefund
   })
 
   it('refund exposes arbiter methods', () => {
@@ -166,11 +166,11 @@ describe('ArbiterClient type narrowing', () => {
 
   it('refund hides non-arbiter methods', () => {
     // @ts-expect-error — arbiter cannot request
-    arbiter.refund.request
+    void arbiter.refund.request
     // @ts-expect-error — arbiter cannot cancel
-    arbiter.refund.cancel
+    void arbiter.refund.cancel
     // @ts-expect-error — arbiter cannot refuse
-    arbiter.refund.refuse
+    void arbiter.refund.refuse
   })
 
   it('freeze exposes full FreezeActions', () => {
@@ -181,9 +181,9 @@ describe('ArbiterClient type narrowing', () => {
 
   it('operator hides fee calculation methods', () => {
     // @ts-expect-error — arbiter cannot calculateFees
-    arbiter.operator.calculateFees
+    void arbiter.operator.calculateFees
     // @ts-expect-error — arbiter cannot distributeFees
-    arbiter.operator.distributeFees
+    void arbiter.operator.distributeFees
   })
 })
 
@@ -196,20 +196,20 @@ describe('extend preserves narrowing', () => {
     const extended = payer.extend(() => ({ custom: { foo: 42 } }))
     expectTypeOf(extended.custom.foo).toBeNumber()
     // @ts-expect-error — still narrowed after extend
-    extended.payment.authorize
+    void extended.payment.authorize
   })
 
   it('merchant.extend adds namespace and preserves narrowing', () => {
     const extended = merchant.extend(() => ({ custom: { bar: 'hi' } }))
     expectTypeOf(extended.custom.bar).toBeString()
     // @ts-expect-error — still narrowed after extend
-    extended.refund.request
+    void extended.refund.request
   })
 
   it('arbiter.extend adds namespace and preserves narrowing', () => {
     const extended = arbiter.extend(() => ({ custom: { baz: true } }))
     expectTypeOf(extended.custom.baz).toBeBoolean()
     // @ts-expect-error — still narrowed after extend
-    extended.payment.authorize
+    void extended.payment.authorize
   })
 })
