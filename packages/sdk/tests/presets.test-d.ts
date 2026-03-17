@@ -104,6 +104,7 @@ describe('MerchantClient type narrowing', () => {
   })
 
   it('refund exposes merchant dispute methods', () => {
+    expectTypeOf(merchant.refund.approve).toBeFunction()
     expectTypeOf(merchant.refund.refuse).toBeFunction()
     expectTypeOf(merchant.refund.get).toBeFunction()
     expectTypeOf(merchant.refund.getStatus).toBeFunction()
@@ -117,8 +118,6 @@ describe('MerchantClient type narrowing', () => {
     merchant.refund.cancel
     // @ts-expect-error — merchant cannot deny
     merchant.refund.deny
-    // @ts-expect-error — merchant cannot approve
-    void merchant.refund.approve
     // @ts-expect-error — merchant cannot getPayerRequests
     void merchant.refund.getPayerRequests
     // @ts-expect-error — merchant cannot getOperatorRequests

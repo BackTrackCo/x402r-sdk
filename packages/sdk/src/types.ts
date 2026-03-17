@@ -296,6 +296,7 @@ export interface MerchantClient {
   readonly refund:
     | Pick<
         RefundActions,
+        | 'approve'
         | 'refuse'
         | 'get'
         | 'getByKey'

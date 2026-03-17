@@ -4,6 +4,7 @@ import {
   andConditionFactoryAbi,
   escrowPeriodFactoryAbi,
   freezeFactoryAbi,
+  orConditionFactoryAbi,
   paymentOperatorFactoryAbi,
   refundRequestFactoryAbi,
   signatureConditionFactoryAbi,
@@ -23,6 +24,7 @@ import {
   computeFeeCalculatorAddress,
   computeFreezeAddress,
   computeOperatorAddress,
+  computeOrConditionAddress,
   computeRefundRequestAddress,
   computeSignatureConditionAddress,
   computeStaticAddressConditionAddress,
@@ -190,11 +192,10 @@ export async function previewMarketplaceOperator(
     ])
 
   // Batch 2 (parallel): depends on batch 1 results
-  // refundInEscrowCondition: Only the RefundRequest contract can call refundInEscrow().
-  // RefundRequest.approve() atomically calls operator.refundInEscrow() — the condition
-  // gate ensures only approved refund requests trigger escrow release.
-  // This replaces the old OR(receiver, signatureCondition) model.
-  const [freezeAddress, refundInEscrowConditionAddress] = await Promise.all([
+  // staticAddrCondAddress is an intermediate — gates refundInEscrow to the RefundRequest
+  // contract. The final refundInEscrowCondition is OR(receiver, staticAddrCond) so the
+  // merchant can also refundInEscrow directly via ReceiverCondition.
+  const [freezeAddress, staticAddrCondAddress] = await Promise.all([
     freezeDurationSeconds > 0n
       ? computeFreezeAddress(publicClient, {
           factoryAddress: factories.freeze,
@@ -210,14 +211,24 @@ export async function previewMarketplaceOperator(
     }),
   ])
 
-  // Batch 3: andCondition (only when freeze enabled, depends on batch 2)
-  let releaseConditionAddress: Address = escrowPeriodAddress
-  if (freezeDurationSeconds > 0n && freezeAddress) {
-    releaseConditionAddress = await computeAndConditionAddress(publicClient, {
-      factoryAddress: factories.andCondition,
-      conditions: [escrowPeriodAddress, freezeAddress],
-    })
-  }
+  // Batch 3 (parallel): OR condition + AND condition (both depend on batch 2)
+  // refundInEscrowCondition = OR(ReceiverCondition, StaticAddressCondition(refundRequest))
+  // This allows both merchant direct refund (ReceiverCondition) and arbiter-approved
+  // refund via RefundRequest.approve() (StaticAddressCondition arm).
+  const batch3 = await Promise.all([
+    computeOrConditionAddress(publicClient, {
+      factoryAddress: factories.orCondition,
+      conditions: [singletons.receiver, staticAddrCondAddress],
+    }),
+    freezeDurationSeconds > 0n && freezeAddress
+      ? computeAndConditionAddress(publicClient, {
+          factoryAddress: factories.andCondition,
+          conditions: [escrowPeriodAddress, freezeAddress],
+        })
+      : Promise.resolve(null),
+  ])
+  const refundInEscrowConditionAddress = batch3[0]
+  const releaseConditionAddress: Address = batch3[1] ?? escrowPeriodAddress
 
   // Batch 4: operator (depends on everything)
   const operatorConfig: OperatorConfig = {
@@ -288,10 +299,22 @@ export async function deployMarketplaceOperator(
   const hasFee = operatorFeeBps > 0n
   const hasFreeze = freezeDurationSeconds > 0n
 
+  // Compute the intermediate staticAddrCondAddress (OR depends on it).
+  // The preview already computed this internally; we re-derive it here so we
+  // can check existence and deploy the staticAddressCondition separately.
+  const staticAddrCondAddress = await computeStaticAddressConditionAddress(
+    publicClient,
+    {
+      factoryAddress: factories.staticAddressCondition,
+      designatedAddress: refundRequestAddress,
+    },
+  )
+
   // ── Phase 2: Batch-check which contracts already exist ─────────────────
   const escrowArgs = [options.escrowPeriodSeconds, authorizedCodehash] as const
   const refundRequestArgs = [options.arbiter] as const
   const staticAddrCondArgs = [refundRequestAddress] as const
+  const orCondArgs = [[singletons.receiver, staticAddrCondAddress]] as const
   const freezeArgs = hasFreeze
     ? ([
         singletons.payer,
@@ -332,6 +355,15 @@ export async function deployMarketplaceOperator(
         abi: staticAddressConditionFactoryAbi,
         functionName: 'getDeployed',
         args: staticAddrCondArgs,
+      },
+    },
+    {
+      name: 'orCondition',
+      contract: {
+        address: factories.orCondition,
+        abi: orConditionFactoryAbi,
+        functionName: 'getDeployed',
+        args: orCondArgs,
       },
     },
     {
@@ -397,6 +429,7 @@ export async function deployMarketplaceOperator(
     escrowPeriod: existsMap.get('escrowPeriod') ?? false,
     refundRequest: existsMap.get('refundRequest') ?? false,
     staticAddressCondition: existsMap.get('staticAddressCondition') ?? false,
+    orCondition: existsMap.get('orCondition') ?? false,
     operator: existsMap.get('operator') ?? false,
     freeze: existsMap.get('freeze') ?? false,
     andCondition: existsMap.get('andCondition') ?? false,
@@ -408,6 +441,7 @@ export async function deployMarketplaceOperator(
     const existingDeployments: DeployResult[] = [
       { address: escrowPeriodAddress, hash: null, isNew: false },
       { address: refundRequestAddress, hash: null, isNew: false },
+      { address: staticAddrCondAddress, hash: null, isNew: false },
       { address: refundInEscrowConditionAddress, hash: null, isNew: false },
     ]
     if (hasFreeze && freezeAddress) {
@@ -493,12 +527,20 @@ export async function deployMarketplaceOperator(
     refundRequestArgs,
   )
   trackDeploy(
-    refundInEscrowConditionAddress,
+    staticAddrCondAddress,
     exists.staticAddressCondition,
     factories.staticAddressCondition,
     staticAddressConditionFactoryAbi,
     'deploy',
     staticAddrCondArgs,
+  )
+  trackDeploy(
+    refundInEscrowConditionAddress,
+    exists.orCondition,
+    factories.orCondition,
+    orConditionFactoryAbi,
+    'deploy',
+    orCondArgs,
   )
   if (hasFreeze && freezeArgs && freezeAddress) {
     trackDeploy(

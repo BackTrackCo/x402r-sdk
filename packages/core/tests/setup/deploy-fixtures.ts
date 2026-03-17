@@ -10,6 +10,7 @@ import {
   andConditionFactoryAbi,
   escrowPeriodFactoryAbi,
   freezeFactoryAbi,
+  orConditionFactoryAbi,
   paymentOperatorFactoryAbi,
   staticAddressConditionFactoryAbi,
   staticFeeCalculatorFactoryAbi,
@@ -220,7 +221,56 @@ export async function deployTestFixtures(
   })
 
   // ---------------------------------------------------------------------------
-  // 3d. Deploy PaymentOperator with freeze
+  // 3d. Deploy SignatureCondition + RefundRequest
+  // ---------------------------------------------------------------------------
+  const arbiterSetup = await deployArbiterSetup(walletClient, publicClient, {
+    chainId: 84532,
+    arbiter: testRoles.arbiter.address,
+  })
+  const signatureConditionAddress = arbiterSetup.signatureConditionAddress
+  const refundRequestAddress = arbiterSetup.refundRequestAddress
+
+  // Deploy StaticAddressCondition(refundRequest) — gates refundInEscrow so
+  // only the RefundRequest contract can call operator.refundInEscrow().
+  const refundInEscrowCondHash = await walletClient.writeContract({
+    address: factories.staticAddressCondition,
+    abi: staticAddressConditionFactoryAbi,
+    functionName: 'deploy',
+    args: [refundRequestAddress],
+    account: deployer,
+    chain: walletClient.chain,
+  })
+  await publicClient.waitForTransactionReceipt({ hash: refundInEscrowCondHash })
+
+  const staticAddrCondAddress = await publicClient.readContract({
+    address: factories.staticAddressCondition,
+    abi: staticAddressConditionFactoryAbi,
+    functionName: 'computeAddress',
+    args: [refundRequestAddress],
+  })
+
+  // Deploy OrCondition([ReceiverCondition, StaticAddressCondition(refundRequest)])
+  // This allows both merchant direct refund (ReceiverCondition arm) and
+  // arbiter-approved refund via RefundRequest.approve() (StaticAddressCondition arm).
+  const refundOrCondHash = await walletClient.writeContract({
+    address: factories.orCondition,
+    abi: orConditionFactoryAbi,
+    functionName: 'deploy',
+    args: [[baseSepolia.conditions.receiver, staticAddrCondAddress]],
+    account: deployer,
+    chain: walletClient.chain,
+  })
+  await publicClient.waitForTransactionReceipt({ hash: refundOrCondHash })
+
+  const refundInEscrowOrCondAddress = await publicClient.readContract({
+    address: factories.orCondition,
+    abi: orConditionFactoryAbi,
+    functionName: 'computeAddress',
+    args: [[baseSepolia.conditions.receiver, staticAddrCondAddress]],
+  })
+
+  // ---------------------------------------------------------------------------
+  // 3e. Deploy PaymentOperator with freeze
   // ---------------------------------------------------------------------------
   const freezeOperatorConfig = {
     feeRecipient: testRoles.operatorFeeRecipient.address,
@@ -231,7 +281,7 @@ export async function deployTestFixtures(
     chargeRecorder: zeroAddress,
     releaseCondition: andConditionAddress,
     releaseRecorder: zeroAddress,
-    refundInEscrowCondition: baseSepolia.conditions.receiver,
+    refundInEscrowCondition: refundInEscrowOrCondAddress,
     refundInEscrowRecorder: zeroAddress,
     refundPostEscrowCondition: zeroAddress,
     refundPostEscrowRecorder: zeroAddress,
@@ -255,38 +305,10 @@ export async function deployTestFixtures(
   })
 
   // ---------------------------------------------------------------------------
-  // 3e. Deploy SignatureCondition + RefundRequest
-  // ---------------------------------------------------------------------------
-  const arbiterSetup = await deployArbiterSetup(walletClient, publicClient, {
-    chainId: 84532,
-    arbiter: testRoles.arbiter.address,
-  })
-  const signatureConditionAddress = arbiterSetup.signatureConditionAddress
-  const refundRequestAddress = arbiterSetup.refundRequestAddress
-
-  // Deploy StaticAddressCondition(refundRequest) — gates refundInEscrow so
-  // only the RefundRequest contract can call operator.refundInEscrow().
-  const refundInEscrowCondHash = await walletClient.writeContract({
-    address: factories.staticAddressCondition,
-    abi: staticAddressConditionFactoryAbi,
-    functionName: 'deploy',
-    args: [refundRequestAddress],
-    account: deployer,
-    chain: walletClient.chain,
-  })
-  await publicClient.waitForTransactionReceipt({ hash: refundInEscrowCondHash })
-
-  const refundInEscrowConditionAddress = await publicClient.readContract({
-    address: factories.staticAddressCondition,
-    abi: staticAddressConditionFactoryAbi,
-    functionName: 'computeAddress',
-    args: [refundRequestAddress],
-  })
-
-  // ---------------------------------------------------------------------------
   // 3f. Deploy PaymentOperator for arbiter refund (Flow 7)
-  //     refundInEscrowCondition = StaticAddressCondition(refundRequest)
-  //     RefundRequest.approve() atomically calls operator.refundInEscrow()
+  //     refundInEscrowCondition = OR(ReceiverCondition, StaticAddressCondition(refundRequest))
+  //     Merchant can refund directly (ReceiverCondition arm), or
+  //     RefundRequest.approve() atomically calls operator.refundInEscrow() (StaticAddrCond arm)
   // ---------------------------------------------------------------------------
   const arbiterRefundOperatorConfig = {
     feeRecipient: testRoles.operatorFeeRecipient.address,
@@ -297,7 +319,7 @@ export async function deployTestFixtures(
     chargeRecorder: zeroAddress,
     releaseCondition: escrowPeriodAddress,
     releaseRecorder: zeroAddress,
-    refundInEscrowCondition: refundInEscrowConditionAddress,
+    refundInEscrowCondition: refundInEscrowOrCondAddress,
     refundInEscrowRecorder: zeroAddress,
     refundPostEscrowCondition: baseSepolia.conditions.receiver,
     refundPostEscrowRecorder: zeroAddress,
