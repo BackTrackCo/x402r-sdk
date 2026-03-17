@@ -23,6 +23,8 @@ import type { DeployedFixtures } from '../setup/deploy-fixtures.js'
 import { createCollectorData } from '../setup/erc3009-helper.js'
 import { setupScenario } from '../setup/scenario-helper.js'
 
+const baseSepolia = x402rChains[84532]
+
 // ---------------------------------------------------------------------------
 // Shared state
 // ---------------------------------------------------------------------------
@@ -99,7 +101,7 @@ describe('Scenario 8: Approve refund request (Flow 7)', () => {
 
     // Record payer balance before refund for later assertion
     payerBalanceBefore = await publicClient.readContract({
-      address: x402rChains[84532].usdc,
+      address: baseSepolia.usdc,
       abi: erc20Abi,
       functionName: 'balanceOf',
       args: [testRoles.payer.address],
@@ -128,7 +130,7 @@ describe('Scenario 8: Approve refund request (Flow 7)', () => {
 
     // Verify payer USDC balance increased by refund amount
     const payerBalanceAfter = await publicClient.readContract({
-      address: x402rChains[84532].usdc,
+      address: baseSepolia.usdc,
       abi: erc20Abi,
       functionName: 'balanceOf',
       args: [testRoles.payer.address],
@@ -190,7 +192,7 @@ describe('Scenario 8b: Merchant approves refund request', () => {
     await publicClient.waitForTransactionReceipt({ hash })
 
     payerBalance2Before = await publicClient.readContract({
-      address: x402rChains[84532].usdc,
+      address: baseSepolia.usdc,
       abi: erc20Abi,
       functionName: 'balanceOf',
       args: [testRoles.payer.address],
@@ -229,7 +231,7 @@ describe('Scenario 8b: Merchant approves refund request', () => {
 
     // Verify payer USDC balance increased
     const payerBalance2After = await publicClient.readContract({
-      address: x402rChains[84532].usdc,
+      address: baseSepolia.usdc,
       abi: erc20Abi,
       functionName: 'balanceOf',
       args: [testRoles.payer.address],

@@ -284,9 +284,24 @@ export interface PayerClient {
   ): Prettify<this & T>
 }
 
+/**
+ * Merchant role client. In-escrow refunds go through `refund.approve()` —
+ * `payment.refundInEscrow` is gated by StaticAddressCondition on marketplace
+ * operators and not exposed here. Use `createX402r()` for full access.
+ */
 export interface MerchantClient {
   readonly config: ResolvedWriteConfig
-  readonly payment: Omit<PaymentActions, 'refundInEscrow'>
+  readonly payment: Pick<
+    PaymentActions,
+    | 'authorize'
+    | 'charge'
+    | 'release'
+    | 'refundPostEscrow'
+    | 'approvePostEscrowRefund'
+    | 'getPostEscrowRefundAllowance'
+    | 'getState'
+    | 'getAmounts'
+  >
   readonly escrow:
     | Pick<
         EscrowActions,

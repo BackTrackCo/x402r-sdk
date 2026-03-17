@@ -69,7 +69,6 @@ describe('presets', () => {
     expect(client.config.walletClient).toBeDefined()
     expect(client.payment.authorize).toBeTypeOf('function')
     expect(client.payment.charge).toBeTypeOf('function')
-    expect(client.payment.refundInEscrow).toBeTypeOf('function')
     expect(client.payment.approvePostEscrowRefund).toBeTypeOf('function')
     expect(client.refund!.refuse).toBeTypeOf('function')
     expect(client.operator.calculateFees).toBeTypeOf('function')

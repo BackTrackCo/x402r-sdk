@@ -91,16 +91,17 @@ describe('PayerClient type narrowing', () => {
 // ---------------------------------------------------------------------------
 
 describe('MerchantClient type narrowing', () => {
-  it('payment exposes all methods including refund execution', () => {
+  it('payment exposes merchant methods', () => {
     expectTypeOf(merchant.payment.authorize).toBeFunction()
     expectTypeOf(merchant.payment.charge).toBeFunction()
     expectTypeOf(merchant.payment.release).toBeFunction()
     expectTypeOf(merchant.payment.getState).toBeFunction()
     expectTypeOf(merchant.payment.getAmounts).toBeFunction()
-    expectTypeOf(merchant.payment.refundInEscrow).toBeFunction()
     expectTypeOf(merchant.payment.refundPostEscrow).toBeFunction()
     expectTypeOf(merchant.payment.approvePostEscrowRefund).toBeFunction()
     expectTypeOf(merchant.payment.getPostEscrowRefundAllowance).toBeFunction()
+    // @ts-expect-error — merchant cannot refundInEscrow
+    merchant.payment.refundInEscrow
   })
 
   it('refund exposes merchant dispute methods', () => {
