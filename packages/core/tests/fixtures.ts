@@ -60,14 +60,41 @@ export function createMockPublicClient(
       },
     ),
     multicall: vi.fn(
-      ({ contracts }: { contracts: { functionName: string }[] }) => {
-        const results = contracts.map(({ functionName }) => {
-          if (functionName in responses) return responses[functionName]
-          throw new Error(`No mock response for multicall(${functionName})`)
+      ({
+        contracts,
+        allowFailure,
+      }: {
+        contracts: { address?: string; functionName: string }[]
+        allowFailure?: boolean
+      }) => {
+        const results = contracts.map(({ address, functionName }) => {
+          const compositeKey = address
+            ? `${address}:${functionName}`
+            : functionName
+          const value =
+            compositeKey in responses
+              ? responses[compositeKey]
+              : functionName in responses
+                ? responses[functionName]
+                : undefined
+          if (value === undefined)
+            throw new Error(`No mock response for multicall(${functionName})`)
+          // allowFailure: false → raw values; true/default → { result, status }
+          return allowFailure === false
+            ? value
+            : { result: value, status: 'success' }
         })
         return Promise.resolve(results)
       },
     ),
+    simulateContract: vi
+      .fn()
+      .mockImplementation(({ args }: { args?: unknown[] }) => {
+        // Return success for each call in the aggregate3 batch
+        const calls = Array.isArray(args?.[0]) ? args[0] : []
+        const result = calls.map(() => ({ success: true, returnData: '0x' }))
+        return Promise.resolve({ request: {}, result })
+      }),
     waitForTransactionReceipt: vi.fn().mockResolvedValue({ status: 'success' }),
   } as unknown as PublicClient
 }
@@ -119,18 +146,11 @@ export function createSequentialMockPublicClient(
   let getDeployedCallCount = 0
   const behavior = options.getDeployedBehavior ?? 'allNew'
 
-  const base = createMockPublicClient({})
-  ;(base as any).readContract = async (params: {
-    functionName: string
-    [k: string]: unknown
-  }) => {
-    if (params.functionName === 'computeAddress') {
+  function resolveFunction(functionName: string): unknown {
+    if (functionName === 'computeAddress') {
       return computeAddresses[computeCallCount++] ?? FALLBACK_COMPUTED_ADDR
     }
-    if (
-      params.functionName === 'getDeployed' ||
-      params.functionName === 'getOperator'
-    ) {
+    if (functionName === 'getDeployed' || functionName === 'getOperator') {
       const idx = getDeployedCallCount++
       if (behavior === 'allNew') return zeroAddress
       if (behavior === 'allExisting') return FALLBACK_COMPUTED_ADDR
@@ -139,11 +159,26 @@ export function createSequentialMockPublicClient(
     return FALLBACK_COMPUTED_ADDR
   }
 
+  const base = createMockPublicClient({})
+  ;(base as any).readContract = async (params: {
+    functionName: string
+    [k: string]: unknown
+  }) => resolveFunction(params.functionName)
+  ;(base as any).multicall = async ({
+    contracts,
+  }: {
+    contracts: { functionName: string }[]
+  }) =>
+    contracts.map(({ functionName }) => ({
+      result: resolveFunction(functionName),
+      status: 'success',
+    }))
+
   return base
 }
 
 const FALLBACK_COMPUTED_ADDR =
-  '0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' as Address
+  '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
 
 // ---------------------------------------------------------------------------
 // PaymentInfo factory

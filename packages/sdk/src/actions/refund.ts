@@ -1,5 +1,5 @@
 import {
-  approveRefundWithSignature,
+  approveRefund,
   cancelRefundRequest,
   denyRefundRequest,
   getCancelCount,
@@ -59,14 +59,12 @@ export function createRefundActions(
         nonce,
       }),
 
-    approveWithSignature: (paymentInfo, nonce, amount, expiry, signature) =>
-      approveRefundWithSignature(requireWallet(config), {
+    approve: (paymentInfo, nonce, amount) =>
+      approveRefund(requireWallet(config), {
         contractAddress: refundRequestAddress,
         paymentInfo,
         nonce,
         amount,
-        expiry,
-        signature,
       }),
 
     // -----------------------------------------------------------------------

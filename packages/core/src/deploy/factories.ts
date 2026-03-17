@@ -7,8 +7,8 @@ import {
   orConditionFactoryAbi,
   paymentOperatorFactoryAbi,
   recorderCombinatorFactoryAbi,
+  refundRequestFactoryAbi,
   signatureConditionFactoryAbi,
-  signatureRefundRequestFactoryAbi,
   staticAddressConditionFactoryAbi,
   staticFeeCalculatorFactoryAbi,
 } from '../abis/generated.js'
@@ -398,42 +398,42 @@ export function deploySignatureCondition(
 }
 
 // ---------------------------------------------------------------------------
-// SignatureRefundRequest
+// RefundRequest
 // ---------------------------------------------------------------------------
 
-export interface ComputeSignatureRefundRequestAddressParameters {
+export interface ComputeRefundRequestAddressParameters {
   factoryAddress: Address
-  signatureCondition: Address
+  arbiter: Address
 }
-export type ComputeSignatureRefundRequestAddressReturnType = Address
+export type ComputeRefundRequestAddressReturnType = Address
 
-export function computeSignatureRefundRequestAddress(
+export function computeRefundRequestAddress(
   publicClient: PublicClient,
-  parameters: ComputeSignatureRefundRequestAddressParameters,
-): Promise<ComputeSignatureRefundRequestAddressReturnType> {
+  parameters: ComputeRefundRequestAddressParameters,
+): Promise<ComputeRefundRequestAddressReturnType> {
   return computeViaFactory(publicClient, {
     factoryAddress: parameters.factoryAddress,
-    abi: signatureRefundRequestFactoryAbi,
-    args: [parameters.signatureCondition],
+    abi: refundRequestFactoryAbi,
+    args: [parameters.arbiter],
   })
 }
 
-export interface DeploySignatureRefundRequestParameters {
+export interface DeployRefundRequestParameters {
   factoryAddress: Address
-  signatureCondition: Address
+  arbiter: Address
 }
-export type DeploySignatureRefundRequestReturnType = DeployResult
+export type DeployRefundRequestReturnType = DeployResult
 
-export function deploySignatureRefundRequest(
+export function deployRefundRequest(
   walletClient: WalletClient,
   publicClient: PublicClient,
-  parameters: DeploySignatureRefundRequestParameters,
-): Promise<DeploySignatureRefundRequestReturnType> {
+  parameters: DeployRefundRequestParameters,
+): Promise<DeployRefundRequestReturnType> {
   return deployViaFactory(walletClient, publicClient, {
     factoryAddress: parameters.factoryAddress,
-    abi: signatureRefundRequestFactoryAbi,
-    args: [parameters.signatureCondition],
-    opName: 'deploySignatureRefundRequest',
+    abi: refundRequestFactoryAbi,
+    args: [parameters.arbiter],
+    opName: 'deployRefundRequest',
   })
 }
 

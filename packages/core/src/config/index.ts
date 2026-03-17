@@ -16,7 +16,7 @@ export interface FactoryAddresses {
   notCondition: Address
   recorderCombinator: Address
   signatureCondition: Address
-  signatureRefundRequest: Address
+  refundRequest: Address
 }
 
 export interface ConditionSingletonAddresses {
@@ -63,7 +63,7 @@ const PROTOCOL_ADDRESSES = {
     notCondition: '0x1D58f97843579356863d3393ebe24feEd76ceefF',
     recorderCombinator: '0xACf2b5e21CFc14135C9cD43ebE96a481F184C1A1',
     signatureCondition: '0x669B4930f9E72884725F5C7D837Ab9517eA3040f',
-    signatureRefundRequest: '0x45af78aaBC0A0dD70f16381CfD6D657Ab441B7a0',
+    refundRequest: '0xd7505a677b51bc71906972F372D0b2704De2370f',
   },
   conditions: {
     payer: '0x33F5F1154A02d0839266EFd23Fd3b85a3505bB4B',

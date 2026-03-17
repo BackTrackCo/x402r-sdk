@@ -83,7 +83,7 @@ describe('presets', () => {
     expect(client.config.walletClient).toBeDefined()
     expect(client.payment.getState).toBeTypeOf('function')
     expect(client.refund!.deny).toBeTypeOf('function')
-    expect(client.refund!.approveWithSignature).toBeTypeOf('function')
+    expect(client.refund!.approve).toBeTypeOf('function')
     expect(client.freeze).toBeUndefined() // no freezeAddress in config
     expect(client.canExecute).toBeTypeOf('function')
     expect(client.extend).toBeTypeOf('function')

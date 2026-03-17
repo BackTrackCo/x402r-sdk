@@ -222,4 +222,12 @@ describe('createPaymentActions', () => {
     )
     expect(result).toBe(500000n)
   })
+
+  it('payment does not expose query methods', () => {
+    const config = createTestConfig()
+    const payment = createPaymentActions(config)
+    expect((payment as any).getPayerPayments).toBeUndefined()
+    expect((payment as any).getReceiverPayments).toBeUndefined()
+    expect((payment as any).getPaymentInfo).toBeUndefined()
+  })
 })

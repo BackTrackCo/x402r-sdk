@@ -52,7 +52,7 @@ beforeAll(async () => {
     publicClient,
     walletClient: anvilBaseSepolia.getWalletClient(testRoles.payer.address),
     operatorAddress: fixtures.operatorAddress,
-    refundRequestAddress: fixtures.signatureRefundRequestAddress,
+    refundRequestAddress: fixtures.refundRequestAddress,
   })
 
   merchant = createMerchantClient({
@@ -66,7 +66,7 @@ beforeAll(async () => {
     publicClient,
     walletClient: anvilBaseSepolia.getWalletClient(testRoles.arbiter.address),
     operatorAddress: fixtures.operatorAddress,
-    refundRequestAddress: fixtures.signatureRefundRequestAddress,
+    refundRequestAddress: fixtures.refundRequestAddress,
   })
 }, 60_000)
 
@@ -147,7 +147,7 @@ describe('Scenario 5b: Refuse refund request', () => {
     const hash = await refuseRefundRequest(
       anvilBaseSepolia.getWalletClient(testRoles.arbiter.address),
       {
-        contractAddress: fixtures.signatureRefundRequestAddress,
+        contractAddress: fixtures.refundRequestAddress,
         paymentInfo,
         nonce: 1n,
       },

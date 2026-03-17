@@ -55,12 +55,12 @@ describe('PayerClient type narrowing', () => {
     payer.refund.deny
     // @ts-expect-error — payer cannot refuse
     payer.refund.refuse
-    // @ts-expect-error — payer cannot approveWithSignature
-    payer.refund.approveWithSignature
+    // @ts-expect-error — payer cannot approve
+    void payer.refund.approve
     // @ts-expect-error — payer cannot getReceiverRequests
-    payer.refund.getReceiverRequests
+    void payer.refund.getReceiverRequests
     // @ts-expect-error — payer cannot getOperatorRequests
-    payer.refund.getOperatorRequests
+    void payer.refund.getOperatorRequests
   })
 
   it('operator hides fee calculation methods', () => {
@@ -117,12 +117,12 @@ describe('MerchantClient type narrowing', () => {
     merchant.refund.cancel
     // @ts-expect-error — merchant cannot deny
     merchant.refund.deny
-    // @ts-expect-error — merchant cannot approveWithSignature
-    merchant.refund.approveWithSignature
+    // @ts-expect-error — merchant cannot approve
+    void merchant.refund.approve
     // @ts-expect-error — merchant cannot getPayerRequests
-    merchant.refund.getPayerRequests
+    void merchant.refund.getPayerRequests
     // @ts-expect-error — merchant cannot getOperatorRequests
-    merchant.refund.getOperatorRequests
+    void merchant.refund.getOperatorRequests
   })
 
   it('operator exposes all methods', () => {
@@ -160,7 +160,7 @@ describe('ArbiterClient type narrowing', () => {
 
   it('refund exposes arbiter methods', () => {
     expectTypeOf(arbiter.refund.deny).toBeFunction()
-    expectTypeOf(arbiter.refund.approveWithSignature).toBeFunction()
+    expectTypeOf(arbiter.refund.approve).toBeFunction()
     expectTypeOf(arbiter.refund.getOperatorRequests).toBeFunction()
   })
 

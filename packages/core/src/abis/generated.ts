@@ -1155,251 +1155,6 @@ export const authorizationTimeRecorderAbi = [
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// DisputeEvidence
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-export const disputeEvidenceAbi = [
-  {
-    type: 'constructor',
-    inputs: [
-      { name: 'refundRequest', internalType: 'address', type: 'address' },
-    ],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'REFUND_REQUEST',
-    outputs: [
-      {
-        name: '',
-        internalType: 'contract SignatureRefundRequest',
-        type: 'address',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      {
-        name: 'paymentInfo',
-        internalType: 'struct AuthCaptureEscrow.PaymentInfo',
-        type: 'tuple',
-        components: [
-          { name: 'operator', internalType: 'address', type: 'address' },
-          { name: 'payer', internalType: 'address', type: 'address' },
-          { name: 'receiver', internalType: 'address', type: 'address' },
-          { name: 'token', internalType: 'address', type: 'address' },
-          { name: 'maxAmount', internalType: 'uint120', type: 'uint120' },
-          { name: 'preApprovalExpiry', internalType: 'uint48', type: 'uint48' },
-          {
-            name: 'authorizationExpiry',
-            internalType: 'uint48',
-            type: 'uint48',
-          },
-          { name: 'refundExpiry', internalType: 'uint48', type: 'uint48' },
-          { name: 'minFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'maxFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'feeReceiver', internalType: 'address', type: 'address' },
-          { name: 'salt', internalType: 'uint256', type: 'uint256' },
-        ],
-      },
-      { name: 'nonce', internalType: 'uint256', type: 'uint256' },
-      { name: 'index', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'getEvidence',
-    outputs: [
-      {
-        name: '',
-        internalType: 'struct DisputeEvidence.Evidence',
-        type: 'tuple',
-        components: [
-          { name: 'submitter', internalType: 'address', type: 'address' },
-          { name: 'role', internalType: 'enum SubmitterRole', type: 'uint8' },
-          { name: 'timestamp', internalType: 'uint48', type: 'uint48' },
-          { name: 'cid', internalType: 'string', type: 'string' },
-        ],
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      {
-        name: 'paymentInfo',
-        internalType: 'struct AuthCaptureEscrow.PaymentInfo',
-        type: 'tuple',
-        components: [
-          { name: 'operator', internalType: 'address', type: 'address' },
-          { name: 'payer', internalType: 'address', type: 'address' },
-          { name: 'receiver', internalType: 'address', type: 'address' },
-          { name: 'token', internalType: 'address', type: 'address' },
-          { name: 'maxAmount', internalType: 'uint120', type: 'uint120' },
-          { name: 'preApprovalExpiry', internalType: 'uint48', type: 'uint48' },
-          {
-            name: 'authorizationExpiry',
-            internalType: 'uint48',
-            type: 'uint48',
-          },
-          { name: 'refundExpiry', internalType: 'uint48', type: 'uint48' },
-          { name: 'minFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'maxFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'feeReceiver', internalType: 'address', type: 'address' },
-          { name: 'salt', internalType: 'uint256', type: 'uint256' },
-        ],
-      },
-      { name: 'nonce', internalType: 'uint256', type: 'uint256' },
-      { name: 'offset', internalType: 'uint256', type: 'uint256' },
-      { name: 'count', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'getEvidenceBatch',
-    outputs: [
-      {
-        name: 'entries',
-        internalType: 'struct DisputeEvidence.Evidence[]',
-        type: 'tuple[]',
-        components: [
-          { name: 'submitter', internalType: 'address', type: 'address' },
-          { name: 'role', internalType: 'enum SubmitterRole', type: 'uint8' },
-          { name: 'timestamp', internalType: 'uint48', type: 'uint48' },
-          { name: 'cid', internalType: 'string', type: 'string' },
-        ],
-      },
-      { name: 'total', internalType: 'uint256', type: 'uint256' },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      {
-        name: 'paymentInfo',
-        internalType: 'struct AuthCaptureEscrow.PaymentInfo',
-        type: 'tuple',
-        components: [
-          { name: 'operator', internalType: 'address', type: 'address' },
-          { name: 'payer', internalType: 'address', type: 'address' },
-          { name: 'receiver', internalType: 'address', type: 'address' },
-          { name: 'token', internalType: 'address', type: 'address' },
-          { name: 'maxAmount', internalType: 'uint120', type: 'uint120' },
-          { name: 'preApprovalExpiry', internalType: 'uint48', type: 'uint48' },
-          {
-            name: 'authorizationExpiry',
-            internalType: 'uint48',
-            type: 'uint48',
-          },
-          { name: 'refundExpiry', internalType: 'uint48', type: 'uint48' },
-          { name: 'minFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'maxFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'feeReceiver', internalType: 'address', type: 'address' },
-          { name: 'salt', internalType: 'uint256', type: 'uint256' },
-        ],
-      },
-      { name: 'nonce', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'getEvidenceCount',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      {
-        name: 'paymentInfo',
-        internalType: 'struct AuthCaptureEscrow.PaymentInfo',
-        type: 'tuple',
-        components: [
-          { name: 'operator', internalType: 'address', type: 'address' },
-          { name: 'payer', internalType: 'address', type: 'address' },
-          { name: 'receiver', internalType: 'address', type: 'address' },
-          { name: 'token', internalType: 'address', type: 'address' },
-          { name: 'maxAmount', internalType: 'uint120', type: 'uint120' },
-          { name: 'preApprovalExpiry', internalType: 'uint48', type: 'uint48' },
-          {
-            name: 'authorizationExpiry',
-            internalType: 'uint48',
-            type: 'uint48',
-          },
-          { name: 'refundExpiry', internalType: 'uint48', type: 'uint48' },
-          { name: 'minFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'maxFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'feeReceiver', internalType: 'address', type: 'address' },
-          { name: 'salt', internalType: 'uint256', type: 'uint256' },
-        ],
-      },
-      { name: 'nonce', internalType: 'uint256', type: 'uint256' },
-      { name: 'cid', internalType: 'string', type: 'string' },
-    ],
-    name: 'submitEvidence',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'paymentInfo',
-        internalType: 'struct AuthCaptureEscrow.PaymentInfo',
-        type: 'tuple',
-        components: [
-          { name: 'operator', internalType: 'address', type: 'address' },
-          { name: 'payer', internalType: 'address', type: 'address' },
-          { name: 'receiver', internalType: 'address', type: 'address' },
-          { name: 'token', internalType: 'address', type: 'address' },
-          { name: 'maxAmount', internalType: 'uint120', type: 'uint120' },
-          { name: 'preApprovalExpiry', internalType: 'uint48', type: 'uint48' },
-          {
-            name: 'authorizationExpiry',
-            internalType: 'uint48',
-            type: 'uint48',
-          },
-          { name: 'refundExpiry', internalType: 'uint48', type: 'uint48' },
-          { name: 'minFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'maxFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'feeReceiver', internalType: 'address', type: 'address' },
-          { name: 'salt', internalType: 'uint256', type: 'uint256' },
-        ],
-        indexed: false,
-      },
-      {
-        name: 'nonce',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-      {
-        name: 'submitter',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-      {
-        name: 'role',
-        internalType: 'enum SubmitterRole',
-        type: 'uint8',
-        indexed: false,
-      },
-      { name: 'cid', internalType: 'string', type: 'string', indexed: false },
-      {
-        name: 'index',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-    ],
-    name: 'EvidenceSubmitted',
-  },
-  { type: 'error', inputs: [], name: 'EmptyCid' },
-  { type: 'error', inputs: [], name: 'IndexOutOfBounds' },
-  { type: 'error', inputs: [], name: 'InvalidOperator' },
-  { type: 'error', inputs: [], name: 'NotPayerReceiverOrArbiter' },
-  { type: 'error', inputs: [], name: 'RefundRequestRequired' },
-] as const
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // EscrowPeriod
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -4487,10 +4242,10 @@ export const recorderCombinatorFactoryAbi = [
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// RefundRequestCondition
+// RefundRequest
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-export const refundRequestConditionAbi = [
+export const refundRequestAbi = [
   {
     type: 'constructor',
     inputs: [{ name: '_arbiter', internalType: 'address', type: 'address' }],
@@ -4530,19 +4285,11 @@ export const refundRequestConditionAbi = [
         ],
       },
       { name: 'nonce', internalType: 'uint256', type: 'uint256' },
+      { name: 'amount', internalType: 'uint120', type: 'uint120' },
     ],
     name: 'approve',
     outputs: [],
     stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'paymentInfoHash', internalType: 'bytes32', type: 'bytes32' },
-    ],
-    name: 'approvedRefundAmounts',
-    outputs: [{ name: '', internalType: 'uint120', type: 'uint120' }],
-    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -4582,39 +4329,6 @@ export const refundRequestConditionAbi = [
     name: 'cancelRefundRequest',
     outputs: [],
     stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      {
-        name: 'paymentInfo',
-        internalType: 'struct AuthCaptureEscrow.PaymentInfo',
-        type: 'tuple',
-        components: [
-          { name: 'operator', internalType: 'address', type: 'address' },
-          { name: 'payer', internalType: 'address', type: 'address' },
-          { name: 'receiver', internalType: 'address', type: 'address' },
-          { name: 'token', internalType: 'address', type: 'address' },
-          { name: 'maxAmount', internalType: 'uint120', type: 'uint120' },
-          { name: 'preApprovalExpiry', internalType: 'uint48', type: 'uint48' },
-          {
-            name: 'authorizationExpiry',
-            internalType: 'uint48',
-            type: 'uint48',
-          },
-          { name: 'refundExpiry', internalType: 'uint48', type: 'uint48' },
-          { name: 'minFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'maxFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'feeReceiver', internalType: 'address', type: 'address' },
-          { name: 'salt', internalType: 'uint256', type: 'uint256' },
-        ],
-      },
-      { name: 'amount', internalType: 'uint256', type: 'uint256' },
-      { name: '', internalType: 'address', type: 'address' },
-    ],
-    name: 'check',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -4797,7 +4511,7 @@ export const refundRequestConditionAbi = [
   {
     type: 'function',
     inputs: [
-      { name: '_receiver', internalType: 'address', type: 'address' },
+      { name: 'receiver', internalType: 'address', type: 'address' },
       { name: 'index', internalType: 'uint256', type: 'uint256' },
     ],
     name: 'getReceiverRefundRequest',
@@ -4807,7 +4521,7 @@ export const refundRequestConditionAbi = [
   {
     type: 'function',
     inputs: [
-      { name: '_receiver', internalType: 'address', type: 'address' },
+      { name: 'receiver', internalType: 'address', type: 'address' },
       { name: 'offset', internalType: 'uint256', type: 'uint256' },
       { name: 'count', internalType: 'uint256', type: 'uint256' },
     ],
@@ -4850,12 +4564,13 @@ export const refundRequestConditionAbi = [
     outputs: [
       {
         name: '',
-        internalType: 'struct RefundRequestCondition.RefundRequestData',
+        internalType: 'struct RefundRequest.RefundRequestData',
         type: 'tuple',
         components: [
           { name: 'paymentInfoHash', internalType: 'bytes32', type: 'bytes32' },
           { name: 'nonce', internalType: 'uint256', type: 'uint256' },
           { name: 'amount', internalType: 'uint120', type: 'uint120' },
+          { name: 'approvedAmount', internalType: 'uint120', type: 'uint120' },
           { name: 'status', internalType: 'enum RequestStatus', type: 'uint8' },
         ],
       },
@@ -4871,12 +4586,13 @@ export const refundRequestConditionAbi = [
     outputs: [
       {
         name: '',
-        internalType: 'struct RefundRequestCondition.RefundRequestData',
+        internalType: 'struct RefundRequest.RefundRequestData',
         type: 'tuple',
         components: [
           { name: 'paymentInfoHash', internalType: 'bytes32', type: 'bytes32' },
           { name: 'nonce', internalType: 'uint256', type: 'uint256' },
           { name: 'amount', internalType: 'uint120', type: 'uint120' },
+          { name: 'approvedAmount', internalType: 'uint120', type: 'uint120' },
           { name: 'status', internalType: 'enum RequestStatus', type: 'uint8' },
         ],
       },
@@ -5128,6 +4844,12 @@ export const refundRequestConditionAbi = [
         type: 'uint256',
         indexed: false,
       },
+      {
+        name: 'approvedAmount',
+        internalType: 'uint120',
+        type: 'uint120',
+        indexed: false,
+      },
     ],
     name: 'RefundRequestStatusUpdated',
   },
@@ -5186,6 +4908,7 @@ export const refundRequestConditionAbi = [
     ],
     name: 'RefundRequested',
   },
+  { type: 'error', inputs: [], name: 'ApproveAmountExceedsRequest' },
   { type: 'error', inputs: [], name: 'IndexOutOfBounds' },
   { type: 'error', inputs: [], name: 'InvalidOperator' },
   { type: 'error', inputs: [], name: 'NotArbiter' },
@@ -5194,89 +4917,10 @@ export const refundRequestConditionAbi = [
   { type: 'error', inputs: [], name: 'Reentrancy' },
   { type: 'error', inputs: [], name: 'RequestAlreadyExists' },
   { type: 'error', inputs: [], name: 'RequestDoesNotExist' },
+  { type: 'error', inputs: [], name: 'RequestNotApprovable' },
   { type: 'error', inputs: [], name: 'RequestNotPending' },
   { type: 'error', inputs: [], name: 'ZeroArbiter' },
   { type: 'error', inputs: [], name: 'ZeroRefundAmount' },
-] as const
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// RefundRequestConditionFactory
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-export const refundRequestConditionFactoryAbi = [
-  {
-    type: 'function',
-    inputs: [{ name: 'arbiter', internalType: 'address', type: 'address' }],
-    name: 'computeAddress',
-    outputs: [
-      {
-        name: 'refundRequestCondition',
-        internalType: 'address',
-        type: 'address',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'arbiter', internalType: 'address', type: 'address' }],
-    name: 'deploy',
-    outputs: [
-      {
-        name: 'refundRequestCondition',
-        internalType: 'address',
-        type: 'address',
-      },
-    ],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
-    name: 'deployments',
-    outputs: [{ name: '', internalType: 'address', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'arbiter', internalType: 'address', type: 'address' }],
-    name: 'getDeployed',
-    outputs: [
-      {
-        name: 'refundRequestCondition',
-        internalType: 'address',
-        type: 'address',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: 'arbiter', internalType: 'address', type: 'address' }],
-    name: 'getKey',
-    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
-    stateMutability: 'pure',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'refundRequestCondition',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-      {
-        name: 'arbiter',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-    ],
-    name: 'RefundRequestConditionDeployed',
-  },
-  { type: 'error', inputs: [], name: 'ZeroArbiter' },
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -5296,11 +4940,7 @@ export const refundRequestEvidenceAbi = [
     inputs: [],
     name: 'REFUND_REQUEST',
     outputs: [
-      {
-        name: '',
-        internalType: 'contract SignatureRefundRequest',
-        type: 'address',
-      },
+      { name: '', internalType: 'contract RefundRequest', type: 'address' },
     ],
     stateMutability: 'view',
   },
@@ -5525,6 +5165,74 @@ export const refundRequestEvidenceAbi = [
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// RefundRequestFactory
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const refundRequestFactoryAbi = [
+  {
+    type: 'function',
+    inputs: [{ name: 'arbiter', internalType: 'address', type: 'address' }],
+    name: 'computeAddress',
+    outputs: [
+      { name: 'refundRequest', internalType: 'address', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'arbiter', internalType: 'address', type: 'address' }],
+    name: 'deploy',
+    outputs: [
+      { name: 'refundRequest', internalType: 'address', type: 'address' },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'arbiter', internalType: 'address', type: 'address' }],
+    name: 'getDeployed',
+    outputs: [
+      { name: 'refundRequest', internalType: 'address', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'arbiter', internalType: 'address', type: 'address' }],
+    name: 'getKey',
+    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
+    stateMutability: 'pure',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
+    name: 'refundRequests',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'refundRequest',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'arbiter',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'RefundRequestDeployed',
+  },
+  { type: 'error', inputs: [], name: 'ZeroArbiter' },
+] as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // SignatureCondition
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -5726,763 +5434,6 @@ export const signatureConditionFactoryAbi = [
     name: 'SignatureConditionDeployed',
   },
   { type: 'error', inputs: [], name: 'ZeroSigner' },
-] as const
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// SignatureRefundRequest
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-export const signatureRefundRequestAbi = [
-  {
-    type: 'constructor',
-    inputs: [
-      { name: '_signatureCondition', internalType: 'address', type: 'address' },
-    ],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'SIGNATURE_CONDITION',
-    outputs: [
-      {
-        name: '',
-        internalType: 'contract SignatureCondition',
-        type: 'address',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      {
-        name: 'paymentInfo',
-        internalType: 'struct AuthCaptureEscrow.PaymentInfo',
-        type: 'tuple',
-        components: [
-          { name: 'operator', internalType: 'address', type: 'address' },
-          { name: 'payer', internalType: 'address', type: 'address' },
-          { name: 'receiver', internalType: 'address', type: 'address' },
-          { name: 'token', internalType: 'address', type: 'address' },
-          { name: 'maxAmount', internalType: 'uint120', type: 'uint120' },
-          { name: 'preApprovalExpiry', internalType: 'uint48', type: 'uint48' },
-          {
-            name: 'authorizationExpiry',
-            internalType: 'uint48',
-            type: 'uint48',
-          },
-          { name: 'refundExpiry', internalType: 'uint48', type: 'uint48' },
-          { name: 'minFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'maxFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'feeReceiver', internalType: 'address', type: 'address' },
-          { name: 'salt', internalType: 'uint256', type: 'uint256' },
-        ],
-      },
-      { name: 'nonce', internalType: 'uint256', type: 'uint256' },
-      { name: 'amount', internalType: 'uint256', type: 'uint256' },
-      { name: 'expiry', internalType: 'uint48', type: 'uint48' },
-      { name: 'signature', internalType: 'bytes', type: 'bytes' },
-    ],
-    name: 'approveWithSignature',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
-    name: 'cancelCount',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      {
-        name: 'paymentInfo',
-        internalType: 'struct AuthCaptureEscrow.PaymentInfo',
-        type: 'tuple',
-        components: [
-          { name: 'operator', internalType: 'address', type: 'address' },
-          { name: 'payer', internalType: 'address', type: 'address' },
-          { name: 'receiver', internalType: 'address', type: 'address' },
-          { name: 'token', internalType: 'address', type: 'address' },
-          { name: 'maxAmount', internalType: 'uint120', type: 'uint120' },
-          { name: 'preApprovalExpiry', internalType: 'uint48', type: 'uint48' },
-          {
-            name: 'authorizationExpiry',
-            internalType: 'uint48',
-            type: 'uint48',
-          },
-          { name: 'refundExpiry', internalType: 'uint48', type: 'uint48' },
-          { name: 'minFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'maxFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'feeReceiver', internalType: 'address', type: 'address' },
-          { name: 'salt', internalType: 'uint256', type: 'uint256' },
-        ],
-      },
-      { name: 'nonce', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'cancelRefundRequest',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      {
-        name: 'paymentInfo',
-        internalType: 'struct AuthCaptureEscrow.PaymentInfo',
-        type: 'tuple',
-        components: [
-          { name: 'operator', internalType: 'address', type: 'address' },
-          { name: 'payer', internalType: 'address', type: 'address' },
-          { name: 'receiver', internalType: 'address', type: 'address' },
-          { name: 'token', internalType: 'address', type: 'address' },
-          { name: 'maxAmount', internalType: 'uint120', type: 'uint120' },
-          { name: 'preApprovalExpiry', internalType: 'uint48', type: 'uint48' },
-          {
-            name: 'authorizationExpiry',
-            internalType: 'uint48',
-            type: 'uint48',
-          },
-          { name: 'refundExpiry', internalType: 'uint48', type: 'uint48' },
-          { name: 'minFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'maxFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'feeReceiver', internalType: 'address', type: 'address' },
-          { name: 'salt', internalType: 'uint256', type: 'uint256' },
-        ],
-      },
-      { name: 'nonce', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'deny',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      {
-        name: 'paymentInfo',
-        internalType: 'struct AuthCaptureEscrow.PaymentInfo',
-        type: 'tuple',
-        components: [
-          { name: 'operator', internalType: 'address', type: 'address' },
-          { name: 'payer', internalType: 'address', type: 'address' },
-          { name: 'receiver', internalType: 'address', type: 'address' },
-          { name: 'token', internalType: 'address', type: 'address' },
-          { name: 'maxAmount', internalType: 'uint120', type: 'uint120' },
-          { name: 'preApprovalExpiry', internalType: 'uint48', type: 'uint48' },
-          {
-            name: 'authorizationExpiry',
-            internalType: 'uint48',
-            type: 'uint48',
-          },
-          { name: 'refundExpiry', internalType: 'uint48', type: 'uint48' },
-          { name: 'minFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'maxFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'feeReceiver', internalType: 'address', type: 'address' },
-          { name: 'salt', internalType: 'uint256', type: 'uint256' },
-        ],
-      },
-      { name: 'nonce', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'getCancelCount',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      {
-        name: 'paymentInfo',
-        internalType: 'struct AuthCaptureEscrow.PaymentInfo',
-        type: 'tuple',
-        components: [
-          { name: 'operator', internalType: 'address', type: 'address' },
-          { name: 'payer', internalType: 'address', type: 'address' },
-          { name: 'receiver', internalType: 'address', type: 'address' },
-          { name: 'token', internalType: 'address', type: 'address' },
-          { name: 'maxAmount', internalType: 'uint120', type: 'uint120' },
-          { name: 'preApprovalExpiry', internalType: 'uint48', type: 'uint48' },
-          {
-            name: 'authorizationExpiry',
-            internalType: 'uint48',
-            type: 'uint48',
-          },
-          { name: 'refundExpiry', internalType: 'uint48', type: 'uint48' },
-          { name: 'minFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'maxFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'feeReceiver', internalType: 'address', type: 'address' },
-          { name: 'salt', internalType: 'uint256', type: 'uint256' },
-        ],
-      },
-      { name: 'nonce', internalType: 'uint256', type: 'uint256' },
-      { name: 'cancelIndex', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'getCancelledAmount',
-    outputs: [{ name: '', internalType: 'uint120', type: 'uint120' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'op', internalType: 'address', type: 'address' },
-      { name: 'index', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'getOperatorRefundRequest',
-    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'op', internalType: 'address', type: 'address' },
-      { name: 'offset', internalType: 'uint256', type: 'uint256' },
-      { name: 'count', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'getOperatorRefundRequests',
-    outputs: [
-      { name: 'keys', internalType: 'bytes32[]', type: 'bytes32[]' },
-      { name: 'total', internalType: 'uint256', type: 'uint256' },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'payer', internalType: 'address', type: 'address' },
-      { name: 'index', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'getPayerRefundRequest',
-    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'payer', internalType: 'address', type: 'address' },
-      { name: 'offset', internalType: 'uint256', type: 'uint256' },
-      { name: 'count', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'getPayerRefundRequests',
-    outputs: [
-      { name: 'keys', internalType: 'bytes32[]', type: 'bytes32[]' },
-      { name: 'total', internalType: 'uint256', type: 'uint256' },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'paymentInfoHash', internalType: 'bytes32', type: 'bytes32' },
-    ],
-    name: 'getPaymentInfo',
-    outputs: [
-      {
-        name: '',
-        internalType: 'struct AuthCaptureEscrow.PaymentInfo',
-        type: 'tuple',
-        components: [
-          { name: 'operator', internalType: 'address', type: 'address' },
-          { name: 'payer', internalType: 'address', type: 'address' },
-          { name: 'receiver', internalType: 'address', type: 'address' },
-          { name: 'token', internalType: 'address', type: 'address' },
-          { name: 'maxAmount', internalType: 'uint120', type: 'uint120' },
-          { name: 'preApprovalExpiry', internalType: 'uint48', type: 'uint48' },
-          {
-            name: 'authorizationExpiry',
-            internalType: 'uint48',
-            type: 'uint48',
-          },
-          { name: 'refundExpiry', internalType: 'uint48', type: 'uint48' },
-          { name: 'minFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'maxFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'feeReceiver', internalType: 'address', type: 'address' },
-          { name: 'salt', internalType: 'uint256', type: 'uint256' },
-        ],
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'receiver', internalType: 'address', type: 'address' },
-      { name: 'index', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'getReceiverRefundRequest',
-    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'receiver', internalType: 'address', type: 'address' },
-      { name: 'offset', internalType: 'uint256', type: 'uint256' },
-      { name: 'count', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'getReceiverRefundRequests',
-    outputs: [
-      { name: 'keys', internalType: 'bytes32[]', type: 'bytes32[]' },
-      { name: 'total', internalType: 'uint256', type: 'uint256' },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      {
-        name: 'paymentInfo',
-        internalType: 'struct AuthCaptureEscrow.PaymentInfo',
-        type: 'tuple',
-        components: [
-          { name: 'operator', internalType: 'address', type: 'address' },
-          { name: 'payer', internalType: 'address', type: 'address' },
-          { name: 'receiver', internalType: 'address', type: 'address' },
-          { name: 'token', internalType: 'address', type: 'address' },
-          { name: 'maxAmount', internalType: 'uint120', type: 'uint120' },
-          { name: 'preApprovalExpiry', internalType: 'uint48', type: 'uint48' },
-          {
-            name: 'authorizationExpiry',
-            internalType: 'uint48',
-            type: 'uint48',
-          },
-          { name: 'refundExpiry', internalType: 'uint48', type: 'uint48' },
-          { name: 'minFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'maxFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'feeReceiver', internalType: 'address', type: 'address' },
-          { name: 'salt', internalType: 'uint256', type: 'uint256' },
-        ],
-      },
-      { name: 'nonce', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'getRefundRequest',
-    outputs: [
-      {
-        name: '',
-        internalType: 'struct SignatureRefundRequest.RefundRequestData',
-        type: 'tuple',
-        components: [
-          { name: 'paymentInfoHash', internalType: 'bytes32', type: 'bytes32' },
-          { name: 'nonce', internalType: 'uint256', type: 'uint256' },
-          { name: 'amount', internalType: 'uint120', type: 'uint120' },
-          { name: 'status', internalType: 'enum RequestStatus', type: 'uint8' },
-        ],
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'compositeKey', internalType: 'bytes32', type: 'bytes32' },
-    ],
-    name: 'getRefundRequestByKey',
-    outputs: [
-      {
-        name: '',
-        internalType: 'struct SignatureRefundRequest.RefundRequestData',
-        type: 'tuple',
-        components: [
-          { name: 'paymentInfoHash', internalType: 'bytes32', type: 'bytes32' },
-          { name: 'nonce', internalType: 'uint256', type: 'uint256' },
-          { name: 'amount', internalType: 'uint120', type: 'uint120' },
-          { name: 'status', internalType: 'enum RequestStatus', type: 'uint8' },
-        ],
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      {
-        name: 'paymentInfo',
-        internalType: 'struct AuthCaptureEscrow.PaymentInfo',
-        type: 'tuple',
-        components: [
-          { name: 'operator', internalType: 'address', type: 'address' },
-          { name: 'payer', internalType: 'address', type: 'address' },
-          { name: 'receiver', internalType: 'address', type: 'address' },
-          { name: 'token', internalType: 'address', type: 'address' },
-          { name: 'maxAmount', internalType: 'uint120', type: 'uint120' },
-          { name: 'preApprovalExpiry', internalType: 'uint48', type: 'uint48' },
-          {
-            name: 'authorizationExpiry',
-            internalType: 'uint48',
-            type: 'uint48',
-          },
-          { name: 'refundExpiry', internalType: 'uint48', type: 'uint48' },
-          { name: 'minFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'maxFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'feeReceiver', internalType: 'address', type: 'address' },
-          { name: 'salt', internalType: 'uint256', type: 'uint256' },
-        ],
-      },
-      { name: 'nonce', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'getRefundRequestStatus',
-    outputs: [{ name: '', internalType: 'enum RequestStatus', type: 'uint8' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      {
-        name: 'paymentInfo',
-        internalType: 'struct AuthCaptureEscrow.PaymentInfo',
-        type: 'tuple',
-        components: [
-          { name: 'operator', internalType: 'address', type: 'address' },
-          { name: 'payer', internalType: 'address', type: 'address' },
-          { name: 'receiver', internalType: 'address', type: 'address' },
-          { name: 'token', internalType: 'address', type: 'address' },
-          { name: 'maxAmount', internalType: 'uint120', type: 'uint120' },
-          { name: 'preApprovalExpiry', internalType: 'uint48', type: 'uint48' },
-          {
-            name: 'authorizationExpiry',
-            internalType: 'uint48',
-            type: 'uint48',
-          },
-          { name: 'refundExpiry', internalType: 'uint48', type: 'uint48' },
-          { name: 'minFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'maxFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'feeReceiver', internalType: 'address', type: 'address' },
-          { name: 'salt', internalType: 'uint256', type: 'uint256' },
-        ],
-      },
-      { name: 'nonce', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'hasRefundRequest',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '', internalType: 'address', type: 'address' }],
-    name: 'operatorRefundRequestCount',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '', internalType: 'address', type: 'address' }],
-    name: 'payerRefundRequestCount',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '', internalType: 'address', type: 'address' }],
-    name: 'receiverRefundRequestCount',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      {
-        name: 'paymentInfo',
-        internalType: 'struct AuthCaptureEscrow.PaymentInfo',
-        type: 'tuple',
-        components: [
-          { name: 'operator', internalType: 'address', type: 'address' },
-          { name: 'payer', internalType: 'address', type: 'address' },
-          { name: 'receiver', internalType: 'address', type: 'address' },
-          { name: 'token', internalType: 'address', type: 'address' },
-          { name: 'maxAmount', internalType: 'uint120', type: 'uint120' },
-          { name: 'preApprovalExpiry', internalType: 'uint48', type: 'uint48' },
-          {
-            name: 'authorizationExpiry',
-            internalType: 'uint48',
-            type: 'uint48',
-          },
-          { name: 'refundExpiry', internalType: 'uint48', type: 'uint48' },
-          { name: 'minFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'maxFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'feeReceiver', internalType: 'address', type: 'address' },
-          { name: 'salt', internalType: 'uint256', type: 'uint256' },
-        ],
-      },
-      { name: 'nonce', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'refuse',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      {
-        name: 'paymentInfo',
-        internalType: 'struct AuthCaptureEscrow.PaymentInfo',
-        type: 'tuple',
-        components: [
-          { name: 'operator', internalType: 'address', type: 'address' },
-          { name: 'payer', internalType: 'address', type: 'address' },
-          { name: 'receiver', internalType: 'address', type: 'address' },
-          { name: 'token', internalType: 'address', type: 'address' },
-          { name: 'maxAmount', internalType: 'uint120', type: 'uint120' },
-          { name: 'preApprovalExpiry', internalType: 'uint48', type: 'uint48' },
-          {
-            name: 'authorizationExpiry',
-            internalType: 'uint48',
-            type: 'uint48',
-          },
-          { name: 'refundExpiry', internalType: 'uint48', type: 'uint48' },
-          { name: 'minFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'maxFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'feeReceiver', internalType: 'address', type: 'address' },
-          { name: 'salt', internalType: 'uint256', type: 'uint256' },
-        ],
-      },
-      { name: 'amount', internalType: 'uint120', type: 'uint120' },
-      { name: 'nonce', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'requestRefund',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'paymentInfo',
-        internalType: 'struct AuthCaptureEscrow.PaymentInfo',
-        type: 'tuple',
-        components: [
-          { name: 'operator', internalType: 'address', type: 'address' },
-          { name: 'payer', internalType: 'address', type: 'address' },
-          { name: 'receiver', internalType: 'address', type: 'address' },
-          { name: 'token', internalType: 'address', type: 'address' },
-          { name: 'maxAmount', internalType: 'uint120', type: 'uint120' },
-          { name: 'preApprovalExpiry', internalType: 'uint48', type: 'uint48' },
-          {
-            name: 'authorizationExpiry',
-            internalType: 'uint48',
-            type: 'uint48',
-          },
-          { name: 'refundExpiry', internalType: 'uint48', type: 'uint48' },
-          { name: 'minFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'maxFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'feeReceiver', internalType: 'address', type: 'address' },
-          { name: 'salt', internalType: 'uint256', type: 'uint256' },
-        ],
-        indexed: false,
-      },
-      {
-        name: 'payer',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-      {
-        name: 'nonce',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-    ],
-    name: 'RefundRequestCancelled',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'paymentInfo',
-        internalType: 'struct AuthCaptureEscrow.PaymentInfo',
-        type: 'tuple',
-        components: [
-          { name: 'operator', internalType: 'address', type: 'address' },
-          { name: 'payer', internalType: 'address', type: 'address' },
-          { name: 'receiver', internalType: 'address', type: 'address' },
-          { name: 'token', internalType: 'address', type: 'address' },
-          { name: 'maxAmount', internalType: 'uint120', type: 'uint120' },
-          { name: 'preApprovalExpiry', internalType: 'uint48', type: 'uint48' },
-          {
-            name: 'authorizationExpiry',
-            internalType: 'uint48',
-            type: 'uint48',
-          },
-          { name: 'refundExpiry', internalType: 'uint48', type: 'uint48' },
-          { name: 'minFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'maxFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'feeReceiver', internalType: 'address', type: 'address' },
-          { name: 'salt', internalType: 'uint256', type: 'uint256' },
-        ],
-        indexed: false,
-      },
-      {
-        name: 'oldStatus',
-        internalType: 'enum RequestStatus',
-        type: 'uint8',
-        indexed: false,
-      },
-      {
-        name: 'newStatus',
-        internalType: 'enum RequestStatus',
-        type: 'uint8',
-        indexed: false,
-      },
-      {
-        name: 'updatedBy',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-      {
-        name: 'nonce',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-    ],
-    name: 'RefundRequestStatusUpdated',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'paymentInfo',
-        internalType: 'struct AuthCaptureEscrow.PaymentInfo',
-        type: 'tuple',
-        components: [
-          { name: 'operator', internalType: 'address', type: 'address' },
-          { name: 'payer', internalType: 'address', type: 'address' },
-          { name: 'receiver', internalType: 'address', type: 'address' },
-          { name: 'token', internalType: 'address', type: 'address' },
-          { name: 'maxAmount', internalType: 'uint120', type: 'uint120' },
-          { name: 'preApprovalExpiry', internalType: 'uint48', type: 'uint48' },
-          {
-            name: 'authorizationExpiry',
-            internalType: 'uint48',
-            type: 'uint48',
-          },
-          { name: 'refundExpiry', internalType: 'uint48', type: 'uint48' },
-          { name: 'minFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'maxFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'feeReceiver', internalType: 'address', type: 'address' },
-          { name: 'salt', internalType: 'uint256', type: 'uint256' },
-        ],
-        indexed: false,
-      },
-      {
-        name: 'payer',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-      {
-        name: 'receiver',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-      {
-        name: 'amount',
-        internalType: 'uint120',
-        type: 'uint120',
-        indexed: false,
-      },
-      {
-        name: 'nonce',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-    ],
-    name: 'RefundRequested',
-  },
-  { type: 'error', inputs: [], name: 'IndexOutOfBounds' },
-  { type: 'error', inputs: [], name: 'InvalidOperator' },
-  { type: 'error', inputs: [], name: 'NotArbiter' },
-  { type: 'error', inputs: [], name: 'NotPayer' },
-  { type: 'error', inputs: [], name: 'Reentrancy' },
-  { type: 'error', inputs: [], name: 'RequestAlreadyExists' },
-  { type: 'error', inputs: [], name: 'RequestDoesNotExist' },
-  { type: 'error', inputs: [], name: 'RequestNotPending' },
-  { type: 'error', inputs: [], name: 'ZeroCondition' },
-  { type: 'error', inputs: [], name: 'ZeroRefundAmount' },
-] as const
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// SignatureRefundRequestFactory
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-export const signatureRefundRequestFactoryAbi = [
-  {
-    type: 'function',
-    inputs: [
-      { name: 'signatureCondition', internalType: 'address', type: 'address' },
-    ],
-    name: 'computeAddress',
-    outputs: [
-      { name: 'refundRequest', internalType: 'address', type: 'address' },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'signatureCondition', internalType: 'address', type: 'address' },
-    ],
-    name: 'deploy',
-    outputs: [
-      { name: 'refundRequest', internalType: 'address', type: 'address' },
-    ],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'signatureCondition', internalType: 'address', type: 'address' },
-    ],
-    name: 'getDeployed',
-    outputs: [
-      { name: 'refundRequest', internalType: 'address', type: 'address' },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      { name: 'signatureCondition', internalType: 'address', type: 'address' },
-    ],
-    name: 'getKey',
-    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
-    stateMutability: 'pure',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
-    name: 'refundRequests',
-    outputs: [{ name: '', internalType: 'address', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'refundRequest',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-      {
-        name: 'signatureCondition',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-    ],
-    name: 'SignatureRefundRequestDeployed',
-  },
-  { type: 'error', inputs: [], name: 'ZeroCondition' },
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

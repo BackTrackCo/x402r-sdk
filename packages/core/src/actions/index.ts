@@ -22,6 +22,17 @@ export {
   isDuringEscrowPeriod,
 } from './escrow/index.js'
 // ---------------------------------------------------------------------------
+// Events
+// ---------------------------------------------------------------------------
+export type {
+  GetPayerPaymentsByEventsParameters,
+  GetReceiverPaymentsByEventsParameters,
+} from './events/index.js'
+export {
+  getPayerPaymentsByEvents,
+  getReceiverPaymentsByEvents,
+} from './events/index.js'
+// ---------------------------------------------------------------------------
 // Evidence
 // ---------------------------------------------------------------------------
 export type {
@@ -42,6 +53,20 @@ export {
   SubmitterRole,
   submitEvidence,
 } from './evidence/index.js'
+// ---------------------------------------------------------------------------
+// Factory
+// ---------------------------------------------------------------------------
+export type {
+  GetDeployerOperatorCountParameters,
+  GetDeployerOperatorParameters,
+  GetDeployerOperatorsParameters,
+  GetDeployerOperatorsReturnType,
+} from './factory/index.js'
+export {
+  getDeployerOperator,
+  getDeployerOperatorCount,
+  getDeployerOperators,
+} from './factory/index.js'
 // ---------------------------------------------------------------------------
 // Fees
 // ---------------------------------------------------------------------------
@@ -114,11 +139,30 @@ export {
   release,
 } from './operator/index.js'
 // ---------------------------------------------------------------------------
+// Recorder
+// ---------------------------------------------------------------------------
+export type {
+  GetPayerPaymentParameters,
+  GetPayerPaymentsFromRecorderParameters,
+  GetPayerPaymentsFromRecorderReturnType,
+  GetReceiverPaymentParameters,
+  GetReceiverPaymentsFromRecorderParameters,
+  GetReceiverPaymentsFromRecorderReturnType,
+  GetRecorderPaymentInfoParameters,
+} from './recorder/index.js'
+export {
+  getPayerPayment,
+  getPayerPaymentsFromRecorder,
+  getReceiverPayment,
+  getReceiverPaymentsFromRecorder,
+  getRecorderPaymentInfo,
+} from './recorder/index.js'
+// ---------------------------------------------------------------------------
 // Refund
 // ---------------------------------------------------------------------------
 export type {
-  ApproveRefundWithSignatureParameters,
-  ApproveRefundWithSignatureReturnType,
+  ApproveRefundParameters,
+  ApproveRefundReturnType,
   CancelRefundRequestParameters,
   CancelRefundRequestReturnType,
   DenyRefundRequestParameters,
@@ -150,7 +194,7 @@ export type {
   RequestRefundReturnType,
 } from './refund/index.js'
 export {
-  approveRefundWithSignature,
+  approveRefund,
   cancelRefundRequest,
   denyRefundRequest,
   getCancelCount,
