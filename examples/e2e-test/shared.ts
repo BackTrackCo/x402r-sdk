@@ -702,7 +702,6 @@ export function createSDKInstances(
 export type { Address }
 export {
   authCaptureEscrowAbi,
-  computePaymentInfoHash,
   distributeFees,
   RefundRequestStatus,
 } from '@x402r/core'
