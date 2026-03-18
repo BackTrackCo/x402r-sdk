@@ -1,5 +1,6 @@
-import type { PublicClient, WalletClient } from 'viem'
+import type { Address, PublicClient, WalletClient } from 'viem'
 import { beforeAll, describe, expect, it } from 'vitest'
+import { freezeAbi } from '../../src/abis/generated.js'
 import { x402rChains } from '../../src/config/index.js'
 import {
   computeFeeCalculatorAddress,
@@ -145,6 +146,23 @@ describe('Deploy Module (Fork)', () => {
     expect(deployment.summary.newCount + deployment.summary.existingCount).toBe(
       8,
     )
+
+    // Verify freeze contract's unfreezeCondition is the arbiter SAC (not a singleton)
+    const unfreezeCondition = await publicClient.readContract({
+      address: deployment.freezeAddress! as Address,
+      abi: freezeAbi,
+      functionName: 'UNFREEZE_CONDITION',
+    })
+    expect(unfreezeCondition).toMatch(/^0x[0-9a-fA-F]{40}$/)
+    expect(unfreezeCondition).not.toBe(baseSepolia.conditions.receiver)
+
+    // Verify freezeCondition is singletons.payer
+    const freezeCondition = await publicClient.readContract({
+      address: deployment.freezeAddress! as Address,
+      abi: freezeAbi,
+      functionName: 'FREEZE_CONDITION',
+    })
+    expect(freezeCondition).toBe(baseSepolia.conditions.payer)
   })
 
   it('deploy with different arbiter produces different operator address', async () => {

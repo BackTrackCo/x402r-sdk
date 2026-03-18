@@ -1,6 +1,8 @@
 import type { PublicClient, TestClient } from 'viem'
 import { beforeAll, describe, expect, it } from 'vitest'
 import {
+  type ArbiterClient,
+  createArbiterClient,
   createMerchantClient,
   createX402r,
   type MerchantClient,
@@ -27,6 +29,7 @@ let fixtures: DeployedFixtures
 let payerClient: X402r
 let receiverClient: X402r
 let merchant: MerchantClient
+let arbiterClient: ArbiterClient
 
 let paymentInfo: PaymentInfo
 
@@ -61,13 +64,21 @@ beforeAll(async () => {
     escrowPeriodAddress: fixtures.escrowPeriodAddress,
     freezeAddress: fixtures.freezeAddress,
   })
+
+  arbiterClient = createArbiterClient({
+    publicClient,
+    walletClient: anvilBaseSepolia.getWalletClient(testRoles.arbiter.address),
+    operatorAddress: fixtures.operatorWithFreezeAddress,
+    escrowPeriodAddress: fixtures.escrowPeriodAddress,
+    freezeAddress: fixtures.freezeAddress,
+  })
 }, 60_000)
 
 // ---------------------------------------------------------------------------
-// Scenario 4: Freeze blocks release, refundInEscrow still works
+// Scenario 4a: Freeze blocks release, arbiter unfreezes, release succeeds
 // ---------------------------------------------------------------------------
 
-describe('Scenario 4: Freeze blocks release', () => {
+describe('Scenario 4a: Freeze → unfreeze → release', () => {
   it('authorize creates capturable payment on freeze-enabled operator', async () => {
     const { collectorData, tokenCollector } = await createCollectorData(
       anvilBaseSepolia.getWalletClient(testRoles.payer.address),
@@ -105,18 +116,68 @@ describe('Scenario 4: Freeze blocks release', () => {
     expect(receipt.status).toBe('reverted')
   }, 60_000)
 
-  it('receiver can refundInEscrow even while frozen', async () => {
+  it('arbiter unfreezes and release succeeds', async () => {
+    const hash = await arbiterClient.freeze!.unfreeze(paymentInfo)
+    await publicClient.waitForTransactionReceipt({ hash })
+    expect(await payerClient.freeze!.isFrozen(paymentInfo)).toBe(false)
+
+    // Now release should succeed
+    const releaseHash = await merchant.payment.release(
+      paymentInfo,
+      DEFAULT_AMOUNT,
+    )
+    const receipt = await publicClient.waitForTransactionReceipt({
+      hash: releaseHash,
+    })
+    expect(receipt.status).toBe('success')
+  }, 60_000)
+})
+
+// ---------------------------------------------------------------------------
+// Scenario 4b: Freeze does not block refundInEscrow
+// ---------------------------------------------------------------------------
+
+describe('Scenario 4b: Freeze does not block refundInEscrow', () => {
+  // Use a separate paymentInfo (different salt) to avoid state leaking from 4a
+  let paymentInfo4b: PaymentInfo
+
+  beforeAll(async () => {
+    const scenario = await setupScenario({
+      salt: 40n,
+      operator: 'freeze',
+    })
+    paymentInfo4b = scenario.paymentInfo
+  }, 60_000)
+
+  it('authorize + freeze + refundInEscrow succeeds while frozen', async () => {
+    // Authorize
+    const { collectorData, tokenCollector } = await createCollectorData(
+      anvilBaseSepolia.getWalletClient(testRoles.payer.address),
+      paymentInfo4b,
+    )
+    const authHash = await payerClient.payment.authorize(
+      paymentInfo4b,
+      DEFAULT_AMOUNT,
+      tokenCollector,
+      collectorData,
+    )
+    await publicClient.waitForTransactionReceipt({ hash: authHash })
+
+    // Freeze
+    const freezeHash = await payerClient.freeze!.freeze(paymentInfo4b)
+    await publicClient.waitForTransactionReceipt({ hash: freezeHash })
+    expect(await payerClient.freeze!.isFrozen(paymentInfo4b)).toBe(true)
+
     // refundInEscrow does NOT check freeze — only ReceiverCondition (on this fixture)
-    // Note: refundInEscrow is hidden from MerchantClient — use full X402r client
-    const amountsBefore = await receiverClient.payment.getAmounts(paymentInfo)
+    const amountsBefore = await receiverClient.payment.getAmounts(paymentInfo4b)
 
     const hash = await receiverClient.payment.refundInEscrow(
-      paymentInfo,
+      paymentInfo4b,
       amountsBefore.capturableAmount,
     )
     await publicClient.waitForTransactionReceipt({ hash })
 
-    const amountsAfter = await receiverClient.payment.getAmounts(paymentInfo)
+    const amountsAfter = await receiverClient.payment.getAmounts(paymentInfo4b)
     expect(amountsAfter.capturableAmount).toBe(0n)
   }, 60_000)
 })

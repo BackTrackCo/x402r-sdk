@@ -85,6 +85,41 @@ const RECEIVE_AUTHORIZATION_TYPES = {
   ],
 } as const
 
+/**
+ * Signs an ERC-3009 ReceiveWithAuthorization for the given paymentInfo.
+ * Encapsulates nonce derivation + signTypedData so callers don't duplicate
+ * the typed-data struct.
+ */
+export async function signReceiveAuthorization(
+  payerPrivateKey: `0x${string}`,
+  paymentInfo: PaymentInfo,
+): Promise<`0x${string}`> {
+  const localAccount = privateKeyToAccount(payerPrivateKey)
+  const nonce = computeEscrowNonce(
+    CHAIN_ID,
+    chainConfig.authCaptureEscrow,
+    paymentInfo,
+  )
+  return localAccount.signTypedData({
+    domain: {
+      name: 'USDC',
+      version: '2',
+      chainId: CHAIN_ID,
+      verifyingContract: getAddress(paymentInfo.token),
+    },
+    types: RECEIVE_AUTHORIZATION_TYPES,
+    primaryType: 'ReceiveWithAuthorization',
+    message: {
+      from: getAddress(localAccount.address),
+      to: getAddress(chainConfig.tokenCollector),
+      value: paymentInfo.maxAmount,
+      validAfter: 0n,
+      validBefore: BigInt(paymentInfo.preApprovalExpiry),
+      nonce,
+    },
+  })
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------

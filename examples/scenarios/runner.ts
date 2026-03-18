@@ -5,7 +5,7 @@ import { SCANNER } from '../shared/constants.js'
 // StepRunner — fail-fast scenario execution
 // ---------------------------------------------------------------------------
 
-export class StepFailedError extends Error {
+class StepFailedError extends Error {
   constructor(
     public step: number,
     public stepName: string,

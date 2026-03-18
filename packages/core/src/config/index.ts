@@ -17,6 +17,7 @@ export interface FactoryAddresses {
   recorderCombinator: Address
   signatureCondition: Address
   refundRequest: Address
+  // TODO: rename to `refundRequestEvidenceFactory` — collides with top-level singleton field name
   refundRequestEvidence: Address
 }
 
