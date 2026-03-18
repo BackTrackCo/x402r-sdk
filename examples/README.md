@@ -20,6 +20,7 @@ Per-action examples start a local Anvil fork, deploy contracts, and run the exam
 |---------|-------------|
 | [`payer/request-refund.ts`](payer/request-refund.ts) | Request a refund for a payment in escrow |
 | [`payer/submit-evidence.ts`](payer/submit-evidence.ts) | Submit evidence CID for a dispute |
+| [`payer/freeze-payment.ts`](payer/freeze-payment.ts) | Freeze a payment to block release during investigation |
 
 ### Merchant
 
@@ -34,7 +35,6 @@ Per-action examples start a local Anvil fork, deploy contracts, and run the exam
 | Example | Description |
 |---------|-------------|
 | [`arbiter/approve-refund.ts`](arbiter/approve-refund.ts) | Approve a payer's refund request |
-| [`arbiter/freeze-payment.ts`](arbiter/freeze-payment.ts) | Freeze a payment during investigation |
 | [`arbiter/review-evidence.ts`](arbiter/review-evidence.ts) | Review all submitted evidence |
 
 ### Scenarios (Base Sepolia)

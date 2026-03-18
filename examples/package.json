@@ -10,7 +10,7 @@
     "merchant:release": "tsx merchant/release-escrow.ts",
     "merchant:distribute-fees": "tsx merchant/distribute-fees.ts",
     "arbiter:approve-refund": "tsx arbiter/approve-refund.ts",
-    "arbiter:freeze": "tsx arbiter/freeze-payment.ts",
+    "payer:freeze": "tsx payer/freeze-payment.ts",
     "arbiter:review-evidence": "tsx arbiter/review-evidence.ts",
     "scenario:release": "tsx scenarios/happy-path-release.ts",
     "scenario:dispute": "tsx scenarios/dispute-resolution.ts"

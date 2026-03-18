@@ -194,7 +194,7 @@ export async function setup(): Promise<ExampleContext> {
         feeRecipient: testAccounts.feeRecipient.address,
         arbiter: testAccounts.arbiter.address,
         escrowPeriodSeconds: 604_800n, // 7 days
-        freezeDurationSeconds: 0n,
+        freezeDurationSeconds: 604_800n, // 7 days (enables freeze support)
         operatorFeeBps: 50n,
       },
     )
