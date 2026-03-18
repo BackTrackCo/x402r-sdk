@@ -367,7 +367,13 @@ export interface ArbiterClient {
   readonly evidence: EvidenceActions
   readonly freeze: Pick<FreezeActions, 'isFrozen' | 'unfreeze'> | undefined
   readonly query: QueryActions | undefined
-  readonly operator: Pick<OperatorActions, 'getConfig' | 'getFeeAddresses'>
+  readonly operator: Pick<
+    OperatorActions,
+    | 'getConfig'
+    | 'getFeeAddresses'
+    | 'getAccumulatedProtocolFees'
+    | 'distributeFees'
+  >
 
   readonly watch: WatchActions
   canExecute(

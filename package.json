@@ -27,7 +27,7 @@
     "example:payer:submit-evidence": "pnpm --filter examples run payer:submit-evidence",
     "example:merchant:charge": "pnpm --filter examples run merchant:charge",
     "example:merchant:release": "pnpm --filter examples run merchant:release",
-    "example:merchant:distribute-fees": "pnpm --filter examples run merchant:distribute-fees",
+    "example:arbiter:distribute-fees": "pnpm --filter examples run arbiter:distribute-fees",
     "example:arbiter:approve-refund": "pnpm --filter examples run arbiter:approve-refund",
     "example:payer:freeze": "pnpm --filter examples run payer:freeze",
     "example:arbiter:review-evidence": "pnpm --filter examples run arbiter:review-evidence",
@@ -41,6 +41,9 @@
   "pnpm": {
     "overrides": {
       "tar": ">=7.5.11"
+    },
+    "patchedDependencies": {
+      "http-proxy@1.18.1": "patches/http-proxy@1.18.1.patch"
     }
   },
   "devDependencies": {

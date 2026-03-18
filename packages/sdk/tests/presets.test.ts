@@ -83,6 +83,8 @@ describe('presets', () => {
     expect(client.payment.getState).toBeTypeOf('function')
     expect(client.refund!.deny).toBeTypeOf('function')
     expect(client.refund!.approve).toBeTypeOf('function')
+    expect(client.operator.distributeFees).toBeTypeOf('function')
+    expect(client.operator.getAccumulatedProtocolFees).toBeTypeOf('function')
     expect(client.freeze).toBeUndefined() // no freezeAddress in config
     expect(client.canExecute).toBeTypeOf('function')
     expect(client.extend).toBeTypeOf('function')

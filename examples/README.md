@@ -2,7 +2,7 @@
 
 Runnable examples demonstrating every SDK operation by role (payer, merchant, arbiter) and multi-role integration scenarios.
 
-## Quick Start (no wallet needed)
+## Quick Start
 
 ```bash
 cd x402r-sdk
@@ -10,7 +10,7 @@ pnpm install && pnpm build
 pnpm example:payer:request-refund
 ```
 
-Per-action examples start a local Anvil fork, deploy contracts, and run the example — zero config required.
+Each example starts a local Anvil fork, deploys contracts, and runs — no wallet or testnet funds needed.
 
 ## Examples
 
@@ -28,7 +28,6 @@ Per-action examples start a local Anvil fork, deploy contracts, and run the exam
 |---------|-------------|
 | [`merchant/charge-payment.ts`](merchant/charge-payment.ts) | Charge an authorized payment |
 | [`merchant/release-escrow.ts`](merchant/release-escrow.ts) | Release remaining funds after escrow expires |
-| [`merchant/distribute-fees.ts`](merchant/distribute-fees.ts) | Distribute accumulated protocol fees |
 
 ### Arbiter
 
@@ -36,8 +35,9 @@ Per-action examples start a local Anvil fork, deploy contracts, and run the exam
 |---------|-------------|
 | [`arbiter/approve-refund.ts`](arbiter/approve-refund.ts) | Approve a payer's refund request |
 | [`arbiter/review-evidence.ts`](arbiter/review-evidence.ts) | Review all submitted evidence |
+| [`arbiter/distribute-fees.ts`](arbiter/distribute-fees.ts) | Distribute accumulated protocol fees |
 
-### Scenarios (Base Sepolia)
+### Scenarios
 
 Multi-role integration scenarios running against a local Anvil fork.
 
@@ -48,20 +48,10 @@ Multi-role integration scenarios running against a local Anvil fork.
 
 See [`scenarios/README.md`](scenarios/README.md) for details.
 
-## Setup
-
-```bash
-# From x402r-sdk root
-pnpm install
-pnpm build
-```
-
-Per-action examples use a local Anvil fork — no wallet or testnet funds needed. Anvil is started automatically and uses deterministic test accounts.
-
 ## Running
 
 ```bash
-# Per-action examples (start anvil, run, stop)
+# Per-action examples
 pnpm example:payer:request-refund
 pnpm example:merchant:charge
 pnpm example:arbiter:approve-refund
@@ -70,11 +60,3 @@ pnpm example:arbiter:approve-refund
 pnpm scenario:release
 pnpm scenario:dispute
 ```
-
-## A Note on Private Keys
-
-For scenarios that target real testnets (not included yet, but planned):
-
-- **NEVER** use mainnet-funded keys
-- Generate test keys: `cast wallet new`
-- Fund via [CDP Faucet](https://portal.cdp.coinbase.com/products/faucet)

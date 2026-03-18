@@ -6,7 +6,6 @@ Examples demonstrating merchant-side SDK operations using `createMerchantClient(
 
 - **charge-payment.ts** — Charge an authorized payment during escrow
 - **release-escrow.ts** — Release remaining funds after escrow expires
-- **distribute-fees.ts** — Distribute accumulated protocol fees
 
 ## Running
 
@@ -14,7 +13,6 @@ Examples demonstrating merchant-side SDK operations using `createMerchantClient(
 # From x402r-sdk root
 pnpm example:merchant:charge
 pnpm example:merchant:release
-pnpm example:merchant:distribute-fees
 ```
 
 ## What's Happening

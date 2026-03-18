@@ -8,7 +8,7 @@
     "payer:submit-evidence": "tsx payer/submit-evidence.ts",
     "merchant:charge": "tsx merchant/charge-payment.ts",
     "merchant:release": "tsx merchant/release-escrow.ts",
-    "merchant:distribute-fees": "tsx merchant/distribute-fees.ts",
+    "arbiter:distribute-fees": "tsx arbiter/distribute-fees.ts",
     "arbiter:approve-refund": "tsx arbiter/approve-refund.ts",
     "payer:freeze": "tsx payer/freeze-payment.ts",
     "arbiter:review-evidence": "tsx arbiter/review-evidence.ts",

@@ -7,6 +7,11 @@ settings:
 overrides:
   tar: '>=7.5.11'
 
+patchedDependencies:
+  http-proxy@1.18.1:
+    hash: 3032f3a47f33911d5c278ec6f2d4e0e4afc8f977baea1012613b13de23831c73
+    path: patches/http-proxy@1.18.1.patch
+
 importers:
 
   .:
@@ -3432,7 +3437,7 @@ snapshots:
 
   html-escaper@2.0.2: {}
 
-  http-proxy@1.18.1:
+  http-proxy@1.18.1(patch_hash=3032f3a47f33911d5c278ec6f2d4e0e4afc8f977baea1012613b13de23831c73):
     dependencies:
       eventemitter3: 4.0.7
       follow-redirects: 1.15.11
@@ -3773,7 +3778,7 @@ snapshots:
       eventemitter3: 5.0.1
       execa: 9.6.1
       get-port: 7.1.0
-      http-proxy: 1.18.1
+      http-proxy: 1.18.1(patch_hash=3032f3a47f33911d5c278ec6f2d4e0e4afc8f977baea1012613b13de23831c73)
       tar: 7.5.11
     transitivePeerDependencies:
       - debug

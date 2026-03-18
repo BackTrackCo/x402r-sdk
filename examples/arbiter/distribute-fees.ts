@@ -6,8 +6,9 @@ const ctx = await setup()
 
 try {
   // ============ Example: Distribute Fees ============
-  // As a merchant, distribute accumulated protocol fees after releasing payment.
+  // Distribute accumulated protocol fees after releasing payment.
   // Fees accumulate on the operator when payments are released.
+  // distributeFees is permissionless — any role can call it.
 
   if (!ctx.merchant.escrow) {
     throw new Error(
@@ -28,21 +29,23 @@ try {
   console.log('Payment released — fees accumulated')
 
   // Check accumulated fees
-  const accumulatedFees =
-    await ctx.merchant.operator.getAccumulatedProtocolFees(chainConfig.usdc)
+  const accumulatedFees = await ctx.arbiter.operator.getAccumulatedProtocolFees(
+    chainConfig.usdc,
+  )
   console.log(`Accumulated protocol fees: ${accumulatedFees}`)
 
   if (accumulatedFees === 0n) {
     console.log('No protocol fees to distribute (operator fee may be 0)')
   } else {
     // Distribute fees — this sends accumulated fees to the protocol fee recipient
-    const tx = await ctx.merchant.operator.distributeFees(chainConfig.usdc)
+    const tx = await ctx.arbiter.operator.distributeFees(chainConfig.usdc)
     await ctx.waitForTx(tx)
     console.log(`Fees distributed: ${tx}`)
 
     // Verify fees were distributed
-    const remainingFees =
-      await ctx.merchant.operator.getAccumulatedProtocolFees(chainConfig.usdc)
+    const remainingFees = await ctx.arbiter.operator.getAccumulatedProtocolFees(
+      chainConfig.usdc,
+    )
     console.log(`Remaining fees after distribution: ${remainingFees}`)
   }
 } finally {

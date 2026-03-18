@@ -180,11 +180,17 @@ describe('ArbiterClient type narrowing', () => {
     void arbiter.freeze!.freeze
   })
 
-  it('operator hides fee calculation methods', () => {
+  it('operator exposes distributeFees but hides fee calculation', () => {
+    expectTypeOf(arbiter.operator.distributeFees).toBeFunction()
+    expectTypeOf(arbiter.operator.getAccumulatedProtocolFees).toBeFunction()
     // @ts-expect-error — arbiter cannot calculateFees
     void arbiter.operator.calculateFees
-    // @ts-expect-error — arbiter cannot distributeFees
-    void arbiter.operator.distributeFees
+    // @ts-expect-error — arbiter cannot calculateOperatorFeeBps
+    void arbiter.operator.calculateOperatorFeeBps
+    // @ts-expect-error — arbiter cannot calculateProtocolFeeBps
+    void arbiter.operator.calculateProtocolFeeBps
+    // @ts-expect-error — arbiter cannot getAuthorizedFees
+    void arbiter.operator.getAuthorizedFees
   })
 })
 

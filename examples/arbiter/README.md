@@ -6,6 +6,7 @@ Examples demonstrating arbiter-side SDK operations using `createArbiterClient()`
 
 - **approve-refund.ts** — Approve a payer's refund request
 - **review-evidence.ts** — Review all submitted evidence for a dispute
+- **distribute-fees.ts** — Distribute accumulated protocol fees
 
 ## Running
 
@@ -13,6 +14,7 @@ Examples demonstrating arbiter-side SDK operations using `createArbiterClient()`
 # From x402r-sdk root
 pnpm example:arbiter:approve-refund
 pnpm example:arbiter:review-evidence
+pnpm example:arbiter:distribute-fees
 ```
 
 ## What's Happening
