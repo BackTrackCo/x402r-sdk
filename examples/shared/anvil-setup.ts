@@ -1,0 +1,314 @@
+import {
+  computeEscrowNonce,
+  deployMarketplaceOperator,
+  getChainConfig,
+  type PaymentInfo,
+} from '@x402r/core'
+import {
+  createArbiterClient,
+  createMerchantClient,
+  createPayerClient,
+} from '@x402r/sdk'
+import {
+  type Address,
+  createPublicClient,
+  createTestClient,
+  createWalletClient,
+  encodeAbiParameters,
+  erc20Abi,
+  getAddress,
+  http,
+  keccak256,
+  type PublicClient,
+  pad,
+  type TestClient,
+} from 'viem'
+import { privateKeyToAccount } from 'viem/accounts'
+import { baseSepolia } from 'viem/chains'
+import { FAR_FUTURE, PAYMENT_AMOUNT } from './constants.js'
+import type { ExampleContext } from './types.js'
+
+// ---------------------------------------------------------------------------
+// Anvil test accounts (deterministic mnemonic)
+// ---------------------------------------------------------------------------
+
+const testAccounts = {
+  deployer: {
+    address: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266' as Address,
+    privateKey:
+      '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80' as const,
+  },
+  payer: {
+    address: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8' as Address,
+    privateKey:
+      '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d' as const,
+  },
+  receiver: {
+    address: '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC' as Address,
+    privateKey:
+      '0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a' as const,
+  },
+  feeRecipient: {
+    address: '0x90F79bf6EB2c4f870365E785982E1f101E93b906' as Address,
+    privateKey:
+      '0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6' as const,
+  },
+  arbiter: {
+    address: '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65' as Address,
+    privateKey:
+      '0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a' as const,
+  },
+} as const
+
+const allAccountAddresses = Object.values(testAccounts).map((a) => a.address)
+
+// ---------------------------------------------------------------------------
+// Config
+// ---------------------------------------------------------------------------
+
+const CHAIN_ID = 84532
+const chainConfig = getChainConfig(CHAIN_ID)
+const USDC = chainConfig.usdc
+const USDC_BALANCE_SLOT = 9n
+const FORK_BLOCK = 38_945_000n
+const ANVIL_PORT = 8846
+
+// ERC-3009 typed data
+const RECEIVE_AUTHORIZATION_TYPES = {
+  ReceiveWithAuthorization: [
+    { name: 'from', type: 'address' },
+    { name: 'to', type: 'address' },
+    { name: 'value', type: 'uint256' },
+    { name: 'validAfter', type: 'uint256' },
+    { name: 'validBefore', type: 'uint256' },
+    { name: 'nonce', type: 'bytes32' },
+  ],
+} as const
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function getBalanceSlot(account: Address, baseSlot: bigint): `0x${string}` {
+  return keccak256(
+    encodeAbiParameters(
+      [{ type: 'address' }, { type: 'uint256' }],
+      [account, baseSlot],
+    ),
+  )
+}
+
+async function createCollectorData(
+  payerPrivateKey: `0x${string}`,
+  paymentInfo: PaymentInfo,
+) {
+  const localAccount = privateKeyToAccount(payerPrivateKey)
+  const nonce = computeEscrowNonce(
+    CHAIN_ID,
+    chainConfig.authCaptureEscrow,
+    paymentInfo,
+  )
+
+  const signature = await localAccount.signTypedData({
+    domain: {
+      name: 'USDC',
+      version: '2',
+      chainId: CHAIN_ID,
+      verifyingContract: getAddress(paymentInfo.token),
+    },
+    types: RECEIVE_AUTHORIZATION_TYPES,
+    primaryType: 'ReceiveWithAuthorization',
+    message: {
+      from: getAddress(localAccount.address),
+      to: getAddress(chainConfig.tokenCollector),
+      value: paymentInfo.maxAmount,
+      validAfter: 0n,
+      validBefore: BigInt(paymentInfo.preApprovalExpiry),
+      nonce,
+    },
+  })
+
+  return {
+    collectorData: signature,
+    tokenCollector: chainConfig.tokenCollector,
+  }
+}
+
+// ---------------------------------------------------------------------------
+// setup() — main entry point for per-action examples
+// ---------------------------------------------------------------------------
+
+export async function setup(): Promise<ExampleContext> {
+  // 1. Start Anvil fork
+  const { Instance, Server } = await import('prool')
+  const server = Server.create({
+    instance: Instance.anvil({
+      chainId: CHAIN_ID,
+      forkUrl:
+        process.env.VITE_ANVIL_FORK_URL_BASE_SEPOLIA ??
+        'https://sepolia.base.org',
+      forkBlockNumber: FORK_BLOCK,
+    }),
+    port: ANVIL_PORT,
+  })
+  await server.start()
+
+  const rpcUrl = `http://127.0.0.1:${ANVIL_PORT}/1`
+  const transport = http(rpcUrl)
+
+  // Omit chain to avoid OP Stack deposit tx type widening (baseSepolia)
+  // — anvil fork already has the correct chainId
+  const publicClient: PublicClient = createPublicClient({
+    transport,
+    cacheTime: 0,
+  })
+  const testClient: TestClient = createTestClient({ transport, mode: 'anvil' })
+
+  const cleanup = async () => {
+    await server.stop()
+  }
+
+  try {
+    // 2. Clear contract code at test addresses (fixes ERC-3009 signer checks)
+    for (const addr of allAccountAddresses) {
+      await testClient.setCode({ address: addr, bytecode: '0x' })
+    }
+
+    // 3. Deploy marketplace operator via public API
+    const deployerWallet = createWalletClient({
+      account: testAccounts.deployer.address,
+      chain: baseSepolia,
+      transport,
+    })
+
+    const deployment = await deployMarketplaceOperator(
+      deployerWallet,
+      publicClient,
+      {
+        chainId: CHAIN_ID,
+        feeRecipient: testAccounts.feeRecipient.address,
+        arbiter: testAccounts.arbiter.address,
+        escrowPeriodSeconds: 604_800n, // 7 days
+        freezeDurationSeconds: 0n,
+        operatorFeeBps: 50n,
+      },
+    )
+
+    const operatorAddress = deployment.operatorAddress
+
+    // 4. Fund payer with USDC via storage slot manipulation
+    const payerUsdcAmount = 10_000_000_000n // 10,000 USDC
+    const payerSlot = getBalanceSlot(
+      testAccounts.payer.address,
+      USDC_BALANCE_SLOT,
+    )
+    await testClient.setStorageAt({
+      address: USDC,
+      index: payerSlot,
+      value: pad(`0x${payerUsdcAmount.toString(16)}` as `0x${string}`),
+    })
+
+    const payerBalance = await publicClient.readContract({
+      address: USDC,
+      abi: erc20Abi,
+      functionName: 'balanceOf',
+      args: [testAccounts.payer.address],
+    })
+    if (payerBalance === 0n) {
+      const fallbackSlot = getBalanceSlot(testAccounts.payer.address, 0n)
+      await testClient.setStorageAt({
+        address: USDC,
+        index: fallbackSlot,
+        value: pad(`0x${payerUsdcAmount.toString(16)}` as `0x${string}`),
+      })
+    }
+
+    // 5. Create role-specific SDK clients
+    const payerWallet = createWalletClient({
+      account: testAccounts.payer.address,
+      chain: baseSepolia,
+      transport,
+    })
+    const merchantWallet = createWalletClient({
+      account: testAccounts.receiver.address,
+      chain: baseSepolia,
+      transport,
+    })
+    const arbiterWallet = createWalletClient({
+      account: testAccounts.arbiter.address,
+      chain: baseSepolia,
+      transport,
+    })
+
+    const clientConfig = {
+      publicClient,
+      operatorAddress,
+      escrowPeriodAddress: deployment.escrowPeriodAddress,
+      freezeAddress: deployment.freezeAddress ?? undefined,
+      refundRequestAddress: deployment.refundRequestAddress,
+    }
+
+    const payer = createPayerClient({
+      ...clientConfig,
+      walletClient: payerWallet,
+    })
+    const merchant = createMerchantClient({
+      ...clientConfig,
+      walletClient: merchantWallet,
+    })
+    const arbiter = createArbiterClient({
+      ...clientConfig,
+      walletClient: arbiterWallet,
+    })
+
+    // 6. Build paymentInfo and authorize a payment
+    const paymentInfo: PaymentInfo = {
+      operator: operatorAddress,
+      payer: testAccounts.payer.address,
+      receiver: testAccounts.receiver.address,
+      token: USDC,
+      maxAmount: PAYMENT_AMOUNT,
+      preApprovalExpiry: FAR_FUTURE,
+      authorizationExpiry: FAR_FUTURE,
+      refundExpiry: FAR_FUTURE,
+      minFeeBps: 0,
+      maxFeeBps: 500,
+      feeReceiver: operatorAddress,
+      salt: 1n,
+    }
+
+    const { collectorData, tokenCollector } = await createCollectorData(
+      testAccounts.payer.privateKey,
+      paymentInfo,
+    )
+
+    await merchant.payment.authorize(
+      paymentInfo,
+      PAYMENT_AMOUNT,
+      tokenCollector,
+      collectorData,
+    )
+
+    console.log('Setup complete — payment authorized in escrow\n')
+
+    return {
+      payer,
+      merchant,
+      arbiter,
+      paymentInfo,
+      publicClient,
+      testClient,
+      accounts: {
+        payer: testAccounts.payer.address,
+        merchant: testAccounts.receiver.address,
+        arbiter: testAccounts.arbiter.address,
+      },
+      operatorAddress,
+      PAYMENT_AMOUNT,
+      cleanup,
+    }
+  } catch (error) {
+    await cleanup()
+    throw error
+  }
+}
