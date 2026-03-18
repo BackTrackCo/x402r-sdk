@@ -223,8 +223,8 @@ describe('deployMarketplaceOperator', () => {
       makeOptions({ freezeDurationSeconds: 86400n }),
     )
 
-    // With freeze: escrow + refundRequest + staticAddrCond + freeze + andCond + operator = 6
-    expect(result.deployments).toHaveLength(6)
+    // With freeze: escrow + refundRequest + staticAddrCond + staticAddrCondArbiter + freeze + andCond + operator = 7
+    expect(result.deployments).toHaveLength(7)
     expect(result.freezeAddress).not.toBeNull()
     expect(result.operatorConfig.releaseCondition).not.toBe(
       result.escrowPeriodAddress,
@@ -301,10 +301,10 @@ describe('deployMarketplaceOperator', () => {
       makeOptions({ freezeDurationSeconds: 86400n, operatorFeeBps: 100n }),
     )
 
-    // escrow + refundRequest + staticAddrCond + freeze + andCond + feeCal + operator
-    expect(result.deployments).toHaveLength(7)
+    // escrow + refundRequest + staticAddrCond + staticAddrCondArbiter + freeze + andCond + feeCal + operator
+    expect(result.deployments).toHaveLength(8)
     expect(result.summary.newCount).toBe(0)
-    expect(result.summary.existingCount).toBe(7)
+    expect(result.summary.existingCount).toBe(8)
     expect(result.summary.txHashes).toHaveLength(0)
     expect(result.freezeAddress).toBe(freezeAddr)
     expect(result.feeCalculatorAddress).toBe(feeAddr)

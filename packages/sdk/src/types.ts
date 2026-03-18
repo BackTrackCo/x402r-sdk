@@ -270,7 +270,7 @@ export interface PayerClient {
       >
     | undefined
   readonly evidence: EvidenceActions
-  readonly freeze: Pick<FreezeActions, 'isFrozen'> | undefined
+  readonly freeze: Pick<FreezeActions, 'isFrozen' | 'freeze'> | undefined
   readonly query: QueryActions | undefined
   readonly operator: Pick<OperatorActions, 'getConfig' | 'getFeeAddresses'>
 
@@ -365,7 +365,7 @@ export interface ArbiterClient {
       >
     | undefined
   readonly evidence: EvidenceActions
-  readonly freeze: FreezeActions | undefined
+  readonly freeze: Pick<FreezeActions, 'isFrozen' | 'unfreeze'> | undefined
   readonly query: QueryActions | undefined
   readonly operator: Pick<OperatorActions, 'getConfig' | 'getFeeAddresses'>
 

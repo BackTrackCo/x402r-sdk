@@ -140,10 +140,10 @@ describe('Deploy Module (Fork)', () => {
       deployment.escrowPeriodAddress,
     )
 
-    // freeze + andCondition + escrow + refundRequest + staticAddrCond + feeCalc + operator = 7
-    expect(deployment.deployments).toHaveLength(7)
+    // freeze + andCondition + escrow + refundRequest + staticAddrCond + staticAddrCondArbiter + feeCalc + operator = 8
+    expect(deployment.deployments).toHaveLength(8)
     expect(deployment.summary.newCount + deployment.summary.existingCount).toBe(
-      7,
+      8,
     )
   })
 

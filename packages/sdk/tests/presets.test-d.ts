@@ -78,9 +78,9 @@ describe('PayerClient type narrowing', () => {
     void payer.operator.distributeFees
   })
 
-  it('freeze hides write methods', () => {
-    // @ts-expect-error — payer cannot freeze
-    void payer.freeze!.freeze
+  it('freeze exposes freeze + isFrozen, hides unfreeze', () => {
+    expectTypeOf(payer.freeze!.freeze).toBeFunction()
+    expectTypeOf(payer.freeze!.isFrozen).toBeFunction()
     // @ts-expect-error — payer cannot unfreeze
     void payer.freeze!.unfreeze
   })
@@ -173,10 +173,11 @@ describe('ArbiterClient type narrowing', () => {
     void arbiter.refund.refuse
   })
 
-  it('freeze exposes full FreezeActions', () => {
-    expectTypeOf(arbiter.freeze!.freeze).toBeFunction()
+  it('freeze exposes unfreeze + isFrozen, hides freeze', () => {
     expectTypeOf(arbiter.freeze!.unfreeze).toBeFunction()
     expectTypeOf(arbiter.freeze!.isFrozen).toBeFunction()
+    // @ts-expect-error — arbiter cannot freeze
+    void arbiter.freeze!.freeze
   })
 
   it('operator hides fee calculation methods', () => {

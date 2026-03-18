@@ -1,8 +1,6 @@
 import type { PublicClient, TestClient } from 'viem'
 import { beforeAll, describe, expect, it } from 'vitest'
 import {
-  type ArbiterClient,
-  createArbiterClient,
   createMerchantClient,
   createX402r,
   type MerchantClient,
@@ -29,7 +27,6 @@ let fixtures: DeployedFixtures
 let payerClient: X402r
 let receiverClient: X402r
 let merchant: MerchantClient
-let arbiter: ArbiterClient
 
 let paymentInfo: PaymentInfo
 
@@ -64,14 +61,6 @@ beforeAll(async () => {
     escrowPeriodAddress: fixtures.escrowPeriodAddress,
     freezeAddress: fixtures.freezeAddress,
   })
-
-  arbiter = createArbiterClient({
-    publicClient,
-    walletClient: anvilBaseSepolia.getWalletClient(testRoles.arbiter.address),
-    operatorAddress: fixtures.operatorWithFreezeAddress,
-    escrowPeriodAddress: fixtures.escrowPeriodAddress,
-    freezeAddress: fixtures.freezeAddress,
-  })
 }, 60_000)
 
 // ---------------------------------------------------------------------------
@@ -96,11 +85,11 @@ describe('Scenario 4: Freeze blocks release', () => {
     expect(amounts.capturableAmount).toBeGreaterThan(0n)
   }, 60_000)
 
-  it('arbiter freezes payment and isFrozen returns true', async () => {
-    const hash = await arbiter.freeze!.freeze(paymentInfo)
+  it('payer freezes payment and isFrozen returns true', async () => {
+    const hash = await payerClient.freeze!.freeze(paymentInfo)
     await publicClient.waitForTransactionReceipt({ hash })
 
-    expect(await arbiter.freeze!.isFrozen(paymentInfo)).toBe(true)
+    expect(await payerClient.freeze!.isFrozen(paymentInfo)).toBe(true)
   }, 60_000)
 
   it('release reverts while frozen (even after escrow period)', async () => {
