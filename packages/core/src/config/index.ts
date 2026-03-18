@@ -54,7 +54,7 @@ const PROTOCOL_ADDRESSES = {
   receiverRefundCollector: '0xE5500a38BE45a6C598420fbd7867ac85EC451A07',
   refundRequestEvidence: '0xF97aAB816b7cbe53025454ad05b03cf5C361F1BA',
   factories: {
-    paymentOperator: '0x4D9BC2Ba2D0d9AFb6B63E3afBbfC95143E6E8Da9',
+    paymentOperator: '0xdc41F932dF2d22346F218E4f5650694c650ab863',
     escrowPeriod: '0x15DB06aADEB3a39D47756Bf864a173cc48bafe24',
     freeze: '0xdf129EFFE040c3403aca597c0F0bb704859a78Fd',
     staticFeeCalculator: '0x6CDdBdB46e2d7Caae31A6b213B59a1412d7f16Ac',
@@ -64,7 +64,7 @@ const PROTOCOL_ADDRESSES = {
     notCondition: '0x1D58f97843579356863d3393ebe24feEd76ceefF',
     recorderCombinator: '0xACf2b5e21CFc14135C9cD43ebE96a481F184C1A1',
     signatureCondition: '0x669B4930f9E72884725F5C7D837Ab9517eA3040f',
-    refundRequest: '0xd7505a677b51bc71906972F372D0b2704De2370f',
+    refundRequest: '0x9cD87Bb58553Ef5ad90Ed6260EBdB906a50D6b83',
     refundRequestEvidence: '0x3769Be76BBEa31345A2B2d84EF90683E9A377e00',
   },
   conditions: {
