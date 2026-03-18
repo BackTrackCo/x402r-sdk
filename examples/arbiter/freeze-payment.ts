@@ -21,6 +21,7 @@ try {
 
     // Step 2: Arbiter freezes the payment
     const tx = await ctx.arbiter.freeze.freeze(ctx.paymentInfo)
+    await ctx.waitForTx(tx)
     console.log(`Payment frozen: ${tx}`)
 
     // Step 3: Verify frozen status

@@ -55,6 +55,7 @@ try {
     chainConfig.tokenCollector,
     signature,
   )
+  await ctx.waitForTx(tx)
   console.log(`Payment charged: ${tx}`)
 
   // Verify amounts — after charge, payment has been collected

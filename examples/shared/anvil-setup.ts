@@ -156,13 +156,18 @@ export async function setup(): Promise<ExampleContext> {
   const rpcUrl = `http://127.0.0.1:${ANVIL_PORT}/1`
   const transport = http(rpcUrl)
 
-  // Omit chain to avoid OP Stack deposit tx type widening (baseSepolia)
-  // — anvil fork already has the correct chainId
-  const publicClient: PublicClient = createPublicClient({
+  // Cast required: baseSepolia adds OP Stack deposit tx type which widens
+  // beyond what X402rConfig's PublicClient accepts
+  const publicClient = createPublicClient({
+    chain: baseSepolia,
     transport,
     cacheTime: 0,
-  })
-  const testClient: TestClient = createTestClient({ transport, mode: 'anvil' })
+  }) as unknown as PublicClient
+  const testClient = createTestClient({
+    chain: baseSepolia,
+    transport,
+    mode: 'anvil',
+  }) as unknown as TestClient
 
   const cleanup = async () => {
     await server.stop()
@@ -282,14 +287,19 @@ export async function setup(): Promise<ExampleContext> {
       paymentInfo,
     )
 
-    await merchant.payment.authorize(
+    const authTx = await merchant.payment.authorize(
       paymentInfo,
       PAYMENT_AMOUNT,
       tokenCollector,
       collectorData,
     )
+    await publicClient.waitForTransactionReceipt({ hash: authTx })
 
     console.log('Setup complete — payment authorized in escrow\n')
+
+    const waitForTx = async (hash: `0x${string}`) => {
+      await publicClient.waitForTransactionReceipt({ hash })
+    }
 
     return {
       payer,
@@ -306,6 +316,7 @@ export async function setup(): Promise<ExampleContext> {
       operatorAddress,
       PAYMENT_AMOUNT,
       cleanup,
+      waitForTx,
     }
   } catch (error) {
     await cleanup()

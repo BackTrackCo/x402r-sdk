@@ -19,7 +19,12 @@ try {
   }
 
   // Step 1: Payer requests a refund
-  await ctx.payer.refund.request(ctx.paymentInfo, ctx.PAYMENT_AMOUNT, 0n)
+  const reqTx = await ctx.payer.refund.request(
+    ctx.paymentInfo,
+    ctx.PAYMENT_AMOUNT,
+    0n,
+  )
+  await ctx.waitForTx(reqTx)
   console.log('Payer requested refund')
 
   // Step 2: Arbiter reviews and approves
@@ -28,6 +33,7 @@ try {
     0n,
     ctx.PAYMENT_AMOUNT,
   )
+  await ctx.waitForTx(tx)
   console.log(`Refund approved: ${tx}`)
 
   // Step 3: Verify the approval

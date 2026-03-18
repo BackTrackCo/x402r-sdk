@@ -44,7 +44,10 @@ export async function setupE2EAccounts(
   const chainConfig = getChainConfig(chainId)
 
   const transport = http(rpcUrl)
-  const publicClient: PublicClient = createPublicClient({ transport })
+  const publicClient = createPublicClient({
+    chain: baseSepolia,
+    transport,
+  }) as unknown as PublicClient
 
   // For simplicity, all roles use the same key in scenarios
   const account = privateKeyToAccount(privateKey as `0x${string}`)

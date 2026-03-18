@@ -1,6 +1,6 @@
 import type { PaymentInfo } from '@x402r/core'
 import type { ArbiterClient, MerchantClient, PayerClient } from '@x402r/sdk'
-import type { Address, PublicClient, TestClient } from 'viem'
+import type { Address, Hash, PublicClient, TestClient } from 'viem'
 
 export interface ExampleContext {
   payer: PayerClient
@@ -13,4 +13,6 @@ export interface ExampleContext {
   operatorAddress: Address
   PAYMENT_AMOUNT: bigint
   cleanup: () => Promise<void>
+  /** Wait for a transaction to be confirmed before reading state */
+  waitForTx: (hash: Hash) => Promise<void>
 }

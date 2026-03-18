@@ -20,7 +20,11 @@ try {
   // Fast-forward past escrow and release to generate fees
   await ctx.testClient.increaseTime({ seconds: ESCROW_FAST_FORWARD })
   await ctx.testClient.mine({ blocks: 1 })
-  await ctx.merchant.payment.release(ctx.paymentInfo, ctx.PAYMENT_AMOUNT)
+  const releaseTx = await ctx.merchant.payment.release(
+    ctx.paymentInfo,
+    ctx.PAYMENT_AMOUNT,
+  )
+  await ctx.waitForTx(releaseTx)
   console.log('Payment released — fees accumulated')
 
   // Check accumulated fees
@@ -33,6 +37,7 @@ try {
   } else {
     // Distribute fees — this sends accumulated fees to the protocol fee recipient
     const tx = await ctx.merchant.operator.distributeFees(chainConfig.usdc)
+    await ctx.waitForTx(tx)
     console.log(`Fees distributed: ${tx}`)
 
     // Verify fees were distributed

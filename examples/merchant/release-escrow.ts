@@ -31,6 +31,7 @@ try {
     ctx.paymentInfo,
     ctx.PAYMENT_AMOUNT,
   )
+  await ctx.waitForTx(tx)
   console.log(`Escrow released: ${tx}`)
 
   // Verify final amounts — after release, capturable should be 0

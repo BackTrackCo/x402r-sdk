@@ -98,11 +98,16 @@ async function main() {
 
   const rpcUrl = 'http://127.0.0.1:8847/1'
   const transport = http(rpcUrl)
-  const publicClient: PublicClient = createPublicClient({
+  const publicClient = createPublicClient({
+    chain: baseSepolia,
     transport,
     cacheTime: 0,
-  })
-  const testClient: TestClient = createTestClient({ transport, mode: 'anvil' })
+  }) as unknown as PublicClient
+  const testClient = createTestClient({
+    chain: baseSepolia,
+    transport,
+    mode: 'anvil',
+  }) as unknown as TestClient
   const runner = new StepRunner('Happy Path Release', publicClient)
 
   try {

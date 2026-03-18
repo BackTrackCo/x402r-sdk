@@ -18,6 +18,7 @@ try {
     ctx.PAYMENT_AMOUNT,
     0n,
   )
+  await ctx.waitForTx(tx)
   console.log(`Refund requested: ${tx}`)
 
   const status = await ctx.payer.refund.getStatus(ctx.paymentInfo, 0n)
