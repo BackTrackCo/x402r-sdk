@@ -17,34 +17,25 @@
  *   PRIVATE_KEY=0x... pnpm example:e2e-test
  */
 
+import { authCaptureEscrowAbi, RefundRequestStatus } from '@x402r/core'
+import { type Address, erc20Abi, formatUnits } from 'viem'
+
 import {
-  type Address,
-  authCaptureEscrowAbi,
   checkAndLogBalances,
-  createSDKInstances,
-  deployTestOperator,
-  distributeFees,
-  erc20Abi,
-  formatUnits,
   fundDerivedAccounts,
-  PAYMENT_AMOUNT,
-  performHTTP402Payment,
-  RefundRequestStatus,
-  SCANNER,
-  StepRunner,
   setupE2EAccounts,
-  setupHTTP402,
-  shortAddr,
-  USDC_ADDRESS,
-  waitForTx,
-} from './shared.js'
+} from './accounts.js'
+import { PAYMENT_AMOUNT, SCANNER, shortAddr, waitForTx } from './config.js'
+import { performHTTP402Payment, setupHTTP402 } from './http402.js'
+import { StepRunner } from './runner.js'
+import { createSDKInstances, deployTestOperator } from './sdk.js'
 
 // ============ Main ============
 
 async function main() {
-  console.log('╔══════════════════════════════════════════════════════════╗')
-  console.log('║       x402r E2E Integration Test — Base Sepolia        ║')
-  console.log('╚══════════════════════════════════════════════════════════╝')
+  console.log('==============================================================')
+  console.log('       x402r E2E Integration Test -- Base Sepolia')
+  console.log('==============================================================')
 
   const runner = new StepRunner()
 
@@ -135,53 +126,48 @@ async function main() {
     `  Escrow state: hasCollected=${hasCollected}, capturable=${capturableAmount}, refundable=${refundableAmount}`,
   )
 
-  if (capturableAmount > 0n) {
-    runner.pass('USDC in escrow via HTTP 402 flow')
-  } else {
-    runner.fail('USDC in escrow', 'capturableAmount is 0 after settle')
-  }
+  runner.assert(
+    capturableAmount === PAYMENT_AMOUNT,
+    'USDC in escrow via HTTP 402 flow',
+    `capturableAmount=${capturableAmount}, expected ${PAYMENT_AMOUNT}`,
+  )
 
   // ---- Step 4b: Verify payment state via SDK ----
   runner.step('4b. Verify Payment State via SDK')
 
-  const { payer, merchant, arbiter } = createSDKInstances(
-    accounts,
-    deployResult,
+  const {
+    payer,
+    merchant,
+    arbiter: arbiterOrUndefined,
+  } = createSDKInstances(accounts, deployResult)
+
+  if (!arbiterOrUndefined) {
+    throw new Error('Arbiter client is required for this test')
+  }
+  const arbiter = arbiterOrUndefined
+
+  const payerState = await payer.payment.getState(paymentInfo)
+  const [, payerCapturable, payerRefundable] = payerState
+  runner.log(
+    `payer.payment.getState: capturable=${payerCapturable}, refundable=${payerRefundable}`,
   )
 
-  try {
-    const payerState = await payer.payment.getState(paymentInfo)
-    const [, payerCapturable, payerRefundable] = payerState
-    runner.log(
-      `payer.payment.getState: capturable=${payerCapturable}, refundable=${payerRefundable}`,
-    )
+  const amounts = await merchant.payment.getAmounts(paymentInfo)
+  runner.log(
+    `merchant.payment.getAmounts: capturable=${amounts.capturableAmount}, refundable=${amounts.refundableAmount}`,
+  )
 
-    const amounts = await merchant.payment.getAmounts(paymentInfo)
-    runner.log(
-      `merchant.payment.getAmounts: capturable=${amounts.capturableAmount}, refundable=${amounts.refundableAmount}`,
-    )
+  const arbiterState = await arbiter.payment.getState(paymentInfo)
+  const [, arbiterCapturable] = arbiterState
+  runner.log(`arbiter.payment.getState: capturable=${arbiterCapturable}`)
 
-    const arbiterState = await arbiter!.payment.getState(paymentInfo)
-    const [, arbiterCapturable] = arbiterState
-    runner.log(`arbiter.payment.getState: capturable=${arbiterCapturable}`)
-
-    if (
-      payerCapturable > 0n &&
-      amounts.capturableAmount > 0n &&
-      arbiterCapturable > 0n
-    ) {
-      runner.pass(
-        'All SDK payment queries return correct state after authorize',
-      )
-    } else {
-      runner.fail(
-        'SDK payment queries',
-        'One or more checks failed (see logs above)',
-      )
-    }
-  } catch (err) {
-    runner.fail('SDK payment queries', String(err))
-  }
+  runner.assert(
+    payerCapturable === PAYMENT_AMOUNT &&
+      amounts.capturableAmount === PAYMENT_AMOUNT &&
+      arbiterCapturable === PAYMENT_AMOUNT,
+    'All SDK payment queries return correct state after authorize',
+    `payer=${payerCapturable}, merchant=${amounts.capturableAmount}, arbiter=${arbiterCapturable} (expected ${PAYMENT_AMOUNT})`,
+  )
 
   // ---- Step 5: Payer Requests Refund ----
   runner.step('5. Payer Requests Refund')
@@ -200,14 +186,11 @@ async function main() {
     `Refund status: ${refundStatus} (expected ${RefundRequestStatus.Pending} = Pending)`,
   )
 
-  if (refundStatus === RefundRequestStatus.Pending) {
-    runner.pass('Request refund (status = Pending)', refundReqTx)
-  } else {
-    runner.fail(
-      'Request refund',
-      `Expected Pending (${RefundRequestStatus.Pending}), got ${refundStatus}`,
-    )
-  }
+  runner.assert(
+    refundStatus === RefundRequestStatus.Pending,
+    'Request refund (status = Pending)',
+    `Expected Pending (${RefundRequestStatus.Pending}), got ${refundStatus}`,
+  )
 
   // ---- Step 6: Payer Freezes Payment ----
   runner.step('6. Payer Freezes Payment')
@@ -220,11 +203,11 @@ async function main() {
   const frozen = await payer.freeze!.isFrozen(paymentInfo)
   runner.log(`Is frozen: ${frozen}`)
 
-  if (frozen) {
-    runner.pass('Freeze payment (isFrozen = true)', freezeTx)
-  } else {
-    runner.fail('Freeze payment', 'isFrozen returned false after freeze')
-  }
+  runner.assert(
+    frozen,
+    'Freeze payment (isFrozen = true)',
+    'isFrozen returned false after freeze',
+  )
 
   // ---- Step 7: Payer Submits Evidence ----
   runner.step('7. Payer Submits Evidence')
@@ -241,14 +224,11 @@ async function main() {
   const evidenceCount1 = await payer.evidence.count(paymentInfo, 0n)
   runner.log(`Evidence count: ${evidenceCount1} (expected 1)`)
 
-  if (evidenceCount1 === 1n) {
-    runner.pass('Payer submits evidence (count = 1)', payerEvidenceTx)
-  } else {
-    runner.fail(
-      'Payer submits evidence',
-      `Expected count 1, got ${evidenceCount1}`,
-    )
-  }
+  runner.assert(
+    evidenceCount1 === 1n,
+    'Payer submits evidence (count = 1)',
+    `Expected count 1, got ${evidenceCount1}`,
+  )
 
   // ---- Step 8: Merchant Submits Counter-Evidence ----
   runner.step('8. Merchant Submits Counter-Evidence')
@@ -265,23 +245,17 @@ async function main() {
   const evidenceCount2 = await payer.evidence.count(paymentInfo, 0n)
   runner.log(`Evidence count: ${evidenceCount2} (expected 2)`)
 
-  if (evidenceCount2 === 2n) {
-    runner.pass(
-      'Merchant submits counter-evidence (count = 2)',
-      merchantEvidenceTx,
-    )
-  } else {
-    runner.fail(
-      'Merchant submits counter-evidence',
-      `Expected count 2, got ${evidenceCount2}`,
-    )
-  }
+  runner.assert(
+    evidenceCount2 === 2n,
+    'Merchant submits counter-evidence (count = 2)',
+    `Expected count 2, got ${evidenceCount2}`,
+  )
 
   // ---- Step 9: Arbiter Reads All Evidence ----
   runner.step('9. Arbiter Reads All Evidence')
 
-  const totalEvidence = await arbiter!.evidence.count(paymentInfo, 0n)
-  const { entries: allEvidence } = await arbiter!.evidence.getBatch(
+  const totalEvidence = await arbiter.evidence.count(paymentInfo, 0n)
+  const { entries: allEvidence } = await arbiter.evidence.getBatch(
     paymentInfo,
     0n,
     0n,
@@ -299,22 +273,17 @@ async function main() {
     )
   }
 
-  if (
+  runner.assert(
     allEvidence.length === 2 &&
-    allEvidence[0].cid === 'QmPayerEvidenceCID_RefundJustification' &&
-    allEvidence[1].cid === 'QmMerchantEvidenceCID_ServiceDelivered' &&
-    allEvidence[0].role === 0 &&
-    allEvidence[1].role === 1
-  ) {
-    runner.pass(
-      'Arbiter reads all evidence (2 entries, correct roles and CIDs)',
-    )
-  } else {
-    runner.fail(
-      'Arbiter reads all evidence',
-      `Expected 2 entries with correct data, got ${allEvidence.length}`,
-    )
-  }
+      allEvidence[0].cid === 'QmPayerEvidenceCID_RefundJustification' &&
+      allEvidence[1].cid === 'QmMerchantEvidenceCID_ServiceDelivered' &&
+      allEvidence[0].role === 0 &&
+      allEvidence[1].role === 1 &&
+      allEvidence[0].submitter === accounts.payerAccount.address &&
+      allEvidence[1].submitter === accounts.merchantAccount.address,
+    'Arbiter reads all evidence (2 entries, correct roles, CIDs, and submitters)',
+    `Expected 2 entries with correct data, got ${allEvidence.length}`,
+  )
 
   // ---- Step 10: Arbiter Approves Refund (atomic in-escrow refund) ----
   runner.step(
@@ -322,14 +291,14 @@ async function main() {
   )
 
   const payerUsdcBefore = await accounts.publicClient.readContract({
-    address: USDC_ADDRESS,
+    address: accounts.chainConfig.usdc as Address,
     abi: erc20Abi,
     functionName: 'balanceOf',
     args: [accounts.payerAccount.address],
   })
 
   runner.log('Submitting arbiter approval (triggers atomic refund)...')
-  const approveTxHash = await arbiter!.refund!.approve(
+  const approveTxHash = await arbiter.refund!.approve(
     paymentInfo,
     0n,
     PAYMENT_AMOUNT,
@@ -337,19 +306,26 @@ async function main() {
   await waitForTx(accounts.publicClient, approveTxHash)
   runner.log(`  Approve tx: ${SCANNER}/tx/${approveTxHash}`)
 
-  const approvedStatus = await arbiter!.refund!.getStatus(paymentInfo, 0n)
+  const approvedStatus = await arbiter.refund!.getStatus(paymentInfo, 0n)
   runner.log(
     `Refund status: ${approvedStatus} (expected ${RefundRequestStatus.Approved} = Approved)`,
   )
 
-  if (approvedStatus === RefundRequestStatus.Approved) {
-    runner.pass('Arbiter approve refund (status = Approved)', approveTxHash)
-  } else {
-    runner.fail(
-      'Arbiter approve refund',
-      `Expected Approved (${RefundRequestStatus.Approved}), got ${approvedStatus}`,
-    )
-  }
+  runner.assert(
+    approvedStatus === RefundRequestStatus.Approved,
+    'Arbiter approve refund (status = Approved)',
+    `Expected Approved (${RefundRequestStatus.Approved}), got ${approvedStatus}`,
+  )
+
+  // Verify approvedAmount on the refund request
+  const approvedRequest = await arbiter.refund!.get(paymentInfo, 0n)
+  runner.log(`Approved amount: ${approvedRequest.approvedAmount}`)
+
+  runner.assert(
+    approvedRequest.approvedAmount === PAYMENT_AMOUNT,
+    'Approved amount matches payment amount',
+    `Expected ${PAYMENT_AMOUNT}, got ${approvedRequest.approvedAmount}`,
+  )
 
   // ---- Step 11: Verify Atomic Refund Executed ----
   runner.step('11. Verify Atomic Refund Executed')
@@ -371,7 +347,7 @@ async function main() {
   )
 
   const payerUsdcAfter = await accounts.publicClient.readContract({
-    address: USDC_ADDRESS,
+    address: accounts.chainConfig.usdc as Address,
     abi: erc20Abi,
     functionName: 'balanceOf',
     args: [accounts.payerAccount.address],
@@ -380,107 +356,92 @@ async function main() {
   const usdcRecovered = payerUsdcAfter - payerUsdcBefore
   runner.log(`Payer USDC recovered: ${formatUnits(usdcRecovered, 6)} USDC`)
 
-  if (capturableAfter === 0n && usdcRecovered > 0n) {
-    runner.pass(
-      'Atomic refund verified (escrow emptied, USDC returned to payer)',
-      approveTxHash,
-    )
-  } else {
-    runner.fail(
-      'Atomic refund verification',
-      `capturable=${capturableAfter} (expected 0), recovered=${usdcRecovered} (expected > 0)`,
-    )
-  }
+  runner.assert(
+    capturableAfter === 0n && usdcRecovered === PAYMENT_AMOUNT,
+    'Atomic refund verified (escrow emptied, USDC returned to payer)',
+    `capturable=${capturableAfter} (expected 0), recovered=${usdcRecovered} (expected ${PAYMENT_AMOUNT})`,
+  )
 
   // ---- Step 11b: Verify post-refund state via SDK ----
   runner.step('11b. Verify Post-Refund State via SDK')
 
-  try {
-    const postRefundState = await payer.payment.getState(paymentInfo)
-    const [, postCapturable, postRefundable] = postRefundState
-    runner.log(
-      `payer.payment.getState: capturable=${postCapturable}, refundable=${postRefundable}`,
-    )
+  const postRefundState = await payer.payment.getState(paymentInfo)
+  const [, postCapturable, postRefundable] = postRefundState
+  runner.log(
+    `payer.payment.getState: capturable=${postCapturable}, refundable=${postRefundable}`,
+  )
 
-    const postRefundAmounts = await merchant.payment.getAmounts(paymentInfo)
-    runner.log(
-      `merchant.payment.getAmounts: capturable=${postRefundAmounts.capturableAmount}, refundable=${postRefundAmounts.refundableAmount}`,
-    )
+  const postRefundAmounts = await merchant.payment.getAmounts(paymentInfo)
+  runner.log(
+    `merchant.payment.getAmounts: capturable=${postRefundAmounts.capturableAmount}, refundable=${postRefundAmounts.refundableAmount}`,
+  )
 
-    if (
-      postCapturable === 0n &&
+  runner.assert(
+    postCapturable === 0n &&
       postRefundable === 0n &&
       postRefundAmounts.capturableAmount === 0n &&
-      postRefundAmounts.refundableAmount === 0n
-    ) {
-      runner.pass('All SDK queries return correct post-refund state')
-    } else {
-      runner.fail(
-        'Post-refund SDK queries',
-        'One or more checks failed (see logs above)',
-      )
-    }
-  } catch (err) {
-    runner.fail('Post-refund SDK queries', String(err))
-  }
+      postRefundAmounts.refundableAmount === 0n,
+    'All SDK queries return correct post-refund state',
+    'One or more checks failed (see logs above)',
+  )
 
   // ---- Step 12: Final Verification ----
   runner.step('12. Final Verification')
 
-  const finalEvidenceCount = await arbiter!.evidence.count(paymentInfo, 0n)
+  const finalEvidenceCount = await arbiter.evidence.count(paymentInfo, 0n)
   runner.log(`Evidence still queryable: ${finalEvidenceCount} entries`)
 
-  const finalRefundStatus = await arbiter!.refund!.getStatus(paymentInfo, 0n)
+  const finalRefundStatus = await arbiter.refund!.getStatus(paymentInfo, 0n)
   runner.log(`Final refund status: ${finalRefundStatus}`)
 
-  if (
+  runner.assert(
     finalEvidenceCount === 2n &&
-    capturableAfter === 0n &&
-    usdcRecovered > 0n
-  ) {
-    runner.pass(
-      'Final verification (evidence persists, escrow emptied, USDC returned)',
-    )
-  } else {
-    runner.fail(
-      'Final verification',
-      `evidence=${finalEvidenceCount} (expected 2), capturable=${capturableAfter} (expected 0), recovered=${usdcRecovered} (expected > 0)`,
-    )
-  }
+      capturableAfter === 0n &&
+      usdcRecovered === PAYMENT_AMOUNT &&
+      finalRefundStatus === RefundRequestStatus.Approved,
+    'Final verification (evidence persists, escrow emptied, USDC returned, status Approved)',
+    `evidence=${finalEvidenceCount} (expected 2), capturable=${capturableAfter} (expected 0), recovered=${usdcRecovered} (expected ${PAYMENT_AMOUNT}), status=${finalRefundStatus} (expected ${RefundRequestStatus.Approved})`,
+  )
 
   // ---- Step 13: Distribute Fees ----
   runner.step('13. Distribute Accumulated Fees')
 
-  try {
+  // The full payment was refunded, so there may be no fees to distribute.
+  // Check accumulated fees before calling distributeFees to avoid a revert.
+  const accumulatedFees = await merchant.operator.getAccumulatedProtocolFees(
+    accounts.chainConfig.usdc as Address,
+  )
+  runner.log(
+    `Accumulated protocol fees: ${formatUnits(accumulatedFees, 6)} USDC`,
+  )
+
+  if (accumulatedFees > 0n) {
     runner.log('Distributing fees for USDC...')
-    const distributeFeeTx = await distributeFees(accounts.merchantWallet, {
-      operatorAddress: deployResult.operatorAddress,
-      token: USDC_ADDRESS,
-    })
+    const distributeFeeTx = await merchant.operator.distributeFees(
+      accounts.chainConfig.usdc as Address,
+    )
     await waitForTx(accounts.publicClient, distributeFeeTx)
     runner.log(`  Distribute fees tx: ${SCANNER}/tx/${distributeFeeTx}`)
     runner.pass('Distribute fees', distributeFeeTx)
-  } catch (error) {
-    // May revert if no fees accumulated — that's acceptable in test
-    const msg = error instanceof Error ? error.message : String(error)
-    if (msg.includes('revert')) {
-      runner.log(
-        '  No fees to distribute (expected if fee calculator is address(0))',
-      )
-      runner.pass('Distribute fees (no fees accumulated — expected)')
-    } else {
-      runner.fail('Distribute fees', msg)
-    }
+  } else {
+    runner.log(
+      '  No fees to distribute (full refund executed, no fees accumulated)',
+    )
+    runner.pass(
+      'Distribute fees (no fees accumulated -- expected after full refund)',
+    )
   }
 
   // ---- Summary ----
-  console.log('\n╔══════════════════════════════════════════════════════════╗')
-  console.log('║                    TEST SUMMARY                        ║')
-  console.log('╚══════════════════════════════════════════════════════════╝')
+  console.log(
+    '\n==============================================================',
+  )
+  console.log('                    TEST SUMMARY')
+  console.log('==============================================================')
 
   runner.printSummary('TEST RESULTS')
   runner.exitWithResults(
-    'E2E TEST PASSED — Full payment lifecycle verified on-chain',
+    'E2E TEST PASSED -- Full payment lifecycle verified on-chain',
     'E2E TEST FAILED',
   )
 }

@@ -5,11 +5,10 @@ End-to-end test that exercises the full x402r refundable payment lifecycle again
 ## Flow
 
 ```
-Setup (3 accounts) → Deploy Operator → Construct PaymentInfo →
-Authorize Payment (ERC-3009) → Request Refund → Freeze Payment →
-Payer Submits Evidence → Merchant Submits Counter-Evidence →
-Arbiter Reads All Evidence → Arbiter Approves Refund →
-Execute Refund → Final Verification
+Setup (3 accounts) -> Deploy Operator -> HTTP 402 Payment Flow ->
+Request Refund -> Freeze Payment -> Payer Submits Evidence ->
+Merchant Submits Counter-Evidence -> Arbiter Reads All Evidence ->
+Arbiter Approves Refund -> Verify Refund -> Final Verification
 ```
 
 ## Prerequisites
@@ -39,46 +38,58 @@ The script uses 3 accounts:
 
 | Account | Source | Role |
 |---------|--------|------|
-| Payer | `PRIVATE_KEY` env var | Deploys operator, authorizes payment, requests refund, freezes |
-| Merchant | Generated mnemonic (index 0) | Payment receiver |
-| Arbiter | Generated mnemonic (index 1) | Approves refund, executes refund |
+| Payer | `PRIVATE_KEY` env var | Deploys operator, authorizes payment, requests refund |
+| Merchant | Generated mnemonic (index 0) | Payment receiver, submits counter-evidence |
+| Arbiter | Generated mnemonic (index 1) | Freezes payment, approves refund |
 
 Merchant and arbiter accounts are funded with a small amount of ETH from the payer for gas.
 
 ## What It Tests
 
-| Step | SDK Package | Methods |
+| Step | SDK Client | Methods |
 |------|------------|---------|
-| 1. Setup accounts | — | Generate payer, merchant, arbiter wallets |
+| 1. Setup accounts | -- | Generate payer, merchant, arbiter wallets |
 | 2. Deploy operator | `@x402r/core` | `deployMarketplaceOperator` |
-| 3. Construct PaymentInfo | `@x402r/core` | `toAbiPaymentInfo`, `validatePaymentInfo`, `resolveAddresses` |
-| 4. Authorize payment | `@x402r/core` | `computeEscrowNonce`, `signERC3009Authorization` |
-| 4b. Verify post-authorize state | all | `getPaymentState`, `paymentExists`, `isInEscrow`, `getPayerPayments`, `getReceiverPayments`, `getPaymentAmounts` |
-| 5. Request refund | `@x402r/client` | `X402rClient.requestRefund()` |
-| 6. Freeze payment | `@x402r/client` | `X402rClient.freezePayment()`, `isFrozen()` |
-| 7. Payer submits evidence | `@x402r/client` | `X402rClient.submitEvidence()`, `getEvidenceCount()` |
-| 8. Merchant submits counter-evidence | `@x402r/merchant` | `X402rMerchant.submitEvidence()` |
-| 9. Arbiter reads all evidence | `@x402r/arbiter` | `X402rArbiter.getAllEvidence()` |
-| 10. Approve refund | `@x402r/arbiter` | `X402rArbiter.approveRefundRequest()` |
-| 11. Execute refund | `@x402r/arbiter` | `X402rArbiter.executeRefundInEscrow()` |
-| 11b. Verify post-refund state | all | `getPaymentState` (Settled), `isInEscrow` (false), `getPaymentAmounts` (0/0) |
-| 12. Final verification | all | Evidence persists, escrow emptied, USDC returned |
+| 3. Setup HTTP 402 | `@x402/core`, `@x402r/evm` | In-process facilitator, resource server, HTTP client |
+| 4. Authorize payment | `@x402/core` | `performHTTP402Payment` (full 402 -> pay -> verify -> settle flow) |
+| 4b. Verify post-authorize state | `@x402r/sdk` | `payer.payment.getState()`, `merchant.payment.getAmounts()`, `arbiter.payment.getState()` |
+| 5. Request refund | `PayerClient` | `payer.refund.request()`, `payer.refund.getStatus()` |
+| 6. Freeze payment | `ArbiterClient` | `arbiter.freeze.freeze()`, `arbiter.freeze.isFrozen()` |
+| 7. Payer submits evidence | `PayerClient` | `payer.evidence.submit()`, `payer.evidence.count()` |
+| 8. Merchant submits counter-evidence | `MerchantClient` | `merchant.evidence.submit()` |
+| 9. Arbiter reads all evidence | `ArbiterClient` | `arbiter.evidence.count()`, `arbiter.evidence.getBatch()` |
+| 10. Approve refund | `ArbiterClient` | `arbiter.refund.approve()`, `arbiter.refund.get()` |
+| 11. Verify atomic refund | all | Escrow state zeroed, USDC returned to payer |
+| 11b. Verify post-refund state | all | `payer.payment.getState()`, `merchant.payment.getAmounts()` |
+| 12. Final verification | all | Evidence persists, escrow emptied, USDC returned, status Approved |
+| 13. Distribute fees | `MerchantClient` | `merchant.operator.distributeFees()` (skipped if no fees) |
 
 ## Key Implementation Details
 
-- **ERC-3009 signing**: The authorize step uses `ReceiveWithAuthorization` (not ERC-20 `approve()`). Uses `computeEscrowNonce()` and `signERC3009Authorization()` from `@x402r/core`.
-- **PaymentInfo validation**: `validatePaymentInfo()` checks feeReceiver, expiry, amount, and fee bounds before on-chain transactions.
-- **Address resolution**: `resolveAddresses()` provides all protocol contract addresses for SDK construction.
+- **HTTP 402 flow**: Steps 3-4 use `performHTTP402Payment` which runs the full HTTP 402 protocol: unpaid request returns 402, client creates payment payload, paid request is verified, and settlement executes on-chain.
+- **Role-scoped presets**: Uses `createPayerClient()`, `createMerchantClient()`, `createArbiterClient()` from `@x402r/sdk` for type-safe action groups.
 - **Hash computation**: `computePaymentInfoHash()` computes the escrow hash off-chain (matches on-chain `getHash`).
-- **feeReceiver must be the operator**: `PaymentInfo.feeReceiver` must equal the deployed operator contract address.
-- **preApprovalExpiry = ERC-3009 validBefore**: Must be a future timestamp (not `0n`).
+- **Freeze is arbiter-only**: `PayerClient` only has `isFrozen` (read-only). `ArbiterClient` has full freeze access (`freeze`, `unfreeze`, `isFrozen`).
 - **RPC delay**: A 2-second delay after each transaction allows Base Sepolia RPC state propagation.
-- **Event log range**: Base Sepolia RPC limits `eth_getLogs` to 10,000 blocks — `getPayerPayments`/`getReceiverPayments` require a `fromBlock` parameter.
+
+## File Structure
+
+```
+examples/e2e-test/
+  index.ts       # main test orchestration
+  runner.ts      # StepRunner class
+  accounts.ts    # E2EAccounts, setup, funding
+  http402.ts     # HTTP 402 infrastructure and payment flow
+  sdk.ts         # SDK instance creation, operator deployment, evidence bytecode
+  config.ts      # constants and helpers
+  README.md      # this file
+  package.json   # dependencies
+```
 
 ## Environment Variables
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `PRIVATE_KEY` | Yes | — | Private key of a funded Base Sepolia wallet |
+| `PRIVATE_KEY` | Yes | -- | Private key of a funded Base Sepolia wallet |
 | `RPC_URL` | No | `https://sepolia.base.org` | Base Sepolia RPC endpoint |
 | `NETWORK_ID` | No | `eip155:84532` | Network identifier |
