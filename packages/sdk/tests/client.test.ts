@@ -92,6 +92,19 @@ describe('resolveConfig', () => {
     expect(resolved.freezeAddress).toBe(freezeAddress)
   })
 
+  it('throws when refundRequestEvidenceAddress provided without refundRequestAddress', () => {
+    expect(() =>
+      resolveConfig({
+        publicClient,
+        walletClient,
+        operatorAddress,
+        refundRequestEvidenceAddress:
+          '0x2222222222222222222222222222222222222222' as const,
+        chainId: 84532,
+      }),
+    ).toThrow('refundRequestEvidenceAddress requires refundRequestAddress')
+  })
+
   it('throws when no chainId source is available', () => {
     const noChainClient = createPublicClient({
       transport: http('http://localhost:8545'),
