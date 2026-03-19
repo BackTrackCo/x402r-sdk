@@ -81,12 +81,6 @@ export function resolveConfig(config: X402rConfig): ResolvedConfig {
   const chainConfig = getChainConfig(chainId)
   const refundRequestEvidenceAddress = config.refundRequestEvidenceAddress
 
-  if (config.refundRequestAddress && !refundRequestEvidenceAddress) {
-    throw new ValidationError(
-      'refundRequestEvidenceAddress is required when refundRequestAddress is provided',
-    )
-  }
-
   return {
     publicClient: config.publicClient,
     walletClient: config.walletClient,

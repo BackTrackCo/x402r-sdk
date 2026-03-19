@@ -53,7 +53,6 @@ beforeAll(async () => {
     walletClient: anvilBaseSepolia.getWalletClient(testRoles.payer.address),
     operatorAddress: fixtures.operatorAddress,
     refundRequestAddress: fixtures.refundRequestAddress,
-    refundRequestEvidenceAddress: fixtures.refundRequestEvidenceAddress,
   })
 
   merchant = createMerchantClient({
@@ -68,7 +67,6 @@ beforeAll(async () => {
     walletClient: anvilBaseSepolia.getWalletClient(testRoles.arbiter.address),
     operatorAddress: fixtures.operatorAddress,
     refundRequestAddress: fixtures.refundRequestAddress,
-    refundRequestEvidenceAddress: fixtures.refundRequestEvidenceAddress,
   })
 }, 60_000)
 

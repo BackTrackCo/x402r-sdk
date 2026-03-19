@@ -192,7 +192,6 @@ describe('Scenario 7: Evidence submit → read lifecycle', () => {
   let paymentInfo7: PaymentInfo
   let payer7: PayerClient
   let arbiter7: ArbiterClient
-  let evidenceDeployed = false
 
   beforeAll(async () => {
     const scenario = await setupScenario({
@@ -201,20 +200,13 @@ describe('Scenario 7: Evidence submit → read lifecycle', () => {
     })
     paymentInfo7 = scenario.paymentInfo
 
-    // Verify evidence contract was deployed (factory may not exist on older fork blocks)
-    const evidenceAddr = scenario.fixtures.refundRequestEvidenceAddress
-    const code = await scenario.publicClient.getCode({ address: evidenceAddr })
-    if (!code || code === '0x') {
-      return // Skip test setup — evidence factory not available on this fork block
-    }
-    evidenceDeployed = true
-
     const clientConfig = {
       publicClient: scenario.publicClient,
       operatorAddress: scenario.fixtures.arbiterRefundOperatorAddress,
       escrowPeriodAddress: scenario.fixtures.escrowPeriodAddress,
       refundRequestAddress: scenario.fixtures.refundRequestAddress,
-      refundRequestEvidenceAddress: evidenceAddr,
+      refundRequestEvidenceAddress:
+        scenario.fixtures.refundRequestEvidenceAddress,
     }
 
     payer7 = createPayerClient({
@@ -247,11 +239,7 @@ describe('Scenario 7: Evidence submit → read lifecycle', () => {
     await scenario.publicClient.waitForTransactionReceipt({ hash: authHash })
   }, 60_000)
 
-  it('payer requests refund, submits evidence, reads it back', async ({
-    skip,
-  }) => {
-    if (!evidenceDeployed) skip()
-
+  it('payer requests refund, submits evidence, reads it back', async () => {
     // Request refund
     const requestHash = await payer7.refund!.request(
       paymentInfo7,
@@ -280,9 +268,7 @@ describe('Scenario 7: Evidence submit → read lifecycle', () => {
     )
   }, 60_000)
 
-  it('arbiter reads evidence via getBatch', async ({ skip }) => {
-    if (!evidenceDeployed) skip()
-
+  it('arbiter reads evidence via getBatch', async () => {
     const batch = await arbiter7.evidence!.getBatch(paymentInfo7, 0n, 0n, 10n)
     expect(batch.entries.length).toBeGreaterThanOrEqual(1)
     expect(batch.entries[0].cid).toBe('QmTestEvidenceCID_lifecycle')

@@ -8,7 +8,6 @@ import {
   TEST_OPERATOR as operatorAddress,
   publicClient,
   TEST_REFUND_REQUEST as refundRequestAddress,
-  TEST_EVIDENCE as refundRequestEvidenceAddress,
   TEST_RECORDER,
   walletClient,
 } from './fixtures.js'
@@ -18,7 +17,6 @@ const baseConfig: X402rConfig = {
   walletClient,
   operatorAddress,
   refundRequestAddress,
-  refundRequestEvidenceAddress,
   chainId: 84532,
 }
 
@@ -32,9 +30,7 @@ describe('resolveConfig', () => {
     expect(resolved.chainId).toBe(84532)
     expect(resolved.operatorAddress).toBe(operatorAddress)
     expect(resolved.refundRequestAddress).toBe(refundRequestAddress)
-    expect(resolved.refundRequestEvidenceAddress).toBe(
-      refundRequestEvidenceAddress,
-    )
+    expect(resolved.refundRequestEvidenceAddress).toBeUndefined()
     expect(resolved.escrowPeriodAddress).toBeUndefined()
     expect(resolved.freezeAddress).toBeUndefined()
   })
@@ -64,7 +60,6 @@ describe('resolveConfig', () => {
       walletClient,
       operatorAddress,
       refundRequestAddress,
-      refundRequestEvidenceAddress,
     })
     expect(resolved.chainId).toBe(84532)
   })
@@ -106,23 +101,8 @@ describe('resolveConfig', () => {
         publicClient: noChainClient,
         operatorAddress,
         refundRequestAddress,
-        refundRequestEvidenceAddress,
       }),
     ).toThrow('Unable to determine chain')
-  })
-
-  it('throws when refundRequestAddress provided without refundRequestEvidenceAddress', () => {
-    expect(() =>
-      resolveConfig({
-        publicClient,
-        walletClient,
-        operatorAddress,
-        refundRequestAddress,
-        chainId: 84532,
-      }),
-    ).toThrow(
-      'refundRequestEvidenceAddress is required when refundRequestAddress is provided',
-    )
   })
 })
 
@@ -136,7 +116,7 @@ describe('createX402r', () => {
     expect(client.config).toBeDefined()
     expect(client.payment).toBeDefined()
     expect(client.refund).toBeDefined()
-    expect(client.evidence).toBeDefined()
+    expect(client.evidence).toBeUndefined()
     expect(client.operator).toBeDefined()
     expect(client.watch).toBeDefined()
     expect(client.canExecute).toBeTypeOf('function')
@@ -172,7 +152,6 @@ describe('createX402r', () => {
       walletClient,
       operatorAddress,
       refundRequestAddress,
-      refundRequestEvidenceAddress,
       chainId: 84532,
     })
     expect(client.refund).toBeDefined()

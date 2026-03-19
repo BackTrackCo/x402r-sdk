@@ -115,6 +115,7 @@ export function createMockPublicClient(
         return Promise.resolve({ request: {}, result })
       }),
     waitForTransactionReceipt: vi.fn().mockResolvedValue({ status: 'success' }),
+    getCode: vi.fn().mockResolvedValue('0x600160005260206000f3'),
   } as unknown as PublicClient
 }
 

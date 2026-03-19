@@ -82,6 +82,54 @@ type MulticallContract = {
   args?: readonly unknown[]
 }
 
+// ---------------------------------------------------------------------------
+// Post-deploy bytecode verification + retry
+// ---------------------------------------------------------------------------
+
+/**
+ * Verify that all new deployments have bytecode on-chain. Multicall3
+ * aggregate3 with `allowFailure: true` can silently swallow a sub-call
+ * revert while the overall tx succeeds. When a deploy is missing bytecode,
+ * retry it as a standalone transaction before giving up.
+ */
+async function verifyAndRetryDeploys(
+  publicClient: PublicClient,
+  walletClient: WalletClient,
+  deployments: DeployResult[],
+  calls: Multicall3Call[],
+  txHashes: Hex[],
+): Promise<void> {
+  let callIdx = 0
+  for (const d of deployments) {
+    if (!d.isNew) continue
+    const code = await publicClient.getCode({ address: d.address })
+    if (!code || code === '0x') {
+      // Retry this deploy as a standalone transaction
+      const call = calls[callIdx]
+      const retryHash = await walletClient.sendTransaction({
+        to: call.target,
+        data: call.callData,
+        account: walletClient.account!,
+        chain: publicClient.chain,
+      })
+      await publicClient.waitForTransactionReceipt({ hash: retryHash })
+      const retryCode = await publicClient.getCode({ address: d.address })
+      if (!retryCode || retryCode === '0x') {
+        throw new ConfigError(
+          `Deploy verification failed: no bytecode at ${d.address}`,
+        )
+      }
+      d.hash = retryHash
+      txHashes.push(retryHash)
+    }
+    callIdx++
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Marketplace operator types
+// ---------------------------------------------------------------------------
+
 export interface MarketplaceOperatorOptions {
   chainId: number
   feeRecipient: Address
@@ -679,6 +727,19 @@ export async function deployMarketplaceOperator(
     if (d.isNew) d.hash = txHash
   }
 
+  // Verify all new deployments have bytecode and retry failures individually.
+  // Multicall3 aggregate3 with allowFailure:true can silently swallow a
+  // sub-call revert while the overall tx succeeds. When that happens, retry
+  // the failed deploy as a standalone transaction.
+  const txHashes: Hex[] = [txHash]
+  await verifyAndRetryDeploys(
+    publicClient,
+    walletClient,
+    deployments,
+    calls,
+    txHashes,
+  )
+
   const newCount = deployments.filter((d) => d.isNew).length
   const existingCount = deployments.filter((d) => !d.isNew).length
 
@@ -692,7 +753,7 @@ export async function deployMarketplaceOperator(
     feeCalculatorAddress,
     operatorConfig,
     deployments,
-    summary: { newCount, existingCount, txHashes: [txHash] },
+    summary: { newCount, existingCount, txHashes: txHashes },
   }
 }
 
@@ -930,6 +991,16 @@ export async function deployArbiterSetup(
     if (d.isNew) d.hash = txHash
   }
 
+  // Verify all new deployments have bytecode and retry failures individually.
+  const txHashes: Hex[] = [txHash]
+  await verifyAndRetryDeploys(
+    publicClient,
+    walletClient,
+    deployments,
+    calls,
+    txHashes,
+  )
+
   const newCount = deployments.filter((d) => d.isNew).length
   const existingCount = deployments.filter((d) => !d.isNew).length
 
@@ -938,6 +1009,6 @@ export async function deployArbiterSetup(
     refundRequestAddress,
     refundRequestEvidenceAddress,
     deployments,
-    summary: { newCount, existingCount, txHashes: [txHash] },
+    summary: { newCount, existingCount, txHashes: txHashes },
   }
 }
