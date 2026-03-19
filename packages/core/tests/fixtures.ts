@@ -116,6 +116,7 @@ export function createMockPublicClient(
       }),
     waitForTransactionReceipt: vi.fn().mockResolvedValue({ status: 'success' }),
     getCode: vi.fn().mockResolvedValue('0x600160005260206000f3'),
+    estimateContractGas: vi.fn().mockResolvedValue(3_000_000n),
   } as unknown as PublicClient
 }
 

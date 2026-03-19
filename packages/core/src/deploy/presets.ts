@@ -87,10 +87,33 @@ type MulticallContract = {
 // ---------------------------------------------------------------------------
 
 /**
- * Verify that all new deployments have bytecode on-chain. Multicall3
- * aggregate3 with `allowFailure: true` can silently swallow a sub-call
- * revert while the overall tx succeeds. When a deploy is missing bytecode,
- * retry it as a standalone transaction before giving up.
+ * Estimate gas for a Multicall3 aggregate3 batch by temporarily setting all
+ * calls to allowFailure:false. This forces eth_estimateGas to find a gas
+ * limit where every sub-call succeeds, preventing the known underestimation
+ * when allowFailure:true lets the estimator converge on partial-success gas.
+ * See: https://github.com/ethereum/go-ethereum/issues/18519
+ */
+async function estimateBatchGas(
+  publicClient: PublicClient,
+  calls: Multicall3Call[],
+  account: { address: Address },
+): Promise<bigint> {
+  const strictCalls = calls.map((c) => ({ ...c, allowFailure: false }))
+  const estimated = await publicClient.estimateContractGas({
+    address: MULTICALL3,
+    abi: multicall3Abi,
+    functionName: 'aggregate3',
+    args: [strictCalls],
+    account: account.address,
+  })
+  return (estimated * 120n) / 100n
+}
+
+/**
+ * Defense-in-depth: verify that all new deployments have bytecode on-chain.
+ * The primary fix for silent sub-call failures is proper gas estimation via
+ * `estimateBatchGas`, but this retry mechanism catches edge cases like
+ * concurrent deploys or unusual RPC behavior.
  */
 async function verifyAndRetryDeploys(
   publicClient: PublicClient,
@@ -719,7 +742,8 @@ export async function deployMarketplaceOperator(
     }
   }
 
-  const txHash = await walletClient.writeContract(request)
+  const gas = await estimateBatchGas(publicClient, calls, walletClient.account!)
+  const txHash = await walletClient.writeContract({ ...request, gas })
   await publicClient.waitForTransactionReceipt({ hash: txHash })
 
   // Fill in txHash for all new deployments
@@ -727,10 +751,9 @@ export async function deployMarketplaceOperator(
     if (d.isNew) d.hash = txHash
   }
 
-  // Verify all new deployments have bytecode and retry failures individually.
-  // Multicall3 aggregate3 with allowFailure:true can silently swallow a
-  // sub-call revert while the overall tx succeeds. When that happens, retry
-  // the failed deploy as a standalone transaction.
+  // Defense-in-depth: verify all new deployments have bytecode and retry
+  // failures individually. The primary fix is gas estimation above, but this
+  // catches edge cases like concurrent deploys or unusual RPC behavior.
   const txHashes: Hex[] = [txHash]
   await verifyAndRetryDeploys(
     publicClient,
@@ -984,14 +1007,16 @@ export async function deployArbiterSetup(
     }
   }
 
-  const txHash = await walletClient.writeContract(request)
+  const gas = await estimateBatchGas(publicClient, calls, walletClient.account!)
+  const txHash = await walletClient.writeContract({ ...request, gas })
   await publicClient.waitForTransactionReceipt({ hash: txHash })
 
   for (const d of deployments) {
     if (d.isNew) d.hash = txHash
   }
 
-  // Verify all new deployments have bytecode and retry failures individually.
+  // Defense-in-depth: verify all new deployments have bytecode and retry
+  // failures individually.
   const txHashes: Hex[] = [txHash]
   await verifyAndRetryDeploys(
     publicClient,
