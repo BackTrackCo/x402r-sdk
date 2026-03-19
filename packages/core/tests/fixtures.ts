@@ -130,6 +130,7 @@ export function createMockWalletClient(
   return {
     writeContract:
       options.writeContract ?? vi.fn().mockResolvedValue(MOCK_TX_HASH),
+    sendTransaction: vi.fn().mockResolvedValue(MOCK_TX_HASH),
     chain: options.chain ?? { id: 84532, name: 'Base Sepolia' },
     account: options.account
       ? { address: options.account }

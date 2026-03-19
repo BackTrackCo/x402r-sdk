@@ -1,6 +1,6 @@
 import type { Address } from 'viem'
 import { zeroAddress } from 'viem'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, type vi } from 'vitest'
 import { getFactoryAddresses } from '../../src/config/index.js'
 import {
   type ArbiterSetupOptions,
@@ -624,5 +624,75 @@ describe('deployArbiterSetup', () => {
     await expect(
       deployArbiterSetup(walletClient, publicClient, makeArbiterOptions()),
     ).rejects.toThrow('call 1 failed in simulation')
+  })
+
+  it('retries deploy when bytecode missing after batch tx', async () => {
+    const addresses = [
+      '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa',
+      '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB',
+      '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
+    ] as Address[]
+    const publicClient = createSequentialMockPublicClient(addresses)
+    // First getCode returns no bytecode (triggers retry), then valid
+    ;(publicClient.getCode as ReturnType<typeof vi.fn>)
+      .mockReset()
+      .mockResolvedValueOnce('0x')
+      .mockResolvedValue('0x600160005260206000f3')
+    const walletClient = createMockWalletClient()
+
+    const result = await deployArbiterSetup(
+      walletClient,
+      publicClient,
+      makeArbiterOptions(),
+    )
+
+    expect(result.deployments).toHaveLength(3)
+    expect(result.summary.txHashes).toHaveLength(2)
+  })
+
+  it('throws ConfigError when retry deploy also has no bytecode', async () => {
+    const addresses = [
+      '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa',
+      '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB',
+      '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
+    ] as Address[]
+    const publicClient = createSequentialMockPublicClient(addresses)
+    // getCode always returns no bytecode — retry also fails
+    ;(publicClient.getCode as ReturnType<typeof vi.fn>)
+      .mockReset()
+      .mockResolvedValue('0x')
+    const walletClient = createMockWalletClient()
+
+    await expect(
+      deployArbiterSetup(walletClient, publicClient, makeArbiterOptions()),
+    ).rejects.toThrow('Deploy verification failed')
+  })
+
+  it('deploys only signatureCondition when refundRequest + evidence already exist', async () => {
+    const sigCondAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
+    const refundReqAddr =
+      '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
+    const evidenceAddr = '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
+    const publicClient = createSequentialMockPublicClient(
+      [sigCondAddr, refundReqAddr, evidenceAddr],
+      {
+        getDeployedBehavior: (callIndex) =>
+          callIndex === 0 ? zeroAddress : COMPUTED_ADDR,
+      },
+    )
+    const walletClient = createMockWalletClient()
+
+    const result = await deployArbiterSetup(
+      walletClient,
+      publicClient,
+      makeArbiterOptions(),
+    )
+
+    expect(result.deployments).toHaveLength(3)
+    expect(result.summary.newCount).toBe(1)
+    expect(result.summary.existingCount).toBe(2)
+    expect(result.deployments[0].isNew).toBe(true)
+    expect(result.deployments[1].isNew).toBe(false)
+    expect(result.deployments[2].isNew).toBe(false)
   })
 })
