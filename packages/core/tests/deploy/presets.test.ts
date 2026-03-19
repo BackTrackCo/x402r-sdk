@@ -1,6 +1,6 @@
 import type { Address } from 'viem'
 import { zeroAddress } from 'viem'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, type vi } from 'vitest'
 import { getFactoryAddresses } from '../../src/config/index.js'
 import {
   type ArbiterSetupOptions,
@@ -70,11 +70,13 @@ describe('previewMarketplaceOperator', () => {
       '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
     const staticAddrCondAddr =
       '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
+    const evidenceAddr = '0x4444444444444444444444444444444444444444' as Address
     const operatorAddr = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' as Address
     const publicClient = createMockPublicClient({
       [`${F.escrowPeriod}:computeAddress`]: escrowAddr,
       [`${F.refundRequest}:computeAddress`]: refundReqAddr,
       [`${F.staticAddressCondition}:computeAddress`]: staticAddrCondAddr,
+      [`${F.refundRequestEvidence}:computeAddress`]: evidenceAddr,
       [`${F.paymentOperator}:computeAddress`]: operatorAddr,
     })
 
@@ -93,13 +95,23 @@ describe('previewMarketplaceOperator', () => {
     const andAddr = '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
     const refundReqAddr =
       '0xDDdDddDdDdddDDddDDddDDDDdDdDDdDDdDDDDDDd' as Address
-    const staticAddrCondAddr =
+    // Distinct addresses for refundRequest SAC vs arbiter SAC
+    const staticAddrCondRefundReqAddr =
       '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' as Address
+    const staticAddrCondArbiterAddr =
+      '0x1111111111111111111111111111111111111111' as Address
+    const evidenceAddr = '0x4444444444444444444444444444444444444444' as Address
     const operatorAddr = '0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF' as Address
+    const arbiter = makeOptions().arbiter
     const publicClient = createMockPublicClient({
       [`${F.escrowPeriod}:computeAddress`]: escrowAddr,
       [`${F.refundRequest}:computeAddress`]: refundReqAddr,
-      [`${F.staticAddressCondition}:computeAddress`]: staticAddrCondAddr,
+      // Argument-specific keys: SAC(arbiter) vs SAC(refundRequest)
+      [`${F.staticAddressCondition}:computeAddress:${arbiter}`]:
+        staticAddrCondArbiterAddr,
+      [`${F.staticAddressCondition}:computeAddress:${refundReqAddr}`]:
+        staticAddrCondRefundReqAddr,
+      [`${F.refundRequestEvidence}:computeAddress`]: evidenceAddr,
       [`${F.freeze}:computeAddress`]: freezeAddr,
       [`${F.andCondition}:computeAddress`]: andAddr,
       [`${F.paymentOperator}:computeAddress`]: operatorAddr,
@@ -116,7 +128,13 @@ describe('previewMarketplaceOperator', () => {
       result.escrowPeriodAddress,
     )
     expect(result.refundRequestAddress).toBe(refundReqAddr)
-    expect(result.refundInEscrowConditionAddress).toBe(staticAddrCondAddr)
+    // refundInEscrowCondition uses SAC(refundRequest), NOT SAC(arbiter)
+    expect(result.refundInEscrowConditionAddress).toBe(
+      staticAddrCondRefundReqAddr,
+    )
+    expect(result.refundInEscrowConditionAddress).not.toBe(
+      staticAddrCondArbiterAddr,
+    )
   })
 
   it('feeCalculatorAddress is non-null when operatorFeeBps > 0', async () => {
@@ -141,6 +159,7 @@ describe('deployMarketplaceOperator', () => {
       '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
     const staticAddrCondAddr =
       '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
+    const evidenceAddr = '0x4444444444444444444444444444444444444444' as Address
     const operatorAddr = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' as Address
     // escrowPeriod is new; refundRequest + staticAddressCondition are existing; operator always new
     const publicClient = createMockPublicClient({
@@ -150,6 +169,8 @@ describe('deployMarketplaceOperator', () => {
       [`${F.refundRequest}:computeAddress`]: refundReqAddr,
       [`${F.staticAddressCondition}:getDeployed`]: staticAddrCondAddr,
       [`${F.staticAddressCondition}:computeAddress`]: staticAddrCondAddr,
+      [`${F.refundRequestEvidence}:getDeployed`]: zeroAddress,
+      [`${F.refundRequestEvidence}:computeAddress`]: evidenceAddr,
       [`${F.paymentOperator}:getOperator`]: zeroAddress,
       [`${F.paymentOperator}:computeAddress`]: operatorAddr,
     })
@@ -161,14 +182,15 @@ describe('deployMarketplaceOperator', () => {
       makeOptions(),
     )
 
-    // Without freeze or fee calculator: escrow + refundRequest + staticAddrCond + operator = 4
-    expect(result.deployments).toHaveLength(4)
+    // Without freeze or fee calculator: escrow + refundRequest + staticAddrCond + evidence + operator = 5
+    expect(result.deployments).toHaveLength(5)
     expect(result.freezeAddress).toBeNull()
     expect(result.operatorConfig.releaseCondition).toBe(escrowAddr)
     expect(result.escrowPeriodAddress).toBe(escrowAddr)
     expect(result.refundRequestAddress).toBe(refundReqAddr)
-    // 2 new (escrow + operator), 2 existing (refundRequest + staticAddrCond)
-    expect(result.summary.newCount).toBe(2)
+    expect(result.refundRequestEvidenceAddress).toBe(evidenceAddr)
+    // 3 new (escrow + evidence + operator), 2 existing (refundRequest + staticAddrCond)
+    expect(result.summary.newCount).toBe(3)
     expect(result.summary.existingCount).toBe(2)
     expect(result.summary.txHashes).toHaveLength(1) // batched into single Multicall3 tx
   })
@@ -187,8 +209,8 @@ describe('deployMarketplaceOperator', () => {
       makeOptions({ operatorFeeBps: 100n }),
     )
 
-    // Without freeze, with fee calculator: escrow + refundRequest + staticAddrCond + feeCalc + operator = 5
-    expect(result.deployments).toHaveLength(5)
+    // Without freeze, with fee calculator: escrow + refundRequest + staticAddrCond + evidence + feeCalc + operator = 6
+    expect(result.deployments).toHaveLength(6)
     expect(result.feeCalculatorAddress).toBe(COMPUTED_ADDR)
   })
 
@@ -198,16 +220,25 @@ describe('deployMarketplaceOperator', () => {
     const andAddr = '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
     const refundReqAddr =
       '0xDDdDddDdDdddDDddDDddDDDDdDdDDdDDdDDDDDDd' as Address
-    const staticAddrCondAddr =
+    const staticAddrCondRefundReqAddr =
       '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' as Address
+    const staticAddrCondArbiterAddr =
+      '0x1111111111111111111111111111111111111111' as Address
+    const evidenceAddr = '0x4444444444444444444444444444444444444444' as Address
     const operatorAddr = '0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF' as Address
+    const arbiter = makeOptions().arbiter
     const publicClient = createMockPublicClient({
       [`${F.escrowPeriod}:getDeployed`]: zeroAddress,
       [`${F.escrowPeriod}:computeAddress`]: escrowAddr,
       [`${F.refundRequest}:getDeployed`]: zeroAddress,
       [`${F.refundRequest}:computeAddress`]: refundReqAddr,
       [`${F.staticAddressCondition}:getDeployed`]: zeroAddress,
-      [`${F.staticAddressCondition}:computeAddress`]: staticAddrCondAddr,
+      [`${F.staticAddressCondition}:computeAddress:${arbiter}`]:
+        staticAddrCondArbiterAddr,
+      [`${F.staticAddressCondition}:computeAddress:${refundReqAddr}`]:
+        staticAddrCondRefundReqAddr,
+      [`${F.refundRequestEvidence}:getDeployed`]: zeroAddress,
+      [`${F.refundRequestEvidence}:computeAddress`]: evidenceAddr,
       [`${F.freeze}:getDeployed`]: zeroAddress,
       [`${F.freeze}:computeAddress`]: freezeAddr,
       [`${F.andCondition}:getDeployed`]: zeroAddress,
@@ -223,13 +254,20 @@ describe('deployMarketplaceOperator', () => {
       makeOptions({ freezeDurationSeconds: 86400n }),
     )
 
-    // With freeze: escrow + refundRequest + staticAddrCond + freeze + andCond + operator = 6
-    expect(result.deployments).toHaveLength(6)
+    // With freeze: escrow + refundRequest + staticAddrCond + evidence + staticAddrCondArbiter + freeze + andCond + operator = 8
+    expect(result.deployments).toHaveLength(8)
     expect(result.freezeAddress).not.toBeNull()
     expect(result.operatorConfig.releaseCondition).not.toBe(
       result.escrowPeriodAddress,
     )
     expect(result.refundRequestAddress).toBe(refundReqAddr)
+    // Verify freeze uses arbiter SAC address, not refundRequest SAC address
+    expect(result.refundInEscrowConditionAddress).toBe(
+      staticAddrCondRefundReqAddr,
+    )
+    expect(result.refundInEscrowConditionAddress).not.toBe(
+      staticAddrCondArbiterAddr,
+    )
   })
 
   it('returns all existing when operator already deployed (no freeze, no fee)', async () => {
@@ -238,11 +276,14 @@ describe('deployMarketplaceOperator', () => {
       '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
     const staticAddrCondAddr =
       '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
+    const evidenceAddr = '0x4444444444444444444444444444444444444444' as Address
     const operatorAddr = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' as Address
     const publicClient = createMockPublicClient({
       [`${F.escrowPeriod}:computeAddress`]: escrowAddr,
       [`${F.refundRequest}:computeAddress`]: refundReqAddr,
       [`${F.staticAddressCondition}:computeAddress`]: staticAddrCondAddr,
+      [`${F.refundRequestEvidence}:computeAddress`]: evidenceAddr,
+      [`${F.refundRequestEvidence}:getDeployed`]: evidenceAddr,
       [`${F.paymentOperator}:computeAddress`]: operatorAddr,
       [`${F.escrowPeriod}:getDeployed`]: escrowAddr,
       [`${F.refundRequest}:getDeployed`]: refundReqAddr,
@@ -257,10 +298,11 @@ describe('deployMarketplaceOperator', () => {
       makeOptions(),
     )
 
-    expect(result.deployments).toHaveLength(4)
+    expect(result.deployments).toHaveLength(5)
     expect(result.summary.newCount).toBe(0)
-    expect(result.summary.existingCount).toBe(4)
+    expect(result.summary.existingCount).toBe(5)
     expect(result.summary.txHashes).toHaveLength(0)
+    expect(result.refundRequestEvidenceAddress).toBe(evidenceAddr)
     for (const d of result.deployments) {
       expect(d.isNew).toBe(false)
       expect(d.hash).toBeNull()
@@ -273,21 +315,30 @@ describe('deployMarketplaceOperator', () => {
     const andAddr = '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
     const refundReqAddr =
       '0xDDdDddDdDdddDDddDDddDDDDdDdDDdDDdDDDDDDd' as Address
-    const staticAddrCondAddr =
+    const staticAddrCondRefundReqAddr =
       '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' as Address
+    const staticAddrCondArbiterAddr =
+      '0x1111111111111111111111111111111111111111' as Address
     const feeAddr = '0x2222222222222222222222222222222222222222' as Address
+    const evidenceAddr = '0x4444444444444444444444444444444444444444' as Address
     const operatorAddr = '0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF' as Address
+    const arbiter = makeOptions().arbiter
     const publicClient = createMockPublicClient({
       [`${F.escrowPeriod}:computeAddress`]: escrowAddr,
       [`${F.refundRequest}:computeAddress`]: refundReqAddr,
-      [`${F.staticAddressCondition}:computeAddress`]: staticAddrCondAddr,
+      [`${F.staticAddressCondition}:computeAddress:${arbiter}`]:
+        staticAddrCondArbiterAddr,
+      [`${F.staticAddressCondition}:computeAddress:${refundReqAddr}`]:
+        staticAddrCondRefundReqAddr,
+      [`${F.staticAddressCondition}:getDeployed`]: staticAddrCondRefundReqAddr,
+      [`${F.refundRequestEvidence}:computeAddress`]: evidenceAddr,
+      [`${F.refundRequestEvidence}:getDeployed`]: evidenceAddr,
       [`${F.freeze}:computeAddress`]: freezeAddr,
       [`${F.andCondition}:computeAddress`]: andAddr,
       [`${F.staticFeeCalculator}:computeAddress`]: feeAddr,
       [`${F.paymentOperator}:computeAddress`]: operatorAddr,
       [`${F.escrowPeriod}:getDeployed`]: escrowAddr,
       [`${F.refundRequest}:getDeployed`]: refundReqAddr,
-      [`${F.staticAddressCondition}:getDeployed`]: staticAddrCondAddr,
       [`${F.freeze}:getDeployed`]: freezeAddr,
       [`${F.andCondition}:getDeployed`]: andAddr,
       [`${F.staticFeeCalculator}:getDeployed`]: feeAddr,
@@ -301,10 +352,10 @@ describe('deployMarketplaceOperator', () => {
       makeOptions({ freezeDurationSeconds: 86400n, operatorFeeBps: 100n }),
     )
 
-    // escrow + refundRequest + staticAddrCond + freeze + andCond + feeCal + operator
-    expect(result.deployments).toHaveLength(7)
+    // escrow + refundRequest + staticAddrCond + evidence + staticAddrCondArbiter + freeze + andCond + feeCal + operator
+    expect(result.deployments).toHaveLength(9)
     expect(result.summary.newCount).toBe(0)
-    expect(result.summary.existingCount).toBe(7)
+    expect(result.summary.existingCount).toBe(9)
     expect(result.summary.txHashes).toHaveLength(0)
     expect(result.freezeAddress).toBe(freezeAddr)
     expect(result.feeCalculatorAddress).toBe(feeAddr)
@@ -353,6 +404,7 @@ describe('deployMarketplaceOperator', () => {
       '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
     const staticAddrCondAddr =
       '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
+    const evidenceAddr = '0x4444444444444444444444444444444444444444' as Address
     const operatorAddr = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' as Address
     const publicClient = createMockPublicClient({
       [`${F.escrowPeriod}:getDeployed`]: zeroAddress,
@@ -361,6 +413,8 @@ describe('deployMarketplaceOperator', () => {
       [`${F.refundRequest}:computeAddress`]: refundReqAddr,
       [`${F.staticAddressCondition}:getDeployed`]: zeroAddress,
       [`${F.staticAddressCondition}:computeAddress`]: staticAddrCondAddr,
+      [`${F.refundRequestEvidence}:getDeployed`]: zeroAddress,
+      [`${F.refundRequestEvidence}:computeAddress`]: evidenceAddr,
       [`${F.paymentOperator}:getOperator`]: zeroAddress,
       [`${F.paymentOperator}:computeAddress`]: operatorAddr,
     })
@@ -396,10 +450,11 @@ function makeArbiterOptions(
 }
 
 describe('previewArbiterSetup', () => {
-  it('computes signatureCondition and refundRequest addresses', async () => {
+  it('computes signatureCondition, refundRequest, and evidence addresses', async () => {
     const addresses = [
       '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa', // signatureCondition
       '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB', // refundRequest
+      '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC', // refundRequestEvidence
     ] as Address[]
     const publicClient = createSequentialMockPublicClient(addresses)
 
@@ -407,6 +462,7 @@ describe('previewArbiterSetup', () => {
 
     expect(result.signatureConditionAddress).toBe(addresses[0])
     expect(result.refundRequestAddress).toBe(addresses[1])
+    expect(result.refundRequestEvidenceAddress).toBe(addresses[2])
   })
 
   it('throws ConfigError for unsupported chainId', async () => {
@@ -421,10 +477,11 @@ describe('previewArbiterSetup', () => {
 })
 
 describe('deployArbiterSetup', () => {
-  it('deploys exactly 2 contracts (signatureCondition + refundRequest)', async () => {
+  it('deploys exactly 3 contracts (signatureCondition + refundRequest + evidence)', async () => {
     const addresses = [
       '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa', // signatureCondition
       '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB', // refundRequest
+      '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC', // refundRequestEvidence
     ] as Address[]
     const publicClient = createSequentialMockPublicClient(addresses)
     const walletClient = createMockWalletClient()
@@ -435,10 +492,11 @@ describe('deployArbiterSetup', () => {
       makeArbiterOptions(),
     )
 
-    expect(result.deployments).toHaveLength(2)
+    expect(result.deployments).toHaveLength(3)
     expect(result.signatureConditionAddress).toBe(addresses[0])
     expect(result.refundRequestAddress).toBe(addresses[1])
-    expect(result.summary.newCount).toBe(2)
+    expect(result.refundRequestEvidenceAddress).toBe(addresses[2])
+    expect(result.summary.newCount).toBe(3)
     expect(result.summary.existingCount).toBe(0)
     expect(result.summary.txHashes).toHaveLength(1) // batched into single Multicall3 tx
   })
@@ -447,6 +505,7 @@ describe('deployArbiterSetup', () => {
     const addresses = [
       '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa', // signatureCondition
       '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB', // refundRequest
+      '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC', // refundRequestEvidence
     ] as Address[]
     const publicClient = createSequentialMockPublicClient(addresses, {
       getDeployedBehavior: 'allExisting',
@@ -459,18 +518,19 @@ describe('deployArbiterSetup', () => {
       makeArbiterOptions(),
     )
 
-    expect(result.deployments).toHaveLength(2)
+    expect(result.deployments).toHaveLength(3)
     expect(result.summary.newCount).toBe(0)
-    expect(result.summary.existingCount).toBe(2)
+    expect(result.summary.existingCount).toBe(3)
     expect(result.summary.txHashes).toHaveLength(0)
   })
 
-  it('deploys only refundRequest when signatureCondition already exists', async () => {
+  it('deploys only refundRequest + evidence when signatureCondition already exists', async () => {
     const sigCondAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
     const refundReqAddr =
       '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
+    const evidenceAddr = '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
     const publicClient = createSequentialMockPublicClient(
-      [sigCondAddr, refundReqAddr],
+      [sigCondAddr, refundReqAddr, evidenceAddr],
       {
         getDeployedBehavior: (callIndex) =>
           callIndex === 0 ? sigCondAddr : zeroAddress,
@@ -484,22 +544,25 @@ describe('deployArbiterSetup', () => {
       makeArbiterOptions(),
     )
 
-    expect(result.deployments).toHaveLength(2)
-    expect(result.summary.newCount).toBe(1)
+    expect(result.deployments).toHaveLength(3)
+    expect(result.summary.newCount).toBe(2)
     expect(result.summary.existingCount).toBe(1)
     expect(result.summary.txHashes).toHaveLength(1)
     expect(result.deployments[0].isNew).toBe(false)
     expect(result.deployments[0].address).toBe(sigCondAddr)
     expect(result.deployments[1].isNew).toBe(true)
     expect(result.deployments[1].address).toBe(refundReqAddr)
+    expect(result.deployments[2].isNew).toBe(true)
+    expect(result.deployments[2].address).toBe(evidenceAddr)
   })
 
-  it('deploys only signatureCondition when refundRequest already exists', async () => {
+  it('deploys signatureCondition + evidence when refundRequest already exists', async () => {
     const sigCondAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
     const refundReqAddr =
       '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
+    const evidenceAddr = '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
     const publicClient = createSequentialMockPublicClient(
-      [sigCondAddr, refundReqAddr],
+      [sigCondAddr, refundReqAddr, evidenceAddr],
       {
         getDeployedBehavior: (callIndex) =>
           callIndex === 1 ? refundReqAddr : zeroAddress,
@@ -513,20 +576,23 @@ describe('deployArbiterSetup', () => {
       makeArbiterOptions(),
     )
 
-    expect(result.deployments).toHaveLength(2)
-    expect(result.summary.newCount).toBe(1)
+    expect(result.deployments).toHaveLength(3)
+    expect(result.summary.newCount).toBe(2)
     expect(result.summary.existingCount).toBe(1)
     expect(result.summary.txHashes).toHaveLength(1)
     expect(result.deployments[0].isNew).toBe(true)
     expect(result.deployments[0].address).toBe(sigCondAddr)
     expect(result.deployments[1].isNew).toBe(false)
     expect(result.deployments[1].address).toBe(refundReqAddr)
+    expect(result.deployments[2].isNew).toBe(true)
+    expect(result.deployments[2].address).toBe(evidenceAddr)
   })
 
   it('throws ConfigError when walletClient has no account', async () => {
     const addresses = [
       '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa',
       '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB',
+      '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
     ] as Address[]
     const publicClient = createSequentialMockPublicClient(addresses)
     const walletClient = createMockWalletWithoutAccount()
@@ -540,6 +606,7 @@ describe('deployArbiterSetup', () => {
     const addresses = [
       '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa',
       '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB',
+      '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
     ] as Address[]
     const publicClient = createSequentialMockPublicClient(addresses)
     // Override simulateContract to return a failed batch result
@@ -557,5 +624,75 @@ describe('deployArbiterSetup', () => {
     await expect(
       deployArbiterSetup(walletClient, publicClient, makeArbiterOptions()),
     ).rejects.toThrow('call 1 failed in simulation')
+  })
+
+  it('retries deploy when bytecode missing after batch tx', async () => {
+    const addresses = [
+      '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa',
+      '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB',
+      '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
+    ] as Address[]
+    const publicClient = createSequentialMockPublicClient(addresses)
+    // First getCode returns no bytecode (triggers retry), then valid
+    ;(publicClient.getCode as ReturnType<typeof vi.fn>)
+      .mockReset()
+      .mockResolvedValueOnce('0x')
+      .mockResolvedValue('0x600160005260206000f3')
+    const walletClient = createMockWalletClient()
+
+    const result = await deployArbiterSetup(
+      walletClient,
+      publicClient,
+      makeArbiterOptions(),
+    )
+
+    expect(result.deployments).toHaveLength(3)
+    expect(result.summary.txHashes).toHaveLength(2)
+  })
+
+  it('throws ConfigError when retry deploy also has no bytecode', async () => {
+    const addresses = [
+      '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa',
+      '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB',
+      '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
+    ] as Address[]
+    const publicClient = createSequentialMockPublicClient(addresses)
+    // getCode always returns no bytecode — retry also fails
+    ;(publicClient.getCode as ReturnType<typeof vi.fn>)
+      .mockReset()
+      .mockResolvedValue('0x')
+    const walletClient = createMockWalletClient()
+
+    await expect(
+      deployArbiterSetup(walletClient, publicClient, makeArbiterOptions()),
+    ).rejects.toThrow('Deploy verification failed')
+  })
+
+  it('deploys only signatureCondition when refundRequest + evidence already exist', async () => {
+    const sigCondAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
+    const refundReqAddr =
+      '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
+    const evidenceAddr = '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
+    const publicClient = createSequentialMockPublicClient(
+      [sigCondAddr, refundReqAddr, evidenceAddr],
+      {
+        getDeployedBehavior: (callIndex) =>
+          callIndex === 0 ? zeroAddress : COMPUTED_ADDR,
+      },
+    )
+    const walletClient = createMockWalletClient()
+
+    const result = await deployArbiterSetup(
+      walletClient,
+      publicClient,
+      makeArbiterOptions(),
+    )
+
+    expect(result.deployments).toHaveLength(3)
+    expect(result.summary.newCount).toBe(1)
+    expect(result.summary.existingCount).toBe(2)
+    expect(result.deployments[0].isNew).toBe(true)
+    expect(result.deployments[1].isNew).toBe(false)
+    expect(result.deployments[2].isNew).toBe(false)
   })
 })

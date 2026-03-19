@@ -5,12 +5,14 @@ import {
   getEvidenceCount,
   submitEvidence,
 } from '@x402r/core'
-import type { Hash } from 'viem'
+import type { Address, Hash } from 'viem'
 import type { EvidenceActions, ResolvedConfig } from '../types.js'
 import { requireWallet } from './utils.js'
 
-export function createEvidenceActions(config: ResolvedConfig): EvidenceActions {
-  const contractAddress = config.refundRequestEvidenceAddress
+export function createEvidenceActions(
+  config: ResolvedConfig,
+  contractAddress: Address,
+): EvidenceActions {
   return {
     async submit(
       paymentInfo: PaymentInfo,

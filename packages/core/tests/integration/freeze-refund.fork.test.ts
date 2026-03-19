@@ -4,8 +4,10 @@ import {
   type ArbiterClient,
   createArbiterClient,
   createMerchantClient,
+  createPayerClient,
   createX402r,
   type MerchantClient,
+  type PayerClient,
   type X402r,
 } from '../../../sdk/src/index.js'
 import type { PaymentInfo } from '../../src/types/index.js'
@@ -29,7 +31,7 @@ let fixtures: DeployedFixtures
 let payerClient: X402r
 let receiverClient: X402r
 let merchant: MerchantClient
-let arbiter: ArbiterClient
+let arbiterClient: ArbiterClient
 
 let paymentInfo: PaymentInfo
 
@@ -65,7 +67,7 @@ beforeAll(async () => {
     freezeAddress: fixtures.freezeAddress,
   })
 
-  arbiter = createArbiterClient({
+  arbiterClient = createArbiterClient({
     publicClient,
     walletClient: anvilBaseSepolia.getWalletClient(testRoles.arbiter.address),
     operatorAddress: fixtures.operatorWithFreezeAddress,
@@ -75,10 +77,10 @@ beforeAll(async () => {
 }, 60_000)
 
 // ---------------------------------------------------------------------------
-// Scenario 4: Freeze blocks release, refundInEscrow still works
+// Scenario 4a: Freeze blocks release, arbiter unfreezes, release succeeds
 // ---------------------------------------------------------------------------
 
-describe('Scenario 4: Freeze blocks release', () => {
+describe('Scenario 4a: Freeze → unfreeze → release', () => {
   it('authorize creates capturable payment on freeze-enabled operator', async () => {
     const { collectorData, tokenCollector } = await createCollectorData(
       anvilBaseSepolia.getWalletClient(testRoles.payer.address),
@@ -96,11 +98,11 @@ describe('Scenario 4: Freeze blocks release', () => {
     expect(amounts.capturableAmount).toBeGreaterThan(0n)
   }, 60_000)
 
-  it('arbiter freezes payment and isFrozen returns true', async () => {
-    const hash = await arbiter.freeze!.freeze(paymentInfo)
+  it('payer freezes payment and isFrozen returns true', async () => {
+    const hash = await payerClient.freeze!.freeze(paymentInfo)
     await publicClient.waitForTransactionReceipt({ hash })
 
-    expect(await arbiter.freeze!.isFrozen(paymentInfo)).toBe(true)
+    expect(await payerClient.freeze!.isFrozen(paymentInfo)).toBe(true)
   }, 60_000)
 
   it('release reverts while frozen (even after escrow period)', async () => {
@@ -116,18 +118,159 @@ describe('Scenario 4: Freeze blocks release', () => {
     expect(receipt.status).toBe('reverted')
   }, 60_000)
 
-  it('receiver can refundInEscrow even while frozen', async () => {
+  it('arbiter unfreezes and release succeeds', async () => {
+    const hash = await arbiterClient.freeze!.unfreeze(paymentInfo)
+    await publicClient.waitForTransactionReceipt({ hash })
+    expect(await payerClient.freeze!.isFrozen(paymentInfo)).toBe(false)
+
+    // Now release should succeed
+    const releaseHash = await merchant.payment.release(
+      paymentInfo,
+      DEFAULT_AMOUNT,
+    )
+    const receipt = await publicClient.waitForTransactionReceipt({
+      hash: releaseHash,
+    })
+    expect(receipt.status).toBe('success')
+  }, 60_000)
+})
+
+// ---------------------------------------------------------------------------
+// Scenario 4b: Freeze does not block refundInEscrow
+// ---------------------------------------------------------------------------
+
+describe('Scenario 4b: Freeze does not block refundInEscrow', () => {
+  // Use a separate paymentInfo (different salt) to avoid state leaking from 4a
+  let paymentInfo4b: PaymentInfo
+
+  beforeAll(async () => {
+    const scenario = await setupScenario({
+      salt: 40n,
+      operator: 'freeze',
+    })
+    paymentInfo4b = scenario.paymentInfo
+  }, 60_000)
+
+  it('authorize + freeze + refundInEscrow succeeds while frozen', async () => {
+    // Authorize
+    const { collectorData, tokenCollector } = await createCollectorData(
+      anvilBaseSepolia.getWalletClient(testRoles.payer.address),
+      paymentInfo4b,
+    )
+    const authHash = await payerClient.payment.authorize(
+      paymentInfo4b,
+      DEFAULT_AMOUNT,
+      tokenCollector,
+      collectorData,
+    )
+    await publicClient.waitForTransactionReceipt({ hash: authHash })
+
+    // Freeze
+    const freezeHash = await payerClient.freeze!.freeze(paymentInfo4b)
+    await publicClient.waitForTransactionReceipt({ hash: freezeHash })
+    expect(await payerClient.freeze!.isFrozen(paymentInfo4b)).toBe(true)
+
     // refundInEscrow does NOT check freeze — only ReceiverCondition (on this fixture)
-    // Note: refundInEscrow is hidden from MerchantClient — use full X402r client
-    const amountsBefore = await receiverClient.payment.getAmounts(paymentInfo)
+    const amountsBefore = await receiverClient.payment.getAmounts(paymentInfo4b)
 
     const hash = await receiverClient.payment.refundInEscrow(
-      paymentInfo,
+      paymentInfo4b,
       amountsBefore.capturableAmount,
     )
     await publicClient.waitForTransactionReceipt({ hash })
 
-    const amountsAfter = await receiverClient.payment.getAmounts(paymentInfo)
+    const amountsAfter = await receiverClient.payment.getAmounts(paymentInfo4b)
     expect(amountsAfter.capturableAmount).toBe(0n)
+  }, 60_000)
+})
+
+// ---------------------------------------------------------------------------
+// Scenario 7: Evidence submit → read lifecycle
+// ---------------------------------------------------------------------------
+
+describe('Scenario 7: Evidence submit → read lifecycle', () => {
+  let paymentInfo7: PaymentInfo
+  let payer7: PayerClient
+  let arbiter7: ArbiterClient
+
+  beforeAll(async () => {
+    const scenario = await setupScenario({
+      salt: 70n,
+      operator: 'arbiterRefund',
+    })
+    paymentInfo7 = scenario.paymentInfo
+
+    const clientConfig = {
+      publicClient: scenario.publicClient,
+      operatorAddress: scenario.fixtures.arbiterRefundOperatorAddress,
+      escrowPeriodAddress: scenario.fixtures.escrowPeriodAddress,
+      refundRequestAddress: scenario.fixtures.refundRequestAddress,
+      refundRequestEvidenceAddress:
+        scenario.fixtures.refundRequestEvidenceAddress,
+    }
+
+    payer7 = createPayerClient({
+      ...clientConfig,
+      walletClient: anvilBaseSepolia.getWalletClient(testRoles.payer.address),
+    })
+
+    arbiter7 = createArbiterClient({
+      ...clientConfig,
+      walletClient: anvilBaseSepolia.getWalletClient(testRoles.arbiter.address),
+    })
+
+    // Authorize payment
+    const { collectorData, tokenCollector } = await createCollectorData(
+      anvilBaseSepolia.getWalletClient(testRoles.payer.address),
+      paymentInfo7,
+    )
+    const fullClient = createX402r({
+      ...clientConfig,
+      walletClient: anvilBaseSepolia.getWalletClient(
+        testRoles.receiver.address,
+      ),
+    })
+    const authHash = await fullClient.payment.authorize(
+      paymentInfo7,
+      DEFAULT_AMOUNT,
+      tokenCollector,
+      collectorData,
+    )
+    await scenario.publicClient.waitForTransactionReceipt({ hash: authHash })
+  }, 60_000)
+
+  it('payer requests refund, submits evidence, reads it back', async () => {
+    // Request refund
+    const requestHash = await payer7.refund!.request(
+      paymentInfo7,
+      DEFAULT_AMOUNT,
+      0n,
+    )
+    await publicClient.waitForTransactionReceipt({ hash: requestHash })
+
+    // Submit evidence
+    const evidenceCid = 'QmTestEvidenceCID_lifecycle'
+    const submitHash = await payer7.evidence!.submit(
+      paymentInfo7,
+      0n,
+      evidenceCid,
+    )
+    await publicClient.waitForTransactionReceipt({ hash: submitHash })
+
+    // Read back evidence
+    const count = await payer7.evidence!.count(paymentInfo7, 0n)
+    expect(count).toBe(1n)
+
+    const entry = await payer7.evidence!.get(paymentInfo7, 0n, 0n)
+    expect(entry.cid).toBe(evidenceCid)
+    expect(entry.submitter.toLowerCase()).toBe(
+      testRoles.payer.address.toLowerCase(),
+    )
+  }, 60_000)
+
+  it('arbiter reads evidence via getBatch', async () => {
+    const batch = await arbiter7.evidence!.getBatch(paymentInfo7, 0n, 0n, 10n)
+    expect(batch.entries.length).toBeGreaterThanOrEqual(1)
+    expect(batch.entries[0].cid).toBe('QmTestEvidenceCID_lifecycle')
   }, 60_000)
 })

@@ -1,0 +1,28 @@
+{
+  "name": "examples",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "payer:request-refund": "tsx payer/request-refund.ts",
+    "payer:submit-evidence": "tsx payer/submit-evidence.ts",
+    "merchant:charge": "tsx merchant/charge-payment.ts",
+    "merchant:release": "tsx merchant/release-escrow.ts",
+    "arbiter:distribute-fees": "tsx arbiter/distribute-fees.ts",
+    "arbiter:approve-refund": "tsx arbiter/approve-refund.ts",
+    "payer:freeze": "tsx payer/freeze-payment.ts",
+    "arbiter:review-evidence": "tsx arbiter/review-evidence.ts",
+    "scenario:release": "tsx scenarios/happy-path-release.ts",
+    "scenario:dispute": "tsx scenarios/dispute-resolution.ts"
+  },
+  "dependencies": {
+    "@x402r/core": "workspace:*",
+    "@x402r/sdk": "workspace:*",
+    "prool": "^0.2.3",
+    "tsx": "^4.19.4",
+    "viem": "^2.46.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.12.0"
+  }
+}

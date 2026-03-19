@@ -159,6 +159,7 @@ describe('Scenario 5a-neg: Approve reverts after deny', () => {
       walletClient: anvilBaseSepolia.getWalletClient(testRoles.payer.address),
       operatorAddress: fixtures.arbiterRefundOperatorAddress,
       refundRequestAddress: fixtures.refundRequestAddress,
+      refundRequestEvidenceAddress: fixtures.refundRequestEvidenceAddress,
     })
 
     gatedArbiter = createArbiterClient({
@@ -166,6 +167,7 @@ describe('Scenario 5a-neg: Approve reverts after deny', () => {
       walletClient: anvilBaseSepolia.getWalletClient(testRoles.arbiter.address),
       operatorAddress: fixtures.arbiterRefundOperatorAddress,
       refundRequestAddress: fixtures.refundRequestAddress,
+      refundRequestEvidenceAddress: fixtures.refundRequestEvidenceAddress,
     })
   }, 60_000)
 

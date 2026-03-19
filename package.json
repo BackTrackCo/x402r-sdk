@@ -22,7 +22,17 @@
     "attw": "pnpm --filter=@x402r/core exec attw --pack --ignore-rules no-resolution cjs-resolves-to-esm && pnpm --filter=@x402r/helpers exec attw --pack --ignore-rules no-resolution cjs-resolves-to-esm && pnpm --filter=@x402r/sdk exec attw --pack --ignore-rules no-resolution cjs-resolves-to-esm",
     "knip": "knip",
     "size-limit": "pnpm --filter=@x402r/core exec size-limit && pnpm --filter=@x402r/helpers exec size-limit && pnpm --filter=@x402r/sdk exec size-limit",
-    "test:pkg": "pnpm publint && pnpm attw"
+    "test:pkg": "pnpm publint && pnpm attw",
+    "example:payer:request-refund": "pnpm --filter examples run payer:request-refund",
+    "example:payer:submit-evidence": "pnpm --filter examples run payer:submit-evidence",
+    "example:merchant:charge": "pnpm --filter examples run merchant:charge",
+    "example:merchant:release": "pnpm --filter examples run merchant:release",
+    "example:arbiter:distribute-fees": "pnpm --filter examples run arbiter:distribute-fees",
+    "example:arbiter:approve-refund": "pnpm --filter examples run arbiter:approve-refund",
+    "example:payer:freeze": "pnpm --filter examples run payer:freeze",
+    "example:arbiter:review-evidence": "pnpm --filter examples run arbiter:review-evidence",
+    "scenario:release": "pnpm --filter examples run scenario:release",
+    "scenario:dispute": "pnpm --filter examples run scenario:dispute"
   },
   "engines": {
     "node": ">=22"
@@ -31,6 +41,9 @@
   "pnpm": {
     "overrides": {
       "tar": ">=7.5.11"
+    },
+    "patchedDependencies": {
+      "http-proxy@1.18.1": "patches/http-proxy@1.18.1.patch"
     }
   },
   "devDependencies": {

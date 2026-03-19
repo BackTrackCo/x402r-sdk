@@ -26,7 +26,7 @@ describe('createEvidenceActions', () => {
   it('submit delegates to core with refundRequestEvidenceAddress and requires wallet', async () => {
     const { submitEvidence } = await import('@x402r/core')
     const config = createTestConfig()
-    const actions = createEvidenceActions(config)
+    const actions = createEvidenceActions(config, TEST_EVIDENCE)
 
     await actions.submit(mockPaymentInfo, 1n, 'QmTest')
 
@@ -40,7 +40,7 @@ describe('createEvidenceActions', () => {
 
   it('submit throws without walletClient', async () => {
     const config = createTestConfig({ walletClient: undefined })
-    const actions = createEvidenceActions(config)
+    const actions = createEvidenceActions(config, TEST_EVIDENCE)
 
     await expect(() =>
       actions.submit(mockPaymentInfo, 1n, 'QmTest'),
@@ -50,7 +50,7 @@ describe('createEvidenceActions', () => {
   it('get delegates to core with contractAddress and index', async () => {
     const { getEvidence } = await import('@x402r/core')
     const config = createTestConfig()
-    const actions = createEvidenceActions(config)
+    const actions = createEvidenceActions(config, TEST_EVIDENCE)
 
     const result = await actions.get(mockPaymentInfo, 1n, 0n)
 
@@ -71,7 +71,7 @@ describe('createEvidenceActions', () => {
   it('getBatch delegates to core with offset and count', async () => {
     const { getEvidenceBatch } = await import('@x402r/core')
     const config = createTestConfig()
-    const actions = createEvidenceActions(config)
+    const actions = createEvidenceActions(config, TEST_EVIDENCE)
 
     const result = await actions.getBatch(mockPaymentInfo, 1n, 0n, 10n)
 
@@ -88,7 +88,7 @@ describe('createEvidenceActions', () => {
   it('count works without walletClient (read-only)', async () => {
     const { getEvidenceCount } = await import('@x402r/core')
     const config = createTestConfig({ walletClient: undefined })
-    const actions = createEvidenceActions(config)
+    const actions = createEvidenceActions(config, TEST_EVIDENCE)
 
     const result = await actions.count(mockPaymentInfo, 1n)
 

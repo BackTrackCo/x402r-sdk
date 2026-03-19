@@ -1,8 +1,10 @@
-import type { PublicClient, WalletClient } from 'viem'
+import type { Address, PublicClient, WalletClient } from 'viem'
 import { beforeAll, describe, expect, it } from 'vitest'
+import { freezeAbi } from '../../src/abis/generated.js'
 import { x402rChains } from '../../src/config/index.js'
 import {
   computeFeeCalculatorAddress,
+  computeStaticAddressConditionAddress,
   deployMarketplaceOperator,
   type MarketplaceOperatorOptions,
   previewMarketplaceOperator,
@@ -90,11 +92,20 @@ describe('Deploy Module (Fork)', () => {
     )
     expect(deployment.feeCalculatorAddress).toBe(preview.feeCalculatorAddress)
 
-    // No freeze, with fee: escrow + refundRequest + staticAddrCond + feeCalc + operator = 5
-    expect(deployment.deployments).toHaveLength(5)
+    // Evidence contract deployed and has bytecode
+    expect(deployment.refundRequestEvidenceAddress).toMatch(
+      /^0x[0-9a-fA-F]{40}$/,
+    )
+    const evidenceCode = await publicClient.getCode({
+      address: deployment.refundRequestEvidenceAddress as Address,
+    })
+    expect(evidenceCode).not.toBe('0x')
+
+    // No freeze, with fee: escrow + refundRequest + staticAddrCond + evidence + feeCalc + operator = 6
+    expect(deployment.deployments).toHaveLength(6)
     // Some components may already exist on the forked chain — assert totals add up
     expect(deployment.summary.newCount + deployment.summary.existingCount).toBe(
-      5,
+      6,
     )
     // Multicall3 batches all deploys into a single tx
     expect(deployment.summary.txHashes).toHaveLength(
@@ -112,9 +123,9 @@ describe('Deploy Module (Fork)', () => {
     )
 
     // All should be existing since we deployed (or found existing) in the previous test
-    expect(deployment.deployments).toHaveLength(5)
+    expect(deployment.deployments).toHaveLength(6)
     expect(deployment.summary.newCount).toBe(0)
-    expect(deployment.summary.existingCount).toBe(5)
+    expect(deployment.summary.existingCount).toBe(6)
     expect(deployment.summary.txHashes).toHaveLength(0)
     for (const d of deployment.deployments) {
       expect(d.isNew).toBe(false)
@@ -140,11 +151,34 @@ describe('Deploy Module (Fork)', () => {
       deployment.escrowPeriodAddress,
     )
 
-    // freeze + andCondition + escrow + refundRequest + staticAddrCond + feeCalc + operator = 7
-    expect(deployment.deployments).toHaveLength(7)
+    // freeze + andCondition + escrow + refundRequest + staticAddrCond + evidence + staticAddrCondArbiter + feeCalc + operator = 9
+    expect(deployment.deployments).toHaveLength(9)
     expect(deployment.summary.newCount + deployment.summary.existingCount).toBe(
-      7,
+      9,
     )
+
+    // Verify freeze contract's unfreezeCondition is the arbiter SAC (not a singleton)
+    const unfreezeCondition = await publicClient.readContract({
+      address: deployment.freezeAddress! as Address,
+      abi: freezeAbi,
+      functionName: 'UNFREEZE_CONDITION',
+    })
+    const expectedArbiterSAC = await computeStaticAddressConditionAddress(
+      publicClient,
+      {
+        factoryAddress: baseSepolia.factories.staticAddressCondition,
+        designatedAddress: options.arbiter,
+      },
+    )
+    expect(unfreezeCondition).toBe(expectedArbiterSAC)
+
+    // Verify freezeCondition is singletons.payer
+    const freezeCondition = await publicClient.readContract({
+      address: deployment.freezeAddress! as Address,
+      abi: freezeAbi,
+      functionName: 'FREEZE_CONDITION',
+    })
+    expect(freezeCondition).toBe(baseSepolia.conditions.payer)
   })
 
   it('deploy with different arbiter produces different operator address', async () => {

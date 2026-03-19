@@ -5,6 +5,7 @@ import {
   escrowPeriodFactoryAbi,
   freezeFactoryAbi,
   paymentOperatorFactoryAbi,
+  refundRequestEvidenceFactoryAbi,
   refundRequestFactoryAbi,
   signatureConditionFactoryAbi,
   staticAddressConditionFactoryAbi,
@@ -24,6 +25,7 @@ import {
   computeFreezeAddress,
   computeOperatorAddress,
   computeRefundRequestAddress,
+  computeRefundRequestEvidenceAddress,
   computeSignatureConditionAddress,
   computeStaticAddressConditionAddress,
 } from './factories.js'
@@ -80,6 +82,77 @@ type MulticallContract = {
   args?: readonly unknown[]
 }
 
+// ---------------------------------------------------------------------------
+// Post-deploy bytecode verification + retry
+// ---------------------------------------------------------------------------
+
+/**
+ * Estimate gas for a Multicall3 aggregate3 batch by temporarily setting all
+ * calls to allowFailure:false. This forces eth_estimateGas to find a gas
+ * limit where every sub-call succeeds, preventing the known underestimation
+ * when allowFailure:true lets the estimator converge on partial-success gas.
+ * See: https://github.com/ethereum/go-ethereum/issues/18519
+ */
+async function estimateBatchGas(
+  publicClient: PublicClient,
+  calls: Multicall3Call[],
+  account: { address: Address },
+): Promise<bigint> {
+  const strictCalls = calls.map((c) => ({ ...c, allowFailure: false }))
+  const estimated = await publicClient.estimateContractGas({
+    address: MULTICALL3,
+    abi: multicall3Abi,
+    functionName: 'aggregate3',
+    args: [strictCalls],
+    account: account.address,
+  })
+  return (estimated * 120n) / 100n
+}
+
+/**
+ * Defense-in-depth: verify that all new deployments have bytecode on-chain.
+ * The primary fix for silent sub-call failures is proper gas estimation via
+ * `estimateBatchGas`, but this retry mechanism catches edge cases like
+ * concurrent deploys or unusual RPC behavior.
+ */
+async function verifyAndRetryDeploys(
+  publicClient: PublicClient,
+  walletClient: WalletClient,
+  deployments: DeployResult[],
+  calls: Multicall3Call[],
+  txHashes: Hex[],
+): Promise<void> {
+  let callIdx = 0
+  for (const d of deployments) {
+    if (!d.isNew) continue
+    const code = await publicClient.getCode({ address: d.address })
+    if (!code || code === '0x') {
+      // Retry this deploy as a standalone transaction
+      const call = calls[callIdx]
+      const retryHash = await walletClient.sendTransaction({
+        to: call.target,
+        data: call.callData,
+        account: walletClient.account!,
+        chain: publicClient.chain,
+      })
+      await publicClient.waitForTransactionReceipt({ hash: retryHash })
+      const retryCode = await publicClient.getCode({ address: d.address })
+      if (!retryCode || retryCode === '0x') {
+        throw new ConfigError(
+          `Deploy verification failed: no bytecode at ${d.address}`,
+        )
+      }
+      d.hash = retryHash
+      txHashes.push(retryHash)
+    }
+    callIdx++
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Marketplace operator types
+// ---------------------------------------------------------------------------
+
 export interface MarketplaceOperatorOptions {
   chainId: number
   feeRecipient: Address
@@ -95,6 +168,7 @@ export interface MarketplaceOperatorPreview {
   escrowPeriodAddress: Address
   freezeAddress: Address | null
   refundRequestAddress: Address
+  refundRequestEvidenceAddress: Address
   refundInEscrowConditionAddress: Address
   feeCalculatorAddress: Address | null
   operatorConfig: OperatorConfig
@@ -105,6 +179,7 @@ export interface MarketplaceOperatorDeployment {
   escrowPeriodAddress: Address
   freezeAddress: Address | null
   refundRequestAddress: Address
+  refundRequestEvidenceAddress: Address
   refundInEscrowConditionAddress: Address
   feeCalculatorAddress: Address | null
   operatorConfig: OperatorConfig
@@ -170,45 +245,60 @@ export async function previewMarketplaceOperator(
   } = resolveOptions(options)
 
   // Batch 1 (parallel): independent computations
-  const [escrowPeriodAddress, refundRequestAddress, feeCalculatorAddress] =
-    await Promise.all([
-      computeEscrowPeriodAddress(publicClient, {
-        factoryAddress: factories.escrowPeriod,
-        escrowPeriod: options.escrowPeriodSeconds,
-        authorizedCodehash,
-      }),
-      computeRefundRequestAddress(publicClient, {
-        factoryAddress: factories.refundRequest,
-        arbiter: options.arbiter,
-      }),
-      operatorFeeBps > 0n
-        ? computeFeeCalculatorAddress(publicClient, {
-            factoryAddress: factories.staticFeeCalculator,
-            feeBps: operatorFeeBps,
-          })
-        : Promise.resolve(null),
-    ])
+  const [
+    escrowPeriodAddress,
+    refundRequestAddress,
+    feeCalculatorAddress,
+    staticAddrCondArbiterAddr,
+  ] = await Promise.all([
+    computeEscrowPeriodAddress(publicClient, {
+      factoryAddress: factories.escrowPeriod,
+      escrowPeriod: options.escrowPeriodSeconds,
+      authorizedCodehash,
+    }),
+    computeRefundRequestAddress(publicClient, {
+      factoryAddress: factories.refundRequest,
+      arbiter: options.arbiter,
+    }),
+    operatorFeeBps > 0n
+      ? computeFeeCalculatorAddress(publicClient, {
+          factoryAddress: factories.staticFeeCalculator,
+          feeBps: operatorFeeBps,
+        })
+      : Promise.resolve(null),
+    freezeDurationSeconds > 0n
+      ? computeStaticAddressConditionAddress(publicClient, {
+          factoryAddress: factories.staticAddressCondition,
+          designatedAddress: options.arbiter,
+        })
+      : Promise.resolve(null),
+  ])
 
   // Batch 2 (parallel): depends on batch 1 results
   // staticAddrCondAddress gates refundInEscrow to the RefundRequest contract.
   // All in-escrow refunds on marketplace operators require a payer request via
   // RefundRequest.requestRefund() first, then arbiter/merchant approves via
   // RefundRequest.approve() which atomically calls operator.refundInEscrow().
-  const [freezeAddress, staticAddrCondAddress] = await Promise.all([
-    freezeDurationSeconds > 0n
-      ? computeFreezeAddress(publicClient, {
-          factoryAddress: factories.freeze,
-          freezeCondition: singletons.payer,
-          unfreezeCondition: singletons.receiver,
-          freezeDuration: freezeDurationSeconds,
-          escrowPeriodContract: escrowPeriodAddress,
-        })
-      : Promise.resolve(null),
-    computeStaticAddressConditionAddress(publicClient, {
-      factoryAddress: factories.staticAddressCondition,
-      designatedAddress: refundRequestAddress,
-    }),
-  ])
+  const [freezeAddress, staticAddrCondAddress, refundRequestEvidenceAddress] =
+    await Promise.all([
+      freezeDurationSeconds > 0n
+        ? computeFreezeAddress(publicClient, {
+            factoryAddress: factories.freeze,
+            freezeCondition: singletons.payer,
+            unfreezeCondition: staticAddrCondArbiterAddr!,
+            freezeDuration: freezeDurationSeconds,
+            escrowPeriodContract: escrowPeriodAddress,
+          })
+        : Promise.resolve(null),
+      computeStaticAddressConditionAddress(publicClient, {
+        factoryAddress: factories.staticAddressCondition,
+        designatedAddress: refundRequestAddress,
+      }),
+      computeRefundRequestEvidenceAddress(publicClient, {
+        factoryAddress: factories.refundRequestEvidence,
+        refundRequest: refundRequestAddress,
+      }),
+    ])
 
   // refundInEscrowCondition = StaticAddressCondition(refundRequest)
   const refundInEscrowConditionAddress = staticAddrCondAddress
@@ -250,6 +340,7 @@ export async function previewMarketplaceOperator(
     escrowPeriodAddress,
     freezeAddress,
     refundRequestAddress,
+    refundRequestEvidenceAddress,
     refundInEscrowConditionAddress,
     feeCalculatorAddress,
     operatorConfig,
@@ -294,6 +385,7 @@ export async function deployMarketplaceOperator(
     feeCalculatorAddress,
     freezeAddress,
     refundRequestAddress,
+    refundRequestEvidenceAddress,
     refundInEscrowConditionAddress,
     operatorAddress,
     operatorConfig,
@@ -302,14 +394,19 @@ export async function deployMarketplaceOperator(
   const hasFee = operatorFeeBps > 0n
   const hasFreeze = freezeDurationSeconds > 0n
 
-  // Re-derive staticAddrCondAddress so we can check existence and deploy separately.
-  const staticAddrCondAddress = await computeStaticAddressConditionAddress(
-    publicClient,
-    {
+  // Re-derive SAC addresses so we can check existence and deploy separately.
+  const [staticAddrCondAddress, staticAddrCondArbiterAddr] = await Promise.all([
+    computeStaticAddressConditionAddress(publicClient, {
       factoryAddress: factories.staticAddressCondition,
       designatedAddress: refundRequestAddress,
-    },
-  )
+    }),
+    hasFreeze
+      ? computeStaticAddressConditionAddress(publicClient, {
+          factoryAddress: factories.staticAddressCondition,
+          designatedAddress: options.arbiter,
+        })
+      : Promise.resolve(null),
+  ])
 
   // ── Phase 2: Batch-check which contracts already exist ─────────────────
   const escrowArgs = [options.escrowPeriodSeconds, authorizedCodehash] as const
@@ -318,7 +415,7 @@ export async function deployMarketplaceOperator(
   const freezeArgs = hasFreeze
     ? ([
         singletons.payer,
-        singletons.receiver,
+        staticAddrCondArbiterAddr!,
         freezeDurationSeconds,
         escrowPeriodAddress,
       ] as const)
@@ -358,6 +455,15 @@ export async function deployMarketplaceOperator(
       },
     },
     {
+      name: 'refundRequestEvidence',
+      contract: {
+        address: factories.refundRequestEvidence,
+        abi: refundRequestEvidenceFactoryAbi,
+        functionName: 'getDeployed',
+        args: [refundRequestAddress],
+      },
+    },
+    {
       name: 'operator',
       contract: {
         address: factories.paymentOperator,
@@ -368,6 +474,17 @@ export async function deployMarketplaceOperator(
     },
   ]
 
+  if (hasFreeze && staticAddrCondArbiterAddr) {
+    existenceEntries.push({
+      name: 'staticAddressConditionArbiter',
+      contract: {
+        address: factories.staticAddressCondition,
+        abi: staticAddressConditionFactoryAbi,
+        functionName: 'getDeployed',
+        args: [options.arbiter],
+      },
+    })
+  }
   if (hasFreeze && freezeArgs) {
     existenceEntries.push({
       name: 'freeze',
@@ -420,7 +537,10 @@ export async function deployMarketplaceOperator(
     escrowPeriod: existsMap.get('escrowPeriod') ?? false,
     refundRequest: existsMap.get('refundRequest') ?? false,
     staticAddressCondition: existsMap.get('staticAddressCondition') ?? false,
+    refundRequestEvidence: existsMap.get('refundRequestEvidence') ?? false,
     operator: existsMap.get('operator') ?? false,
+    staticAddressConditionArbiter:
+      existsMap.get('staticAddressConditionArbiter') ?? !hasFreeze,
     freeze: existsMap.get('freeze') ?? false,
     andCondition: existsMap.get('andCondition') ?? false,
     feeCalculator: existsMap.get('feeCalculator') ?? !hasFee,
@@ -432,8 +552,16 @@ export async function deployMarketplaceOperator(
       { address: escrowPeriodAddress, hash: null, isNew: false },
       { address: refundRequestAddress, hash: null, isNew: false },
       { address: staticAddrCondAddress, hash: null, isNew: false },
+      { address: refundRequestEvidenceAddress, hash: null, isNew: false },
     ]
     if (hasFreeze && freezeAddress) {
+      if (staticAddrCondArbiterAddr) {
+        existingDeployments.push({
+          address: staticAddrCondArbiterAddr,
+          hash: null,
+          isNew: false,
+        })
+      }
       existingDeployments.push({
         address: freezeAddress,
         hash: null,
@@ -462,6 +590,7 @@ export async function deployMarketplaceOperator(
       escrowPeriodAddress,
       freezeAddress,
       refundRequestAddress,
+      refundRequestEvidenceAddress,
       refundInEscrowConditionAddress,
       feeCalculatorAddress,
       operatorConfig,
@@ -523,6 +652,24 @@ export async function deployMarketplaceOperator(
     'deploy',
     staticAddrCondArgs,
   )
+  trackDeploy(
+    refundRequestEvidenceAddress,
+    exists.refundRequestEvidence,
+    factories.refundRequestEvidence,
+    refundRequestEvidenceFactoryAbi,
+    'deploy',
+    [refundRequestAddress],
+  )
+  if (hasFreeze && staticAddrCondArbiterAddr) {
+    trackDeploy(
+      staticAddrCondArbiterAddr,
+      exists.staticAddressConditionArbiter,
+      factories.staticAddressCondition,
+      staticAddressConditionFactoryAbi,
+      'deploy',
+      [options.arbiter],
+    )
+  }
   if (hasFreeze && freezeArgs && freezeAddress) {
     trackDeploy(
       freezeAddress,
@@ -595,13 +742,26 @@ export async function deployMarketplaceOperator(
     }
   }
 
-  const txHash = await walletClient.writeContract(request)
+  const gas = await estimateBatchGas(publicClient, calls, walletClient.account!)
+  const txHash = await walletClient.writeContract({ ...request, gas })
   await publicClient.waitForTransactionReceipt({ hash: txHash })
 
   // Fill in txHash for all new deployments
   for (const d of deployments) {
     if (d.isNew) d.hash = txHash
   }
+
+  // Defense-in-depth: verify all new deployments have bytecode and retry
+  // failures individually. The primary fix is gas estimation above, but this
+  // catches edge cases like concurrent deploys or unusual RPC behavior.
+  const txHashes: Hex[] = [txHash]
+  await verifyAndRetryDeploys(
+    publicClient,
+    walletClient,
+    deployments,
+    calls,
+    txHashes,
+  )
 
   const newCount = deployments.filter((d) => d.isNew).length
   const existingCount = deployments.filter((d) => !d.isNew).length
@@ -611,11 +771,12 @@ export async function deployMarketplaceOperator(
     escrowPeriodAddress,
     freezeAddress,
     refundRequestAddress,
+    refundRequestEvidenceAddress,
     refundInEscrowConditionAddress,
     feeCalculatorAddress,
     operatorConfig,
     deployments,
-    summary: { newCount, existingCount, txHashes: [txHash] },
+    summary: { newCount, existingCount, txHashes: txHashes },
   }
 }
 
@@ -631,11 +792,13 @@ export interface ArbiterSetupOptions {
 export interface ArbiterSetupPreview {
   signatureConditionAddress: Address
   refundRequestAddress: Address
+  refundRequestEvidenceAddress: Address
 }
 
 export interface ArbiterSetupDeployment {
   signatureConditionAddress: Address
   refundRequestAddress: Address
+  refundRequestEvidenceAddress: Address
   deployments: DeployResult[]
   summary: {
     newCount: number
@@ -667,9 +830,16 @@ export async function previewArbiterSetup(
     arbiter: options.arbiter,
   })
 
+  const refundRequestEvidenceAddress =
+    await computeRefundRequestEvidenceAddress(publicClient, {
+      factoryAddress: factories.refundRequestEvidence,
+      refundRequest: refundRequestAddress,
+    })
+
   return {
     signatureConditionAddress,
     refundRequestAddress,
+    refundRequestEvidenceAddress,
   }
 }
 
@@ -690,7 +860,11 @@ export async function deployArbiterSetup(
 
   // Phase 1: Compute deterministic addresses
   const preview = await previewArbiterSetup(publicClient, options)
-  const { signatureConditionAddress, refundRequestAddress } = preview
+  const {
+    signatureConditionAddress,
+    refundRequestAddress,
+    refundRequestEvidenceAddress,
+  } = preview
 
   // Phase 2: Batch-check existence
   const arbiterExistenceEntries: MulticallContract[] = [
@@ -706,6 +880,12 @@ export async function deployArbiterSetup(
       functionName: 'getDeployed',
       args: [options.arbiter],
     },
+    {
+      address: factories.refundRequestEvidence,
+      abi: refundRequestEvidenceFactoryAbi,
+      functionName: 'getDeployed',
+      args: [refundRequestAddress],
+    },
   ]
   const existenceResults = await publicClient.multicall({
     contracts: arbiterExistenceEntries as Parameters<
@@ -715,17 +895,20 @@ export async function deployArbiterSetup(
 
   const sigCondExists = existenceResults[0].result !== zeroAddress
   const refundReqExists = existenceResults[1].result !== zeroAddress
+  const evidenceExists = existenceResults[2].result !== zeroAddress
 
-  // If both already exist, return immediately
-  if (sigCondExists && refundReqExists) {
+  // If all already exist, return immediately
+  if (sigCondExists && refundReqExists && evidenceExists) {
     return {
       signatureConditionAddress,
       refundRequestAddress,
+      refundRequestEvidenceAddress,
       deployments: [
         { address: signatureConditionAddress, hash: null, isNew: false },
         { address: refundRequestAddress, hash: null, isNew: false },
+        { address: refundRequestEvidenceAddress, hash: null, isNew: false },
       ],
-      summary: { newCount: 0, existingCount: 2, txHashes: [] },
+      summary: { newCount: 0, existingCount: 3, txHashes: [] },
     }
   }
 
@@ -779,6 +962,29 @@ export async function deployArbiterSetup(
     })
   }
 
+  if (evidenceExists) {
+    deployments.push({
+      address: refundRequestEvidenceAddress,
+      hash: null,
+      isNew: false,
+    })
+  } else {
+    calls.push({
+      target: factories.refundRequestEvidence,
+      allowFailure: true,
+      callData: encodeFunctionData({
+        abi: refundRequestEvidenceFactoryAbi,
+        functionName: 'deploy',
+        args: [refundRequestAddress],
+      }),
+    })
+    deployments.push({
+      address: refundRequestEvidenceAddress,
+      hash: null,
+      isNew: true,
+    })
+  }
+
   // Phase 4: Send single transaction via Multicall3.aggregate3
   if (!walletClient.account) {
     throw new ConfigError('walletClient.account is required for deployment')
@@ -801,12 +1007,24 @@ export async function deployArbiterSetup(
     }
   }
 
-  const txHash = await walletClient.writeContract(request)
+  const gas = await estimateBatchGas(publicClient, calls, walletClient.account!)
+  const txHash = await walletClient.writeContract({ ...request, gas })
   await publicClient.waitForTransactionReceipt({ hash: txHash })
 
   for (const d of deployments) {
     if (d.isNew) d.hash = txHash
   }
+
+  // Defense-in-depth: verify all new deployments have bytecode and retry
+  // failures individually.
+  const txHashes: Hex[] = [txHash]
+  await verifyAndRetryDeploys(
+    publicClient,
+    walletClient,
+    deployments,
+    calls,
+    txHashes,
+  )
 
   const newCount = deployments.filter((d) => d.isNew).length
   const existingCount = deployments.filter((d) => !d.isNew).length
@@ -814,7 +1032,8 @@ export async function deployArbiterSetup(
   return {
     signatureConditionAddress,
     refundRequestAddress,
+    refundRequestEvidenceAddress,
     deployments,
-    summary: { newCount, existingCount, txHashes: [txHash] },
+    summary: { newCount, existingCount, txHashes: txHashes },
   }
 }

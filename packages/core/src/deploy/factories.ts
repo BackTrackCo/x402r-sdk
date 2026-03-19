@@ -7,6 +7,7 @@ import {
   orConditionFactoryAbi,
   paymentOperatorFactoryAbi,
   recorderCombinatorFactoryAbi,
+  refundRequestEvidenceFactoryAbi,
   refundRequestFactoryAbi,
   signatureConditionFactoryAbi,
   staticAddressConditionFactoryAbi,
@@ -434,6 +435,46 @@ export function deployRefundRequest(
     abi: refundRequestFactoryAbi,
     args: [parameters.arbiter],
     opName: 'deployRefundRequest',
+  })
+}
+
+// ---------------------------------------------------------------------------
+// RefundRequestEvidence
+// ---------------------------------------------------------------------------
+
+export interface ComputeRefundRequestEvidenceAddressParameters {
+  factoryAddress: Address
+  refundRequest: Address
+}
+export type ComputeRefundRequestEvidenceAddressReturnType = Address
+
+export function computeRefundRequestEvidenceAddress(
+  publicClient: PublicClient,
+  parameters: ComputeRefundRequestEvidenceAddressParameters,
+): Promise<ComputeRefundRequestEvidenceAddressReturnType> {
+  return computeViaFactory(publicClient, {
+    factoryAddress: parameters.factoryAddress,
+    abi: refundRequestEvidenceFactoryAbi,
+    args: [parameters.refundRequest],
+  })
+}
+
+export interface DeployRefundRequestEvidenceParameters {
+  factoryAddress: Address
+  refundRequest: Address
+}
+export type DeployRefundRequestEvidenceReturnType = DeployResult
+
+export function deployRefundRequestEvidence(
+  walletClient: WalletClient,
+  publicClient: PublicClient,
+  parameters: DeployRefundRequestEvidenceParameters,
+): Promise<DeployRefundRequestEvidenceReturnType> {
+  return deployViaFactory(walletClient, publicClient, {
+    factoryAddress: parameters.factoryAddress,
+    abi: refundRequestEvidenceFactoryAbi,
+    args: [parameters.refundRequest],
+    opName: 'deployRefundRequestEvidence',
   })
 }
 

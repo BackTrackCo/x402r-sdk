@@ -6,7 +6,6 @@ import {
   authCaptureEscrowAbi,
   protocolFeeConfigAbi,
   receiverRefundCollectorAbi,
-  refundRequestEvidenceAbi,
   usdcTvlLimitAbi,
 } from '../../src/abis/generated.js'
 import { x402rChains } from '../../src/config/index.js'
@@ -20,6 +19,7 @@ import {
   computeOrConditionAddress,
   computeRecorderCombinatorAddress,
   computeRefundRequestAddress,
+  computeRefundRequestEvidenceAddress,
   computeSignatureConditionAddress,
   computeStaticAddressConditionAddress,
 } from '../../src/deploy/index.js'
@@ -97,15 +97,6 @@ describe('Config Address Smoke Tests (Fork)', () => {
       functionName: 'authCaptureEscrow',
     })
     expect(result).toBe(config.authCaptureEscrow)
-  })
-
-  it('refundRequestEvidence responds to REFUND_REQUEST()', async () => {
-    const result = await publicClient.readContract({
-      address: config.refundRequestEvidence,
-      abi: refundRequestEvidenceAbi,
-      functionName: 'REFUND_REQUEST',
-    })
-    expect(result).toMatch(/^0x[0-9a-fA-F]{40}$/)
   })
 
   it('tokenCollector has non-zero bytecode', async () => {
@@ -223,6 +214,16 @@ describe('Config Address Smoke Tests (Fork)', () => {
       expect(addr).not.toBe(zeroAddress)
     },
   )
+
+  it('refundRequestEvidence factory responds to computeAddress', async () => {
+    expect(config.factories.refundRequestEvidence).not.toBe(zeroAddress)
+    const addr = await computeRefundRequestEvidenceAddress(publicClient, {
+      factoryAddress: config.factories.refundRequestEvidence,
+      refundRequest: zeroAddress,
+    })
+    expect(addr).toMatch(/^0x[0-9a-fA-F]{40}$/)
+    expect(addr).not.toBe(zeroAddress)
+  })
 
   // ---------------------------------------------------------------------------
   // Condition singletons — verify bytecode exists at each address

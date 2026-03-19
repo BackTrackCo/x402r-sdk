@@ -89,6 +89,22 @@ await x402r.disputes.resolve(paymentInfo, 0n, 'refund')
 
 Shipped plugins (`escrowPeriodActions`, `freezeActions`) fill optional `escrow`/`freeze` slots. Custom extensions can add any namespace. Extensions cannot override defined base keys.
 
+## Refund & Dispute Flow
+
+Non-obvious behaviors integrators should be aware of:
+
+1. **Evidence is 1:1 with RefundRequest** — each RefundRequest gets its own factory-deployed Evidence contract. Different arbiter = different contracts = separate evidence stores. Evidence is required when refund is configured (`refundRequestEvidenceAddress` must be provided alongside `refundRequestAddress`).
+
+2. **`approve()` is cumulative and immediate** — each call adds to `approvedAmount` and atomically executes `refundInEscrow()`. No undo. Amount is `uint120` (max ~1.3e36).
+
+3. **Evidence access control** — arbiter identity comes from `REFUND_REQUEST.ARBITER()`, not from the operator's condition tree. If arbiter is a multisig, that address must call `submitEvidence()`.
+
+4. **Post-escrow refunds bypass RefundRequest** — receiver can call `refundPostEscrow()` directly via the Receiver singleton condition. No arbiter involvement.
+
+5. **Freeze roles** — payer freezes (time extension near deadline), arbiter unfreezes (investigation resolved).
+
+6. **`payment.refundInEscrow` is gated** — on marketplace operators, only the RefundRequest contract can call it (via `StaticAddressCondition`). Use `refund.approve()` on role clients instead.
+
 ## Docs
 
 [docs.x402r.org](https://docs.x402r.org)

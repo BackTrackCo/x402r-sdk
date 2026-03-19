@@ -217,6 +217,7 @@ describe('Scenario 8b: Merchant approves refund request', () => {
       operatorAddress: fixtures.arbiterRefundOperatorAddress,
       escrowPeriodAddress: fixtures.escrowPeriodAddress,
       refundRequestAddress: fixtures.refundRequestAddress,
+      refundRequestEvidenceAddress: fixtures.refundRequestEvidenceAddress,
     })
 
     const hash = await merchantWithRefund.refund!.approve(
@@ -280,6 +281,7 @@ describe('Scenario 8c: Approve reverts after escrow expires', () => {
       walletClient: anvilBaseSepolia.getWalletClient(testRoles.payer.address),
       operatorAddress: fixtures.arbiterRefundOperatorAddress,
       refundRequestAddress: fixtures.refundRequestAddress,
+      refundRequestEvidenceAddress: fixtures.refundRequestEvidenceAddress,
     })
     const reqHash = await payer3.refund!.request(
       paymentInfo3,

@@ -35,25 +35,48 @@ export const TEST_ADDRESSES = {
  * Creates a mock public client whose `readContract` resolves from a response map.
  * Supports both `functionName` and `${address}:${functionName}` composite keys.
  */
+/**
+ * Creates a mock public client whose `readContract` resolves from a response map.
+ * Supports keys in priority order:
+ *   1. `${address}:${functionName}:${firstArg}` — argument-specific (disambiguates same contract+fn)
+ *   2. `${address}:${functionName}` — contract+function composite
+ *   3. `${functionName}` — function-name-only fallback
+ */
 export function createMockPublicClient(
   responses: Record<string, unknown> = {},
 ): PublicClient {
+  function resolve(
+    address: string | undefined,
+    functionName: string,
+    args?: readonly unknown[],
+  ): unknown | undefined {
+    // Try argument-specific key first (handles same address:fn with different args)
+    if (address && args?.length) {
+      const argKey = `${address}:${functionName}:${args[0]}`
+      if (argKey in responses) return responses[argKey]
+    }
+    const compositeKey = address ? `${address}:${functionName}` : functionName
+    if (compositeKey in responses) return responses[compositeKey]
+    if (functionName in responses) return responses[functionName]
+    return undefined
+  }
+
   return {
     readContract: vi.fn(
       ({
         address,
         functionName,
+        args,
       }: {
         address?: string
         functionName: string
+        args?: readonly unknown[]
       }) => {
+        const value = resolve(address, functionName, args)
+        if (value !== undefined) return Promise.resolve(value)
         const compositeKey = address
           ? `${address}:${functionName}`
           : functionName
-        if (compositeKey in responses)
-          return Promise.resolve(responses[compositeKey])
-        if (functionName in responses)
-          return Promise.resolve(responses[functionName])
         return Promise.reject(
           new Error(`No mock response for readContract(${compositeKey})`),
         )
@@ -64,19 +87,15 @@ export function createMockPublicClient(
         contracts,
         allowFailure,
       }: {
-        contracts: { address?: string; functionName: string }[]
+        contracts: {
+          address?: string
+          functionName: string
+          args?: readonly unknown[]
+        }[]
         allowFailure?: boolean
       }) => {
-        const results = contracts.map(({ address, functionName }) => {
-          const compositeKey = address
-            ? `${address}:${functionName}`
-            : functionName
-          const value =
-            compositeKey in responses
-              ? responses[compositeKey]
-              : functionName in responses
-                ? responses[functionName]
-                : undefined
+        const results = contracts.map(({ address, functionName, args }) => {
+          const value = resolve(address, functionName, args)
           if (value === undefined)
             throw new Error(`No mock response for multicall(${functionName})`)
           // allowFailure: false → raw values; true/default → { result, status }
@@ -96,6 +115,8 @@ export function createMockPublicClient(
         return Promise.resolve({ request: {}, result })
       }),
     waitForTransactionReceipt: vi.fn().mockResolvedValue({ status: 'success' }),
+    getCode: vi.fn().mockResolvedValue('0x600160005260206000f3'),
+    estimateContractGas: vi.fn().mockResolvedValue(3_000_000n),
   } as unknown as PublicClient
 }
 
@@ -109,6 +130,7 @@ export function createMockWalletClient(
   return {
     writeContract:
       options.writeContract ?? vi.fn().mockResolvedValue(MOCK_TX_HASH),
+    sendTransaction: vi.fn().mockResolvedValue(MOCK_TX_HASH),
     chain: options.chain ?? { id: 84532, name: 'Base Sepolia' },
     account: options.account
       ? { address: options.account }

@@ -5165,6 +5165,76 @@ export const refundRequestEvidenceAbi = [
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// RefundRequestEvidenceFactory
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const refundRequestEvidenceFactoryAbi = [
+  {
+    type: 'function',
+    inputs: [
+      { name: 'refundRequest', internalType: 'address', type: 'address' },
+    ],
+    name: 'computeAddress',
+    outputs: [{ name: 'evidence', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'refundRequest', internalType: 'address', type: 'address' },
+    ],
+    name: 'deploy',
+    outputs: [{ name: 'evidence', internalType: 'address', type: 'address' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'refundRequest', internalType: 'address', type: 'address' },
+    ],
+    name: 'getDeployed',
+    outputs: [{ name: 'evidence', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'refundRequest', internalType: 'address', type: 'address' },
+    ],
+    name: 'getKey',
+    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
+    stateMutability: 'pure',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
+    name: 'refundRequestEvidences',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'evidence',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'refundRequest',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'RefundRequestEvidenceDeployed',
+  },
+  { type: 'error', inputs: [], name: 'ZeroRefundRequest' },
+] as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // RefundRequestFactory
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

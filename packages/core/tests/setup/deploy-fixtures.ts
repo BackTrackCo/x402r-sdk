@@ -30,6 +30,7 @@ export interface DeployedFixtures {
   operatorWithFreezeAddress: Address
   arbiterConditionAddress: Address
   refundRequestAddress: Address
+  refundRequestEvidenceAddress: Address
   arbiterRefundOperatorAddress: Address
 }
 
@@ -176,7 +177,7 @@ export async function deployTestFixtures(
     abi: freezeFactoryAbi,
     functionName: 'deploy',
     args: [
-      arbiterConditionAddress,
+      baseSepolia.conditions.payer,
       arbiterConditionAddress,
       0n,
       escrowPeriodAddress,
@@ -191,7 +192,7 @@ export async function deployTestFixtures(
     abi: freezeFactoryAbi,
     functionName: 'computeAddress',
     args: [
-      arbiterConditionAddress,
+      baseSepolia.conditions.payer,
       arbiterConditionAddress,
       0n,
       escrowPeriodAddress,
@@ -366,6 +367,7 @@ export async function deployTestFixtures(
     operatorWithFreezeAddress,
     arbiterConditionAddress,
     refundRequestAddress,
+    refundRequestEvidenceAddress: arbiterSetup.refundRequestEvidenceAddress,
     arbiterRefundOperatorAddress,
   }
 }
