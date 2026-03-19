@@ -9,8 +9,10 @@ import type { Hash } from 'viem'
 import type { EvidenceActions, ResolvedConfig } from '../types.js'
 import { requireWallet } from './utils.js'
 
-export function createEvidenceActions(config: ResolvedConfig): EvidenceActions {
-  const contractAddress = config.refundRequestEvidenceAddress
+export function createEvidenceActions(
+  config: ResolvedConfig,
+  contractAddress: `0x${string}`,
+): EvidenceActions {
   return {
     async submit(
       paymentInfo: PaymentInfo,

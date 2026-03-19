@@ -52,7 +52,9 @@ export function createX402r(config: X402rConfig): X402r {
     refund: resolved.refundRequestAddress
       ? createRefundActions(resolved, resolved.refundRequestAddress)
       : undefined,
-    evidence: createEvidenceActions(resolved),
+    evidence: resolved.refundRequestEvidenceAddress
+      ? createEvidenceActions(resolved, resolved.refundRequestEvidenceAddress)
+      : undefined,
     freeze: resolved.freezeAddress
       ? createFreezeActions(resolved, resolved.freezeAddress)
       : undefined,
@@ -77,8 +79,7 @@ export function createX402r(config: X402rConfig): X402r {
 export function resolveConfig(config: X402rConfig): ResolvedConfig {
   const chainId = resolveChainId(config)
   const chainConfig = getChainConfig(chainId)
-  const refundRequestEvidenceAddress =
-    config.refundRequestEvidenceAddress ?? chainConfig.refundRequestEvidence
+  const refundRequestEvidenceAddress = config.refundRequestEvidenceAddress
 
   return {
     publicClient: config.publicClient,

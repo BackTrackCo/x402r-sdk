@@ -70,7 +70,7 @@ const CHAIN_ID = 84532
 const chainConfig = getChainConfig(CHAIN_ID)
 const USDC = chainConfig.usdc
 const USDC_BALANCE_SLOT = 9n
-const FORK_BLOCK = 38_945_000n
+const FORK_BLOCK = 39_029_000n
 const ANVIL_PORT = 8846
 
 // ERC-3009 typed data
@@ -286,6 +286,7 @@ export async function setup(): Promise<ExampleContext> {
       escrowPeriodAddress: deployment.escrowPeriodAddress,
       freezeAddress: deployment.freezeAddress ?? undefined,
       refundRequestAddress: deployment.refundRequestAddress,
+      refundRequestEvidenceAddress: deployment.refundRequestEvidenceAddress,
     }
 
     const payer = createPayerClient({

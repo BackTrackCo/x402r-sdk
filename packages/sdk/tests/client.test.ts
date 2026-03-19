@@ -1,4 +1,3 @@
-import { getChainConfig } from '@x402r/core'
 import { createPublicClient, http } from 'viem'
 import { describe, expect, it } from 'vitest'
 import { createX402r, resolveConfig } from '../src/client.js'
@@ -12,8 +11,6 @@ import {
   TEST_RECORDER,
   walletClient,
 } from './fixtures.js'
-
-const baseSepoliaConfig = getChainConfig(84532)
 
 const baseConfig: X402rConfig = {
   publicClient,
@@ -33,9 +30,7 @@ describe('resolveConfig', () => {
     expect(resolved.chainId).toBe(84532)
     expect(resolved.operatorAddress).toBe(operatorAddress)
     expect(resolved.refundRequestAddress).toBe(refundRequestAddress)
-    expect(resolved.refundRequestEvidenceAddress).toBe(
-      baseSepoliaConfig.refundRequestEvidence,
-    )
+    expect(resolved.refundRequestEvidenceAddress).toBeUndefined()
     expect(resolved.escrowPeriodAddress).toBeUndefined()
     expect(resolved.freezeAddress).toBeUndefined()
   })
@@ -76,15 +71,15 @@ describe('resolveConfig', () => {
   it('user address overrides win over chain config', () => {
     const customRefundAddress =
       '0x1111111111111111111111111111111111111111' as const
+    const customEvidenceAddress =
+      '0x2222222222222222222222222222222222222222' as const
     const resolved = resolveConfig({
       ...baseConfig,
       refundRequestAddress: customRefundAddress,
+      refundRequestEvidenceAddress: customEvidenceAddress,
     })
     expect(resolved.refundRequestAddress).toBe(customRefundAddress)
-    // Non-overridden address still comes from chain config
-    expect(resolved.refundRequestEvidenceAddress).toBe(
-      baseSepoliaConfig.refundRequestEvidence,
-    )
+    expect(resolved.refundRequestEvidenceAddress).toBe(customEvidenceAddress)
   })
 
   it('passes through optional plugin addresses', () => {
@@ -121,7 +116,7 @@ describe('createX402r', () => {
     expect(client.config).toBeDefined()
     expect(client.payment).toBeDefined()
     expect(client.refund).toBeDefined()
-    expect(client.evidence).toBeDefined()
+    expect(client.evidence).toBeUndefined()
     expect(client.operator).toBeDefined()
     expect(client.watch).toBeDefined()
     expect(client.canExecute).toBeTypeOf('function')

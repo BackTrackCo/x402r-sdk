@@ -17,8 +17,7 @@ export interface FactoryAddresses {
   recorderCombinator: Address
   signatureCondition: Address
   refundRequest: Address
-  // TODO: rename to `refundRequestEvidenceFactory` — collides with top-level singleton field name
-  refundRequestEvidence: Address
+  refundRequestEvidenceFactory: Address
 }
 
 export interface ConditionSingletonAddresses {
@@ -37,7 +36,6 @@ export interface X402rChainConfig {
   arbiterRegistry: Address
   receiverRefundCollector: Address
   usdc: Address
-  refundRequestEvidence: Address
   factories: FactoryAddresses
   conditions: ConditionSingletonAddresses
 }
@@ -53,7 +51,6 @@ const PROTOCOL_ADDRESSES = {
   usdcTvlLimit: '0x0F1F26719219CfAdC8a1C80D2216098A0534a091',
   arbiterRegistry: '0x1c2d7d5978d46a943FA98aC9a649519C1424FB3e',
   receiverRefundCollector: '0xE5500a38BE45a6C598420fbd7867ac85EC451A07',
-  refundRequestEvidence: '0xF97aAB816b7cbe53025454ad05b03cf5C361F1BA',
   factories: {
     paymentOperator: '0xdc41F932dF2d22346F218E4f5650694c650ab863',
     escrowPeriod: '0x15DB06aADEB3a39D47756Bf864a173cc48bafe24',
@@ -66,7 +63,7 @@ const PROTOCOL_ADDRESSES = {
     recorderCombinator: '0xACf2b5e21CFc14135C9cD43ebE96a481F184C1A1',
     signatureCondition: '0x669B4930f9E72884725F5C7D837Ab9517eA3040f',
     refundRequest: '0x9cD87Bb58553Ef5ad90Ed6260EBdB906a50D6b83',
-    refundRequestEvidence: '0x3769Be76BBEa31345A2B2d84EF90683E9A377e00',
+    refundRequestEvidenceFactory: '0x3769Be76BBEa31345A2B2d84EF90683E9A377e00',
   },
   conditions: {
     payer: '0x33F5F1154A02d0839266EFd23Fd3b85a3505bB4B',

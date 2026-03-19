@@ -56,7 +56,7 @@ describe('presets', () => {
     expect(client.payment.getState).toBeTypeOf('function')
     expect(client.payment.getAmounts).toBeTypeOf('function')
     expect(client.refund!.request).toBeTypeOf('function')
-    expect(client.evidence).toBeDefined()
+    expect(client.evidence).toBeUndefined() // no refundRequestEvidenceAddress in config
     expect(client.operator.getConfig).toBeTypeOf('function')
     expect(client.watch).toBeDefined()
     expect(client.canExecute).toBeTypeOf('function')

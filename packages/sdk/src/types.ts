@@ -60,7 +60,7 @@ export interface ResolvedConfig {
   chainId: number
   chainConfig: X402rChainConfig
   refundRequestAddress: Address | undefined
-  refundRequestEvidenceAddress: Address
+  refundRequestEvidenceAddress: Address | undefined
   escrowPeriodAddress: Address | undefined
   freezeAddress: Address | undefined
   paymentIndexRecorderAddress: Address | undefined
@@ -225,7 +225,7 @@ export interface X402r {
   readonly payment: PaymentActions
   readonly escrow: EscrowActions | undefined
   readonly refund: RefundActions | undefined
-  readonly evidence: EvidenceActions
+  readonly evidence: EvidenceActions | undefined
   readonly freeze: FreezeActions | undefined
   readonly query: QueryActions | undefined
   readonly operator: OperatorActions
@@ -269,7 +269,7 @@ export interface PayerClient {
         | 'getCancelledAmount'
       >
     | undefined
-  readonly evidence: EvidenceActions
+  readonly evidence: EvidenceActions | undefined
   readonly freeze: Pick<FreezeActions, 'isFrozen' | 'freeze'> | undefined
   readonly query: QueryActions | undefined
   readonly operator: Pick<OperatorActions, 'getConfig' | 'getFeeAddresses'>
@@ -324,7 +324,7 @@ export interface MerchantClient {
         | 'getCancelledAmount'
       >
     | undefined
-  readonly evidence: EvidenceActions
+  readonly evidence: EvidenceActions | undefined
   readonly freeze: Pick<FreezeActions, 'isFrozen'> | undefined
   readonly query: QueryActions | undefined
   readonly operator: OperatorActions
@@ -364,7 +364,7 @@ export interface ArbiterClient {
         | 'getCancelledAmount'
       >
     | undefined
-  readonly evidence: EvidenceActions
+  readonly evidence: EvidenceActions | undefined
   readonly freeze: Pick<FreezeActions, 'isFrozen' | 'unfreeze'> | undefined
   readonly query: QueryActions | undefined
   readonly operator: Pick<
