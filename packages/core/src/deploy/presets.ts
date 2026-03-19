@@ -224,7 +224,7 @@ export async function previewMarketplaceOperator(
         designatedAddress: refundRequestAddress,
       }),
       computeRefundRequestEvidenceAddress(publicClient, {
-        factoryAddress: factories.refundRequestEvidenceFactory,
+        factoryAddress: factories.refundRequestEvidence,
         refundRequest: refundRequestAddress,
       }),
     ])
@@ -386,7 +386,7 @@ export async function deployMarketplaceOperator(
     {
       name: 'refundRequestEvidence',
       contract: {
-        address: factories.refundRequestEvidenceFactory,
+        address: factories.refundRequestEvidence,
         abi: refundRequestEvidenceFactoryAbi,
         functionName: 'getDeployed',
         args: [refundRequestAddress],
@@ -584,7 +584,7 @@ export async function deployMarketplaceOperator(
   trackDeploy(
     refundRequestEvidenceAddress,
     exists.refundRequestEvidence,
-    factories.refundRequestEvidenceFactory,
+    factories.refundRequestEvidence,
     refundRequestEvidenceFactoryAbi,
     'deploy',
     [refundRequestAddress],
@@ -748,7 +748,7 @@ export async function previewArbiterSetup(
 
   const refundRequestEvidenceAddress =
     await computeRefundRequestEvidenceAddress(publicClient, {
-      factoryAddress: factories.refundRequestEvidenceFactory,
+      factoryAddress: factories.refundRequestEvidence,
       refundRequest: refundRequestAddress,
     })
 
@@ -797,7 +797,7 @@ export async function deployArbiterSetup(
       args: [options.arbiter],
     },
     {
-      address: factories.refundRequestEvidenceFactory,
+      address: factories.refundRequestEvidence,
       abi: refundRequestEvidenceFactoryAbi,
       functionName: 'getDeployed',
       args: [refundRequestAddress],
@@ -886,7 +886,7 @@ export async function deployArbiterSetup(
     })
   } else {
     calls.push({
-      target: factories.refundRequestEvidenceFactory,
+      target: factories.refundRequestEvidence,
       allowFailure: true,
       callData: encodeFunctionData({
         abi: refundRequestEvidenceFactoryAbi,

@@ -313,7 +313,6 @@ export interface MerchantClient {
     | Pick<
         RefundActions,
         | 'approve'
-        | 'refuse'
         | 'get'
         | 'getByKey'
         | 'getStatus'
@@ -353,6 +352,7 @@ export interface ArbiterClient {
     | Pick<
         RefundActions,
         | 'deny'
+        | 'refuse'
         | 'approve'
         | 'get'
         | 'getByKey'

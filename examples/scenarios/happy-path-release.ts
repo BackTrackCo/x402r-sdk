@@ -1,5 +1,10 @@
+import { getChainConfig } from '@x402r/core'
 import { setup, signReceiveAuthorization } from '../shared/anvil-setup.js'
-import { ESCROW_FAST_FORWARD, PAYMENT_AMOUNT } from '../shared/constants.js'
+import {
+  ESCROW_FAST_FORWARD,
+  PAYER_PRIVATE_KEY,
+  PAYMENT_AMOUNT,
+} from '../shared/constants.js'
 import { StepRunner } from './runner.js'
 
 // ---------------------------------------------------------------------------
@@ -8,7 +13,7 @@ import { StepRunner } from './runner.js'
 // ---------------------------------------------------------------------------
 
 async function main() {
-  const ctx = await setup()
+  const ctx = await setup({ authorize: false })
 
   const runner = new StepRunner('Happy Path Release', ctx.publicClient)
 
@@ -16,19 +21,19 @@ async function main() {
     // --- Step 1: Authorize payment (HTTP 402 flow) ---
     runner.step('Authorize payment via HTTP 402 flow')
 
-    const payerKey =
-      '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d' as const
-    const { getChainConfig } = await import('@x402r/core')
     const chainConfig = getChainConfig(84532)
 
-    const authSig = await signReceiveAuthorization(payerKey, ctx.paymentInfo)
+    const authSig = await signReceiveAuthorization(
+      PAYER_PRIVATE_KEY,
+      ctx.paymentInfo,
+    )
     const authTx = await ctx.merchant.payment.authorize(
       ctx.paymentInfo,
       PAYMENT_AMOUNT,
       chainConfig.tokenCollector,
       authSig,
     )
-    runner.log(`Authorized: ${authTx}`)
+    await runner.waitForTx(authTx)
 
     const amounts1 = await ctx.merchant.payment.getAmounts(ctx.paymentInfo)
     runner.assert(
@@ -38,14 +43,17 @@ async function main() {
 
     // --- Step 2: Charge ---
     runner.step('Merchant charges payment')
-    const chargeSig = await signReceiveAuthorization(payerKey, ctx.paymentInfo)
+    const chargeSig = await signReceiveAuthorization(
+      PAYER_PRIVATE_KEY,
+      ctx.paymentInfo,
+    )
     const chargeTx = await ctx.merchant.payment.charge(
       ctx.paymentInfo,
       PAYMENT_AMOUNT,
       chainConfig.tokenCollector,
       chargeSig,
     )
-    runner.log(`Charged: ${chargeTx}`)
+    await runner.waitForTx(chargeTx)
 
     const amounts2 = await ctx.merchant.payment.getAmounts(ctx.paymentInfo)
     runner.assert(
@@ -62,7 +70,7 @@ async function main() {
       ctx.paymentInfo,
       PAYMENT_AMOUNT,
     )
-    runner.log(`Released: ${releaseTx}`)
+    await runner.waitForTx(releaseTx)
 
     const amounts3 = await ctx.merchant.payment.getAmounts(ctx.paymentInfo)
     runner.assert(

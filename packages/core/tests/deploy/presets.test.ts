@@ -76,7 +76,7 @@ describe('previewMarketplaceOperator', () => {
       [`${F.escrowPeriod}:computeAddress`]: escrowAddr,
       [`${F.refundRequest}:computeAddress`]: refundReqAddr,
       [`${F.staticAddressCondition}:computeAddress`]: staticAddrCondAddr,
-      [`${F.refundRequestEvidenceFactory}:computeAddress`]: evidenceAddr,
+      [`${F.refundRequestEvidence}:computeAddress`]: evidenceAddr,
       [`${F.paymentOperator}:computeAddress`]: operatorAddr,
     })
 
@@ -111,7 +111,7 @@ describe('previewMarketplaceOperator', () => {
         staticAddrCondArbiterAddr,
       [`${F.staticAddressCondition}:computeAddress:${refundReqAddr}`]:
         staticAddrCondRefundReqAddr,
-      [`${F.refundRequestEvidenceFactory}:computeAddress`]: evidenceAddr,
+      [`${F.refundRequestEvidence}:computeAddress`]: evidenceAddr,
       [`${F.freeze}:computeAddress`]: freezeAddr,
       [`${F.andCondition}:computeAddress`]: andAddr,
       [`${F.paymentOperator}:computeAddress`]: operatorAddr,
@@ -169,8 +169,8 @@ describe('deployMarketplaceOperator', () => {
       [`${F.refundRequest}:computeAddress`]: refundReqAddr,
       [`${F.staticAddressCondition}:getDeployed`]: staticAddrCondAddr,
       [`${F.staticAddressCondition}:computeAddress`]: staticAddrCondAddr,
-      [`${F.refundRequestEvidenceFactory}:getDeployed`]: zeroAddress,
-      [`${F.refundRequestEvidenceFactory}:computeAddress`]: evidenceAddr,
+      [`${F.refundRequestEvidence}:getDeployed`]: zeroAddress,
+      [`${F.refundRequestEvidence}:computeAddress`]: evidenceAddr,
       [`${F.paymentOperator}:getOperator`]: zeroAddress,
       [`${F.paymentOperator}:computeAddress`]: operatorAddr,
     })
@@ -237,8 +237,8 @@ describe('deployMarketplaceOperator', () => {
         staticAddrCondArbiterAddr,
       [`${F.staticAddressCondition}:computeAddress:${refundReqAddr}`]:
         staticAddrCondRefundReqAddr,
-      [`${F.refundRequestEvidenceFactory}:getDeployed`]: zeroAddress,
-      [`${F.refundRequestEvidenceFactory}:computeAddress`]: evidenceAddr,
+      [`${F.refundRequestEvidence}:getDeployed`]: zeroAddress,
+      [`${F.refundRequestEvidence}:computeAddress`]: evidenceAddr,
       [`${F.freeze}:getDeployed`]: zeroAddress,
       [`${F.freeze}:computeAddress`]: freezeAddr,
       [`${F.andCondition}:getDeployed`]: zeroAddress,
@@ -282,8 +282,8 @@ describe('deployMarketplaceOperator', () => {
       [`${F.escrowPeriod}:computeAddress`]: escrowAddr,
       [`${F.refundRequest}:computeAddress`]: refundReqAddr,
       [`${F.staticAddressCondition}:computeAddress`]: staticAddrCondAddr,
-      [`${F.refundRequestEvidenceFactory}:computeAddress`]: evidenceAddr,
-      [`${F.refundRequestEvidenceFactory}:getDeployed`]: evidenceAddr,
+      [`${F.refundRequestEvidence}:computeAddress`]: evidenceAddr,
+      [`${F.refundRequestEvidence}:getDeployed`]: evidenceAddr,
       [`${F.paymentOperator}:computeAddress`]: operatorAddr,
       [`${F.escrowPeriod}:getDeployed`]: escrowAddr,
       [`${F.refundRequest}:getDeployed`]: refundReqAddr,
@@ -302,6 +302,7 @@ describe('deployMarketplaceOperator', () => {
     expect(result.summary.newCount).toBe(0)
     expect(result.summary.existingCount).toBe(5)
     expect(result.summary.txHashes).toHaveLength(0)
+    expect(result.refundRequestEvidenceAddress).toBe(evidenceAddr)
     for (const d of result.deployments) {
       expect(d.isNew).toBe(false)
       expect(d.hash).toBeNull()
@@ -330,8 +331,8 @@ describe('deployMarketplaceOperator', () => {
       [`${F.staticAddressCondition}:computeAddress:${refundReqAddr}`]:
         staticAddrCondRefundReqAddr,
       [`${F.staticAddressCondition}:getDeployed`]: staticAddrCondRefundReqAddr,
-      [`${F.refundRequestEvidenceFactory}:computeAddress`]: evidenceAddr,
-      [`${F.refundRequestEvidenceFactory}:getDeployed`]: evidenceAddr,
+      [`${F.refundRequestEvidence}:computeAddress`]: evidenceAddr,
+      [`${F.refundRequestEvidence}:getDeployed`]: evidenceAddr,
       [`${F.freeze}:computeAddress`]: freezeAddr,
       [`${F.andCondition}:computeAddress`]: andAddr,
       [`${F.staticFeeCalculator}:computeAddress`]: feeAddr,
@@ -412,8 +413,8 @@ describe('deployMarketplaceOperator', () => {
       [`${F.refundRequest}:computeAddress`]: refundReqAddr,
       [`${F.staticAddressCondition}:getDeployed`]: zeroAddress,
       [`${F.staticAddressCondition}:computeAddress`]: staticAddrCondAddr,
-      [`${F.refundRequestEvidenceFactory}:getDeployed`]: zeroAddress,
-      [`${F.refundRequestEvidenceFactory}:computeAddress`]: evidenceAddr,
+      [`${F.refundRequestEvidence}:getDeployed`]: zeroAddress,
+      [`${F.refundRequestEvidence}:computeAddress`]: evidenceAddr,
       [`${F.paymentOperator}:getOperator`]: zeroAddress,
       [`${F.paymentOperator}:computeAddress`]: operatorAddr,
     })

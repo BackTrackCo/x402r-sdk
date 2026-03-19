@@ -1,5 +1,6 @@
 import { getChainConfig } from '@x402r/core'
 import { setup, signReceiveAuthorization } from '../shared/anvil-setup.js'
+import { PAYER_PRIVATE_KEY } from '../shared/constants.js'
 
 const ctx = await setup()
 
@@ -9,10 +10,11 @@ try {
   // Requires ERC-3009 collector data for the token transfer.
 
   const chainConfig = getChainConfig(84532)
-  const payerKey =
-    '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d' as const
 
-  const signature = await signReceiveAuthorization(payerKey, ctx.paymentInfo)
+  const signature = await signReceiveAuthorization(
+    PAYER_PRIVATE_KEY,
+    ctx.paymentInfo,
+  )
 
   const tx = await ctx.merchant.payment.charge(
     ctx.paymentInfo,

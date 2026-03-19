@@ -26,7 +26,7 @@ import {
 import { privateKeyToAccount } from 'viem/accounts'
 import { baseSepolia } from 'viem/chains'
 import { FAR_FUTURE, PAYMENT_AMOUNT } from './constants.js'
-import type { ExampleContext } from './types.js'
+import type { ExampleContext, SetupOptions } from './types.js'
 
 // ---------------------------------------------------------------------------
 // Anvil test accounts (deterministic mnemonic)
@@ -133,47 +133,12 @@ function getBalanceSlot(account: Address, baseSlot: bigint): `0x${string}` {
   )
 }
 
-async function createCollectorData(
-  payerPrivateKey: `0x${string}`,
-  paymentInfo: PaymentInfo,
-) {
-  const localAccount = privateKeyToAccount(payerPrivateKey)
-  const nonce = computeEscrowNonce(
-    CHAIN_ID,
-    chainConfig.authCaptureEscrow,
-    paymentInfo,
-  )
-
-  const signature = await localAccount.signTypedData({
-    domain: {
-      name: 'USDC',
-      version: '2',
-      chainId: CHAIN_ID,
-      verifyingContract: getAddress(paymentInfo.token),
-    },
-    types: RECEIVE_AUTHORIZATION_TYPES,
-    primaryType: 'ReceiveWithAuthorization',
-    message: {
-      from: getAddress(localAccount.address),
-      to: getAddress(chainConfig.tokenCollector),
-      value: paymentInfo.maxAmount,
-      validAfter: 0n,
-      validBefore: BigInt(paymentInfo.preApprovalExpiry),
-      nonce,
-    },
-  })
-
-  return {
-    collectorData: signature,
-    tokenCollector: chainConfig.tokenCollector,
-  }
-}
-
 // ---------------------------------------------------------------------------
 // setup() — main entry point for per-action examples
 // ---------------------------------------------------------------------------
 
-export async function setup(): Promise<ExampleContext> {
+export async function setup(options?: SetupOptions): Promise<ExampleContext> {
+  const skipAuthorize = options?.authorize === false
   // 1. Start Anvil fork
   const { Instance, Server } = await import('prool')
   const server = Server.create({
@@ -302,7 +267,7 @@ export async function setup(): Promise<ExampleContext> {
       walletClient: arbiterWallet,
     })
 
-    // 6. Build paymentInfo and authorize a payment
+    // 6. Build paymentInfo and optionally authorize a payment
     const paymentInfo: PaymentInfo = {
       operator: operatorAddress,
       payer: testAccounts.payer.address,
@@ -318,20 +283,24 @@ export async function setup(): Promise<ExampleContext> {
       salt: 1n,
     }
 
-    const { collectorData, tokenCollector } = await createCollectorData(
-      testAccounts.payer.privateKey,
-      paymentInfo,
-    )
+    if (!skipAuthorize) {
+      const collectorData = await signReceiveAuthorization(
+        testAccounts.payer.privateKey,
+        paymentInfo,
+      )
 
-    const authTx = await merchant.payment.authorize(
-      paymentInfo,
-      PAYMENT_AMOUNT,
-      tokenCollector,
-      collectorData,
-    )
-    await publicClient.waitForTransactionReceipt({ hash: authTx })
+      const authTx = await merchant.payment.authorize(
+        paymentInfo,
+        PAYMENT_AMOUNT,
+        chainConfig.tokenCollector,
+        collectorData,
+      )
+      await publicClient.waitForTransactionReceipt({ hash: authTx })
 
-    console.log('Setup complete — payment authorized in escrow\n')
+      console.log('Setup complete — payment authorized in escrow\n')
+    } else {
+      console.log('Setup complete — authorization skipped\n')
+    }
 
     const waitForTx = async (hash: `0x${string}`) => {
       await publicClient.waitForTransactionReceipt({ hash })

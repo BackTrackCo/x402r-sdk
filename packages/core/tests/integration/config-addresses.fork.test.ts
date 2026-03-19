@@ -215,17 +215,15 @@ describe('Config Address Smoke Tests (Fork)', () => {
     },
   )
 
-  it.skipIf(config.factories.refundRequestEvidenceFactory === zeroAddress)(
-    'refundRequestEvidenceFactory responds to computeAddress',
-    async () => {
-      const addr = await computeRefundRequestEvidenceAddress(publicClient, {
-        factoryAddress: config.factories.refundRequestEvidenceFactory,
-        refundRequest: zeroAddress,
-      })
-      expect(addr).toMatch(/^0x[0-9a-fA-F]{40}$/)
-      expect(addr).not.toBe(zeroAddress)
-    },
-  )
+  it('refundRequestEvidence factory responds to computeAddress', async () => {
+    expect(config.factories.refundRequestEvidence).not.toBe(zeroAddress)
+    const addr = await computeRefundRequestEvidenceAddress(publicClient, {
+      factoryAddress: config.factories.refundRequestEvidence,
+      refundRequest: zeroAddress,
+    })
+    expect(addr).toMatch(/^0x[0-9a-fA-F]{40}$/)
+    expect(addr).not.toBe(zeroAddress)
+  })
 
   // ---------------------------------------------------------------------------
   // Condition singletons — verify bytecode exists at each address

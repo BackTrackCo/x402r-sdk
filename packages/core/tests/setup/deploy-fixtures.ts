@@ -30,6 +30,7 @@ export interface DeployedFixtures {
   operatorWithFreezeAddress: Address
   arbiterConditionAddress: Address
   refundRequestAddress: Address
+  refundRequestEvidenceAddress: Address
   arbiterRefundOperatorAddress: Address
 }
 
@@ -366,6 +367,7 @@ export async function deployTestFixtures(
     operatorWithFreezeAddress,
     arbiterConditionAddress,
     refundRequestAddress,
+    refundRequestEvidenceAddress: arbiterSetup.refundRequestEvidenceAddress,
     arbiterRefundOperatorAddress,
   }
 }

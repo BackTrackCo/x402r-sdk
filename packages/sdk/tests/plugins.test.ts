@@ -12,6 +12,7 @@ import {
   TEST_OPERATOR as operatorAddress,
   publicClient,
   TEST_REFUND_REQUEST as refundRequestAddress,
+  TEST_EVIDENCE as refundRequestEvidenceAddress,
   TEST_RECORDER,
   walletClient,
 } from './fixtures.js'
@@ -21,6 +22,7 @@ const baseConfig: X402rConfig = {
   walletClient,
   operatorAddress,
   refundRequestAddress,
+  refundRequestEvidenceAddress,
   chainId: 84532,
 }
 

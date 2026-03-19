@@ -4,6 +4,7 @@ import { freezeAbi } from '../../src/abis/generated.js'
 import { x402rChains } from '../../src/config/index.js'
 import {
   computeFeeCalculatorAddress,
+  computeStaticAddressConditionAddress,
   deployMarketplaceOperator,
   type MarketplaceOperatorOptions,
   previewMarketplaceOperator,
@@ -91,6 +92,15 @@ describe('Deploy Module (Fork)', () => {
     )
     expect(deployment.feeCalculatorAddress).toBe(preview.feeCalculatorAddress)
 
+    // Evidence contract deployed and has bytecode
+    expect(deployment.refundRequestEvidenceAddress).toMatch(
+      /^0x[0-9a-fA-F]{40}$/,
+    )
+    const evidenceCode = await publicClient.getCode({
+      address: deployment.refundRequestEvidenceAddress as Address,
+    })
+    expect(evidenceCode).not.toBe('0x')
+
     // No freeze, with fee: escrow + refundRequest + staticAddrCond + evidence + feeCalc + operator = 6
     expect(deployment.deployments).toHaveLength(6)
     // Some components may already exist on the forked chain — assert totals add up
@@ -153,8 +163,14 @@ describe('Deploy Module (Fork)', () => {
       abi: freezeAbi,
       functionName: 'UNFREEZE_CONDITION',
     })
-    expect(unfreezeCondition).toMatch(/^0x[0-9a-fA-F]{40}$/)
-    expect(unfreezeCondition).not.toBe(baseSepolia.conditions.receiver)
+    const expectedArbiterSAC = await computeStaticAddressConditionAddress(
+      publicClient,
+      {
+        factoryAddress: baseSepolia.factories.staticAddressCondition,
+        designatedAddress: options.arbiter,
+      },
+    )
+    expect(unfreezeCondition).toBe(expectedArbiterSAC)
 
     // Verify freezeCondition is singletons.payer
     const freezeCondition = await publicClient.readContract({

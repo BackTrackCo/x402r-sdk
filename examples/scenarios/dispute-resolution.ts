@@ -1,6 +1,7 @@
+import { getChainConfig } from '@x402r/core'
 import { erc20Abi } from 'viem'
 import { setup, signReceiveAuthorization } from '../shared/anvil-setup.js'
-import { PAYMENT_AMOUNT } from '../shared/constants.js'
+import { PAYER_PRIVATE_KEY, PAYMENT_AMOUNT } from '../shared/constants.js'
 import { StepRunner } from './runner.js'
 
 // ---------------------------------------------------------------------------
@@ -12,7 +13,7 @@ import { StepRunner } from './runner.js'
 // ---------------------------------------------------------------------------
 
 async function main() {
-  const ctx = await setup()
+  const ctx = await setup({ authorize: false })
 
   const runner = new StepRunner('Dispute Resolution', ctx.publicClient)
 
@@ -23,10 +24,14 @@ async function main() {
       throw new Error('Arbiter refund module unavailable')
     if (!ctx.merchant.escrow)
       throw new Error('Merchant escrow module unavailable')
+    if (
+      !ctx.payer.evidence ||
+      !ctx.merchant.evidence ||
+      !ctx.arbiter.evidence
+    ) {
+      throw new Error('Evidence module not available')
+    }
 
-    const payerKey =
-      '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d' as const
-    const { getChainConfig } = await import('@x402r/core')
     const chainConfig = getChainConfig(84532)
 
     // ================================================================
@@ -34,13 +39,17 @@ async function main() {
     // ================================================================
     runner.step('Authorize payment via HTTP 402 flow')
 
-    const authSig = await signReceiveAuthorization(payerKey, ctx.paymentInfo)
-    await ctx.merchant.payment.authorize(
+    const authSig = await signReceiveAuthorization(
+      PAYER_PRIVATE_KEY,
+      ctx.paymentInfo,
+    )
+    const authTx = await ctx.merchant.payment.authorize(
       ctx.paymentInfo,
       PAYMENT_AMOUNT,
       chainConfig.tokenCollector,
       authSig,
     )
+    await runner.waitForTx(authTx)
 
     const amounts1 = await ctx.merchant.payment.getAmounts(ctx.paymentInfo)
     runner.assert(
@@ -57,13 +66,17 @@ async function main() {
     // ================================================================
     runner.step('Merchant charges payment')
 
-    const chargeSig = await signReceiveAuthorization(payerKey, ctx.paymentInfo)
-    await ctx.merchant.payment.charge(
+    const chargeSig = await signReceiveAuthorization(
+      PAYER_PRIVATE_KEY,
+      ctx.paymentInfo,
+    )
+    const chargeTx = await ctx.merchant.payment.charge(
       ctx.paymentInfo,
       PAYMENT_AMOUNT,
       chainConfig.tokenCollector,
       chargeSig,
     )
+    await runner.waitForTx(chargeTx)
 
     const amounts2 = await ctx.merchant.payment.getAmounts(ctx.paymentInfo)
     runner.assert(
@@ -76,7 +89,12 @@ async function main() {
     // ================================================================
     runner.step('Payer requests refund')
 
-    await ctx.payer.refund.request(ctx.paymentInfo, PAYMENT_AMOUNT, 0n)
+    const requestTx = await ctx.payer.refund.request(
+      ctx.paymentInfo,
+      PAYMENT_AMOUNT,
+      0n,
+    )
+    await runner.waitForTx(requestTx)
 
     const refundRequest = await ctx.payer.refund.get(ctx.paymentInfo, 0n)
     runner.assert(
@@ -90,20 +108,12 @@ async function main() {
     // ================================================================
     runner.step('Submit evidence (payer + merchant)')
 
-    if (
-      !ctx.payer.evidence ||
-      !ctx.merchant.evidence ||
-      !ctx.arbiter.evidence
-    ) {
-      throw new Error('Evidence module not available')
-    }
-
     const payerEvTx = await ctx.payer.evidence.submit(
       ctx.paymentInfo,
       0n,
       'QmPayerEvidence_receipt',
     )
-    await ctx.publicClient.waitForTransactionReceipt({ hash: payerEvTx })
+    await runner.waitForTx(payerEvTx)
     const payerEntry = await ctx.payer.evidence.get(ctx.paymentInfo, 0n, 0n)
     runner.assert(
       payerEntry.submitter.toLowerCase() === ctx.accounts.payer.toLowerCase(),
@@ -115,7 +125,7 @@ async function main() {
       0n,
       'QmMerchantEvidence_delivery',
     )
-    await ctx.publicClient.waitForTransactionReceipt({ hash: merchantEvTx })
+    await runner.waitForTx(merchantEvTx)
     const merchantEntry = await ctx.merchant.evidence.get(
       ctx.paymentInfo,
       0n,
@@ -151,7 +161,12 @@ async function main() {
     // ================================================================
     runner.step('Arbiter approves refund for full amount')
 
-    await ctx.arbiter.refund.approve(ctx.paymentInfo, 0n, PAYMENT_AMOUNT)
+    const approveTx = await ctx.arbiter.refund.approve(
+      ctx.paymentInfo,
+      0n,
+      PAYMENT_AMOUNT,
+    )
+    await runner.waitForTx(approveTx)
 
     const approvedRequest = await ctx.arbiter.refund.get(ctx.paymentInfo, 0n)
     runner.assert(
@@ -197,7 +212,7 @@ async function main() {
       const feeTx = await ctx.merchant.operator.distributeFees(
         ctx.paymentInfo.token,
       )
-      runner.log(`Fees distributed: ${feeTx}`)
+      await runner.waitForTx(feeTx)
 
       const remainingFees =
         await ctx.merchant.operator.getAccumulatedProtocolFees(

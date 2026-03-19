@@ -63,9 +63,6 @@ export class StepRunner {
     if (receipt.status !== 'success') {
       this.fail(`Transaction reverted: ${hash}`)
     }
-
-    // Brief delay for RPC propagation on real networks
-    await new Promise((resolve) => setTimeout(resolve, 1_000))
   }
 
   done(): void {
