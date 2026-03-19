@@ -90,78 +90,60 @@ async function main() {
     // ================================================================
     runner.step('Submit evidence (payer + merchant)')
 
-    let evidenceAvailable = false
-    try {
-      const payerEvTx = await ctx.payer.evidence.submit(
-        ctx.paymentInfo,
-        0n,
-        'QmPayerEvidence_receipt',
-      )
-      const receipt = await ctx.publicClient.waitForTransactionReceipt({
-        hash: payerEvTx,
-      })
-      if (receipt.status === 'success') {
-        const payerEntry = await ctx.payer.evidence.get(ctx.paymentInfo, 0n, 0n)
-        runner.assert(
-          payerEntry.submitter.toLowerCase() ===
-            ctx.accounts.payer.toLowerCase(),
-          `Evidence submitter matches payer (${ctx.accounts.payer})`,
-        )
-
-        const merchantEvTx = await ctx.merchant.evidence.submit(
-          ctx.paymentInfo,
-          0n,
-          'QmMerchantEvidence_delivery',
-        )
-        await ctx.publicClient.waitForTransactionReceipt({
-          hash: merchantEvTx,
-        })
-        const merchantEntry = await ctx.merchant.evidence.get(
-          ctx.paymentInfo,
-          0n,
-          1n,
-        )
-        runner.assert(
-          merchantEntry.submitter.toLowerCase() ===
-            ctx.accounts.merchant.toLowerCase(),
-          `Evidence submitter matches merchant (${ctx.accounts.merchant})`,
-        )
-        evidenceAvailable = true
-      } else {
-        runner.log(
-          'SKIP: Evidence submission reverted — singleton does not recognize this operator',
-        )
-      }
-    } catch {
-      runner.log(
-        'SKIP: Evidence submission failed — singleton does not recognize this operator',
-      )
+    if (
+      !ctx.payer.evidence ||
+      !ctx.merchant.evidence ||
+      !ctx.arbiter.evidence
+    ) {
+      throw new Error('Evidence module not available')
     }
 
+    const payerEvTx = await ctx.payer.evidence.submit(
+      ctx.paymentInfo,
+      0n,
+      'QmPayerEvidence_receipt',
+    )
+    await ctx.publicClient.waitForTransactionReceipt({ hash: payerEvTx })
+    const payerEntry = await ctx.payer.evidence.get(ctx.paymentInfo, 0n, 0n)
+    runner.assert(
+      payerEntry.submitter.toLowerCase() === ctx.accounts.payer.toLowerCase(),
+      `Evidence submitter matches payer (${ctx.accounts.payer})`,
+    )
+
+    const merchantEvTx = await ctx.merchant.evidence.submit(
+      ctx.paymentInfo,
+      0n,
+      'QmMerchantEvidence_delivery',
+    )
+    await ctx.publicClient.waitForTransactionReceipt({ hash: merchantEvTx })
+    const merchantEntry = await ctx.merchant.evidence.get(
+      ctx.paymentInfo,
+      0n,
+      1n,
+    )
+    runner.assert(
+      merchantEntry.submitter.toLowerCase() ===
+        ctx.accounts.merchant.toLowerCase(),
+      `Evidence submitter matches merchant (${ctx.accounts.merchant})`,
+    )
+
     // ================================================================
-    // Step 5: Arbiter reviews evidence (if available)
+    // Step 5: Arbiter reviews evidence
     // ================================================================
     runner.step('Arbiter reviews evidence')
 
-    if (evidenceAvailable) {
-      const evidenceCount = await ctx.arbiter.evidence.count(
-        ctx.paymentInfo,
-        0n,
-      )
-      runner.assert(evidenceCount === 2n, 'Evidence count === 2')
+    const evidenceCount = await ctx.arbiter.evidence.count(ctx.paymentInfo, 0n)
+    runner.assert(evidenceCount === 2n, 'Evidence count === 2')
 
-      const batch = await ctx.arbiter.evidence.getBatch(
-        ctx.paymentInfo,
-        0n,
-        0n,
-        evidenceCount,
-      )
-      runner.log(`Evidence entries: ${batch.entries.length}`)
-      for (const entry of batch.entries) {
-        runner.log(`  CID: ${entry.cid} from ${entry.submitter}`)
-      }
-    } else {
-      runner.log('SKIP: Evidence not available with locally deployed operators')
+    const batch = await ctx.arbiter.evidence.getBatch(
+      ctx.paymentInfo,
+      0n,
+      0n,
+      evidenceCount,
+    )
+    runner.log(`Evidence entries: ${batch.entries.length}`)
+    for (const entry of batch.entries) {
+      runner.log(`  CID: ${entry.cid} from ${entry.submitter}`)
     }
 
     // ================================================================

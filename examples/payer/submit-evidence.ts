@@ -7,15 +7,13 @@ try {
   // As a payer, submit evidence (an IPFS CID) for a refund dispute.
   // First request a refund, then attach evidence to it.
   //
-  // Note: The evidence contract is a protocol singleton that validates refund
-  // requests against the deployed RefundRequest. When using locally deployed
-  // operators (e.g. via deployMarketplaceOperator), the evidence contract may
-  // not recognize the new RefundRequest, causing reverts. This example handles
-  // that case gracefully.
+  // Note: The evidence contract is factory-deployed alongside the RefundRequest
+  // via deployMarketplaceOperator. Evidence is always available when using the
+  // deployment preset.
 
-  if (!ctx.payer.refund) {
+  if (!ctx.payer.refund || !ctx.payer.evidence) {
     throw new Error(
-      'Refund module not available — check operator configuration',
+      'Refund/evidence module not available — check operator configuration',
     )
   }
 
@@ -30,44 +28,25 @@ try {
 
   // Step 2: Submit evidence CID
   const evidenceCid = 'QmExampleEvidenceCid123456789'
-  try {
-    const tx = await ctx.payer.evidence.submit(ctx.paymentInfo, 0n, evidenceCid)
-    const receipt = await ctx.publicClient.waitForTransactionReceipt({
-      hash: tx,
-    })
+  const tx = await ctx.payer.evidence.submit(ctx.paymentInfo, 0n, evidenceCid)
+  await ctx.waitForTx(tx)
+  console.log(`Evidence submitted: ${tx}`)
 
-    if (receipt.status === 'reverted') {
-      console.log(
-        "Evidence submission reverted — evidence contract does not recognize this operator's RefundRequest.",
-      )
-      console.log(
-        'This is expected with locally deployed operators. On production deployments, evidence works with the protocol singleton.',
-      )
-    } else {
-      console.log(`Evidence submitted: ${tx}`)
+  // Step 3: Verify the evidence was recorded
+  const count = await ctx.payer.evidence.count(ctx.paymentInfo, 0n)
+  console.log(`Evidence count: ${count}`)
 
-      // Step 3: Verify the evidence was recorded
-      const count = await ctx.payer.evidence.count(ctx.paymentInfo, 0n)
-      console.log(`Evidence count: ${count}`)
+  const entry = await ctx.payer.evidence.get(ctx.paymentInfo, 0n, 0n)
+  console.log(`Evidence CID: ${entry.cid}`)
+  console.log(`Submitter: ${entry.submitter}`)
 
-      const entry = await ctx.payer.evidence.get(ctx.paymentInfo, 0n, 0n)
-      console.log(`Evidence CID: ${entry.cid}`)
-      console.log(`Submitter: ${entry.submitter}`)
-
-      // Verify submitter matches payer account
-      if (entry.submitter.toLowerCase() !== ctx.accounts.payer.toLowerCase()) {
-        throw new Error(
-          `Submitter mismatch: expected ${ctx.accounts.payer}, got ${entry.submitter}`,
-        )
-      }
-      console.log('Submitter verified as payer')
-    }
-  } catch (err) {
-    console.log(
-      'Evidence submission failed — evidence contract may not be compatible with this operator.',
+  // Verify submitter matches payer account
+  if (entry.submitter.toLowerCase() !== ctx.accounts.payer.toLowerCase()) {
+    throw new Error(
+      `Submitter mismatch: expected ${ctx.accounts.payer}, got ${entry.submitter}`,
     )
-    console.log(`Error: ${err instanceof Error ? err.message : err}`)
   }
+  console.log('Submitter verified as payer')
 } finally {
   await ctx.cleanup()
 }
