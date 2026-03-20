@@ -343,7 +343,6 @@ export {
   ValidationError,
   X402rError,
 } from './errors/index.js'
-
 // ---------------------------------------------------------------------------
 // Payment
 // ---------------------------------------------------------------------------
@@ -353,7 +352,10 @@ export {
   computeEscrowNonce,
   computePaymentInfoHash,
   PAYMENT_INFO_TYPEHASH,
-} from './payment/hashing.js'
+  type SignReceiveAuthorizationParameters,
+  type SignReceiveAuthorizationReturnType,
+  signReceiveAuthorization,
+} from './payment/index.js'
 export {
   type ToPaymentInfoReturnType,
   toPaymentInfo,

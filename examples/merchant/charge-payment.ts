@@ -1,26 +1,27 @@
-import { getChainConfig } from '@x402r/core'
-import { setup, signReceiveAuthorization } from '../shared/anvil-setup.js'
+import { signReceiveAuthorization } from '@x402r/core'
+import { privateKeyToAccount } from 'viem/accounts'
+import { setup } from '../shared/anvil-setup.js'
 import { PAYER_PRIVATE_KEY } from '../shared/constants.js'
 
-const ctx = await setup()
+const ctx = await setup({ authorize: false })
 
 try {
   // ============ Example: Charge Payment ============
-  // As a merchant, charge an authorized payment during the escrow period.
-  // Requires ERC-3009 collector data for the token transfer.
+  // Direct charge — collects tokens and immediately distributes to receiver.
+  // No escrow hold. Requires ERC-3009 collector data for the token transfer.
 
-  const chainConfig = getChainConfig(84532)
-
-  const signature = await signReceiveAuthorization(
-    PAYER_PRIVATE_KEY,
-    ctx.paymentInfo,
-  )
+  const payerAccount = privateKeyToAccount(PAYER_PRIVATE_KEY)
+  const { collectorData, tokenCollector } = await signReceiveAuthorization({
+    account: payerAccount,
+    chainId: 84532,
+    paymentInfo: ctx.paymentInfo,
+  })
 
   const tx = await ctx.merchant.payment.charge(
     ctx.paymentInfo,
     ctx.PAYMENT_AMOUNT,
-    chainConfig.tokenCollector,
-    signature,
+    tokenCollector,
+    collectorData,
   )
   await ctx.waitForTx(tx)
   console.log(`Payment charged: ${tx}`)

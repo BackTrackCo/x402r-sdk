@@ -1,14 +1,15 @@
-import { getChainConfig } from '@x402r/core'
+import { signReceiveAuthorization } from '@x402r/core'
 import { erc20Abi } from 'viem'
-import { setup, signReceiveAuthorization } from '../shared/anvil-setup.js'
+import { privateKeyToAccount } from 'viem/accounts'
+import { setup } from '../shared/anvil-setup.js'
 import { PAYER_PRIVATE_KEY, PAYMENT_AMOUNT } from '../shared/constants.js'
 import { StepRunner } from './runner.js'
 
 // ---------------------------------------------------------------------------
 // Scenario: Dispute Resolution (3-role full lifecycle)
 //
-// Flow: authorize → charge → payer requests refund → payer + merchant submit
-//       evidence → arbiter reviews evidence → arbiter approves refund →
+// Flow: authorize → payer requests refund → payer + merchant submit evidence →
+//       arbiter reviews evidence → arbiter approves refund →
 //       verify refund amounts → merchant distributes fees
 // ---------------------------------------------------------------------------
 
@@ -32,22 +33,22 @@ async function main() {
       throw new Error('Evidence module not available')
     }
 
-    const chainConfig = getChainConfig(84532)
-
     // ================================================================
     // Step 1: Authorize payment (HTTP 402 flow)
     // ================================================================
     runner.step('Authorize payment via HTTP 402 flow')
 
-    const authSig = await signReceiveAuthorization(
-      PAYER_PRIVATE_KEY,
-      ctx.paymentInfo,
-    )
+    const payerAccount = privateKeyToAccount(PAYER_PRIVATE_KEY)
+    const { collectorData, tokenCollector } = await signReceiveAuthorization({
+      account: payerAccount,
+      chainId: 84532,
+      paymentInfo: ctx.paymentInfo,
+    })
     const authTx = await ctx.merchant.payment.authorize(
       ctx.paymentInfo,
       PAYMENT_AMOUNT,
-      chainConfig.tokenCollector,
-      authSig,
+      tokenCollector,
+      collectorData,
     )
     await runner.waitForTx(authTx)
 
@@ -62,30 +63,7 @@ async function main() {
     )
 
     // ================================================================
-    // Step 2: Merchant charges payment
-    // ================================================================
-    runner.step('Merchant charges payment')
-
-    const chargeSig = await signReceiveAuthorization(
-      PAYER_PRIVATE_KEY,
-      ctx.paymentInfo,
-    )
-    const chargeTx = await ctx.merchant.payment.charge(
-      ctx.paymentInfo,
-      PAYMENT_AMOUNT,
-      chainConfig.tokenCollector,
-      chargeSig,
-    )
-    await runner.waitForTx(chargeTx)
-
-    const amounts2 = await ctx.merchant.payment.getAmounts(ctx.paymentInfo)
-    runner.assert(
-      amounts2.hasCollectedPayment,
-      'Payment still collected after charge',
-    )
-
-    // ================================================================
-    // Step 3: Payer requests refund
+    // Step 2: Payer requests refund
     // ================================================================
     runner.step('Payer requests refund')
 
@@ -104,7 +82,7 @@ async function main() {
     runner.log(`Refund status: ${refundRequest.status} (Pending)`)
 
     // ================================================================
-    // Step 4: Evidence submission (payer + merchant)
+    // Step 3: Evidence submission (payer + merchant)
     // ================================================================
     runner.step('Submit evidence (payer + merchant)')
 
@@ -138,7 +116,7 @@ async function main() {
     )
 
     // ================================================================
-    // Step 5: Arbiter reviews evidence
+    // Step 4: Arbiter reviews evidence
     // ================================================================
     runner.step('Arbiter reviews evidence')
 
@@ -157,7 +135,7 @@ async function main() {
     }
 
     // ================================================================
-    // Step 6: Arbiter approves refund
+    // Step 5: Arbiter approves refund
     // ================================================================
     runner.step('Arbiter approves refund for full amount')
 
@@ -179,13 +157,13 @@ async function main() {
     )
 
     // ================================================================
-    // Step 7: Verify refund amounts
+    // Step 6: Verify refund amounts
     // ================================================================
     runner.step('Verify refund amounts on operator')
 
-    const amounts3 = await ctx.merchant.payment.getAmounts(ctx.paymentInfo)
+    const amounts2 = await ctx.merchant.payment.getAmounts(ctx.paymentInfo)
     runner.assert(
-      amounts3.refundableAmount === 0n,
+      amounts2.refundableAmount === 0n,
       'Refundable amount === 0 after refund executed',
     )
 
@@ -198,7 +176,7 @@ async function main() {
     runner.log(`Payer USDC balance: ${payerUsdcBalance}`)
 
     // ================================================================
-    // Step 8: Distribute fees
+    // Step 7: Distribute fees
     // ================================================================
     runner.step('Merchant distributes protocol fees')
 

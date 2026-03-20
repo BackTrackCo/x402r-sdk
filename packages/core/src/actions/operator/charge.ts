@@ -15,6 +15,11 @@ export interface ChargeParameters {
 }
 export type ChargeReturnType = Hash
 
+/**
+ * Direct charge — collects and immediately distributes tokens to the receiver.
+ * No escrow hold. Mutually exclusive with `authorize()` on the same paymentInfo —
+ * calling both reverts with `PaymentAlreadyCollected`.
+ */
 export async function charge(
   walletClient: WalletClient,
   parameters: ChargeParameters,
