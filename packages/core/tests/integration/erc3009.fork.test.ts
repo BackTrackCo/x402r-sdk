@@ -68,5 +68,6 @@ describe('signReceiveAuthorization on-chain validation', () => {
 
     const amounts = await merchant.payment.getAmounts(paymentInfo)
     expect(amounts.hasCollectedPayment).toBe(true)
+    expect(amounts.capturableAmount).toBeGreaterThan(0n)
   }, 60_000)
 })
