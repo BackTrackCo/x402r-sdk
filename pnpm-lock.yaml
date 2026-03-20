@@ -64,6 +64,9 @@ importers:
       '@x402r/core':
         specifier: workspace:*
         version: link:../packages/core
+      '@x402r/helpers':
+        specifier: workspace:*
+        version: link:../packages/helpers
       '@x402r/sdk':
         specifier: workspace:*
         version: link:../packages/sdk
