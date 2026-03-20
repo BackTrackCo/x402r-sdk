@@ -14,7 +14,7 @@ Multi-role integration scenarios that exercise the full x402r payment lifecycle 
 
 2-role flow: authorize → release.
 
-Demonstrates the simplest payment lifecycle — merchant authorizes a payment, charges funds, waits for escrow expiry, and releases remaining funds.
+Demonstrates the simplest payment lifecycle — merchant authorizes a payment, waits for escrow expiry, and releases.
 
 ### dispute-resolution
 

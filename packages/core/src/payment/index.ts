@@ -1,4 +1,8 @@
-export { signReceiveAuthorization } from './erc3009.js'
+export {
+  type SignReceiveAuthorizationParameters,
+  type SignReceiveAuthorizationReturnType,
+  signReceiveAuthorization,
+} from './erc3009.js'
 export {
   type ComputeEscrowNonceReturnType,
   type ComputePaymentInfoHashReturnType,

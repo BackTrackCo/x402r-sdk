@@ -5,6 +5,33 @@ import { getChainConfig } from '../config/index.js'
 import type { PaymentInfo } from '../types/index.js'
 import { computeEscrowNonce } from './hashing.js'
 
+// ---------------------------------------------------------------------------
+// Companion types
+// ---------------------------------------------------------------------------
+
+export type SignReceiveAuthorizationParameters = {
+  account: LocalAccount
+  chainId: number
+  paymentInfo: PaymentInfo
+  /** EIP-712 domain name of the token (default: "USDC") */
+  tokenName?: string
+  /** EIP-712 domain version of the token (default: "2") */
+  tokenVersion?: string
+  /** Override tokenCollector (default: from chain config) */
+  tokenCollector?: Address
+  /** Override escrow address for nonce computation (default: from chain config) */
+  escrowAddress?: Address
+}
+
+export type SignReceiveAuthorizationReturnType = {
+  collectorData: Hex
+  tokenCollector: Address
+}
+
+// ---------------------------------------------------------------------------
+// Internal constants
+// ---------------------------------------------------------------------------
+
 /** EIP-712 typed data for ERC-3009 `receiveWithAuthorization`. */
 const RECEIVE_AUTHORIZATION_TYPES = {
   ReceiveWithAuthorization: [
@@ -16,6 +43,10 @@ const RECEIVE_AUTHORIZATION_TYPES = {
     { name: 'nonce', type: 'bytes32' },
   ],
 } as const
+
+// ---------------------------------------------------------------------------
+// Implementation
+// ---------------------------------------------------------------------------
 
 /**
  * Signs an ERC-3009 `ReceiveWithAuthorization` for the given paymentInfo.
@@ -29,29 +60,20 @@ const RECEIVE_AUTHORIZATION_TYPES = {
  * The returned `collectorData` and `tokenCollector` can be passed directly to
  * `payment.authorize()` or `payment.charge()`.
  */
-export async function signReceiveAuthorization(params: {
-  account: LocalAccount
-  chainId: number
-  paymentInfo: PaymentInfo
-  /** EIP-712 domain name of the token (default: "USDC") */
-  tokenName?: string
-  /** EIP-712 domain version of the token (default: "2") */
-  tokenVersion?: string
-  /** Override tokenCollector (default: from chain config) */
-  tokenCollector?: Address
-  /** Override escrow address for nonce computation (default: from chain config) */
-  escrowAddress?: Address
-}): Promise<{ collectorData: Hex; tokenCollector: Address }> {
-  const { account, chainId, paymentInfo } = params
+export async function signReceiveAuthorization(
+  parameters: SignReceiveAuthorizationParameters,
+): Promise<SignReceiveAuthorizationReturnType> {
+  const { account, chainId, paymentInfo } = parameters
   const chainConfig = getChainConfig(chainId)
-  const tokenCollector = params.tokenCollector ?? chainConfig.tokenCollector
-  const escrowAddress = params.escrowAddress ?? chainConfig.authCaptureEscrow
+  const tokenCollector = parameters.tokenCollector ?? chainConfig.tokenCollector
+  const escrowAddress =
+    parameters.escrowAddress ?? chainConfig.authCaptureEscrow
   const nonce = computeEscrowNonce(chainId, escrowAddress, paymentInfo)
 
   const signature = await account.signTypedData({
     domain: {
-      name: params.tokenName ?? 'USDC',
-      version: params.tokenVersion ?? '2',
+      name: parameters.tokenName ?? 'USDC',
+      version: parameters.tokenVersion ?? '2',
       chainId,
       verifyingContract: getAddress(paymentInfo.token),
     },

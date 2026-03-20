@@ -112,4 +112,109 @@ describe('signReceiveAuthorization', () => {
       }),
     ).rejects.toThrow(ConfigError)
   })
+
+  it('tokenName / tokenVersion override changes signature domain', async () => {
+    const chainId = 84532
+    const chainConfig = getChainConfig(chainId)
+
+    const { collectorData, tokenCollector } = await signReceiveAuthorization({
+      account,
+      chainId,
+      paymentInfo,
+      tokenName: 'CustomToken',
+      tokenVersion: '3',
+    })
+
+    const nonce = computeEscrowNonce(
+      chainId,
+      chainConfig.authCaptureEscrow,
+      paymentInfo,
+    )
+
+    // Recovery with the matching custom domain must succeed
+    const recovered = await recoverTypedDataAddress({
+      domain: {
+        name: 'CustomToken',
+        version: '3',
+        chainId,
+        verifyingContract: getAddress(paymentInfo.token),
+      },
+      types: RECEIVE_AUTHORIZATION_TYPES,
+      primaryType: 'ReceiveWithAuthorization',
+      message: {
+        from: getAddress(account.address),
+        to: getAddress(tokenCollector),
+        value: paymentInfo.maxAmount,
+        validAfter: 0n,
+        validBefore: BigInt(paymentInfo.preApprovalExpiry),
+        nonce,
+      },
+      signature: collectorData,
+    })
+    expect(recovered.toLowerCase()).toBe(account.address.toLowerCase())
+  })
+
+  it('tokenCollector override is returned and used in signature', async () => {
+    const chainId = 84532
+    const chainConfig = getChainConfig(chainId)
+    const customCollector =
+      '0x1111111111111111111111111111111111111111' as `0x${string}`
+
+    const { collectorData, tokenCollector } = await signReceiveAuthorization({
+      account,
+      chainId,
+      paymentInfo,
+      tokenCollector: customCollector,
+    })
+
+    expect(tokenCollector).toBe(getAddress(customCollector))
+
+    const nonce = computeEscrowNonce(
+      chainId,
+      chainConfig.authCaptureEscrow,
+      paymentInfo,
+    )
+
+    const recovered = await recoverTypedDataAddress({
+      domain: {
+        name: 'USDC',
+        version: '2',
+        chainId,
+        verifyingContract: getAddress(paymentInfo.token),
+      },
+      types: RECEIVE_AUTHORIZATION_TYPES,
+      primaryType: 'ReceiveWithAuthorization',
+      message: {
+        from: getAddress(account.address),
+        to: getAddress(customCollector),
+        value: paymentInfo.maxAmount,
+        validAfter: 0n,
+        validBefore: BigInt(paymentInfo.preApprovalExpiry),
+        nonce,
+      },
+      signature: collectorData,
+    })
+    expect(recovered.toLowerCase()).toBe(account.address.toLowerCase())
+  })
+
+  it('escrowAddress override produces different nonce', async () => {
+    const chainId = 84532
+    const customEscrow =
+      '0x2222222222222222222222222222222222222222' as `0x${string}`
+
+    const defaultResult = await signReceiveAuthorization({
+      account,
+      chainId,
+      paymentInfo,
+    })
+    const customResult = await signReceiveAuthorization({
+      account,
+      chainId,
+      paymentInfo,
+      escrowAddress: customEscrow,
+    })
+
+    // Different escrow address → different nonce → different signature
+    expect(customResult.collectorData).not.toBe(defaultResult.collectorData)
+  })
 })

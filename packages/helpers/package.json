@@ -26,12 +26,10 @@
     "@x402r/core": "workspace:*"
   },
   "peerDependencies": {
-    "@x402r/evm": ">=0.0.3",
-    "viem": "^2.46.3"
+    "@x402r/evm": ">=0.0.3"
   },
   "devDependencies": {
-    "@x402r/evm": "0.0.3",
-    "viem": "^2.46.3"
+    "@x402r/evm": "0.0.3"
   },
   "size-limit": [
     {
