@@ -15,7 +15,15 @@ import type {
   RefundRequestStatus,
   X402rChainConfig,
 } from '@x402r/core'
-import type { Address, Hash, Hex, PublicClient, WalletClient } from 'viem'
+import type {
+  Address,
+  Chain,
+  Hash,
+  Hex,
+  PublicClient,
+  Transport,
+  WalletClient,
+} from 'viem'
 import type { PaymentStore } from './store/types.js'
 
 /** Force TypeScript to flatten intersection types for cleaner IDE tooltips. */
@@ -28,7 +36,7 @@ export type Prettify<T> = {
 // ---------------------------------------------------------------------------
 
 export interface X402rConfig {
-  publicClient: PublicClient
+  publicClient: PublicClient<Transport, Chain | undefined>
   walletClient?: WalletClient
   operatorAddress: Address
   chainId?: number
@@ -54,7 +62,7 @@ export interface X402rConfig {
 // ---------------------------------------------------------------------------
 
 export interface ResolvedConfig {
-  publicClient: PublicClient
+  publicClient: PublicClient<Transport, Chain | undefined>
   walletClient: WalletClient | undefined
   operatorAddress: Address
   chainId: number

@@ -1,5 +1,6 @@
-import { getChainConfig } from '@x402r/core'
-import { setup, signReceiveAuthorization } from '../shared/anvil-setup.js'
+import { signReceiveAuthorization } from '@x402r/helpers'
+import { privateKeyToAccount } from 'viem/accounts'
+import { setup } from '../shared/anvil-setup.js'
 import {
   ESCROW_FAST_FORWARD,
   PAYER_PRIVATE_KEY,
@@ -9,7 +10,7 @@ import { StepRunner } from './runner.js'
 
 // ---------------------------------------------------------------------------
 // Scenario: Happy Path Release
-// authorize → charge → release (2 roles: payer + merchant)
+// authorize → fast-forward past escrow → release (2 roles: payer + merchant)
 // ---------------------------------------------------------------------------
 
 async function main() {
@@ -21,17 +22,17 @@ async function main() {
     // --- Step 1: Authorize payment (HTTP 402 flow) ---
     runner.step('Authorize payment via HTTP 402 flow')
 
-    const chainConfig = getChainConfig(84532)
-
-    const authSig = await signReceiveAuthorization(
-      PAYER_PRIVATE_KEY,
-      ctx.paymentInfo,
-    )
+    const payerAccount = privateKeyToAccount(PAYER_PRIVATE_KEY)
+    const { collectorData, tokenCollector } = await signReceiveAuthorization({
+      account: payerAccount,
+      chainId: 84532,
+      paymentInfo: ctx.paymentInfo,
+    })
     const authTx = await ctx.merchant.payment.authorize(
       ctx.paymentInfo,
       PAYMENT_AMOUNT,
-      chainConfig.tokenCollector,
-      authSig,
+      tokenCollector,
+      collectorData,
     )
     await runner.waitForTx(authTx)
 
@@ -41,27 +42,7 @@ async function main() {
       'Payment collected after authorize',
     )
 
-    // --- Step 2: Charge ---
-    runner.step('Merchant charges payment')
-    const chargeSig = await signReceiveAuthorization(
-      PAYER_PRIVATE_KEY,
-      ctx.paymentInfo,
-    )
-    const chargeTx = await ctx.merchant.payment.charge(
-      ctx.paymentInfo,
-      PAYMENT_AMOUNT,
-      chainConfig.tokenCollector,
-      chargeSig,
-    )
-    await runner.waitForTx(chargeTx)
-
-    const amounts2 = await ctx.merchant.payment.getAmounts(ctx.paymentInfo)
-    runner.assert(
-      amounts2.hasCollectedPayment,
-      'Payment still collected after charge',
-    )
-
-    // --- Step 3: Release after escrow ---
+    // --- Step 2: Release after escrow ---
     runner.step('Release remaining after escrow expires')
     await ctx.testClient.increaseTime({ seconds: ESCROW_FAST_FORWARD })
     await ctx.testClient.mine({ blocks: 1 })
@@ -72,9 +53,9 @@ async function main() {
     )
     await runner.waitForTx(releaseTx)
 
-    const amounts3 = await ctx.merchant.payment.getAmounts(ctx.paymentInfo)
+    const amounts2 = await ctx.merchant.payment.getAmounts(ctx.paymentInfo)
     runner.assert(
-      amounts3.capturableAmount === 0n,
+      amounts2.capturableAmount === 0n,
       'Capturable amount === 0 after release',
     )
 

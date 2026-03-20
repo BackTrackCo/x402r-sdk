@@ -1,9 +1,9 @@
 import {
-  computeEscrowNonce,
   deployMarketplaceOperator,
   getChainConfig,
   type PaymentInfo,
 } from '@x402r/core'
+import { signReceiveAuthorization } from '@x402r/helpers'
 import {
   createArbiterClient,
   createMerchantClient,
@@ -16,10 +16,8 @@ import {
   createWalletClient,
   encodeAbiParameters,
   erc20Abi,
-  getAddress,
   http,
   keccak256,
-  type PublicClient,
   pad,
   type TestClient,
 } from 'viem'
@@ -73,53 +71,6 @@ const USDC_BALANCE_SLOT = 9n
 const FORK_BLOCK = 39_029_000n
 const ANVIL_PORT = 8846
 
-// ERC-3009 typed data
-const RECEIVE_AUTHORIZATION_TYPES = {
-  ReceiveWithAuthorization: [
-    { name: 'from', type: 'address' },
-    { name: 'to', type: 'address' },
-    { name: 'value', type: 'uint256' },
-    { name: 'validAfter', type: 'uint256' },
-    { name: 'validBefore', type: 'uint256' },
-    { name: 'nonce', type: 'bytes32' },
-  ],
-} as const
-
-/**
- * Signs an ERC-3009 ReceiveWithAuthorization for the given paymentInfo.
- * Encapsulates nonce derivation + signTypedData so callers don't duplicate
- * the typed-data struct.
- */
-export async function signReceiveAuthorization(
-  payerPrivateKey: `0x${string}`,
-  paymentInfo: PaymentInfo,
-): Promise<`0x${string}`> {
-  const localAccount = privateKeyToAccount(payerPrivateKey)
-  const nonce = computeEscrowNonce(
-    CHAIN_ID,
-    chainConfig.authCaptureEscrow,
-    paymentInfo,
-  )
-  return localAccount.signTypedData({
-    domain: {
-      name: 'USDC',
-      version: '2',
-      chainId: CHAIN_ID,
-      verifyingContract: getAddress(paymentInfo.token),
-    },
-    types: RECEIVE_AUTHORIZATION_TYPES,
-    primaryType: 'ReceiveWithAuthorization',
-    message: {
-      from: getAddress(localAccount.address),
-      to: getAddress(chainConfig.tokenCollector),
-      value: paymentInfo.maxAmount,
-      validAfter: 0n,
-      validBefore: BigInt(paymentInfo.preApprovalExpiry),
-      nonce,
-    },
-  })
-}
-
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -156,13 +107,11 @@ export async function setup(options?: SetupOptions): Promise<ExampleContext> {
   const rpcUrl = `http://127.0.0.1:${ANVIL_PORT}/1`
   const transport = http(rpcUrl)
 
-  // Cast required: baseSepolia adds OP Stack deposit tx type which widens
-  // beyond what X402rConfig's PublicClient accepts
   const publicClient = createPublicClient({
     chain: baseSepolia,
     transport,
     cacheTime: 0,
-  }) as unknown as PublicClient
+  })
   const testClient = createTestClient({
     chain: baseSepolia,
     transport,
@@ -284,15 +233,17 @@ export async function setup(options?: SetupOptions): Promise<ExampleContext> {
     }
 
     if (!skipAuthorize) {
-      const collectorData = await signReceiveAuthorization(
-        testAccounts.payer.privateKey,
+      const payerAccount = privateKeyToAccount(testAccounts.payer.privateKey)
+      const { collectorData, tokenCollector } = await signReceiveAuthorization({
+        account: payerAccount,
+        chainId: CHAIN_ID,
         paymentInfo,
-      )
+      })
 
       const authTx = await merchant.payment.authorize(
         paymentInfo,
         PAYMENT_AMOUNT,
-        chainConfig.tokenCollector,
+        tokenCollector,
         collectorData,
       )
       await publicClient.waitForTransactionReceipt({ hash: authTx })

@@ -1,7 +1,7 @@
 /** 1 USDC (6 decimals) — default amount for examples */
 export const PAYMENT_AMOUNT = 1_000_000n
 
-/** Anvil test account #1 (payer) private key */
+/** Anvil payer account private key (deterministic mnemonic, account #1) */
 export const PAYER_PRIVATE_KEY =
   '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d' as const
 

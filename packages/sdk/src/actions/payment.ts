@@ -16,6 +16,7 @@ import { requireWallet } from './utils.js'
 
 export function createPaymentActions(config: ResolvedConfig): PaymentActions {
   return {
+    /** Collects tokens into escrow. Use `release()` to claim after escrow period. Mutually exclusive with `charge()`. */
     async authorize(
       paymentInfo: PaymentInfo,
       amount: bigint,
@@ -31,6 +32,7 @@ export function createPaymentActions(config: ResolvedConfig): PaymentActions {
         collectorData,
       })
     },
+    /** Direct charge — collects and immediately distributes to receiver. No escrow hold. Mutually exclusive with `authorize()`. */
     async charge(
       paymentInfo: PaymentInfo,
       amount: bigint,
