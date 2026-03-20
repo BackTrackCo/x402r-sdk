@@ -43,7 +43,7 @@ Multi-role integration scenarios running against a local Anvil fork.
 
 | Scenario | Description |
 |----------|-------------|
-| [`scenarios/happy-path-release.ts`](scenarios/happy-path-release.ts) | authorize → charge → release (2 roles) |
+| [`scenarios/happy-path-release.ts`](scenarios/happy-path-release.ts) | authorize → release (2 roles) |
 | [`scenarios/dispute-resolution.ts`](scenarios/dispute-resolution.ts) | Full lifecycle with arbitration (3 roles) |
 
 See [`scenarios/README.md`](scenarios/README.md) for details.

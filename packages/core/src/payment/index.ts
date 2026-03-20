@@ -1,3 +1,4 @@
+export { signReceiveAuthorization } from './erc3009.js'
 export {
   type ComputeEscrowNonceReturnType,
   type ComputePaymentInfoHashReturnType,

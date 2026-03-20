@@ -343,7 +343,7 @@ export {
   ValidationError,
   X402rError,
 } from './errors/index.js'
-
+export { signReceiveAuthorization } from './payment/erc3009.js'
 // ---------------------------------------------------------------------------
 // Payment
 // ---------------------------------------------------------------------------

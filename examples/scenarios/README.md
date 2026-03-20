@@ -12,7 +12,7 @@ Multi-role integration scenarios that exercise the full x402r payment lifecycle 
 
 ### happy-path-release
 
-2-role flow: authorize → charge → release.
+2-role flow: authorize → release.
 
 Demonstrates the simplest payment lifecycle — merchant authorizes a payment, charges funds, waits for escrow expiry, and releases remaining funds.
 
@@ -23,12 +23,11 @@ Demonstrates the simplest payment lifecycle — merchant authorizes a payment, c
 Exercises the complete dispute flow:
 1. Deploy marketplace operator
 2. Authorize payment (HTTP 402 flow)
-3. Merchant charges
-4. Payer requests refund
-5. Both parties submit evidence
-6. Arbiter reviews evidence and approves refund
-7. Verify refund amounts
-8. Distribute protocol fees
+3. Payer requests refund
+4. Both parties submit evidence
+5. Arbiter reviews evidence and approves refund
+6. Verify refund amounts
+7. Distribute protocol fees
 
 ## Running
 

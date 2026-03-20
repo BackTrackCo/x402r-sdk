@@ -2,8 +2,8 @@ import {
   deployMarketplaceOperator,
   getChainConfig,
   type PaymentInfo,
+  signReceiveAuthorization,
 } from '@x402r/core'
-import { signReceiveAuthorization } from '@x402r/helpers'
 import {
   createArbiterClient,
   createMerchantClient,

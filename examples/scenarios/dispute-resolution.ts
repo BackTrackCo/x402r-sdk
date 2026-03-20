@@ -1,4 +1,4 @@
-import { signReceiveAuthorization } from '@x402r/helpers'
+import { signReceiveAuthorization } from '@x402r/core'
 import { erc20Abi } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { setup } from '../shared/anvil-setup.js'
