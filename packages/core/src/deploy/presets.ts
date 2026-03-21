@@ -1021,3 +1021,274 @@ export async function deployArbiterSetup(
     summary: { newCount, existingCount, txHashes: txHashes },
   }
 }
+
+// ---------------------------------------------------------------------------
+// Delivery protection operator types
+// ---------------------------------------------------------------------------
+
+export interface DeliveryProtectionOperatorOptions {
+  chainId: number
+  arbiter: Address
+  feeRecipient: Address
+  escrowPeriodSeconds: bigint
+  authorizedCodehash?: Hex
+}
+
+export interface DeliveryProtectionOperatorPreview {
+  operatorAddress: Address
+  escrowPeriodAddress: Address
+  arbiterConditionAddress: Address
+  operatorConfig: OperatorConfig
+}
+
+export interface DeliveryProtectionOperatorDeployment {
+  operatorAddress: Address
+  escrowPeriodAddress: Address
+  arbiterConditionAddress: Address
+  operatorConfig: OperatorConfig
+  deployments: DeployResult[]
+  summary: {
+    newCount: number
+    existingCount: number
+    txHashes: `0x${string}`[]
+  }
+}
+
+// ---------------------------------------------------------------------------
+// previewDeliveryProtectionOperator — read-only address computation
+// ---------------------------------------------------------------------------
+
+export async function previewDeliveryProtectionOperator(
+  publicClient: PublicClient,
+  options: DeliveryProtectionOperatorOptions,
+): Promise<DeliveryProtectionOperatorPreview> {
+  const config = getChainConfig(options.chainId)
+  const factories = getFactoryAddresses(options.chainId)
+  const singletons = getConditionSingletons(options.chainId)
+  const authorizedCodehash = options.authorizedCodehash ?? pad('0x00')
+
+  const [escrowPeriodAddress, arbiterConditionAddress] = await Promise.all([
+    computeEscrowPeriodAddress(publicClient, {
+      factoryAddress: factories.escrowPeriod,
+      escrowPeriod: options.escrowPeriodSeconds,
+      authorizedCodehash,
+    }),
+    computeStaticAddressConditionAddress(publicClient, {
+      factoryAddress: factories.staticAddressCondition,
+      designatedAddress: options.arbiter,
+    }),
+  ])
+
+  // Release: only arbiter can call (StaticAddressCondition)
+  // Authorize recorder: EscrowPeriod (tracks auth time)
+  // Refund in escrow: EscrowPeriod (anyone can refund after window expires)
+  // Refund post escrow: receiver only
+  const operatorConfig: OperatorConfig = {
+    feeRecipient: options.feeRecipient,
+    feeCalculator: zeroAddress,
+    authorizeCondition: config.usdcTvlLimit,
+    authorizeRecorder: escrowPeriodAddress,
+    chargeCondition: zeroAddress,
+    chargeRecorder: zeroAddress,
+    releaseCondition: arbiterConditionAddress,
+    releaseRecorder: zeroAddress,
+    refundInEscrowCondition: escrowPeriodAddress,
+    refundInEscrowRecorder: zeroAddress,
+    refundPostEscrowCondition: singletons.receiver,
+    refundPostEscrowRecorder: zeroAddress,
+  }
+
+  const operatorAddress = await computeOperatorAddress(publicClient, {
+    factoryAddress: factories.paymentOperator,
+    config: operatorConfig,
+  })
+
+  return {
+    operatorAddress,
+    escrowPeriodAddress,
+    arbiterConditionAddress,
+    operatorConfig,
+  }
+}
+
+// ---------------------------------------------------------------------------
+// deployDeliveryProtectionOperator — single-tx via Multicall3
+//
+// Deploys a PaymentOperator where:
+// - Release is gated by StaticAddressCondition(arbiter) — arbiter calls
+//   release() directly when content passes garbage detection
+// - Refund in escrow uses EscrowPeriod — if arbiter does nothing, escrow
+//   window expires and anyone can call refundInEscrow() for auto-refund
+// ---------------------------------------------------------------------------
+
+export async function deployDeliveryProtectionOperator(
+  walletClient: WalletClient,
+  publicClient: PublicClient,
+  options: DeliveryProtectionOperatorOptions,
+): Promise<DeliveryProtectionOperatorDeployment> {
+  const factories = getFactoryAddresses(options.chainId)
+  const authorizedCodehash = options.authorizedCodehash ?? pad('0x00')
+
+  // Phase 1: Compute all deterministic addresses
+  const preview = await previewDeliveryProtectionOperator(publicClient, options)
+  const {
+    escrowPeriodAddress,
+    arbiterConditionAddress,
+    operatorAddress,
+    operatorConfig,
+  } = preview
+
+  // Phase 2: Batch-check which contracts already exist
+  const existenceEntries: MulticallContract[] = [
+    {
+      address: factories.escrowPeriod,
+      abi: escrowPeriodFactoryAbi,
+      functionName: 'getDeployed',
+      args: [options.escrowPeriodSeconds, authorizedCodehash],
+    },
+    {
+      address: factories.staticAddressCondition,
+      abi: staticAddressConditionFactoryAbi,
+      functionName: 'getDeployed',
+      args: [options.arbiter],
+    },
+    {
+      address: factories.paymentOperator,
+      abi: paymentOperatorFactoryAbi,
+      functionName: 'getOperator',
+      args: [operatorConfig],
+    },
+  ]
+
+  const existenceResults = await publicClient.multicall({
+    contracts: existenceEntries as Parameters<
+      typeof publicClient.multicall
+    >[0]['contracts'],
+  })
+
+  const escrowPeriodExists = existenceResults[0].result !== zeroAddress
+  const arbiterCondExists = existenceResults[1].result !== zeroAddress
+  const operatorExists = existenceResults[2].result !== zeroAddress
+
+  // If operator already deployed, return immediately
+  if (operatorExists) {
+    return {
+      operatorAddress,
+      escrowPeriodAddress,
+      arbiterConditionAddress,
+      operatorConfig,
+      deployments: [
+        { address: escrowPeriodAddress, hash: null, isNew: false },
+        { address: arbiterConditionAddress, hash: null, isNew: false },
+        { address: operatorAddress, hash: null, isNew: false },
+      ],
+      summary: { newCount: 0, existingCount: 3, txHashes: [] },
+    }
+  }
+
+  // Phase 3: Build deploy calls for missing contracts
+  const calls: Multicall3Call[] = []
+  const deployments: DeployResult[] = []
+
+  if (escrowPeriodExists) {
+    deployments.push({ address: escrowPeriodAddress, hash: null, isNew: false })
+  } else {
+    calls.push({
+      target: factories.escrowPeriod,
+      allowFailure: true,
+      callData: encodeFunctionData({
+        abi: escrowPeriodFactoryAbi,
+        functionName: 'deploy',
+        args: [options.escrowPeriodSeconds, authorizedCodehash],
+      }),
+    })
+    deployments.push({ address: escrowPeriodAddress, hash: null, isNew: true })
+  }
+
+  if (arbiterCondExists) {
+    deployments.push({
+      address: arbiterConditionAddress,
+      hash: null,
+      isNew: false,
+    })
+  } else {
+    calls.push({
+      target: factories.staticAddressCondition,
+      allowFailure: true,
+      callData: encodeFunctionData({
+        abi: staticAddressConditionFactoryAbi,
+        functionName: 'deploy',
+        args: [options.arbiter],
+      }),
+    })
+    deployments.push({
+      address: arbiterConditionAddress,
+      hash: null,
+      isNew: true,
+    })
+  }
+
+  // Operator deploy is always included
+  calls.push({
+    target: factories.paymentOperator,
+    allowFailure: false,
+    callData: encodeFunctionData({
+      abi: paymentOperatorFactoryAbi,
+      functionName: 'deployOperator',
+      args: [operatorConfig],
+    }),
+  })
+  deployments.push({ address: operatorAddress, hash: null, isNew: true })
+
+  // Phase 4: Send single transaction via Multicall3.aggregate3
+  if (!walletClient.account) {
+    throw new ConfigError('walletClient.account is required for deployment')
+  }
+
+  const { request, result: batchResults } = await publicClient.simulateContract(
+    {
+      address: MULTICALL3,
+      abi: multicall3Abi,
+      functionName: 'aggregate3',
+      args: [calls],
+      account: walletClient.account,
+    },
+  )
+
+  for (let i = 0; i < batchResults.length; i++) {
+    if (!batchResults[i].success) {
+      throw new ConfigError(
+        `Multicall3 batch deploy: call ${i} failed in simulation`,
+      )
+    }
+  }
+
+  const gas = await estimateBatchGas(publicClient, calls, walletClient.account!)
+  const txHash = await walletClient.writeContract({ ...request, gas })
+  await publicClient.waitForTransactionReceipt({ hash: txHash })
+
+  for (const d of deployments) {
+    if (d.isNew) d.hash = txHash
+  }
+
+  const txHashes: Hex[] = [txHash]
+  await verifyAndRetryDeploys(
+    publicClient,
+    walletClient,
+    deployments,
+    calls,
+    txHashes,
+  )
+
+  const newCount = deployments.filter((d) => d.isNew).length
+  const existingCount = deployments.filter((d) => !d.isNew).length
+
+  return {
+    operatorAddress,
+    escrowPeriodAddress,
+    arbiterConditionAddress,
+    operatorConfig,
+    deployments,
+    summary: { newCount, existingCount, txHashes },
+  }
+}
