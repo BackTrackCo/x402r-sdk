@@ -1,2 +1,1 @@
-export { refundable } from './refundable.js'
-export type { PaymentOption, RefundableOptions } from './types.js'
+export { forwardToArbiter } from './forward-to-arbiter.js'
