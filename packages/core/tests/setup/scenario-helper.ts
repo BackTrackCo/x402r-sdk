@@ -19,7 +19,11 @@ export interface ScenarioFixtures {
   paymentInfo: PaymentInfo
 }
 
-export type OperatorType = 'standard' | 'freeze' | 'arbiterRefund'
+export type OperatorType =
+  | 'standard'
+  | 'freeze'
+  | 'arbiterRefund'
+  | 'deliveryProtection'
 
 export interface ScenarioOptions {
   salt: bigint
@@ -51,7 +55,9 @@ export async function setupScenario(
       ? fixtures.operatorWithFreezeAddress
       : opts.operator === 'arbiterRefund'
         ? fixtures.arbiterRefundOperatorAddress
-        : fixtures.operatorAddress
+        : opts.operator === 'deliveryProtection'
+          ? fixtures.deliveryProtectionOperatorAddress
+          : fixtures.operatorAddress
 
   const paymentInfo: PaymentInfo = {
     operator: operatorAddress,

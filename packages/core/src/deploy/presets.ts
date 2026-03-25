@@ -1083,6 +1083,10 @@ export async function previewDeliveryProtectionOperator(
   // Authorize recorder: EscrowPeriod (tracks auth time)
   // Refund in escrow: EscrowPeriod (anyone can refund after window expires)
   // Refund post escrow: receiver only
+  // feeCalculator is zeroAddress (no fees charged) but feeRecipient is still
+  // required by the factory's non-zero validation. This future-proofs the
+  // operator: when a fee calculator is added later, the recipient is already
+  // set — no redeployment needed.
   const operatorConfig: OperatorConfig = {
     feeRecipient: options.feeRecipient,
     feeCalculator: zeroAddress,

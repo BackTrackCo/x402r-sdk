@@ -32,6 +32,8 @@ export interface DeployedFixtures {
   refundRequestAddress: Address
   refundRequestEvidenceAddress: Address
   arbiterRefundOperatorAddress: Address
+  deliveryProtectionOperatorAddress: Address
+  deliveryProtectionEscrowPeriodAddress: Address
 }
 
 // ---------------------------------------------------------------------------
@@ -303,6 +305,67 @@ export async function deployTestFixtures(
   })
 
   // ---------------------------------------------------------------------------
+  // 3g. Deploy delivery protection operator
+  //     releaseCondition = StaticAddressCondition(arbiter) — only arbiter releases
+  //     refundInEscrowCondition = EscrowPeriod — auto-refund after window expires
+  //     Uses a shorter escrow period (3 days) to distinguish from standard (7 days)
+  // ---------------------------------------------------------------------------
+  const DELIVERY_ESCROW_SECONDS = 259200n // 3 days
+
+  const deliveryEscrowHash = await walletClient.writeContract({
+    address: factories.escrowPeriod,
+    abi: escrowPeriodFactoryAbi,
+    functionName: 'deploy',
+    args: [DELIVERY_ESCROW_SECONDS, pad('0x00')],
+    account: deployer,
+    chain: walletClient.chain,
+  })
+  await publicClient.waitForTransactionReceipt({ hash: deliveryEscrowHash })
+
+  const deliveryProtectionEscrowPeriodAddress = await publicClient.readContract(
+    {
+      address: factories.escrowPeriod,
+      abi: escrowPeriodFactoryAbi,
+      functionName: 'computeAddress',
+      args: [DELIVERY_ESCROW_SECONDS, pad('0x00')],
+    },
+  )
+
+  const deliveryProtectionOperatorConfig = {
+    feeRecipient: testRoles.operatorFeeRecipient.address,
+    feeCalculator: zeroAddress,
+    authorizeCondition: zeroAddress,
+    authorizeRecorder: deliveryProtectionEscrowPeriodAddress,
+    chargeCondition: zeroAddress,
+    chargeRecorder: zeroAddress,
+    releaseCondition: arbiterConditionAddress,
+    releaseRecorder: zeroAddress,
+    refundInEscrowCondition: deliveryProtectionEscrowPeriodAddress,
+    refundInEscrowRecorder: zeroAddress,
+    refundPostEscrowCondition: baseSepolia.conditions.receiver,
+    refundPostEscrowRecorder: zeroAddress,
+  } as const
+
+  const deliveryProtectionOpHash = await walletClient.writeContract({
+    address: factories.paymentOperator,
+    abi: paymentOperatorFactoryAbi,
+    functionName: 'deployOperator',
+    args: [deliveryProtectionOperatorConfig],
+    account: deployer,
+    chain: walletClient.chain,
+  })
+  await publicClient.waitForTransactionReceipt({
+    hash: deliveryProtectionOpHash,
+  })
+
+  const deliveryProtectionOperatorAddress = await publicClient.readContract({
+    address: factories.paymentOperator,
+    abi: paymentOperatorFactoryAbi,
+    functionName: 'computeAddress',
+    args: [deliveryProtectionOperatorConfig],
+  })
+
+  // ---------------------------------------------------------------------------
   // 4. Fund payer with USDC via storage slot manipulation
   // ---------------------------------------------------------------------------
   const payerUsdcAmount = 10_000_000_000n // 10,000 USDC (6 decimals)
@@ -351,5 +414,7 @@ export async function deployTestFixtures(
     refundRequestAddress,
     refundRequestEvidenceAddress: arbiterSetup.refundRequestEvidenceAddress,
     arbiterRefundOperatorAddress,
+    deliveryProtectionOperatorAddress,
+    deliveryProtectionEscrowPeriodAddress,
   }
 }
