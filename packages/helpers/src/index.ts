@@ -1,4 +1,1 @@
-export {
-  type ForwardToArbiterOptions,
-  forwardToArbiter,
-} from './forward-to-arbiter.js'
+export { forwardToArbiter } from './forward-to-arbiter.js'
