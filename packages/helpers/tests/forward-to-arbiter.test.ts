@@ -98,18 +98,25 @@ describe('forwardToArbiter', () => {
     }
   })
 
-  it('swallows fetch errors silently', async () => {
+  it('warns on fetch errors without throwing', async () => {
     const original = globalThis.fetch
     globalThis.fetch = vi.fn(async () => {
       throw new Error('network failure')
     }) as any
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
     try {
       const hook = forwardToArbiter('http://localhost:3001')
       await hook(makeContext({ responseBody: '{"temp": 72}' }))
       await new Promise((r) => setTimeout(r, 50))
+
+      expect(warnSpy).toHaveBeenCalledWith(
+        '[forwardToArbiter] failed:',
+        expect.any(Error),
+      )
     } finally {
       globalThis.fetch = original
+      warnSpy.mockRestore()
     }
   })
 

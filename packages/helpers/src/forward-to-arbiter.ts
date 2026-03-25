@@ -39,6 +39,8 @@ export function forwardToArbiter(arbiterUrl: string) {
           scheme: 'escrow',
         }),
       })
-      .catch(() => {})
+      .catch((err) => {
+        console.warn('[forwardToArbiter] failed:', err)
+      })
   }
 }
