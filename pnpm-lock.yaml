@@ -95,7 +95,11 @@ importers:
         specifier: ^0.2.3
         version: 0.2.3
 
-  packages/helpers: {}
+  packages/helpers:
+    devDependencies:
+      '@x402/core':
+        specifier: 2.5.0
+        version: 2.5.0
 
   packages/sdk:
     dependencies:

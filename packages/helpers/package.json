@@ -22,7 +22,12 @@
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "publint --strict && attw --pack --ignore-rules no-resolution cjs-resolves-to-esm"
   },
-  "dependencies": {},
+  "peerDependencies": {
+    "@x402/core": ">=2.5.0"
+  },
+  "devDependencies": {
+    "@x402/core": "2.5.0"
+  },
   "size-limit": [
     {
       "path": "dist/index.js",

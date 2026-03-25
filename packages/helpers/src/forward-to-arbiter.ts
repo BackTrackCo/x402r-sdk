@@ -1,3 +1,5 @@
+import type { SettleResultContext } from '@x402/core/server'
+
 /**
  * Creates an `onAfterSettle` hook that forwards the response body to an
  * arbiter service for evaluation. Fire-and-forget — does not block the
@@ -15,11 +17,7 @@
  * ```
  */
 export function forwardToArbiter(arbiterUrl: string) {
-  return async (context: {
-    result: { success: boolean; transaction: string; network: string }
-    requirements: { scheme: string; network: string }
-    transportContext?: unknown
-  }): Promise<void> => {
+  return async (context: SettleResultContext): Promise<void> => {
     if (!context.result.success) return
     if (context.requirements.scheme !== 'escrow') return
 
