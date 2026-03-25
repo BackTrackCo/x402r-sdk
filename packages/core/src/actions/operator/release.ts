@@ -25,7 +25,7 @@ export async function release(
       address: operatorAddress,
       abi: paymentOperatorAbi,
       functionName: 'release',
-      args: [paymentInfo, amount],
+      args: [paymentInfo, amount, '0x'],
       chain: walletClient.chain,
       account: walletClient.account,
     }),

@@ -53,7 +53,7 @@ describe('refund write functions', () => {
     expect(walletClient.writeContract).toHaveBeenCalledWith(
       expect.objectContaining({
         functionName: 'approve',
-        args: [pi, 1n, 500n],
+        args: [pi, 1n, 500n, '0x'],
       }),
     )
   })

@@ -24,7 +24,7 @@ export async function unfreezePayment(
       address: freezeAddress,
       abi: freezeAbi,
       functionName: 'unfreeze',
-      args: [paymentInfo],
+      args: [paymentInfo, '0x'],
       chain: walletClient.chain,
       account: walletClient.account,
     }),

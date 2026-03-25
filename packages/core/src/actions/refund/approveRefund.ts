@@ -26,7 +26,7 @@ export async function approveRefund(
       address: contractAddress,
       abi: refundRequestAbi,
       functionName: 'approve',
-      args: [paymentInfo, nonce, amount],
+      args: [paymentInfo, nonce, amount, '0x'],
       chain: walletClient.chain,
       account: walletClient.account,
     }),

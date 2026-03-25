@@ -25,7 +25,7 @@ export async function refundInEscrow(
       address: operatorAddress,
       abi: paymentOperatorAbi,
       functionName: 'refundInEscrow',
-      args: [paymentInfo, amount],
+      args: [paymentInfo, amount, '0x'],
       chain: walletClient.chain,
       account: walletClient.account,
     }),

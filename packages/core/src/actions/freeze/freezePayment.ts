@@ -24,7 +24,7 @@ export async function freezePayment(
       address: freezeAddress,
       abi: freezeAbi,
       functionName: 'freeze',
-      args: [paymentInfo],
+      args: [paymentInfo, '0x'],
       chain: walletClient.chain,
       account: walletClient.account,
     }),
