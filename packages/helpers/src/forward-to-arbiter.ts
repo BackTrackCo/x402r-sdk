@@ -1,5 +1,10 @@
 import type { SettleResultContext } from '@x402/core/server'
 
+export interface ForwardToArbiterOptions {
+  /** Called when the arbiter request fails. Defaults to `console.warn`. */
+  onError?: (error: unknown) => void
+}
+
 /**
  * Creates an `onAfterSettle` hook that forwards the response body to an
  * arbiter service for evaluation. Fire-and-forget — does not block the
@@ -16,7 +21,14 @@ import type { SettleResultContext } from '@x402/core/server'
  *   .onAfterSettle(forwardToArbiter('http://arbiter:3001'))
  * ```
  */
-export function forwardToArbiter(arbiterUrl: string) {
+export function forwardToArbiter(
+  arbiterUrl: string,
+  options?: ForwardToArbiterOptions,
+) {
+  const onError =
+    options?.onError ??
+    ((err: unknown) => console.warn('[forwardToArbiter] failed:', err))
+
   return async (context: SettleResultContext): Promise<void> => {
     if (!context.result.success) return
     if (context.requirements.scheme !== 'escrow') return
@@ -39,8 +51,6 @@ export function forwardToArbiter(arbiterUrl: string) {
           scheme: 'escrow',
         }),
       })
-      .catch((err) => {
-        console.warn('[forwardToArbiter] failed:', err)
-      })
+      .catch(onError)
   }
 }

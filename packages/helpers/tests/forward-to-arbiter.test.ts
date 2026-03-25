@@ -98,7 +98,7 @@ describe('forwardToArbiter', () => {
     }
   })
 
-  it('warns on fetch errors without throwing', async () => {
+  it('warns on fetch errors by default', async () => {
     const original = globalThis.fetch
     globalThis.fetch = vi.fn(async () => {
       throw new Error('network failure')
@@ -117,6 +117,24 @@ describe('forwardToArbiter', () => {
     } finally {
       globalThis.fetch = original
       warnSpy.mockRestore()
+    }
+  })
+
+  it('calls custom onError on fetch failure', async () => {
+    const original = globalThis.fetch
+    globalThis.fetch = vi.fn(async () => {
+      throw new Error('network failure')
+    }) as any
+    const onError = vi.fn()
+
+    try {
+      const hook = forwardToArbiter('http://localhost:3001', { onError })
+      await hook(makeContext({ responseBody: '{"temp": 72}' }))
+      await new Promise((r) => setTimeout(r, 50))
+
+      expect(onError).toHaveBeenCalledWith(expect.any(Error))
+    } finally {
+      globalThis.fetch = original
     }
   })
 
