@@ -1,4 +1,5 @@
-import type { PublicClient, TestClient } from 'viem'
+import type { PublicClient, TestClient, WalletClient } from 'viem'
+import { zeroAddress } from 'viem'
 import { beforeAll, describe, expect, it } from 'vitest'
 import {
   type ArbiterClient,
@@ -8,15 +9,27 @@ import {
   type MerchantClient,
   type X402r,
 } from '../../../sdk/src/index.js'
+import { getOperatorConfig } from '../../src/actions/index.js'
+import { x402rChains } from '../../src/config/index.js'
+import {
+  type DeliveryProtectionOperatorDeployment,
+  deployDeliveryProtectionOperator,
+} from '../../src/deploy/index.js'
 import type { PaymentInfo } from '../../src/types/index.js'
 import { anvilBaseSepolia } from '../setup/anvil.js'
-import { DEFAULT_AMOUNT, testRoles } from '../setup/constants.js'
-import type { DeployedFixtures } from '../setup/deploy-fixtures.js'
+import { DEFAULT_AMOUNT, FAR_FUTURE, testRoles } from '../setup/constants.js'
+import { deployTestFixtures } from '../setup/deploy-fixtures.js'
 import { createCollectorData } from '../setup/erc3009-helper.js'
-import { setupScenario } from '../setup/scenario-helper.js'
 
-// Delivery protection escrow: 3 days (259200 seconds) — set in deploy-fixtures.ts
-const DELIVERY_ESCROW_FAST_FORWARD = 259201 // 3 days + 1 second
+const baseSepolia = x402rChains[84532]
+const USDC = baseSepolia.usdc
+
+// ---------------------------------------------------------------------------
+// Config
+// ---------------------------------------------------------------------------
+
+const ESCROW_PERIOD_SECONDS = 172800n // 2 days — distinct from other fixtures
+const ESCROW_FAST_FORWARD = 172801 // 2 days + 1 second
 
 // ---------------------------------------------------------------------------
 // Shared state
@@ -24,40 +37,105 @@ const DELIVERY_ESCROW_FAST_FORWARD = 259201 // 3 days + 1 second
 
 let publicClient: PublicClient
 let testClient: TestClient
-let fixtures: DeployedFixtures
+let walletClient: WalletClient
+let deployment: DeliveryProtectionOperatorDeployment
+
 let payerClient: X402r
 let arbiterClient: ArbiterClient
 let merchant: MerchantClient
-
 let paymentInfo: PaymentInfo
 
 beforeAll(async () => {
-  ;({ publicClient, testClient, fixtures, paymentInfo } = await setupScenario({
-    salt: 100n, // distinct from other fork tests
-    operator: 'deliveryProtection',
-  }))
+  publicClient = anvilBaseSepolia.getPublicClient()
+  testClient = anvilBaseSepolia.getTestClient()
+  walletClient = anvilBaseSepolia.getWalletClient(testRoles.deployer.address)
+
+  // Deploy fixtures to clear code at test accounts and fund payer with USDC
+  await deployTestFixtures(publicClient, walletClient, testClient)
+
+  // Deploy delivery protection operator via preset (tested in deploy.fork.test.ts)
+  deployment = await deployDeliveryProtectionOperator(
+    walletClient,
+    publicClient,
+    {
+      chainId: 84532,
+      arbiter: testRoles.arbiter.address,
+      feeRecipient: testRoles.operatorFeeRecipient.address,
+      escrowPeriodSeconds: ESCROW_PERIOD_SECONDS,
+    },
+  )
+
+  const operatorAddress = deployment.operatorAddress
+  const escrowPeriodAddress = deployment.escrowPeriodAddress
 
   payerClient = createX402r({
     publicClient,
     walletClient: anvilBaseSepolia.getWalletClient(testRoles.payer.address),
-    operatorAddress: fixtures.deliveryProtectionOperatorAddress,
-    escrowPeriodAddress: fixtures.deliveryProtectionEscrowPeriodAddress,
+    operatorAddress,
+    escrowPeriodAddress,
   })
 
   arbiterClient = createArbiterClient({
     publicClient,
     walletClient: anvilBaseSepolia.getWalletClient(testRoles.arbiter.address),
-    operatorAddress: fixtures.deliveryProtectionOperatorAddress,
-    escrowPeriodAddress: fixtures.deliveryProtectionEscrowPeriodAddress,
+    operatorAddress,
+    escrowPeriodAddress,
   })
 
   merchant = createMerchantClient({
     publicClient,
     walletClient: anvilBaseSepolia.getWalletClient(testRoles.receiver.address),
-    operatorAddress: fixtures.deliveryProtectionOperatorAddress,
-    escrowPeriodAddress: fixtures.deliveryProtectionEscrowPeriodAddress,
+    operatorAddress,
+    escrowPeriodAddress,
   })
+
+  paymentInfo = {
+    operator: operatorAddress,
+    payer: testRoles.payer.address,
+    receiver: testRoles.receiver.address,
+    token: USDC,
+    maxAmount: DEFAULT_AMOUNT,
+    preApprovalExpiry: FAR_FUTURE,
+    authorizationExpiry: FAR_FUTURE,
+    refundExpiry: FAR_FUTURE,
+    minFeeBps: 0,
+    maxFeeBps: 500,
+    feeReceiver: operatorAddress,
+    salt: 200n, // distinct from other fork tests
+  }
 }, 60_000)
+
+// ---------------------------------------------------------------------------
+// Verify on-chain operator config
+// ---------------------------------------------------------------------------
+
+describe('Delivery Protection: operator config verification', () => {
+  it('operator has correct condition addresses', async () => {
+    const config = await getOperatorConfig(publicClient, {
+      operatorAddress: deployment.operatorAddress,
+    })
+
+    // releaseCondition must be the arbiter StaticAddressCondition (not zero)
+    expect(config.releaseCondition.toLowerCase()).toBe(
+      deployment.arbiterConditionAddress.toLowerCase(),
+    )
+    expect(config.releaseCondition).not.toBe(zeroAddress)
+
+    // refundInEscrowCondition must be the EscrowPeriod (not zero)
+    expect(config.refundInEscrowCondition.toLowerCase()).toBe(
+      deployment.escrowPeriodAddress.toLowerCase(),
+    )
+    expect(config.refundInEscrowCondition).not.toBe(zeroAddress)
+
+    // authorizeRecorder must be the EscrowPeriod (records auth time)
+    expect(config.authorizeRecorder.toLowerCase()).toBe(
+      deployment.escrowPeriodAddress.toLowerCase(),
+    )
+
+    // feeCalculator should be zero (no fees)
+    expect(config.feeCalculator).toBe(zeroAddress)
+  })
+})
 
 // ---------------------------------------------------------------------------
 // Happy path: authorize → arbiter calls release() → funds move
@@ -102,11 +180,10 @@ describe('Delivery Protection: arbiter-gated release', () => {
 // ---------------------------------------------------------------------------
 
 describe('Delivery Protection: access control', () => {
-  // Use a different salt for a fresh payment
   let accessControlPaymentInfo: PaymentInfo
 
   beforeAll(async () => {
-    accessControlPaymentInfo = { ...paymentInfo, salt: 101n }
+    accessControlPaymentInfo = { ...paymentInfo, salt: 201n }
 
     const { collectorData, tokenCollector } = await createCollectorData(
       anvilBaseSepolia.getWalletClient(testRoles.payer.address),
@@ -123,20 +200,17 @@ describe('Delivery Protection: access control', () => {
   }, 60_000)
 
   it('non-arbiter (receiver) cannot call release()', async () => {
-    // Merchant (receiver) tries to release — should fail because releaseCondition
-    // is StaticAddressCondition(arbiter), and receiver is not the arbiter.
     await expect(
       merchant.payment.release(accessControlPaymentInfo, DEFAULT_AMOUNT),
     ).rejects.toThrow()
   }, 60_000)
 
   it('non-arbiter (payer) cannot call release()', async () => {
-    // Payer tries to release — should also fail
     const payerAsReleaser = createX402r({
       publicClient,
       walletClient: anvilBaseSepolia.getWalletClient(testRoles.payer.address),
-      operatorAddress: fixtures.deliveryProtectionOperatorAddress,
-      escrowPeriodAddress: fixtures.deliveryProtectionEscrowPeriodAddress,
+      operatorAddress: deployment.operatorAddress,
+      escrowPeriodAddress: deployment.escrowPeriodAddress,
     })
 
     await expect(
@@ -150,11 +224,10 @@ describe('Delivery Protection: access control', () => {
 // ---------------------------------------------------------------------------
 
 describe('Delivery Protection: timeout auto-refund', () => {
-  // Use a different salt for a fresh payment
   let timeoutPaymentInfo: PaymentInfo
 
   beforeAll(async () => {
-    timeoutPaymentInfo = { ...paymentInfo, salt: 102n }
+    timeoutPaymentInfo = { ...paymentInfo, salt: 202n }
 
     const { collectorData, tokenCollector } = await createCollectorData(
       anvilBaseSepolia.getWalletClient(testRoles.payer.address),
@@ -171,18 +244,15 @@ describe('Delivery Protection: timeout auto-refund', () => {
   }, 60_000)
 
   it('refundInEscrow reverts before escrow expires', async () => {
-    // Immediately after authorize, escrow is still active — refundInEscrow should fail
     await expect(
       payerClient.payment.refundInEscrow(timeoutPaymentInfo, DEFAULT_AMOUNT),
     ).rejects.toThrow()
   }, 60_000)
 
   it('refundInEscrow succeeds after escrow expires', async () => {
-    // Fast-forward past the 3-day delivery protection escrow period
-    await testClient.increaseTime({ seconds: DELIVERY_ESCROW_FAST_FORWARD })
+    await testClient.increaseTime({ seconds: ESCROW_FAST_FORWARD })
     await testClient.mine({ blocks: 1 })
 
-    // Anyone can call refundInEscrow after expiry — using payer here
     const hash = await payerClient.payment.refundInEscrow(
       timeoutPaymentInfo,
       DEFAULT_AMOUNT,
