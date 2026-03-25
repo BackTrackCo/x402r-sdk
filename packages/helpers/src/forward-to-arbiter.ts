@@ -1,9 +1,3 @@
-// Node 18+ has fetch globally; declare it for TS with ES2022 lib
-declare function fetch(
-  input: string,
-  init?: { method?: string; headers?: Record<string, string>; body?: string },
-): Promise<{ ok: boolean }>
-
 /**
  * Creates an `onAfterSettle` hook that forwards the response body to an
  * arbiter service for evaluation. Fire-and-forget — does not block the
@@ -35,15 +29,18 @@ export function forwardToArbiter(arbiterUrl: string) {
     const responseBody = transportCtx?.responseBody
     if (!responseBody) return
 
-    fetch(`${arbiterUrl}/verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        responseBody: responseBody.toString('utf-8'),
-        network: context.requirements.network,
-        transaction: context.result.transaction,
-        scheme: 'escrow',
-      }),
-    }).catch(() => {})
+    const url = new URL('/verify', arbiterUrl).toString()
+    globalThis
+      .fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          responseBody: responseBody.toString('utf-8'),
+          network: context.requirements.network,
+          transaction: context.result.transaction,
+          scheme: 'escrow',
+        }),
+      })
+      .catch(() => {})
   }
 }

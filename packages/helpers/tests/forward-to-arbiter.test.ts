@@ -49,38 +49,86 @@ describe('forwardToArbiter', () => {
   })
 
   it('skips on failed settlement', async () => {
+    const original = globalThis.fetch
     const spy = vi.fn()
     globalThis.fetch = spy as any
 
-    const hook = forwardToArbiter('http://localhost:3001')
-    await hook(makeContext({ success: false }))
-    await new Promise((r) => setTimeout(r, 50))
+    try {
+      const hook = forwardToArbiter('http://localhost:3001')
+      await hook(makeContext({ success: false }))
+      await new Promise((r) => setTimeout(r, 50))
 
-    expect(spy).not.toHaveBeenCalled()
-    globalThis.fetch = fetch
+      expect(spy).not.toHaveBeenCalled()
+    } finally {
+      globalThis.fetch = original
+    }
   })
 
   it('skips on non-escrow scheme', async () => {
+    const original = globalThis.fetch
     const spy = vi.fn()
     globalThis.fetch = spy as any
 
-    const hook = forwardToArbiter('http://localhost:3001')
-    await hook(makeContext({ scheme: 'exact', responseBody: '{"data": true}' }))
-    await new Promise((r) => setTimeout(r, 50))
+    try {
+      const hook = forwardToArbiter('http://localhost:3001')
+      await hook(
+        makeContext({ scheme: 'exact', responseBody: '{"data": true}' }),
+      )
+      await new Promise((r) => setTimeout(r, 50))
 
-    expect(spy).not.toHaveBeenCalled()
-    globalThis.fetch = fetch
+      expect(spy).not.toHaveBeenCalled()
+    } finally {
+      globalThis.fetch = original
+    }
   })
 
   it('skips when no response body', async () => {
+    const original = globalThis.fetch
     const spy = vi.fn()
     globalThis.fetch = spy as any
 
-    const hook = forwardToArbiter('http://localhost:3001')
-    await hook(makeContext({}))
-    await new Promise((r) => setTimeout(r, 50))
+    try {
+      const hook = forwardToArbiter('http://localhost:3001')
+      await hook(makeContext({}))
+      await new Promise((r) => setTimeout(r, 50))
 
-    expect(spy).not.toHaveBeenCalled()
-    globalThis.fetch = fetch
+      expect(spy).not.toHaveBeenCalled()
+    } finally {
+      globalThis.fetch = original
+    }
+  })
+
+  it('swallows fetch errors silently', async () => {
+    const original = globalThis.fetch
+    globalThis.fetch = vi.fn(async () => {
+      throw new Error('network failure')
+    }) as any
+
+    try {
+      const hook = forwardToArbiter('http://localhost:3001')
+      await hook(makeContext({ responseBody: '{"temp": 72}' }))
+      await new Promise((r) => setTimeout(r, 50))
+    } finally {
+      globalThis.fetch = original
+    }
+  })
+
+  it('handles trailing slash in arbiter URL', async () => {
+    let capturedUrl = ''
+    const original = globalThis.fetch
+    globalThis.fetch = vi.fn(async (url: any) => {
+      capturedUrl = url
+      return new Response('ok')
+    }) as any
+
+    try {
+      const hook = forwardToArbiter('http://localhost:3001/')
+      await hook(makeContext({ responseBody: '{"temp": 72}' }))
+      await new Promise((r) => setTimeout(r, 50))
+
+      expect(capturedUrl).toBe('http://localhost:3001/verify')
+    } finally {
+      globalThis.fetch = original
+    }
   })
 })
