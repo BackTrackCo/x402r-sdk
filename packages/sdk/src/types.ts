@@ -221,6 +221,7 @@ export interface X402r {
     slot: ConditionSlot,
     paymentInfo: PaymentInfo,
     amount: bigint,
+    data?: Hex,
   ): Promise<boolean>
   extend<const T extends Record<string, unknown>>(
     fn: (client: X402r) => T,
@@ -265,6 +266,7 @@ export interface PayerClient {
     slot: ConditionSlot,
     paymentInfo: PaymentInfo,
     amount: bigint,
+    data?: Hex,
   ): Promise<boolean>
   extend<const T extends Record<string, unknown>>(
     fn: (client: X402r) => T,
@@ -319,6 +321,7 @@ export interface MerchantClient {
     slot: ConditionSlot,
     paymentInfo: PaymentInfo,
     amount: bigint,
+    data?: Hex,
   ): Promise<boolean>
   extend<const T extends Record<string, unknown>>(
     fn: (client: X402r) => T,
@@ -365,6 +368,7 @@ export interface ArbiterClient {
     slot: ConditionSlot,
     paymentInfo: PaymentInfo,
     amount: bigint,
+    data?: Hex,
   ): Promise<boolean>
   extend<const T extends Record<string, unknown>>(
     fn: (client: X402r) => T,
