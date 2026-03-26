@@ -20,13 +20,25 @@ const resourceServer = new x402ResourceServer(facilitatorClient)
 
 ## API
 
-### `forwardToArbiter(arbiterUrl)`
+### `forwardToArbiter(arbiterUrl, options?)`
 
 Creates an `onAfterSettle` hook that forwards the response body to an arbiter service for evaluation. Fire-and-forget — does not block the response to the client.
 
 - Only fires for successful escrow scheme settlements
 - POSTs `{ responseBody, network, transaction, scheme }` to `{arbiterUrl}/verify`
 - Errors silently caught (arbiter being down shouldn't break payment flow)
+
+#### Options
+
+| Option    | Type                         | Description                                      |
+| --------- | ---------------------------- | ------------------------------------------------ |
+| `onError` | `(error: unknown) => void`   | Custom error handler. Defaults to `console.warn`. |
+
+```ts
+forwardToArbiter('http://arbiter:3001', {
+  onError: (err) => sentry.captureException(err),
+})
+```
 
 ## Docs
 

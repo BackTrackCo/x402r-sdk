@@ -120,7 +120,7 @@ describe('forwardToArbiter', () => {
     }
   })
 
-  it('calls chained .onError() on fetch failure', async () => {
+  it('calls onError option on fetch failure', async () => {
     const original = globalThis.fetch
     globalThis.fetch = vi.fn(async () => {
       throw new Error('network failure')
@@ -128,7 +128,7 @@ describe('forwardToArbiter', () => {
     const onError = vi.fn()
 
     try {
-      const hook = forwardToArbiter('http://localhost:3001').onError(onError)
+      const hook = forwardToArbiter('http://localhost:3001', { onError })
       await hook(makeContext({ responseBody: '{"temp": 72}' }))
       await new Promise((r) => setTimeout(r, 50))
 
