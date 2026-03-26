@@ -46,8 +46,6 @@ export {
 export type {
   ApprovePostEscrowRefundParameters,
   ApprovePostEscrowRefundReturnType,
-  ApproveRefundRequestParameters,
-  ApproveRefundRequestReturnType,
   AuthorizeParameters,
   AuthorizeReturnType,
   CalculateOperatorFeeBpsParameters,
@@ -151,7 +149,6 @@ export type {
 } from './actions/index.js'
 export {
   approvePostEscrowRefund,
-  approveRefund,
   authorize,
   calculateOperatorFeeBps,
   calculateProtocolFeeBps,

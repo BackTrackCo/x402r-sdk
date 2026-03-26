@@ -360,10 +360,11 @@ export async function previewMarketplaceOperator(
  * Deploy a marketplace PaymentOperator with all required condition contracts.
  *
  * **In-escrow refund limitation:** In-escrow refunds on marketplace operators
- * require a payer request via `RefundRequest.requestRefund()` first, then
- * arbiter/merchant approves via `RefundRequest.approve()` which atomically
- * calls `operator.refundInEscrow()`. Direct `refundInEscrow()` calls are
- * blocked by the `StaticAddressCondition(refundRequest)` gate.
+ * require a payer request via `RefundRequest.requestRefund()` first. The
+ * merchant then calls `operator.refundInEscrow()` which triggers the
+ * RefundRequest recorder to approve the request automatically. Direct
+ * `refundInEscrow()` calls are blocked by the
+ * `StaticAddressCondition(refundRequest)` gate.
  */
 export async function deployMarketplaceOperator(
   walletClient: WalletClient,

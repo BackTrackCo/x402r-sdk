@@ -28,12 +28,11 @@ describe('createEvidenceActions', () => {
     const config = createTestConfig()
     const actions = createEvidenceActions(config, TEST_EVIDENCE)
 
-    await actions.submit(mockPaymentInfo, 1n, 'QmTest')
+    await actions.submit(mockPaymentInfo, 'QmTest')
 
     expect(submitEvidence).toHaveBeenCalledWith(config.walletClient, {
       contractAddress: TEST_EVIDENCE,
       paymentInfo: mockPaymentInfo,
-      nonce: 1n,
       cid: 'QmTest',
     })
   })
@@ -43,7 +42,7 @@ describe('createEvidenceActions', () => {
     const actions = createEvidenceActions(config, TEST_EVIDENCE)
 
     await expect(() =>
-      actions.submit(mockPaymentInfo, 1n, 'QmTest'),
+      actions.submit(mockPaymentInfo, 'QmTest'),
     ).rejects.toThrow('walletClient is required')
   })
 
@@ -52,7 +51,7 @@ describe('createEvidenceActions', () => {
     const config = createTestConfig()
     const actions = createEvidenceActions(config, TEST_EVIDENCE)
 
-    const result = await actions.get(mockPaymentInfo, 1n, 0n)
+    const result = await actions.get(mockPaymentInfo, 0n)
 
     expect(result).toEqual({
       submitter: '0x0000000000000000000000000000000000000001',
@@ -63,7 +62,6 @@ describe('createEvidenceActions', () => {
     expect(getEvidence).toHaveBeenCalledWith(config.publicClient, {
       contractAddress: TEST_EVIDENCE,
       paymentInfo: mockPaymentInfo,
-      nonce: 1n,
       index: 0n,
     })
   })
@@ -73,13 +71,12 @@ describe('createEvidenceActions', () => {
     const config = createTestConfig()
     const actions = createEvidenceActions(config, TEST_EVIDENCE)
 
-    const result = await actions.getBatch(mockPaymentInfo, 1n, 0n, 10n)
+    const result = await actions.getBatch(mockPaymentInfo, 0n, 10n)
 
     expect(result).toEqual({ entries: [], total: 0n })
     expect(getEvidenceBatch).toHaveBeenCalledWith(config.publicClient, {
       contractAddress: TEST_EVIDENCE,
       paymentInfo: mockPaymentInfo,
-      nonce: 1n,
       offset: 0n,
       count: 10n,
     })
@@ -90,13 +87,12 @@ describe('createEvidenceActions', () => {
     const config = createTestConfig({ walletClient: undefined })
     const actions = createEvidenceActions(config, TEST_EVIDENCE)
 
-    const result = await actions.count(mockPaymentInfo, 1n)
+    const result = await actions.count(mockPaymentInfo)
 
     expect(result).toBe(5n)
     expect(getEvidenceCount).toHaveBeenCalledWith(config.publicClient, {
       contractAddress: TEST_EVIDENCE,
       paymentInfo: mockPaymentInfo,
-      nonce: 1n,
     })
   })
 })

@@ -9,8 +9,9 @@ import { StepRunner } from './runner.js'
 // Scenario: Dispute Resolution (3-role full lifecycle)
 //
 // Flow: authorize → payer requests refund → payer + merchant submit evidence →
-//       arbiter reviews evidence → arbiter approves refund →
-//       verify refund amounts → merchant distributes fees
+//       arbiter reviews evidence → merchant executes refundInEscrow
+//       (recorder approves automatically) → verify refund amounts →
+//       merchant distributes fees
 // ---------------------------------------------------------------------------
 
 async function main() {
@@ -21,8 +22,8 @@ async function main() {
   try {
     // Runtime guards
     if (!ctx.payer.refund) throw new Error('Payer refund module unavailable')
-    if (!ctx.arbiter.refund)
-      throw new Error('Arbiter refund module unavailable')
+    if (!ctx.merchant.refund)
+      throw new Error('Merchant refund module unavailable')
     if (!ctx.merchant.escrow)
       throw new Error('Merchant escrow module unavailable')
     if (
@@ -70,11 +71,10 @@ async function main() {
     const requestTx = await ctx.payer.refund.request(
       ctx.paymentInfo,
       PAYMENT_AMOUNT,
-      0n,
     )
     await runner.waitForTx(requestTx)
 
-    const refundRequest = await ctx.payer.refund.get(ctx.paymentInfo, 0n)
+    const refundRequest = await ctx.payer.refund.get(ctx.paymentInfo)
     runner.assert(
       refundRequest.amount === PAYMENT_AMOUNT,
       `Refund request amount === ${PAYMENT_AMOUNT}`,
@@ -88,11 +88,10 @@ async function main() {
 
     const payerEvTx = await ctx.payer.evidence.submit(
       ctx.paymentInfo,
-      0n,
       'QmPayerEvidence_receipt',
     )
     await runner.waitForTx(payerEvTx)
-    const payerEntry = await ctx.payer.evidence.get(ctx.paymentInfo, 0n, 0n)
+    const payerEntry = await ctx.payer.evidence.get(ctx.paymentInfo, 0n)
     runner.assert(
       payerEntry.submitter.toLowerCase() === ctx.accounts.payer.toLowerCase(),
       `Evidence submitter matches payer (${ctx.accounts.payer})`,
@@ -100,15 +99,10 @@ async function main() {
 
     const merchantEvTx = await ctx.merchant.evidence.submit(
       ctx.paymentInfo,
-      0n,
       'QmMerchantEvidence_delivery',
     )
     await runner.waitForTx(merchantEvTx)
-    const merchantEntry = await ctx.merchant.evidence.get(
-      ctx.paymentInfo,
-      0n,
-      1n,
-    )
+    const merchantEntry = await ctx.merchant.evidence.get(ctx.paymentInfo, 1n)
     runner.assert(
       merchantEntry.submitter.toLowerCase() ===
         ctx.accounts.merchant.toLowerCase(),
@@ -120,12 +114,11 @@ async function main() {
     // ================================================================
     runner.step('Arbiter reviews evidence')
 
-    const evidenceCount = await ctx.arbiter.evidence.count(ctx.paymentInfo, 0n)
+    const evidenceCount = await ctx.arbiter.evidence.count(ctx.paymentInfo)
     runner.assert(evidenceCount === 2n, 'Evidence count === 2')
 
     const batch = await ctx.arbiter.evidence.getBatch(
       ctx.paymentInfo,
-      0n,
       0n,
       evidenceCount,
     )
@@ -135,18 +128,17 @@ async function main() {
     }
 
     // ================================================================
-    // Step 5: Arbiter approves refund
+    // Step 5: Merchant executes refund (recorder approves automatically)
     // ================================================================
-    runner.step('Arbiter approves refund for full amount')
+    runner.step('Merchant executes refundInEscrow (recorder approves)')
 
-    const approveTx = await ctx.arbiter.refund.approve(
+    const refundTx = await ctx.merchant.payment.refundInEscrow(
       ctx.paymentInfo,
-      0n,
       PAYMENT_AMOUNT,
     )
-    await runner.waitForTx(approveTx)
+    await runner.waitForTx(refundTx)
 
-    const approvedRequest = await ctx.arbiter.refund.get(ctx.paymentInfo, 0n)
+    const approvedRequest = await ctx.merchant.refund.get(ctx.paymentInfo)
     runner.assert(
       approvedRequest.approvedAmount === PAYMENT_AMOUNT,
       `Approved amount === ${PAYMENT_AMOUNT}`,

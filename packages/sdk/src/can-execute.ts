@@ -27,7 +27,7 @@ export async function canExecute(
       address: conditionAddress,
       abi: iConditionAbi,
       functionName: 'check',
-      args: [paymentInfo, amount, caller],
+      args: [paymentInfo, amount, caller, '0x'],
     })
   } catch (error) {
     if (error instanceof BaseError) return false

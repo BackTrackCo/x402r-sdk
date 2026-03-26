@@ -20,17 +20,14 @@ vi.mock('@x402r/core', async (importOriginal) => {
     cancelRefundRequest: vi.fn().mockResolvedValue('0xhash'),
     denyRefundRequest: vi.fn().mockResolvedValue('0xhash'),
     refuseRefundRequest: vi.fn().mockResolvedValue('0xhash'),
-    approveRefund: vi.fn().mockResolvedValue('0xhash'),
     getRefundRequest: vi.fn().mockResolvedValue({
       paymentInfoHash: '0x0',
-      nonce: 0n,
       amount: 0n,
       approvedAmount: 0n,
       status: 0,
     }),
     getRefundRequestByKey: vi.fn().mockResolvedValue({
       paymentInfoHash: '0x0',
-      nonce: 0n,
       amount: 0n,
       approvedAmount: 0n,
       status: 0,
@@ -51,7 +48,6 @@ vi.mock('@x402r/core', async (importOriginal) => {
 })
 
 import {
-  approveRefund,
   cancelRefundRequest,
   denyRefundRequest,
   getCancelCount,
@@ -80,19 +76,18 @@ describe('createRefundActions', () => {
   it('request injects refundRequestAddress as contractAddress', async () => {
     const config = createTestConfig()
     const actions = createRefundActions(config, config.refundRequestAddress!)
-    await actions.request(mockPaymentInfo, 100n, 1n)
+    await actions.request(mockPaymentInfo, 100n)
     expect(requestRefund).toHaveBeenCalledWith(config.walletClient, {
       contractAddress: TEST_REFUND_REQUEST,
       paymentInfo: mockPaymentInfo,
       amount: 100n,
-      nonce: 1n,
     })
   })
 
   it('write method throws ValidationError without walletClient', () => {
     const config = createTestConfig({ walletClient: undefined })
     const actions = createRefundActions(config, config.refundRequestAddress!)
-    expect(() => actions.request(mockPaymentInfo, 100n, 1n)).toThrow(
+    expect(() => actions.request(mockPaymentInfo, 100n)).toThrow(
       ValidationError,
     )
   })
@@ -100,58 +95,40 @@ describe('createRefundActions', () => {
   it('read method works without walletClient', async () => {
     const config = createTestConfig({ walletClient: undefined })
     const actions = createRefundActions(config, config.refundRequestAddress!)
-    await actions.get(mockPaymentInfo, 1n)
+    await actions.get(mockPaymentInfo)
     expect(getRefundRequest).toHaveBeenCalledWith(config.publicClient, {
       contractAddress: TEST_REFUND_REQUEST,
       paymentInfo: mockPaymentInfo,
-      nonce: 1n,
-    })
-  })
-
-  it('approve delegates all 3 args correctly', async () => {
-    const config = createTestConfig()
-    const actions = createRefundActions(config, config.refundRequestAddress!)
-
-    await actions.approve(mockPaymentInfo, 1n, 200n)
-
-    expect(approveRefund).toHaveBeenCalledWith(config.walletClient, {
-      contractAddress: TEST_REFUND_REQUEST,
-      paymentInfo: mockPaymentInfo,
-      nonce: 1n,
-      amount: 200n,
     })
   })
 
   it('cancel delegates with refundRequestAddress', async () => {
     const config = createTestConfig()
     const actions = createRefundActions(config, config.refundRequestAddress!)
-    await actions.cancel(mockPaymentInfo, 1n)
+    await actions.cancel(mockPaymentInfo)
     expect(cancelRefundRequest).toHaveBeenCalledWith(config.walletClient, {
       contractAddress: TEST_REFUND_REQUEST,
       paymentInfo: mockPaymentInfo,
-      nonce: 1n,
     })
   })
 
   it('deny delegates with refundRequestAddress', async () => {
     const config = createTestConfig()
     const actions = createRefundActions(config, config.refundRequestAddress!)
-    await actions.deny(mockPaymentInfo, 2n)
+    await actions.deny(mockPaymentInfo)
     expect(denyRefundRequest).toHaveBeenCalledWith(config.walletClient, {
       contractAddress: TEST_REFUND_REQUEST,
       paymentInfo: mockPaymentInfo,
-      nonce: 2n,
     })
   })
 
   it('refuse delegates with refundRequestAddress', async () => {
     const config = createTestConfig()
     const actions = createRefundActions(config, config.refundRequestAddress!)
-    await actions.refuse(mockPaymentInfo, 3n)
+    await actions.refuse(mockPaymentInfo)
     expect(refuseRefundRequest).toHaveBeenCalledWith(config.walletClient, {
       contractAddress: TEST_REFUND_REQUEST,
       paymentInfo: mockPaymentInfo,
-      nonce: 3n,
     })
   })
 
@@ -164,18 +141,17 @@ describe('createRefundActions', () => {
     await actions.getByKey(key)
     expect(getRefundRequestByKey).toHaveBeenCalledWith(config.publicClient, {
       contractAddress: TEST_REFUND_REQUEST,
-      compositeKey: key,
+      paymentInfoHash: key,
     })
   })
 
   it('getStatus delegates correctly', async () => {
     const config = createTestConfig({ walletClient: undefined })
     const actions = createRefundActions(config, config.refundRequestAddress!)
-    const result = await actions.getStatus(mockPaymentInfo, 1n)
+    const result = await actions.getStatus(mockPaymentInfo)
     expect(getRefundRequestStatus).toHaveBeenCalledWith(config.publicClient, {
       contractAddress: TEST_REFUND_REQUEST,
       paymentInfo: mockPaymentInfo,
-      nonce: 1n,
     })
     expect(result).toBe(0)
   })
@@ -183,11 +159,10 @@ describe('createRefundActions', () => {
   it('has delegates correctly', async () => {
     const config = createTestConfig({ walletClient: undefined })
     const actions = createRefundActions(config, config.refundRequestAddress!)
-    const result = await actions.has(mockPaymentInfo, 1n)
+    const result = await actions.has(mockPaymentInfo)
     expect(hasRefundRequest).toHaveBeenCalledWith(config.publicClient, {
       contractAddress: TEST_REFUND_REQUEST,
       paymentInfo: mockPaymentInfo,
-      nonce: 1n,
     })
     expect(result).toBe(true)
   })
@@ -251,11 +226,10 @@ describe('createRefundActions', () => {
   it('getCancelCount delegates correctly', async () => {
     const config = createTestConfig({ walletClient: undefined })
     const actions = createRefundActions(config, config.refundRequestAddress!)
-    const result = await actions.getCancelCount(mockPaymentInfo, 1n)
+    const result = await actions.getCancelCount(mockPaymentInfo)
     expect(getCancelCount).toHaveBeenCalledWith(config.publicClient, {
       contractAddress: TEST_REFUND_REQUEST,
       paymentInfo: mockPaymentInfo,
-      nonce: 1n,
     })
     expect(result).toBe(0n)
   })
@@ -263,11 +237,10 @@ describe('createRefundActions', () => {
   it('getCancelledAmount delegates correctly', async () => {
     const config = createTestConfig({ walletClient: undefined })
     const actions = createRefundActions(config, config.refundRequestAddress!)
-    const result = await actions.getCancelledAmount(mockPaymentInfo, 1n, 0n)
+    const result = await actions.getCancelledAmount(mockPaymentInfo, 0n)
     expect(getCancelledAmount).toHaveBeenCalledWith(config.publicClient, {
       contractAddress: TEST_REFUND_REQUEST,
       paymentInfo: mockPaymentInfo,
-      nonce: 1n,
       cancelIndex: 0n,
     })
     expect(result).toBe(0n)

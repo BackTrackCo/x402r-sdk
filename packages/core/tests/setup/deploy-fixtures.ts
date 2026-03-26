@@ -285,8 +285,9 @@ export async function deployTestFixtures(
   // ---------------------------------------------------------------------------
   // 3f. Deploy PaymentOperator for arbiter refund (Flow 7)
   //     refundInEscrowCondition = StaticAddressCondition(refundRequest)
-  //     All in-escrow refunds require payer request first, then
-  //     RefundRequest.approve() atomically calls operator.refundInEscrow()
+  //     refundInEscrowRecorder = refundRequest (IRecorder — auto-approves)
+  //     In-escrow refunds require payer request first, then merchant calls
+  //     refundInEscrow() which triggers the RefundRequest recorder.
   // ---------------------------------------------------------------------------
   const arbiterRefundOperatorConfig = {
     feeRecipient: testRoles.operatorFeeRecipient.address,
@@ -298,7 +299,7 @@ export async function deployTestFixtures(
     releaseCondition: escrowPeriodAddress,
     releaseRecorder: zeroAddress,
     refundInEscrowCondition: staticAddrCondAddress,
-    refundInEscrowRecorder: zeroAddress,
+    refundInEscrowRecorder: refundRequestAddress,
     refundPostEscrowCondition: baseSepolia.conditions.receiver,
     refundPostEscrowRecorder: zeroAddress,
   } as const

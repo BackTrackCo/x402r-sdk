@@ -79,10 +79,10 @@ beforeAll(async () => {
 }, 60_000)
 
 // ---------------------------------------------------------------------------
-// Scenario 8: Arbiter approves refund request — in-escrow atomic refund (Flow 7a)
+// Scenario 8: Merchant calls refundInEscrow — RefundRequest recorder auto-approves (Flow 7a)
 // ---------------------------------------------------------------------------
 
-describe('Scenario 8: Approve refund request (Flow 7)', () => {
+describe('Scenario 8: Approve refund request via refundInEscrow (Flow 7)', () => {
   it('authorize creates a payment in escrow', async () => {
     const { collectorData, tokenCollector } = await createCollectorData(
       anvilBaseSepolia.getWalletClient(testRoles.payer.address),
@@ -109,23 +109,39 @@ describe('Scenario 8: Approve refund request (Flow 7)', () => {
   }, 60_000)
 
   it('payer requests refund', async () => {
-    const hash = await payer.refund!.request(paymentInfo, REFUND_AMOUNT, 0n)
+    const hash = await payer.refund!.request(paymentInfo, REFUND_AMOUNT)
     await publicClient.waitForTransactionReceipt({ hash })
 
-    const status = await arbiter.refund!.getStatus(paymentInfo, 0n)
+    const status = await arbiter.refund!.getStatus(paymentInfo)
     // Pending = 0
     expect(status).toBe(0)
   }, 60_000)
 
-  it('arbiter approves — funds returned atomically from escrow', async () => {
-    const hash = await arbiter.refund!.approve(paymentInfo, 0n, REFUND_AMOUNT)
+  it('merchant calls refundInEscrow — recorder auto-approves, funds returned atomically', async () => {
+    // Merchant calls refundInEscrow on the operator; the RefundRequest recorder
+    // (wired as refundInEscrowRecorder) auto-approves the pending request.
+    const merchantWithRefund = createMerchantClient({
+      publicClient,
+      walletClient: anvilBaseSepolia.getWalletClient(
+        testRoles.receiver.address,
+      ),
+      operatorAddress: fixtures.arbiterRefundOperatorAddress,
+      escrowPeriodAddress: fixtures.escrowPeriodAddress,
+      refundRequestAddress: fixtures.refundRequestAddress,
+      refundRequestEvidenceAddress: fixtures.refundRequestEvidenceAddress,
+    })
+
+    const hash = await merchantWithRefund.payment.refundInEscrow(
+      paymentInfo,
+      REFUND_AMOUNT,
+    )
     await publicClient.waitForTransactionReceipt({ hash })
 
-    const status = await arbiter.refund!.getStatus(paymentInfo, 0n)
+    const status = await arbiter.refund!.getStatus(paymentInfo)
     // Approved = 1
     expect(status).toBe(1)
 
-    const request = await arbiter.refund!.get(paymentInfo, 0n)
+    const request = await arbiter.refund!.get(paymentInfo)
     expect(request.approvedAmount).toBe(REFUND_AMOUNT)
 
     // Verify payer USDC balance increased by refund amount
@@ -155,10 +171,11 @@ describe('Scenario 8: Approve refund request (Flow 7)', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Scenario 8b: Merchant approves in-escrow refund (Flow 7a — merchant arm)
+// Scenario 8b: Merchant directly calls refundInEscrow (no request needed for
+// merchant-initiated refund — recorder still records the approval)
 // ---------------------------------------------------------------------------
 
-describe('Scenario 8b: Merchant approves refund request', () => {
+describe('Scenario 8b: Merchant refundInEscrow without prior request', () => {
   let paymentInfo2: PaymentInfo
   let payerBalance2Before: bigint
 
@@ -200,15 +217,16 @@ describe('Scenario 8b: Merchant approves refund request', () => {
   }, 60_000)
 
   it('payer requests refund', async () => {
-    const hash = await payer.refund!.request(paymentInfo2, REFUND_AMOUNT, 0n)
+    const hash = await payer.refund!.request(paymentInfo2, REFUND_AMOUNT)
     await publicClient.waitForTransactionReceipt({ hash })
 
-    const status = await arbiter.refund!.getStatus(paymentInfo2, 0n)
+    const status = await arbiter.refund!.getStatus(paymentInfo2)
     expect(status).toBe(0) // Pending
   }, 60_000)
 
-  it('merchant approves — funds returned atomically from escrow', async () => {
-    // Merchant has approve() on MerchantClient.refund
+  it('merchant calls refundInEscrow — funds returned atomically from escrow', async () => {
+    // Merchant calls refundInEscrow on the operator; the RefundRequest recorder
+    // (wired as refundInEscrowRecorder) auto-approves during execution.
     const merchantWithRefund = createMerchantClient({
       publicClient,
       walletClient: anvilBaseSepolia.getWalletClient(
@@ -220,14 +238,13 @@ describe('Scenario 8b: Merchant approves refund request', () => {
       refundRequestEvidenceAddress: fixtures.refundRequestEvidenceAddress,
     })
 
-    const hash = await merchantWithRefund.refund!.approve(
+    const hash = await merchantWithRefund.payment.refundInEscrow(
       paymentInfo2,
-      0n,
       REFUND_AMOUNT,
     )
     await publicClient.waitForTransactionReceipt({ hash })
 
-    const status = await arbiter.refund!.getStatus(paymentInfo2, 0n)
+    const status = await arbiter.refund!.getStatus(paymentInfo2)
     expect(status).toBe(1) // Approved
 
     // Verify payer USDC balance increased
@@ -242,10 +259,10 @@ describe('Scenario 8b: Merchant approves refund request', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Scenario 8c: approve() reverts after escrow expires
+// Scenario 8c: refundInEscrow reverts after escrow expires
 // ---------------------------------------------------------------------------
 
-describe('Scenario 8c: Approve reverts after escrow expires', () => {
+describe('Scenario 8c: refundInEscrow reverts after escrow expires', () => {
   let paymentInfo3: PaymentInfo
 
   beforeAll(async () => {
@@ -283,22 +300,31 @@ describe('Scenario 8c: Approve reverts after escrow expires', () => {
       refundRequestAddress: fixtures.refundRequestAddress,
       refundRequestEvidenceAddress: fixtures.refundRequestEvidenceAddress,
     })
-    const reqHash = await payer3.refund!.request(
-      paymentInfo3,
-      DEFAULT_AMOUNT,
-      0n,
-    )
+    const reqHash = await payer3.refund!.request(paymentInfo3, DEFAULT_AMOUNT)
     await publicClient.waitForTransactionReceipt({ hash: reqHash })
   }, 60_000)
 
-  it('approve reverts after escrow period passes', async () => {
+  it('refundInEscrow reverts after escrow period passes', async () => {
     // Fast-forward past escrow
     await testClient.increaseTime({ seconds: ESCROW_FAST_FORWARD })
     await testClient.mine({ blocks: 1 })
 
-    // approve() calls operator.refundInEscrow() which requires escrow to still be active
+    // refundInEscrow() requires escrow to still be active
     // On Anvil, writeContract returns a hash even for reverting txs — check receipt
-    const hash = await arbiter.refund!.approve(paymentInfo3, 0n, DEFAULT_AMOUNT)
+    const merchantWithRefund = createMerchantClient({
+      publicClient,
+      walletClient: anvilBaseSepolia.getWalletClient(
+        testRoles.receiver.address,
+      ),
+      operatorAddress: fixtures.arbiterRefundOperatorAddress,
+      escrowPeriodAddress: fixtures.escrowPeriodAddress,
+      refundRequestAddress: fixtures.refundRequestAddress,
+    })
+
+    const hash = await merchantWithRefund.payment.refundInEscrow(
+      paymentInfo3,
+      DEFAULT_AMOUNT,
+    )
     const receipt = await publicClient.waitForTransactionReceipt({ hash })
     expect(receipt.status).toBe('reverted')
   }, 60_000)

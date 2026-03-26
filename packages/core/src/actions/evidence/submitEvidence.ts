@@ -9,7 +9,6 @@ import {
 export interface SubmitEvidenceParameters {
   contractAddress: Address
   paymentInfo: PaymentInfo
-  nonce: bigint
   cid: string
 }
 export type SubmitEvidenceReturnType = Hash
@@ -18,7 +17,7 @@ export async function submitEvidence(
   walletClient: WalletClient,
   parameters: SubmitEvidenceParameters,
 ): Promise<SubmitEvidenceReturnType> {
-  const { contractAddress, paymentInfo, nonce, cid } = parameters
+  const { contractAddress, paymentInfo, cid } = parameters
   requireAccount(walletClient, 'submitEvidence')
 
   return wrapContractCall('submitEvidence', () =>
@@ -26,7 +25,7 @@ export async function submitEvidence(
       address: contractAddress,
       abi: refundRequestEvidenceAbi,
       functionName: 'submitEvidence',
-      args: [paymentInfo, nonce, cid],
+      args: [paymentInfo, cid],
       chain: walletClient.chain,
       account: walletClient.account,
     }),

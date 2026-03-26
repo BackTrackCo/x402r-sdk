@@ -45,30 +45,32 @@ export interface X402rChainConfig {
 // ---------------------------------------------------------------------------
 
 const PROTOCOL_ADDRESSES = {
+  // Unchanged v1 addresses
   authCaptureEscrow: '0xe050bB89eD43BB02d71343063824614A7fb80B77',
   tokenCollector: '0xcE66Ab399EDA513BD12760b6427C87D6602344a7',
   protocolFeeConfig: '0x7e868A42a458fa2443b6259419aA6A8a161E08c8',
-  usdcTvlLimit: '0x0F1F26719219CfAdC8a1C80D2216098A0534a091',
   arbiterRegistry: '0x1c2d7d5978d46a943FA98aC9a649519C1424FB3e',
   receiverRefundCollector: '0xE5500a38BE45a6C598420fbd7867ac85EC451A07',
+  // v2 addresses (data param, RefundRequest IRecorder, deployer tracking removal)
+  usdcTvlLimit: '0x6CAcA05D19312d28787e93ad4249508ED11198be',
   factories: {
-    paymentOperator: '0xdc41F932dF2d22346F218E4f5650694c650ab863',
-    escrowPeriod: '0x15DB06aADEB3a39D47756Bf864a173cc48bafe24',
-    freeze: '0xdf129EFFE040c3403aca597c0F0bb704859a78Fd',
-    staticFeeCalculator: '0x6CDdBdB46e2d7Caae31A6b213B59a1412d7f16Ac',
-    staticAddressCondition: '0xfB09350b200fda7dDd06565F5296A0CA625311d5',
-    andCondition: '0x5a1F3b6d030D25a2B86aAE469Ae1216ef3be308D',
-    orCondition: '0x101B2fac8cdC6348E541A0ef087275dA62AA13A0',
-    notCondition: '0x1D58f97843579356863d3393ebe24feEd76ceefF',
-    recorderCombinator: '0xACf2b5e21CFc14135C9cD43ebE96a481F184C1A1',
-    signatureCondition: '0x669B4930f9E72884725F5C7D837Ab9517eA3040f',
-    refundRequest: '0x9cD87Bb58553Ef5ad90Ed6260EBdB906a50D6b83',
-    refundRequestEvidence: '0x3769Be76BBEa31345A2B2d84EF90683E9A377e00',
+    paymentOperator: '0xA13AD07eD53BFF6c4e9e6478C3A8FFA4D096B5A3',
+    escrowPeriod: '0xCf84F213d6e1b2E2dc0DbCBd7d81FaAC305d4E96',
+    freeze: '0xaf6700833bf414BEde7d450f9c6772e2FE76B21d',
+    staticFeeCalculator: '0x83B94258Daa50Dd08aED72e0Cda1daCC20286F52',
+    staticAddressCondition: '0xf9739BB422C93A9705cC636BA9D35B97F721e782',
+    andCondition: '0x57d33f001a0d880Ca9e53e578c55CA74baB5C36A',
+    orCondition: '0xefaD31Ab2a17092Bb4350C84324D59C80CeBB9F4',
+    notCondition: '0x8FE9EDE9a786e613723922aB9f512F54DAEfE3A8',
+    recorderCombinator: '0x60C1492fbB1A53F5d968Ad6FDFA6b7672Bc6a34c',
+    signatureCondition: '0x99F11e8b407dAc9BCBf40B869D35071D74FE56f4',
+    refundRequest: '0x7996b1E7B5B28AF85093dcE3AE73b128133D3715',
+    refundRequestEvidence: '0xa454D7e0D521176c998309E4E6828156870EDf4B',
   },
   conditions: {
-    payer: '0x33F5F1154A02d0839266EFd23Fd3b85a3505bB4B',
-    receiver: '0xF41974A853940Ff4c18d46B6565f973c1180E171',
-    alwaysTrue: '0xb295df7E7f786fd84D614AB26b1f2e86026C3483',
+    payer: '0xc321156210E9c2D135454290dc13ca7A1A7533C6',
+    receiver: '0xd14242a812F9C7C81869F01867453e571cacEaba',
+    alwaysTrue: '0x27E1576D4C7C5A6Ee919CB456f2284026177e9c6',
   },
 } as const
 

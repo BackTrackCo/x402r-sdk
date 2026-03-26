@@ -3,16 +3,16 @@ import { setup } from '../shared/anvil-setup.js'
 const ctx = await setup()
 
 try {
-  // ============ Example: Approve Refund ============
-  // As an arbiter, approve a payer's refund request.
-  // The arbiter reviews the request and approves for the full or partial amount.
+  // ============ Example: Merchant Executes Refund (via RefundRequest recorder) ============
+  // The RefundRequest is now an IRecorder plugin. When the merchant calls
+  // refundInEscrow(), the recorder automatically approves the pending request.
 
   if (!ctx.payer.refund) {
     throw new Error(
       'Refund module not available — check operator configuration',
     )
   }
-  if (!ctx.arbiter.refund) {
+  if (!ctx.merchant.refund) {
     throw new Error(
       'Refund module not available — check operator configuration',
     )
@@ -22,22 +22,20 @@ try {
   const reqTx = await ctx.payer.refund.request(
     ctx.paymentInfo,
     ctx.PAYMENT_AMOUNT,
-    0n,
   )
   await ctx.waitForTx(reqTx)
   console.log('Payer requested refund')
 
-  // Step 2: Arbiter reviews and approves
-  const tx = await ctx.arbiter.refund.approve(
+  // Step 2: Merchant executes refundInEscrow (recorder approves automatically)
+  const tx = await ctx.merchant.payment.refundInEscrow(
     ctx.paymentInfo,
-    0n,
     ctx.PAYMENT_AMOUNT,
   )
   await ctx.waitForTx(tx)
-  console.log(`Refund approved: ${tx}`)
+  console.log(`Refund executed: ${tx}`)
 
   // Step 3: Verify the approval
-  const request = await ctx.arbiter.refund.get(ctx.paymentInfo, 0n)
+  const request = await ctx.merchant.refund.get(ctx.paymentInfo)
   console.log(`Approved amount: ${request.approvedAmount}`)
   console.log(`Status: ${request.status}`)
 
@@ -46,7 +44,7 @@ try {
       `Approved amount mismatch: expected ${ctx.PAYMENT_AMOUNT}, got ${request.approvedAmount}`,
     )
   }
-  console.log('Approval verified — full amount approved')
+  console.log('Refund verified — full amount approved via recorder')
 } finally {
   await ctx.cleanup()
 }

@@ -1,5 +1,4 @@
 import {
-  approveRefund,
   cancelRefundRequest,
   denyRefundRequest,
   getCancelCount,
@@ -30,72 +29,57 @@ export function createRefundActions(
     // Dispute write ops (refundRequestAddress)
     // -----------------------------------------------------------------------
 
-    request: (paymentInfo, amount, nonce) =>
+    request: (paymentInfo, amount) =>
       requestRefund(requireWallet(config), {
         contractAddress: refundRequestAddress,
         paymentInfo,
         amount,
-        nonce,
       }),
 
-    cancel: (paymentInfo, nonce) =>
+    cancel: (paymentInfo) =>
       cancelRefundRequest(requireWallet(config), {
         contractAddress: refundRequestAddress,
         paymentInfo,
-        nonce,
       }),
 
-    deny: (paymentInfo, nonce) =>
+    deny: (paymentInfo) =>
       denyRefundRequest(requireWallet(config), {
         contractAddress: refundRequestAddress,
         paymentInfo,
-        nonce,
       }),
 
-    refuse: (paymentInfo, nonce) =>
+    refuse: (paymentInfo) =>
       refuseRefundRequest(requireWallet(config), {
         contractAddress: refundRequestAddress,
         paymentInfo,
-        nonce,
-      }),
-
-    approve: (paymentInfo, nonce, amount) =>
-      approveRefund(requireWallet(config), {
-        contractAddress: refundRequestAddress,
-        paymentInfo,
-        nonce,
-        amount,
       }),
 
     // -----------------------------------------------------------------------
     // Dispute read ops (refundRequestAddress)
     // -----------------------------------------------------------------------
 
-    get: (paymentInfo, nonce) =>
+    get: (paymentInfo) =>
       getRefundRequest(publicClient, {
         contractAddress: refundRequestAddress,
         paymentInfo,
-        nonce,
       }),
 
-    getByKey: (compositeKey) =>
+    getByKey: (paymentInfoHash) =>
       getRefundRequestByKey(publicClient, {
         contractAddress: refundRequestAddress,
-        compositeKey,
+        paymentInfoHash,
       }),
 
-    getStatus: (paymentInfo, nonce) =>
+    getStatus: (paymentInfo) =>
       getRefundRequestStatus(publicClient, {
         contractAddress: refundRequestAddress,
         paymentInfo,
-        nonce,
       }),
 
-    has: (paymentInfo, nonce) =>
+    has: (paymentInfo) =>
       hasRefundRequest(publicClient, {
         contractAddress: refundRequestAddress,
         paymentInfo,
-        nonce,
       }),
 
     getStoredPaymentInfo: (paymentInfoHash) =>
@@ -128,18 +112,16 @@ export function createRefundActions(
         count,
       }),
 
-    getCancelCount: (paymentInfo, nonce) =>
+    getCancelCount: (paymentInfo) =>
       getCancelCount(publicClient, {
         contractAddress: refundRequestAddress,
         paymentInfo,
-        nonce,
       }),
 
-    getCancelledAmount: (paymentInfo, nonce, cancelIndex) =>
+    getCancelledAmount: (paymentInfo, cancelIndex) =>
       getCancelledAmount(publicClient, {
         contractAddress: refundRequestAddress,
         paymentInfo,
-        nonce,
         cancelIndex,
       }),
   }

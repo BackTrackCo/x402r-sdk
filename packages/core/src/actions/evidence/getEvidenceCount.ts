@@ -6,7 +6,6 @@ import { wrapContractCall } from '../_internal/error-wrapping.js'
 export interface GetEvidenceCountParameters {
   contractAddress: Address
   paymentInfo: PaymentInfo
-  nonce: bigint
 }
 export type GetEvidenceCountReturnType = bigint
 
@@ -14,14 +13,14 @@ export async function getEvidenceCount(
   publicClient: PublicClient,
   parameters: GetEvidenceCountParameters,
 ): Promise<GetEvidenceCountReturnType> {
-  const { contractAddress, paymentInfo, nonce } = parameters
+  const { contractAddress, paymentInfo } = parameters
 
   return wrapContractCall('getEvidenceCount', () =>
     publicClient.readContract({
       address: contractAddress,
       abi: refundRequestEvidenceAbi,
       functionName: 'getEvidenceCount',
-      args: [paymentInfo, nonce],
+      args: [paymentInfo],
     }),
   )
 }

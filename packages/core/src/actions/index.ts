@@ -150,8 +150,6 @@ export {
 // Refund
 // ---------------------------------------------------------------------------
 export type {
-  ApproveRefundRequestParameters,
-  ApproveRefundRequestReturnType,
   CancelRefundRequestParameters,
   CancelRefundRequestReturnType,
   DenyRefundRequestParameters,
@@ -183,7 +181,6 @@ export type {
   RequestRefundReturnType,
 } from './refund/index.js'
 export {
-  approveRefund,
   cancelRefundRequest,
   denyRefundRequest,
   getCancelCount,

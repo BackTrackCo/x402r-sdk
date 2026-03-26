@@ -1,16 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { approveRefund } from '../src/actions/refund/approveRefund.js'
 import { getOperatorRefundRequests } from '../src/actions/refund/getOperatorRefundRequests.js'
 import { getPayerRefundRequests } from '../src/actions/refund/getPayerRefundRequests.js'
 import { getReceiverRefundRequests } from '../src/actions/refund/getReceiverRefundRequests.js'
 import { getRefundRequest } from '../src/actions/refund/getRefundRequest.js'
 import { getRefundRequestByKey } from '../src/actions/refund/getRefundRequestByKey.js'
 import { RefundRequestStatus } from '../src/actions/refund/types.js'
-import { ContractCallError } from '../src/errors/index.js'
 import {
   createMockPublicClient,
-  createMockWalletClient,
-  createMockWalletWithoutAccount,
   makePaymentInfo,
   TEST_ADDRESSES,
 } from './fixtures.js'
@@ -28,44 +24,12 @@ describe('RefundRequestStatus', () => {
   })
 })
 
-describe('refund write functions', () => {
-  const pi = makePaymentInfo()
-
-  it('approveRefund throws ContractCallError without account', async () => {
-    await expect(
-      approveRefund(createMockWalletWithoutAccount(), {
-        contractAddress: MOCK_CONTRACT,
-        paymentInfo: pi,
-        nonce: 1n,
-        amount: 500n,
-      }),
-    ).rejects.toThrow(ContractCallError)
-  })
-
-  it('approveRefund writes to contract with correct args', async () => {
-    const walletClient = createMockWalletClient()
-    await approveRefund(walletClient, {
-      contractAddress: MOCK_CONTRACT,
-      paymentInfo: pi,
-      nonce: 1n,
-      amount: 500n,
-    })
-    expect(walletClient.writeContract).toHaveBeenCalledWith(
-      expect.objectContaining({
-        functionName: 'approve',
-        args: [pi, 1n, 500n, '0x'],
-      }),
-    )
-  })
-})
-
 describe('refund read functions', () => {
   const pi = makePaymentInfo()
 
   it('getRefundRequest returns mapped object', async () => {
     const mockData = {
       paymentInfoHash: '0xabc' as const,
-      nonce: 1n,
       amount: 100n,
       approvedAmount: 0n,
       status: 0,
@@ -74,7 +38,6 @@ describe('refund read functions', () => {
     const result = await getRefundRequest(client, {
       contractAddress: MOCK_CONTRACT,
       paymentInfo: pi,
-      nonce: 1n,
     })
     expect(result).toEqual(mockData)
   })
@@ -125,7 +88,6 @@ describe('refund read functions', () => {
   it('getRefundRequestByKey returns mapped object', async () => {
     const mockData = {
       paymentInfoHash: '0xabc' as const,
-      nonce: 0n,
       amount: 200n,
       approvedAmount: 0n,
       status: 1,
@@ -133,7 +95,7 @@ describe('refund read functions', () => {
     const client = createMockPublicClient({ getRefundRequestByKey: mockData })
     const result = await getRefundRequestByKey(client, {
       contractAddress: MOCK_CONTRACT,
-      compositeKey: '0xabc' as `0x${string}`,
+      paymentInfoHash: '0xabc' as `0x${string}`,
     })
     expect(result).toEqual(mockData)
   })

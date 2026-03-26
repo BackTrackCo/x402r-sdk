@@ -13,7 +13,6 @@ export type RefundRequestStatus =
 
 export interface RefundRequestData {
   paymentInfoHash: Hex
-  nonce: bigint
   amount: bigint
   approvedAmount: bigint
   status: RefundRequestStatus
