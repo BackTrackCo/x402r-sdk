@@ -1,7 +1,7 @@
 import type { Address } from 'viem'
 import { zeroAddress } from 'viem'
 import { describe, expect, it, type vi } from 'vitest'
-import { getChainConfig, getFactoryAddresses } from '../../src/config/index.js'
+import { getFactoryAddresses } from '../../src/config/index.js'
 import {
   type ArbiterSetupOptions,
   deployArbiterSetup,
