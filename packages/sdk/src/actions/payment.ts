@@ -48,23 +48,30 @@ export function createPaymentActions(config: ResolvedConfig): PaymentActions {
         collectorData,
       })
     },
-    async release(paymentInfo: PaymentInfo, amount: bigint): Promise<Hash> {
+    async release(
+      paymentInfo: PaymentInfo,
+      amount: bigint,
+      data?: Hex,
+    ): Promise<Hash> {
       const wallet = requireWallet(config)
       return coreRelease(wallet, {
         operatorAddress: config.operatorAddress,
         paymentInfo,
         amount,
+        data,
       })
     },
     async refundInEscrow(
       paymentInfo: PaymentInfo,
       amount: bigint,
+      data?: Hex,
     ): Promise<Hash> {
       const wallet = requireWallet(config)
       return coreRefundInEscrow(wallet, {
         operatorAddress: config.operatorAddress,
         paymentInfo,
         amount,
+        data,
       })
     },
     async refundPostEscrow(

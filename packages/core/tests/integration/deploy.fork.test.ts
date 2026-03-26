@@ -102,7 +102,6 @@ describe('Deploy Module (Fork)', () => {
     expect(evidenceCode).not.toBe('0x')
 
     // No freeze, with fee: escrow + refundRequest + evidence + feeCalc + operator = 5
-    // (no SAC(refundRequest) — refundInEscrow uses ReceiverCondition singleton)
     expect(deployment.deployments).toHaveLength(5)
     // Some components may already exist on the forked chain — assert totals add up
     expect(deployment.summary.newCount + deployment.summary.existingCount).toBe(
@@ -153,7 +152,6 @@ describe('Deploy Module (Fork)', () => {
     )
 
     // freeze + andCondition + escrow + refundRequest + evidence + staticAddrCondArbiter + feeCalc + operator = 8
-    // (no SAC(refundRequest) — refundInEscrow uses ReceiverCondition singleton)
     expect(deployment.deployments).toHaveLength(8)
     expect(deployment.summary.newCount + deployment.summary.existingCount).toBe(
       8,

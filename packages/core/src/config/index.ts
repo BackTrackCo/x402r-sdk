@@ -45,13 +45,11 @@ export interface X402rChainConfig {
 // ---------------------------------------------------------------------------
 
 const PROTOCOL_ADDRESSES = {
-  // Unchanged v1 addresses
   authCaptureEscrow: '0xe050bB89eD43BB02d71343063824614A7fb80B77',
   tokenCollector: '0xcE66Ab399EDA513BD12760b6427C87D6602344a7',
   protocolFeeConfig: '0x7e868A42a458fa2443b6259419aA6A8a161E08c8',
   arbiterRegistry: '0x1c2d7d5978d46a943FA98aC9a649519C1424FB3e',
   receiverRefundCollector: '0xE5500a38BE45a6C598420fbd7867ac85EC451A07',
-  // v2 addresses (data param, RefundRequest IRecorder, deployer tracking removal)
   usdcTvlLimit: '0x6CAcA05D19312d28787e93ad4249508ED11198be',
   factories: {
     paymentOperator: '0xA13AD07eD53BFF6c4e9e6478C3A8FFA4D096B5A3',

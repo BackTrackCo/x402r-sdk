@@ -118,8 +118,6 @@ describe('Scenario 8: Approve refund request via refundInEscrow (Flow 7)', () =>
   }, 60_000)
 
   it('merchant calls refundInEscrow — recorder auto-approves, funds returned atomically', async () => {
-    // Merchant calls refundInEscrow on the operator; the RefundRequest recorder
-    // (wired as refundInEscrowRecorder) auto-approves the pending request.
     const merchantWithRefund = createMerchantClient({
       publicClient,
       walletClient: anvilBaseSepolia.getWalletClient(
@@ -225,8 +223,6 @@ describe('Scenario 8b: Merchant refundInEscrow without prior request', () => {
   }, 60_000)
 
   it('merchant calls refundInEscrow — funds returned atomically from escrow', async () => {
-    // Merchant calls refundInEscrow on the operator; the RefundRequest recorder
-    // (wired as refundInEscrowRecorder) auto-approves during execution.
     const merchantWithRefund = createMerchantClient({
       publicClient,
       walletClient: anvilBaseSepolia.getWalletClient(

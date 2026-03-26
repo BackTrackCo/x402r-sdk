@@ -228,10 +228,6 @@ export async function deployTestFixtures(
   })
   const refundRequestAddress = arbiterSetup.refundRequestAddress
 
-  // No StaticAddressCondition(refundRequest) needed — RefundRequest is now
-  // an IRecorder plugin (wired as refundInEscrowRecorder). The condition
-  // gates WHO can trigger refundInEscrow; the recorder tracks the approval.
-
   // ---------------------------------------------------------------------------
   // 3e. Deploy PaymentOperator with freeze
   // ---------------------------------------------------------------------------

@@ -168,7 +168,6 @@ describe('deployMarketplaceOperator', () => {
     )
 
     // Without freeze or fee calculator: escrow + refundRequest + evidence + operator = 4
-    // (no SAC(refundRequest) — refundInEscrow uses ReceiverCondition singleton)
     expect(result.deployments).toHaveLength(4)
     expect(result.freezeAddress).toBeNull()
     expect(result.operatorConfig.releaseCondition).toBe(escrowAddr)
@@ -199,7 +198,6 @@ describe('deployMarketplaceOperator', () => {
     )
 
     // Without freeze, with fee calculator: escrow + refundRequest + evidence + feeCalc + operator = 5
-    // (no SAC(refundRequest) — refundInEscrow uses ReceiverCondition singleton)
     expect(result.deployments).toHaveLength(5)
     expect(result.feeCalculatorAddress).toBe(COMPUTED_ADDR)
   })
@@ -241,7 +239,6 @@ describe('deployMarketplaceOperator', () => {
     )
 
     // With freeze: escrow + refundRequest + evidence + staticAddrCondArbiter + freeze + andCond + operator = 7
-    // (no SAC(refundRequest) — refundInEscrow uses ReceiverCondition singleton)
     expect(result.deployments).toHaveLength(7)
     expect(result.freezeAddress).not.toBeNull()
     expect(result.operatorConfig.releaseCondition).not.toBe(
@@ -278,7 +275,6 @@ describe('deployMarketplaceOperator', () => {
     )
 
     // escrow + refundRequest + evidence + operator = 4
-    // (no SAC(refundRequest) — refundInEscrow uses ReceiverCondition singleton)
     expect(result.deployments).toHaveLength(4)
     expect(result.summary.newCount).toBe(0)
     expect(result.summary.existingCount).toBe(4)
@@ -330,7 +326,6 @@ describe('deployMarketplaceOperator', () => {
     )
 
     // escrow + refundRequest + evidence + staticAddrCondArbiter + freeze + andCond + feeCal + operator = 8
-    // (no SAC(refundRequest) — refundInEscrow uses ReceiverCondition singleton)
     expect(result.deployments).toHaveLength(8)
     expect(result.summary.newCount).toBe(0)
     expect(result.summary.existingCount).toBe(8)

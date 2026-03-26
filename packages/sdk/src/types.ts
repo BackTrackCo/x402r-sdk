@@ -89,9 +89,13 @@ export interface PaymentActions {
     tokenCollector: Address,
     collectorData: Hex,
   ): Promise<Hash>
-  release(paymentInfo: PaymentInfo, amount: bigint): Promise<Hash>
+  release(paymentInfo: PaymentInfo, amount: bigint, data?: Hex): Promise<Hash>
   /** Executes an in-escrow refund. Gated by ReceiverCondition — only the receiver (merchant) can call. */
-  refundInEscrow(paymentInfo: PaymentInfo, amount: bigint): Promise<Hash>
+  refundInEscrow(
+    paymentInfo: PaymentInfo,
+    amount: bigint,
+    data?: Hex,
+  ): Promise<Hash>
   refundPostEscrow(
     paymentInfo: PaymentInfo,
     amount: bigint,
@@ -159,8 +163,8 @@ export interface EvidenceActions {
 }
 
 export interface FreezeActions {
-  freeze(paymentInfo: PaymentInfo): Promise<Hash>
-  unfreeze(paymentInfo: PaymentInfo): Promise<Hash>
+  freeze(paymentInfo: PaymentInfo, data?: Hex): Promise<Hash>
+  unfreeze(paymentInfo: PaymentInfo, data?: Hex): Promise<Hash>
   isFrozen(paymentInfo: PaymentInfo): Promise<boolean>
 }
 
