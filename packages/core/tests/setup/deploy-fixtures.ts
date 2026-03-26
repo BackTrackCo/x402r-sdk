@@ -11,6 +11,7 @@ import {
   escrowPeriodFactoryAbi,
   freezeFactoryAbi,
   paymentOperatorFactoryAbi,
+  staticAddressConditionFactoryAbi,
   staticFeeCalculatorFactoryAbi,
 } from '../../src/abis/generated.js'
 import { x402rChains } from '../../src/config/index.js'
