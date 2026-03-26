@@ -67,7 +67,7 @@ describe('canExecute', () => {
 
     expect(spy).toHaveBeenCalledWith(
       expect.objectContaining({
-        args: expect.arrayContaining([account.address]),
+        args: [mockPaymentInfo, 1000000n, account.address, '0x'],
       }),
     )
 
@@ -91,7 +91,7 @@ describe('canExecute', () => {
 
     expect(spy).toHaveBeenCalledWith(
       expect.objectContaining({
-        args: expect.arrayContaining([zeroAddress]),
+        args: [mockPaymentInfo, 1000000n, zeroAddress, '0x'],
       }),
     )
 

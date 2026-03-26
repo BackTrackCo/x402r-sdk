@@ -1,11 +1,7 @@
 import type { ConditionSlot, PaymentInfo } from '@x402r/core'
-import { alwaysTrueConditionAbi, getConditionAddress } from '@x402r/core'
+import { getConditionAddress, iConditionAbi } from '@x402r/core'
 import { BaseError, zeroAddress } from 'viem'
 import type { ResolvedConfig } from './types.js'
-
-// ICondition.check() has the same signature across all conditions.
-// We reuse AlwaysTrueCondition's ABI since it only has `check`.
-const iConditionAbi = alwaysTrueConditionAbi
 
 export async function canExecute(
   config: ResolvedConfig,

@@ -90,7 +90,7 @@ export interface PaymentActions {
     collectorData: Hex,
   ): Promise<Hash>
   release(paymentInfo: PaymentInfo, amount: bigint): Promise<Hash>
-  /** @internal Gated by StaticAddressCondition — the RefundRequest recorder approves via refundInEscrow. */
+  /** Executes an in-escrow refund. Gated by ReceiverCondition — only the receiver (merchant) can call. */
   refundInEscrow(paymentInfo: PaymentInfo, amount: bigint): Promise<Hash>
   refundPostEscrow(
     paymentInfo: PaymentInfo,

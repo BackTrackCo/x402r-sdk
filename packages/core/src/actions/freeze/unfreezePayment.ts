@@ -1,4 +1,4 @@
-import type { Address, Hash, WalletClient } from 'viem'
+import type { Address, Hash, Hex, WalletClient } from 'viem'
 import { freezeAbi } from '../../abis/generated.js'
 import type { PaymentInfo } from '../../types/index.js'
 import {
@@ -9,6 +9,7 @@ import {
 export interface UnfreezePaymentParameters {
   freezeAddress: Address
   paymentInfo: PaymentInfo
+  data?: Hex
 }
 export type UnfreezePaymentReturnType = Hash
 
@@ -16,7 +17,7 @@ export async function unfreezePayment(
   walletClient: WalletClient,
   parameters: UnfreezePaymentParameters,
 ): Promise<UnfreezePaymentReturnType> {
-  const { freezeAddress, paymentInfo } = parameters
+  const { freezeAddress, paymentInfo, data = '0x' } = parameters
   requireAccount(walletClient, 'unfreezePayment')
 
   return wrapContractCall('unfreezePayment', () =>
@@ -24,7 +25,7 @@ export async function unfreezePayment(
       address: freezeAddress,
       abi: freezeAbi,
       functionName: 'unfreeze',
-      args: [paymentInfo, '0x'],
+      args: [paymentInfo, data],
       chain: walletClient.chain,
       account: walletClient.account,
     }),
