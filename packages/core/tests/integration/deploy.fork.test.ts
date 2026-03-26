@@ -101,11 +101,11 @@ describe('Deploy Module (Fork)', () => {
     })
     expect(evidenceCode).not.toBe('0x')
 
-    // No freeze, with fee: escrow + refundRequest + evidence + feeCalc + operator = 5
-    expect(deployment.deployments).toHaveLength(5)
+    // No freeze, with fee: escrow + refundRequest + evidence + sacArbiter + orCondition + feeCalc + operator = 7
+    expect(deployment.deployments).toHaveLength(7)
     // Some components may already exist on the forked chain — assert totals add up
     expect(deployment.summary.newCount + deployment.summary.existingCount).toBe(
-      5,
+      7,
     )
     // Multicall3 batches all deploys into a single tx
     expect(deployment.summary.txHashes).toHaveLength(
@@ -123,9 +123,9 @@ describe('Deploy Module (Fork)', () => {
     )
 
     // All should be existing since we deployed (or found existing) in the previous test
-    expect(deployment.deployments).toHaveLength(5)
+    expect(deployment.deployments).toHaveLength(7)
     expect(deployment.summary.newCount).toBe(0)
-    expect(deployment.summary.existingCount).toBe(5)
+    expect(deployment.summary.existingCount).toBe(7)
     expect(deployment.summary.txHashes).toHaveLength(0)
     for (const d of deployment.deployments) {
       expect(d.isNew).toBe(false)
@@ -151,10 +151,10 @@ describe('Deploy Module (Fork)', () => {
       deployment.escrowPeriodAddress,
     )
 
-    // freeze + andCondition + escrow + refundRequest + evidence + staticAddrCondArbiter + feeCalc + operator = 8
-    expect(deployment.deployments).toHaveLength(8)
+    // freeze + andCondition + escrow + refundRequest + evidence + sacArbiter + orCondition + feeCalc + operator = 9
+    expect(deployment.deployments).toHaveLength(9)
     expect(deployment.summary.newCount + deployment.summary.existingCount).toBe(
-      8,
+      9,
     )
 
     // Verify freeze contract's unfreezeCondition is the arbiter SAC (not a singleton)

@@ -3,16 +3,17 @@ import { setup } from '../shared/anvil-setup.js'
 const ctx = await setup()
 
 try {
-  // ============ Example: Merchant Executes Refund (via RefundRequest recorder) ============
-  // The RefundRequest is now an IRecorder plugin. When the merchant calls
-  // refundInEscrow(), the recorder automatically approves the pending request.
+  // ============ Example: Approve Refund ============
+  // Whoever is authorized by the operator's refundInEscrowCondition can call
+  // refundInEscrow(). The RefundRequest recorder auto-approves the pending request.
+  // The condition could be ReceiverCondition, StaticAddressCondition(arbiter), etc.
 
   if (!ctx.payer.refund) {
     throw new Error(
       'Refund module not available — check operator configuration',
     )
   }
-  if (!ctx.merchant.refund) {
+  if (!ctx.arbiter.refund) {
     throw new Error(
       'Refund module not available — check operator configuration',
     )
@@ -26,16 +27,17 @@ try {
   await ctx.waitForTx(reqTx)
   console.log('Payer requested refund')
 
-  // Step 2: Merchant executes refundInEscrow (recorder approves automatically)
-  const tx = await ctx.merchant.payment.refundInEscrow(
+  // Step 2: Authorized party calls refundInEscrow (recorder approves automatically)
+  // Here the arbiter is the authorized caller — depends on operator condition setup.
+  const tx = await ctx.arbiter.payment.refundInEscrow(
     ctx.paymentInfo,
     ctx.PAYMENT_AMOUNT,
   )
   await ctx.waitForTx(tx)
-  console.log(`Refund executed: ${tx}`)
+  console.log(`Refund approved: ${tx}`)
 
   // Step 3: Verify the approval
-  const request = await ctx.merchant.refund.get(ctx.paymentInfo)
+  const request = await ctx.arbiter.refund.get(ctx.paymentInfo)
   console.log(`Approved amount: ${request.approvedAmount}`)
   console.log(`Status: ${request.status}`)
 
@@ -44,7 +46,7 @@ try {
       `Approved amount mismatch: expected ${ctx.PAYMENT_AMOUNT}, got ${request.approvedAmount}`,
     )
   }
-  console.log('Refund verified — full amount approved via recorder')
+  console.log('Approval verified — full amount approved')
 } finally {
   await ctx.cleanup()
 }
