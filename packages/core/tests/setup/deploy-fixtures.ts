@@ -11,7 +11,6 @@ import {
   escrowPeriodFactoryAbi,
   freezeFactoryAbi,
   paymentOperatorFactoryAbi,
-  staticAddressConditionFactoryAbi,
   staticFeeCalculatorFactoryAbi,
 } from '../../src/abis/generated.js'
 import { x402rChains } from '../../src/config/index.js'
@@ -228,24 +227,9 @@ export async function deployTestFixtures(
   })
   const refundRequestAddress = arbiterSetup.refundRequestAddress
 
-  // Deploy StaticAddressCondition(refundRequest) — gates refundInEscrow so
-  // only the RefundRequest contract can call operator.refundInEscrow().
-  const refundInEscrowCondHash = await walletClient.writeContract({
-    address: factories.staticAddressCondition,
-    abi: staticAddressConditionFactoryAbi,
-    functionName: 'deploy',
-    args: [refundRequestAddress],
-    account: deployer,
-    chain: walletClient.chain,
-  })
-  await publicClient.waitForTransactionReceipt({ hash: refundInEscrowCondHash })
-
-  const staticAddrCondAddress = await publicClient.readContract({
-    address: factories.staticAddressCondition,
-    abi: staticAddressConditionFactoryAbi,
-    functionName: 'computeAddress',
-    args: [refundRequestAddress],
-  })
+  // No StaticAddressCondition(refundRequest) needed — RefundRequest is now
+  // an IRecorder plugin (wired as refundInEscrowRecorder). The condition
+  // gates WHO can trigger refundInEscrow; the recorder tracks the approval.
 
   // ---------------------------------------------------------------------------
   // 3e. Deploy PaymentOperator with freeze
@@ -298,7 +282,7 @@ export async function deployTestFixtures(
     chargeRecorder: zeroAddress,
     releaseCondition: escrowPeriodAddress,
     releaseRecorder: zeroAddress,
-    refundInEscrowCondition: staticAddrCondAddress,
+    refundInEscrowCondition: baseSepolia.conditions.receiver,
     refundInEscrowRecorder: refundRequestAddress,
     refundPostEscrowCondition: baseSepolia.conditions.receiver,
     refundPostEscrowRecorder: zeroAddress,
