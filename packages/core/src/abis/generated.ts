@@ -1158,6 +1158,20 @@ export const authorizationTimeRecorderAbi = [
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Create3Deployer
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const create3DeployerAbi = [
+  {
+    type: 'function',
+    inputs: [],
+    name: 'IS_SCRIPT',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+] as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // EscrowPeriod
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1906,6 +1920,33 @@ export const iConditionAbi = [
     name: 'check',
     outputs: [{ name: 'allowed', internalType: 'bool', type: 'bool' }],
     stateMutability: 'view',
+  },
+] as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ICreateX
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const iCreateXAbi = [
+  {
+    type: 'function',
+    inputs: [
+      { name: 'salt', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'deployer', internalType: 'address', type: 'address' },
+    ],
+    name: 'computeCreate3Address',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'salt', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'initCode', internalType: 'bytes', type: 'bytes' },
+    ],
+    name: 'deployCreate3',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'payable',
   },
 ] as const
 
@@ -2698,11 +2739,6 @@ export const paymentOperatorAbi = [
           },
         ],
       },
-      {
-        name: 'nonTransientReentrancyGuardMode_',
-        internalType: 'bool',
-        type: 'bool',
-      },
     ],
     stateMutability: 'nonpayable',
   },
@@ -3351,11 +3387,6 @@ export const paymentOperatorFactoryAbi = [
     inputs: [
       { name: '_escrow', internalType: 'address', type: 'address' },
       { name: '_protocolFeeConfig', internalType: 'address', type: 'address' },
-      {
-        name: 'nonTransientReentrancyGuardMode_',
-        internalType: 'bool',
-        type: 'bool',
-      },
     ],
     stateMutability: 'nonpayable',
   },
@@ -3364,13 +3395,6 @@ export const paymentOperatorFactoryAbi = [
     inputs: [],
     name: 'ESCROW',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'NON_TRANSIENT_REENTRANCY_GUARD_MODE',
-    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
     stateMutability: 'view',
   },
   {
@@ -4236,6 +4260,14 @@ export const recorderCombinatorFactoryAbi = [
   },
   { type: 'error', inputs: [], name: 'EmptyRecorders' },
   { type: 'error', inputs: [], name: 'TooManyRecorders' },
+] as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ReentrancyGuardTransient
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const reentrancyGuardTransientAbi = [
+  { type: 'error', inputs: [], name: 'Reentrancy' },
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -330,7 +330,7 @@ export interface MerchantClient {
 
 export interface ArbiterClient {
   readonly config: ResolvedWriteConfig
-  readonly payment: Pick<PaymentActions, 'getState' | 'getAmounts'>
+  readonly payment: Pick<PaymentActions, 'getState' | 'getAmounts' | 'refundInEscrow'>
   readonly escrow:
     | Pick<
         EscrowActions,

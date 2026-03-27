@@ -85,7 +85,7 @@ describe('signReceiveAuthorization', () => {
     })
 
     // Known Base Sepolia tokenCollector
-    expect(tokenCollector).toBe('0xcE66Ab399EDA513BD12760b6427C87D6602344a7')
+    expect(tokenCollector).toBe('0x9A12A116a44636F55c9e135189A1321Abcfe2f30')
   })
 
   it('different paymentInfo produces different signature', async () => {
