@@ -39,6 +39,8 @@ export default defineConfig({
         'SafeTransferLib.sol/**',
         'SignatureCheckerLib.sol/**',
         'ReentrancyGuardTransient.sol/**',
+        'ReentrancyGuardNonTransient.sol/**',
+        'Create3Deployer.sol/**',
         'IERC1363.sol/**',
         'IERC3009.sol/**',
         'IMulticall3.sol/**',
