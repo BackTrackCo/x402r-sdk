@@ -1,12 +1,16 @@
 import type { Address, PublicClient, WalletClient } from 'viem'
+import { zeroAddress } from 'viem'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { freezeAbi } from '../../src/abis/generated.js'
 import { x402rChains } from '../../src/config/index.js'
 import {
   computeFeeCalculatorAddress,
   computeStaticAddressConditionAddress,
+  type DeliveryProtectionOperatorOptions,
+  deployDeliveryProtectionOperator,
   deployMarketplaceOperator,
   type MarketplaceOperatorOptions,
+  previewDeliveryProtectionOperator,
   previewMarketplaceOperator,
 } from '../../src/deploy/index.js'
 import { anvilBaseSepolia } from '../setup/anvil.js'
@@ -193,6 +197,137 @@ describe('Deploy Module (Fork)', () => {
     // Different arbiter → different refundRequest → different staticAddressCondition → different operator
     expect(preview1.refundRequestAddress).not.toBe(
       preview2.refundRequestAddress,
+    )
+    expect(preview1.operatorAddress).not.toBe(preview2.operatorAddress)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Delivery Protection Operator
+// ---------------------------------------------------------------------------
+
+function makeDeliveryProtectionOptions(
+  overrides: Partial<DeliveryProtectionOperatorOptions> = {},
+): DeliveryProtectionOperatorOptions {
+  return {
+    chainId: 84532,
+    arbiter: testRoles.arbiter.address,
+    feeRecipient: testRoles.operatorFeeRecipient.address,
+    escrowPeriodSeconds: 172800n, // 2 days — distinct from other fixtures
+    ...overrides,
+  }
+}
+
+describe('Deploy Delivery Protection Operator (Fork)', () => {
+  let publicClient: PublicClient
+  let walletClient: WalletClient
+
+  beforeAll(async () => {
+    publicClient = anvilBaseSepolia.getPublicClient()
+    walletClient = anvilBaseSepolia.getWalletClient(testRoles.deployer.address)
+  })
+
+  it('previewDeliveryProtectionOperator returns valid non-zero addresses', async () => {
+    const preview = await previewDeliveryProtectionOperator(
+      publicClient,
+      makeDeliveryProtectionOptions(),
+    )
+
+    const zero = '0x0000000000000000000000000000000000000000'
+    expect(preview.operatorAddress).toMatch(/^0x[0-9a-fA-F]{40}$/)
+    expect(preview.operatorAddress).not.toBe(zero)
+    expect(preview.escrowPeriodAddress).toMatch(/^0x[0-9a-fA-F]{40}$/)
+    expect(preview.escrowPeriodAddress).not.toBe(zero)
+    expect(preview.arbiterConditionAddress).toMatch(/^0x[0-9a-fA-F]{40}$/)
+    expect(preview.arbiterConditionAddress).not.toBe(zero)
+
+    // releaseCondition should be the arbiter SAC (not escrowPeriod)
+    expect(preview.operatorConfig.releaseCondition).toBe(
+      preview.arbiterConditionAddress,
+    )
+    // refundInEscrowCondition should be escrowPeriod
+    expect(preview.operatorConfig.refundInEscrowCondition).toBe(
+      preview.escrowPeriodAddress,
+    )
+    // feeCalculator should be zero (no fees)
+    expect(preview.operatorConfig.feeCalculator).toBe(zeroAddress)
+    // authorizeCondition should be usdcTvlLimit
+    expect(preview.operatorConfig.authorizeCondition).toBe(
+      baseSepolia.usdcTvlLimit,
+    )
+    // refundPostEscrowCondition should be receiver singleton
+    expect(preview.operatorConfig.refundPostEscrowCondition).toBe(
+      baseSepolia.conditions!.receiver,
+    )
+  })
+
+  it('deployDeliveryProtectionOperator deploys all components matching preview', async () => {
+    const options = makeDeliveryProtectionOptions()
+
+    const preview = await previewDeliveryProtectionOperator(
+      publicClient,
+      options,
+    )
+    const deployment = await deployDeliveryProtectionOperator(
+      walletClient,
+      publicClient,
+      options,
+    )
+
+    // All deployed addresses should match previewed addresses
+    expect(deployment.operatorAddress).toBe(preview.operatorAddress)
+    expect(deployment.escrowPeriodAddress).toBe(preview.escrowPeriodAddress)
+    expect(deployment.arbiterConditionAddress).toBe(
+      preview.arbiterConditionAddress,
+    )
+
+    // escrowPeriod + arbiterCondition + operator = 3 components
+    expect(deployment.deployments).toHaveLength(3)
+    expect(deployment.summary.newCount + deployment.summary.existingCount).toBe(
+      3,
+    )
+    expect(deployment.summary.txHashes).toHaveLength(
+      deployment.summary.newCount > 0 ? 1 : 0,
+    )
+  })
+
+  it('re-deploy with same options is idempotent', async () => {
+    const options = makeDeliveryProtectionOptions()
+
+    const deployment = await deployDeliveryProtectionOperator(
+      walletClient,
+      publicClient,
+      options,
+    )
+
+    expect(deployment.deployments).toHaveLength(3)
+    expect(deployment.summary.newCount).toBe(0)
+    expect(deployment.summary.existingCount).toBe(3)
+    expect(deployment.summary.txHashes).toHaveLength(0)
+    for (const d of deployment.deployments) {
+      expect(d.isNew).toBe(false)
+      expect(d.hash).toBeNull()
+    }
+  })
+
+  it('deploy with different arbiter produces different operator address', async () => {
+    const options1 = makeDeliveryProtectionOptions()
+    const options2 = makeDeliveryProtectionOptions({
+      arbiter: testRoles.relayer.address,
+    })
+
+    const preview1 = await previewDeliveryProtectionOperator(
+      publicClient,
+      options1,
+    )
+    const preview2 = await previewDeliveryProtectionOperator(
+      publicClient,
+      options2,
+    )
+
+    // Different arbiter → different arbiterCondition → different operator
+    expect(preview1.arbiterConditionAddress).not.toBe(
+      preview2.arbiterConditionAddress,
     )
     expect(preview1.operatorAddress).not.toBe(preview2.operatorAddress)
   })

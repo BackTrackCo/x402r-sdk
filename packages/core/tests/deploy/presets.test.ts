@@ -1,13 +1,16 @@
 import type { Address } from 'viem'
 import { zeroAddress } from 'viem'
 import { describe, expect, it, type vi } from 'vitest'
-import { getFactoryAddresses } from '../../src/config/index.js'
+import { getFactoryAddresses, x402rChains } from '../../src/config/index.js'
 import {
   type ArbiterSetupOptions,
+  type DeliveryProtectionOperatorOptions,
   deployArbiterSetup,
+  deployDeliveryProtectionOperator,
   deployMarketplaceOperator,
   type MarketplaceOperatorOptions,
   previewArbiterSetup,
+  previewDeliveryProtectionOperator,
   previewMarketplaceOperator,
 } from '../../src/deploy/presets.js'
 import { ConfigError } from '../../src/errors/index.js'
@@ -708,5 +711,254 @@ describe('deployArbiterSetup', () => {
     expect(result.deployments[0].isNew).toBe(true)
     expect(result.deployments[1].isNew).toBe(false)
     expect(result.deployments[2].isNew).toBe(false)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Delivery protection operator
+// ---------------------------------------------------------------------------
+
+function makeDeliveryProtectionOptions(
+  overrides: Partial<DeliveryProtectionOperatorOptions> = {},
+): DeliveryProtectionOperatorOptions {
+  return {
+    chainId: 84532,
+    arbiter: '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65',
+    feeRecipient: '0x5678901234567890123456789012345678901234',
+    escrowPeriodSeconds: 86400n,
+    ...overrides,
+  }
+}
+
+describe('previewDeliveryProtectionOperator', () => {
+  it('throws ConfigError for unsupported chainId', async () => {
+    const publicClient = createMockPublicClient()
+    await expect(
+      previewDeliveryProtectionOperator(
+        publicClient,
+        makeDeliveryProtectionOptions({ chainId: 999999 }),
+      ),
+    ).rejects.toThrow(ConfigError)
+  })
+
+  it('computes escrowPeriod, arbiterCondition, and operator addresses', async () => {
+    const escrowAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
+    const arbiterCondAddr =
+      '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
+    const operatorAddr = '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
+    const publicClient = createMockPublicClient({
+      [`${F.escrowPeriod}:computeAddress`]: escrowAddr,
+      [`${F.staticAddressCondition}:computeAddress`]: arbiterCondAddr,
+      [`${F.paymentOperator}:computeAddress`]: operatorAddr,
+    })
+
+    const result = await previewDeliveryProtectionOperator(
+      publicClient,
+      makeDeliveryProtectionOptions(),
+    )
+
+    expect(result.escrowPeriodAddress).toBe(escrowAddr)
+    expect(result.arbiterConditionAddress).toBe(arbiterCondAddr)
+    expect(result.operatorAddress).toBe(operatorAddr)
+    expect(result.operatorConfig.releaseCondition).toBe(arbiterCondAddr)
+    expect(result.operatorConfig.refundInEscrowCondition).toBe(escrowAddr)
+    expect(result.operatorConfig.feeCalculator).toBe(zeroAddress)
+    expect(result.operatorConfig.authorizeCondition).toBe(
+      x402rChains[84532].usdcTvlLimit,
+    )
+    expect(result.operatorConfig.refundPostEscrowCondition).toBe(
+      x402rChains[84532].conditions!.receiver,
+    )
+  })
+
+  it('uses provided feeRecipient in operator config', async () => {
+    const feeRecipient = '0x9999999999999999999999999999999999999999' as Address
+    const publicClient = createMockPublicClient({
+      computeAddress: COMPUTED_ADDR,
+    })
+
+    const result = await previewDeliveryProtectionOperator(
+      publicClient,
+      makeDeliveryProtectionOptions({ feeRecipient }),
+    )
+
+    expect(result.operatorConfig.feeRecipient).toBe(feeRecipient)
+  })
+
+  it('uses provided authorizedCodehash in escrowPeriod computation', async () => {
+    const customCodehash =
+      '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef' as `0x${string}`
+    const defaultAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
+    const customAddr = '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
+    const operatorAddr = '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
+
+    const defaultPublicClient = createMockPublicClient({
+      computeAddress: defaultAddr,
+      [`${F.paymentOperator}:computeAddress`]: operatorAddr,
+    })
+    const customPublicClient = createMockPublicClient({
+      [`${F.escrowPeriod}:computeAddress`]: customAddr,
+      computeAddress: defaultAddr,
+      [`${F.paymentOperator}:computeAddress`]: operatorAddr,
+    })
+
+    const defaultResult = await previewDeliveryProtectionOperator(
+      defaultPublicClient,
+      makeDeliveryProtectionOptions(),
+    )
+    const customResult = await previewDeliveryProtectionOperator(
+      customPublicClient,
+      makeDeliveryProtectionOptions({ authorizedCodehash: customCodehash }),
+    )
+
+    // Different authorizedCodehash should produce different escrowPeriod
+    expect(customResult.escrowPeriodAddress).toBe(customAddr)
+    expect(defaultResult.escrowPeriodAddress).toBe(defaultAddr)
+  })
+})
+
+describe('deployDeliveryProtectionOperator', () => {
+  it('deploys exactly 3 contracts (escrowPeriod + arbiterCondition + operator)', async () => {
+    const escrowAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
+    const arbiterCondAddr =
+      '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
+    const operatorAddr = '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
+    const publicClient = createMockPublicClient({
+      [`${F.escrowPeriod}:computeAddress`]: escrowAddr,
+      [`${F.escrowPeriod}:getDeployed`]: zeroAddress,
+      [`${F.staticAddressCondition}:computeAddress`]: arbiterCondAddr,
+      [`${F.staticAddressCondition}:getDeployed`]: zeroAddress,
+      [`${F.paymentOperator}:computeAddress`]: operatorAddr,
+      [`${F.paymentOperator}:getOperator`]: zeroAddress,
+    })
+    const walletClient = createMockWalletClient()
+
+    const result = await deployDeliveryProtectionOperator(
+      walletClient,
+      publicClient,
+      makeDeliveryProtectionOptions(),
+    )
+
+    expect(result.deployments).toHaveLength(3)
+    expect(result.escrowPeriodAddress).toBe(escrowAddr)
+    expect(result.arbiterConditionAddress).toBe(arbiterCondAddr)
+    expect(result.operatorAddress).toBe(operatorAddr)
+    expect(result.summary.newCount).toBe(3)
+    expect(result.summary.existingCount).toBe(0)
+    expect(result.summary.txHashes).toHaveLength(1)
+    // Verify operatorConfig is passed through correctly
+    expect(result.operatorConfig.releaseCondition).toBe(arbiterCondAddr)
+    expect(result.operatorConfig.refundInEscrowCondition).toBe(escrowAddr)
+    expect(result.operatorConfig.feeCalculator).toBe(zeroAddress)
+    expect(result.operatorConfig.authorizeCondition).toBe(
+      x402rChains[84532].usdcTvlLimit,
+    )
+    expect(result.operatorConfig.refundPostEscrowCondition).toBe(
+      x402rChains[84532].conditions!.receiver,
+    )
+  })
+
+  it('returns all existing when operator already deployed', async () => {
+    const escrowAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
+    const arbiterCondAddr =
+      '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
+    const operatorAddr = '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
+    const publicClient = createMockPublicClient({
+      [`${F.escrowPeriod}:computeAddress`]: escrowAddr,
+      [`${F.escrowPeriod}:getDeployed`]: escrowAddr,
+      [`${F.staticAddressCondition}:computeAddress`]: arbiterCondAddr,
+      [`${F.staticAddressCondition}:getDeployed`]: arbiterCondAddr,
+      [`${F.paymentOperator}:computeAddress`]: operatorAddr,
+      [`${F.paymentOperator}:getOperator`]: operatorAddr,
+    })
+    const walletClient = createMockWalletClient()
+
+    const result = await deployDeliveryProtectionOperator(
+      walletClient,
+      publicClient,
+      makeDeliveryProtectionOptions(),
+    )
+
+    expect(result.deployments).toHaveLength(3)
+    expect(result.summary.newCount).toBe(0)
+    expect(result.summary.existingCount).toBe(3)
+    expect(result.summary.txHashes).toHaveLength(0)
+    for (const d of result.deployments) {
+      expect(d.isNew).toBe(false)
+      expect(d.hash).toBeNull()
+    }
+  })
+
+  it('deploys only missing contracts when some already exist', async () => {
+    const escrowAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
+    const arbiterCondAddr =
+      '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
+    const operatorAddr = '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
+    // escrowPeriod exists, arbiterCondition is new, operator always new
+    const publicClient = createMockPublicClient({
+      [`${F.escrowPeriod}:computeAddress`]: escrowAddr,
+      [`${F.escrowPeriod}:getDeployed`]: escrowAddr,
+      [`${F.staticAddressCondition}:computeAddress`]: arbiterCondAddr,
+      [`${F.staticAddressCondition}:getDeployed`]: zeroAddress,
+      [`${F.paymentOperator}:computeAddress`]: operatorAddr,
+      [`${F.paymentOperator}:getOperator`]: zeroAddress,
+    })
+    const walletClient = createMockWalletClient()
+
+    const result = await deployDeliveryProtectionOperator(
+      walletClient,
+      publicClient,
+      makeDeliveryProtectionOptions(),
+    )
+
+    expect(result.deployments).toHaveLength(3)
+    expect(result.summary.newCount).toBe(2)
+    expect(result.summary.existingCount).toBe(1)
+    expect(result.deployments[0].isNew).toBe(false) // escrowPeriod
+    expect(result.deployments[1].isNew).toBe(true) // arbiterCondition
+    expect(result.deployments[2].isNew).toBe(true) // operator
+  })
+
+  it('throws ConfigError when walletClient has no account', async () => {
+    const publicClient = createMockPublicClient({
+      getDeployed: zeroAddress,
+      getOperator: zeroAddress,
+      computeAddress: COMPUTED_ADDR,
+    })
+    const walletClient = createMockWalletWithoutAccount()
+
+    await expect(
+      deployDeliveryProtectionOperator(
+        walletClient,
+        publicClient,
+        makeDeliveryProtectionOptions(),
+      ),
+    ).rejects.toThrow(ConfigError)
+  })
+
+  it('throws ConfigError when a batch call fails in simulation', async () => {
+    const publicClient = createMockPublicClient({
+      getDeployed: zeroAddress,
+      getOperator: zeroAddress,
+      computeAddress: COMPUTED_ADDR,
+    })
+    ;(
+      publicClient.simulateContract as ReturnType<typeof import('vitest').vi.fn>
+    ).mockResolvedValueOnce({
+      request: {},
+      result: [
+        { success: true, returnData: '0x' },
+        { success: false, returnData: '0x' },
+      ],
+    })
+    const walletClient = createMockWalletClient()
+
+    await expect(
+      deployDeliveryProtectionOperator(
+        walletClient,
+        publicClient,
+        makeDeliveryProtectionOptions(),
+      ),
+    ).rejects.toThrow('call 1 failed in simulation')
   })
 })
