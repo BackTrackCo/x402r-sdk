@@ -89,9 +89,13 @@ export interface PaymentActions {
     tokenCollector: Address,
     collectorData: Hex,
   ): Promise<Hash>
-  release(paymentInfo: PaymentInfo, amount: bigint): Promise<Hash>
-  /** @internal Gated by StaticAddressCondition — use `refund.approve()` on role clients instead. */
-  refundInEscrow(paymentInfo: PaymentInfo, amount: bigint): Promise<Hash>
+  release(paymentInfo: PaymentInfo, amount: bigint, data?: Hex): Promise<Hash>
+  /** Executes an in-escrow refund. Gated by ReceiverCondition — only the receiver (merchant) can call. */
+  refundInEscrow(
+    paymentInfo: PaymentInfo,
+    amount: bigint,
+    data?: Hex,
+  ): Promise<Hash>
   refundPostEscrow(
     paymentInfo: PaymentInfo,
     amount: bigint,
@@ -113,29 +117,17 @@ export interface EscrowActions {
 }
 
 export interface RefundActions {
-  // Dispute flow (RefundRequest contract)
-  request(
-    paymentInfo: PaymentInfo,
-    amount: bigint,
-    nonce: bigint,
-  ): Promise<Hash>
-  cancel(paymentInfo: PaymentInfo, nonce: bigint): Promise<Hash>
-  deny(paymentInfo: PaymentInfo, nonce: bigint): Promise<Hash>
-  refuse(paymentInfo: PaymentInfo, nonce: bigint): Promise<Hash>
-  approve(
-    paymentInfo: PaymentInfo,
-    nonce: bigint,
-    amount: bigint,
-  ): Promise<Hash>
+  // Dispute flow (RefundRequest recorder)
+  request(paymentInfo: PaymentInfo, amount: bigint): Promise<Hash>
+  cancel(paymentInfo: PaymentInfo): Promise<Hash>
+  deny(paymentInfo: PaymentInfo): Promise<Hash>
+  refuse(paymentInfo: PaymentInfo): Promise<Hash>
 
   // Read operations
-  get(paymentInfo: PaymentInfo, nonce: bigint): Promise<RefundRequestData>
-  getByKey(compositeKey: Hex): Promise<RefundRequestData>
-  getStatus(
-    paymentInfo: PaymentInfo,
-    nonce: bigint,
-  ): Promise<RefundRequestStatus>
-  has(paymentInfo: PaymentInfo, nonce: bigint): Promise<boolean>
+  get(paymentInfo: PaymentInfo): Promise<RefundRequestData>
+  getByKey(paymentInfoHash: Hex): Promise<RefundRequestData>
+  getStatus(paymentInfo: PaymentInfo): Promise<RefundRequestStatus>
+  has(paymentInfo: PaymentInfo): Promise<boolean>
   getStoredPaymentInfo(paymentInfoHash: Hex): Promise<PaymentInfo>
   getPayerRequests(
     payer: Address,
@@ -152,33 +144,27 @@ export interface RefundActions {
     offset: bigint,
     count: bigint,
   ): Promise<GetOperatorRefundRequestsReturnType>
-  getCancelCount(paymentInfo: PaymentInfo, nonce: bigint): Promise<bigint>
+  getCancelCount(paymentInfo: PaymentInfo): Promise<bigint>
   getCancelledAmount(
     paymentInfo: PaymentInfo,
-    nonce: bigint,
     cancelIndex: bigint,
   ): Promise<bigint>
 }
 
 export interface EvidenceActions {
-  submit(paymentInfo: PaymentInfo, nonce: bigint, cid: string): Promise<Hash>
-  get(
-    paymentInfo: PaymentInfo,
-    nonce: bigint,
-    index: bigint,
-  ): Promise<EvidenceEntry>
+  submit(paymentInfo: PaymentInfo, cid: string): Promise<Hash>
+  get(paymentInfo: PaymentInfo, index: bigint): Promise<EvidenceEntry>
   getBatch(
     paymentInfo: PaymentInfo,
-    nonce: bigint,
     offset: bigint,
     count: bigint,
   ): Promise<GetEvidenceBatchReturnType>
-  count(paymentInfo: PaymentInfo, nonce: bigint): Promise<bigint>
+  count(paymentInfo: PaymentInfo): Promise<bigint>
 }
 
 export interface FreezeActions {
-  freeze(paymentInfo: PaymentInfo): Promise<Hash>
-  unfreeze(paymentInfo: PaymentInfo): Promise<Hash>
+  freeze(paymentInfo: PaymentInfo, data?: Hex): Promise<Hash>
+  unfreeze(paymentInfo: PaymentInfo, data?: Hex): Promise<Hash>
   isFrozen(paymentInfo: PaymentInfo): Promise<boolean>
 }
 
@@ -235,6 +221,7 @@ export interface X402r {
     slot: ConditionSlot,
     paymentInfo: PaymentInfo,
     amount: bigint,
+    data?: Hex,
   ): Promise<boolean>
   extend<const T extends Record<string, unknown>>(
     fn: (client: X402r) => T,
@@ -279,6 +266,7 @@ export interface PayerClient {
     slot: ConditionSlot,
     paymentInfo: PaymentInfo,
     amount: bigint,
+    data?: Hex,
   ): Promise<boolean>
   extend<const T extends Record<string, unknown>>(
     fn: (client: X402r) => T,
@@ -286,9 +274,9 @@ export interface PayerClient {
 }
 
 /**
- * Merchant role client. In-escrow refunds go through `refund.approve()` —
- * `payment.refundInEscrow` is gated by StaticAddressCondition on marketplace
- * operators and not exposed here. Use `createX402r()` for full access.
+ * Merchant role client. In-escrow refunds go through `payment.refundInEscrow()` —
+ * the RefundRequest recorder automatically approves during execution.
+ * Use `createX402r()` for full access.
  */
 export interface MerchantClient {
   readonly config: ResolvedWriteConfig
@@ -297,6 +285,7 @@ export interface MerchantClient {
     | 'authorize'
     | 'charge'
     | 'release'
+    | 'refundInEscrow'
     | 'refundPostEscrow'
     | 'approvePostEscrowRefund'
     | 'getPostEscrowRefundAllowance'
@@ -312,7 +301,6 @@ export interface MerchantClient {
   readonly refund:
     | Pick<
         RefundActions,
-        | 'approve'
         | 'get'
         | 'getByKey'
         | 'getStatus'
@@ -333,6 +321,7 @@ export interface MerchantClient {
     slot: ConditionSlot,
     paymentInfo: PaymentInfo,
     amount: bigint,
+    data?: Hex,
   ): Promise<boolean>
   extend<const T extends Record<string, unknown>>(
     fn: (client: X402r) => T,
@@ -341,7 +330,10 @@ export interface MerchantClient {
 
 export interface ArbiterClient {
   readonly config: ResolvedWriteConfig
-  readonly payment: Pick<PaymentActions, 'getState' | 'getAmounts'>
+  readonly payment: Pick<
+    PaymentActions,
+    'getState' | 'getAmounts' | 'refundInEscrow'
+  >
   readonly escrow:
     | Pick<
         EscrowActions,
@@ -353,7 +345,6 @@ export interface ArbiterClient {
         RefundActions,
         | 'deny'
         | 'refuse'
-        | 'approve'
         | 'get'
         | 'getByKey'
         | 'getStatus'
@@ -380,6 +371,7 @@ export interface ArbiterClient {
     slot: ConditionSlot,
     paymentInfo: PaymentInfo,
     amount: bigint,
+    data?: Hex,
   ): Promise<boolean>
   extend<const T extends Record<string, unknown>>(
     fn: (client: X402r) => T,

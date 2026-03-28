@@ -5,7 +5,7 @@ import type { RefundRequestData, RefundRequestStatus } from './types.js'
 
 export interface GetRefundRequestByKeyParameters {
   contractAddress: Address
-  compositeKey: Hex
+  paymentInfoHash: Hex
 }
 export type GetRefundRequestByKeyReturnType = RefundRequestData
 
@@ -13,18 +13,17 @@ export async function getRefundRequestByKey(
   publicClient: PublicClient,
   parameters: GetRefundRequestByKeyParameters,
 ): Promise<GetRefundRequestByKeyReturnType> {
-  const { contractAddress, compositeKey } = parameters
+  const { contractAddress, paymentInfoHash } = parameters
 
   return wrapContractCall('getRefundRequestByKey', async () => {
     const result = await publicClient.readContract({
       address: contractAddress,
       abi: refundRequestAbi,
       functionName: 'getRefundRequestByKey',
-      args: [compositeKey],
+      args: [paymentInfoHash],
     })
     return {
       paymentInfoHash: result.paymentInfoHash,
-      nonce: result.nonce,
       amount: result.amount,
       approvedAmount: result.approvedAmount,
       status: result.status as RefundRequestStatus,

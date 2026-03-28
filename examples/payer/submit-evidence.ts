@@ -17,26 +17,25 @@ try {
     )
   }
 
-  // Step 1: Request a refund (evidence is attached to a refund nonce)
+  // Step 1: Request a refund (evidence is keyed by paymentInfo)
   const reqTx = await ctx.payer.refund.request(
     ctx.paymentInfo,
     ctx.PAYMENT_AMOUNT,
-    0n,
   )
   await ctx.waitForTx(reqTx)
   console.log('Refund requested')
 
   // Step 2: Submit evidence CID
   const evidenceCid = 'QmExampleEvidenceCid123456789'
-  const tx = await ctx.payer.evidence.submit(ctx.paymentInfo, 0n, evidenceCid)
+  const tx = await ctx.payer.evidence.submit(ctx.paymentInfo, evidenceCid)
   await ctx.waitForTx(tx)
   console.log(`Evidence submitted: ${tx}`)
 
   // Step 3: Verify the evidence was recorded
-  const count = await ctx.payer.evidence.count(ctx.paymentInfo, 0n)
+  const count = await ctx.payer.evidence.count(ctx.paymentInfo)
   console.log(`Evidence count: ${count}`)
 
-  const entry = await ctx.payer.evidence.get(ctx.paymentInfo, 0n, 0n)
+  const entry = await ctx.payer.evidence.get(ctx.paymentInfo, 0n)
   console.log(`Evidence CID: ${entry.cid}`)
   console.log(`Submitter: ${entry.submitter}`)
 

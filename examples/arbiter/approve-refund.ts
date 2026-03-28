@@ -4,8 +4,9 @@ const ctx = await setup()
 
 try {
   // ============ Example: Approve Refund ============
-  // As an arbiter, approve a payer's refund request.
-  // The arbiter reviews the request and approves for the full or partial amount.
+  // Whoever is authorized by the operator's refundInEscrowCondition can call
+  // refundInEscrow(). The RefundRequest recorder auto-approves the pending request.
+  // The condition could be ReceiverCondition, StaticAddressCondition(arbiter), etc.
 
   if (!ctx.payer.refund) {
     throw new Error(
@@ -22,22 +23,21 @@ try {
   const reqTx = await ctx.payer.refund.request(
     ctx.paymentInfo,
     ctx.PAYMENT_AMOUNT,
-    0n,
   )
   await ctx.waitForTx(reqTx)
   console.log('Payer requested refund')
 
-  // Step 2: Arbiter reviews and approves
-  const tx = await ctx.arbiter.refund.approve(
+  // Step 2: Authorized party calls refundInEscrow (recorder approves automatically)
+  // Here the arbiter is the authorized caller — depends on operator condition setup.
+  const tx = await ctx.arbiter.payment.refundInEscrow(
     ctx.paymentInfo,
-    0n,
     ctx.PAYMENT_AMOUNT,
   )
   await ctx.waitForTx(tx)
   console.log(`Refund approved: ${tx}`)
 
   // Step 3: Verify the approval
-  const request = await ctx.arbiter.refund.get(ctx.paymentInfo, 0n)
+  const request = await ctx.arbiter.refund.get(ctx.paymentInfo)
   console.log(`Approved amount: ${request.approvedAmount}`)
   console.log(`Status: ${request.status}`)
 

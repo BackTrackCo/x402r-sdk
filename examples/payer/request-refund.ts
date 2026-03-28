@@ -13,20 +13,15 @@ try {
     )
   }
 
-  const tx = await ctx.payer.refund.request(
-    ctx.paymentInfo,
-    ctx.PAYMENT_AMOUNT,
-    0n,
-  )
+  const tx = await ctx.payer.refund.request(ctx.paymentInfo, ctx.PAYMENT_AMOUNT)
   await ctx.waitForTx(tx)
   console.log(`Refund requested: ${tx}`)
 
-  const status = await ctx.payer.refund.getStatus(ctx.paymentInfo, 0n)
+  const status = await ctx.payer.refund.getStatus(ctx.paymentInfo)
   console.log(`Refund status: ${status} (0 = Pending)`)
 
-  const request = await ctx.payer.refund.get(ctx.paymentInfo, 0n)
+  const request = await ctx.payer.refund.get(ctx.paymentInfo)
   console.log(`Requested amount: ${request.amount}`)
-  console.log(`Nonce: ${request.nonce}`)
 } finally {
   await ctx.cleanup()
 }

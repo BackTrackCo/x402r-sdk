@@ -244,24 +244,19 @@ describe('Scenario 7: Evidence submit → read lifecycle', () => {
     const requestHash = await payer7.refund!.request(
       paymentInfo7,
       DEFAULT_AMOUNT,
-      0n,
     )
     await publicClient.waitForTransactionReceipt({ hash: requestHash })
 
     // Submit evidence
     const evidenceCid = 'QmTestEvidenceCID_lifecycle'
-    const submitHash = await payer7.evidence!.submit(
-      paymentInfo7,
-      0n,
-      evidenceCid,
-    )
+    const submitHash = await payer7.evidence!.submit(paymentInfo7, evidenceCid)
     await publicClient.waitForTransactionReceipt({ hash: submitHash })
 
     // Read back evidence
-    const count = await payer7.evidence!.count(paymentInfo7, 0n)
+    const count = await payer7.evidence!.count(paymentInfo7)
     expect(count).toBe(1n)
 
-    const entry = await payer7.evidence!.get(paymentInfo7, 0n, 0n)
+    const entry = await payer7.evidence!.get(paymentInfo7, 0n)
     expect(entry.cid).toBe(evidenceCid)
     expect(entry.submitter.toLowerCase()).toBe(
       testRoles.payer.address.toLowerCase(),
@@ -269,7 +264,7 @@ describe('Scenario 7: Evidence submit → read lifecycle', () => {
   }, 60_000)
 
   it('arbiter reads evidence via getBatch', async () => {
-    const batch = await arbiter7.evidence!.getBatch(paymentInfo7, 0n, 0n, 10n)
+    const batch = await arbiter7.evidence!.getBatch(paymentInfo7, 0n, 10n)
     expect(batch.entries.length).toBeGreaterThanOrEqual(1)
     expect(batch.entries[0].cid).toBe('QmTestEvidenceCID_lifecycle')
   }, 60_000)

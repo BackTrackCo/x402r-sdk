@@ -1,10 +1,4 @@
 export type {
-  ApproveRefundRequestParameters,
-  ApproveRefundRequestReturnType,
-} from './approveRefund.js'
-export { approveRefund } from './approveRefund.js'
-
-export type {
   CancelRefundRequestParameters,
   CancelRefundRequestReturnType,
 } from './cancelRefundRequest.js'

@@ -228,25 +228,6 @@ export async function deployTestFixtures(
   })
   const refundRequestAddress = arbiterSetup.refundRequestAddress
 
-  // Deploy StaticAddressCondition(refundRequest) — gates refundInEscrow so
-  // only the RefundRequest contract can call operator.refundInEscrow().
-  const refundInEscrowCondHash = await walletClient.writeContract({
-    address: factories.staticAddressCondition,
-    abi: staticAddressConditionFactoryAbi,
-    functionName: 'deploy',
-    args: [refundRequestAddress],
-    account: deployer,
-    chain: walletClient.chain,
-  })
-  await publicClient.waitForTransactionReceipt({ hash: refundInEscrowCondHash })
-
-  const staticAddrCondAddress = await publicClient.readContract({
-    address: factories.staticAddressCondition,
-    abi: staticAddressConditionFactoryAbi,
-    functionName: 'computeAddress',
-    args: [refundRequestAddress],
-  })
-
   // ---------------------------------------------------------------------------
   // 3e. Deploy PaymentOperator with freeze
   // ---------------------------------------------------------------------------
@@ -285,8 +266,9 @@ export async function deployTestFixtures(
   // ---------------------------------------------------------------------------
   // 3f. Deploy PaymentOperator for arbiter refund (Flow 7)
   //     refundInEscrowCondition = StaticAddressCondition(refundRequest)
-  //     All in-escrow refunds require payer request first, then
-  //     RefundRequest.approve() atomically calls operator.refundInEscrow()
+  //     refundInEscrowRecorder = refundRequest (IRecorder — auto-approves)
+  //     In-escrow refunds require payer request first, then merchant calls
+  //     refundInEscrow() which triggers the RefundRequest recorder.
   // ---------------------------------------------------------------------------
   const arbiterRefundOperatorConfig = {
     feeRecipient: testRoles.operatorFeeRecipient.address,
@@ -297,8 +279,8 @@ export async function deployTestFixtures(
     chargeRecorder: zeroAddress,
     releaseCondition: escrowPeriodAddress,
     releaseRecorder: zeroAddress,
-    refundInEscrowCondition: staticAddrCondAddress,
-    refundInEscrowRecorder: zeroAddress,
+    refundInEscrowCondition: baseSepolia.conditions.receiver,
+    refundInEscrowRecorder: refundRequestAddress,
     refundPostEscrowCondition: baseSepolia.conditions.receiver,
     refundPostEscrowRecorder: zeroAddress,
   } as const

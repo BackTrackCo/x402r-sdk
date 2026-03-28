@@ -54,20 +54,6 @@ export {
   submitEvidence,
 } from './evidence/index.js'
 // ---------------------------------------------------------------------------
-// Factory
-// ---------------------------------------------------------------------------
-export type {
-  GetDeployerOperatorCountParameters,
-  GetDeployerOperatorParameters,
-  GetDeployerOperatorsParameters,
-  GetDeployerOperatorsReturnType,
-} from './factory/index.js'
-export {
-  getDeployerOperator,
-  getDeployerOperatorCount,
-  getDeployerOperators,
-} from './factory/index.js'
-// ---------------------------------------------------------------------------
 // Fees
 // ---------------------------------------------------------------------------
 export type {
@@ -161,8 +147,6 @@ export {
 // Refund
 // ---------------------------------------------------------------------------
 export type {
-  ApproveRefundRequestParameters,
-  ApproveRefundRequestReturnType,
   CancelRefundRequestParameters,
   CancelRefundRequestReturnType,
   DenyRefundRequestParameters,
@@ -194,7 +178,6 @@ export type {
   RequestRefundReturnType,
 } from './refund/index.js'
 export {
-  approveRefund,
   cancelRefundRequest,
   denyRefundRequest,
   getCancelCount,

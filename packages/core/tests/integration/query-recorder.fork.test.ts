@@ -10,9 +10,6 @@ import {
   paymentOperatorFactoryAbi,
 } from '../../src/abis/generated.js'
 import {
-  getDeployerOperator,
-  getDeployerOperatorCount,
-  getDeployerOperators,
   getPayerPayment,
   getPayerPaymentsByEvents,
   getPayerPaymentsFromRecorder,
@@ -283,65 +280,5 @@ describe('Event queries after authorize', () => {
     expect(results[0].receiver.toLowerCase()).toBe(
       testRoles.receiver.address.toLowerCase(),
     )
-  })
-})
-
-// ---------------------------------------------------------------------------
-// Factory deployer indexing tests
-// ---------------------------------------------------------------------------
-
-describe('Factory deployer indexing', () => {
-  // The deployer indexing functions (deployerOperatorCount, getDeployerOperator,
-  // getDeployerOperators) may not exist on the factory at the forked block.
-  // Tests gracefully skip if the factory doesn't support them.
-
-  async function tryGetCount(): Promise<bigint | null> {
-    try {
-      return await getDeployerOperatorCount(publicClient, {
-        factoryAddress: factories.paymentOperator,
-        deployer: testRoles.deployer.address,
-      })
-    } catch {
-      return null
-    }
-  }
-
-  it('getDeployerOperatorCount includes the recorder operator', async () => {
-    const count = await tryGetCount()
-    if (count === null) return // factory on fork doesn't support deployer indexing
-
-    // setupScenario deploys 3 operators + our recorder operator = at least 4
-    expect(count).toBeGreaterThanOrEqual(4n)
-  })
-
-  it('getDeployerOperator returns our operator at the last index', async () => {
-    const count = await tryGetCount()
-    if (count === null) return // factory on fork doesn't support deployer indexing
-
-    const lastOperator = await getDeployerOperator(publicClient, {
-      factoryAddress: factories.paymentOperator,
-      deployer: testRoles.deployer.address,
-      index: count - 1n,
-    })
-
-    expect(lastOperator.toLowerCase()).toBe(
-      recorderOperatorAddress.toLowerCase(),
-    )
-  })
-
-  it('getDeployerOperators returns a list including our operator', async () => {
-    const count = await tryGetCount()
-    if (count === null) return // factory on fork doesn't support deployer indexing
-
-    const result = await getDeployerOperators(publicClient, {
-      factoryAddress: factories.paymentOperator,
-      deployer: testRoles.deployer.address,
-      offset: 0n,
-      count: 10n,
-    })
-
-    expect(result.total).toBeGreaterThanOrEqual(4n)
-    const lowered = result.operators.map((a) => a.toLowerCase())
-    expect(lowered).toContain(recorderOperatorAddress.toLowerCase())
   })
 })

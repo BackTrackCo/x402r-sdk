@@ -9,7 +9,6 @@ import {
 export interface DenyRefundRequestParameters {
   contractAddress: Address
   paymentInfo: PaymentInfo
-  nonce: bigint
 }
 export type DenyRefundRequestReturnType = Hash
 
@@ -17,7 +16,7 @@ export async function denyRefundRequest(
   walletClient: WalletClient,
   parameters: DenyRefundRequestParameters,
 ): Promise<DenyRefundRequestReturnType> {
-  const { contractAddress, paymentInfo, nonce } = parameters
+  const { contractAddress, paymentInfo } = parameters
   requireAccount(walletClient, 'denyRefundRequest')
 
   return wrapContractCall('denyRefundRequest', () =>
@@ -25,7 +24,7 @@ export async function denyRefundRequest(
       address: contractAddress,
       abi: refundRequestAbi,
       functionName: 'deny',
-      args: [paymentInfo, nonce],
+      args: [paymentInfo],
       chain: walletClient.chain,
       account: walletClient.account,
     }),

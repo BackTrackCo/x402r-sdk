@@ -46,8 +46,6 @@ export {
 export type {
   ApprovePostEscrowRefundParameters,
   ApprovePostEscrowRefundReturnType,
-  ApproveRefundRequestParameters,
-  ApproveRefundRequestReturnType,
   AuthorizeParameters,
   AuthorizeReturnType,
   CalculateOperatorFeeBpsParameters,
@@ -82,10 +80,6 @@ export type {
   GetCancelledAmountReturnType,
   GetConditionAddressParameters,
   GetConditionAddressReturnType,
-  GetDeployerOperatorCountParameters,
-  GetDeployerOperatorParameters,
-  GetDeployerOperatorsParameters,
-  GetDeployerOperatorsReturnType,
   GetEscrowAddressParameters,
   GetEscrowAddressReturnType,
   GetEscrowPeriodDurationParameters,
@@ -155,7 +149,6 @@ export type {
 } from './actions/index.js'
 export {
   approvePostEscrowRefund,
-  approveRefund,
   authorize,
   calculateOperatorFeeBps,
   calculateProtocolFeeBps,
@@ -172,9 +165,6 @@ export {
   getCancelCount,
   getCancelledAmount,
   getConditionAddress,
-  getDeployerOperator,
-  getDeployerOperatorCount,
-  getDeployerOperators,
   getEscrowAddress,
   getEscrowPeriodDuration,
   getEvidence,

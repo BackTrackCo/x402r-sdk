@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest'
 import { refundable } from '../src/index.js'
 
 // Known Base Sepolia addresses from chain config
-const BASE_SEPOLIA_ESCROW = '0xe050bB89eD43BB02d71343063824614A7fb80B77'
+const BASE_SEPOLIA_ESCROW = '0xBC151792f80C0EB1973d56b0235e6bee2A60e245'
 const BASE_SEPOLIA_TOKEN_COLLECTOR =
-  '0xcE66Ab399EDA513BD12760b6427C87D6602344a7'
+  '0x9A12A116a44636F55c9e135189A1321Abcfe2f30'
 
 describe('refundable', () => {
   const operatorAddress =

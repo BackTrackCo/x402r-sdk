@@ -55,8 +55,6 @@ describe('PayerClient type narrowing', () => {
     void payer.refund.deny
     // @ts-expect-error — payer cannot refuse
     void payer.refund.refuse
-    // @ts-expect-error — payer cannot approve
-    void payer.refund.approve
     // @ts-expect-error — payer cannot getReceiverRequests
     void payer.refund.getReceiverRequests
     // @ts-expect-error — payer cannot getOperatorRequests
@@ -97,16 +95,13 @@ describe('MerchantClient type narrowing', () => {
     expectTypeOf(merchant.payment.release).toBeFunction()
     expectTypeOf(merchant.payment.getState).toBeFunction()
     expectTypeOf(merchant.payment.getAmounts).toBeFunction()
+    expectTypeOf(merchant.payment.refundInEscrow).toBeFunction()
     expectTypeOf(merchant.payment.refundPostEscrow).toBeFunction()
     expectTypeOf(merchant.payment.approvePostEscrowRefund).toBeFunction()
     expectTypeOf(merchant.payment.getPostEscrowRefundAllowance).toBeFunction()
-    // @ts-expect-error — merchant cannot refundInEscrow
-    void merchant.payment.refundInEscrow
   })
 
   it('refund exposes merchant dispute methods', () => {
-    expectTypeOf(merchant.refund.approve).toBeFunction()
-    expectTypeOf(merchant.refund.refuse).toBeFunction()
     expectTypeOf(merchant.refund.get).toBeFunction()
     expectTypeOf(merchant.refund.getStatus).toBeFunction()
     expectTypeOf(merchant.refund.getReceiverRequests).toBeFunction()
@@ -119,6 +114,8 @@ describe('MerchantClient type narrowing', () => {
     void merchant.refund.cancel
     // @ts-expect-error — merchant cannot deny
     void merchant.refund.deny
+    // @ts-expect-error — merchant cannot refuse
+    void merchant.refund.refuse
     // @ts-expect-error — merchant cannot getPayerRequests
     void merchant.refund.getPayerRequests
     // @ts-expect-error — merchant cannot getOperatorRequests
@@ -160,7 +157,7 @@ describe('ArbiterClient type narrowing', () => {
 
   it('refund exposes arbiter methods', () => {
     expectTypeOf(arbiter.refund.deny).toBeFunction()
-    expectTypeOf(arbiter.refund.approve).toBeFunction()
+    expectTypeOf(arbiter.refund.refuse).toBeFunction()
     expectTypeOf(arbiter.refund.getOperatorRequests).toBeFunction()
   })
 
@@ -169,8 +166,6 @@ describe('ArbiterClient type narrowing', () => {
     void arbiter.refund.request
     // @ts-expect-error — arbiter cannot cancel
     void arbiter.refund.cancel
-    // @ts-expect-error — arbiter cannot refuse
-    void arbiter.refund.refuse
   })
 
   it('freeze exposes unfreeze + isFrozen, hides freeze', () => {

@@ -7,7 +7,6 @@ import type { RefundRequestData, RefundRequestStatus } from './types.js'
 export interface GetRefundRequestParameters {
   contractAddress: Address
   paymentInfo: PaymentInfo
-  nonce: bigint
 }
 export type GetRefundRequestReturnType = RefundRequestData
 
@@ -15,18 +14,17 @@ export async function getRefundRequest(
   publicClient: PublicClient,
   parameters: GetRefundRequestParameters,
 ): Promise<GetRefundRequestReturnType> {
-  const { contractAddress, paymentInfo, nonce } = parameters
+  const { contractAddress, paymentInfo } = parameters
 
   return wrapContractCall('getRefundRequest', async () => {
     const result = await publicClient.readContract({
       address: contractAddress,
       abi: refundRequestAbi,
       functionName: 'getRefundRequest',
-      args: [paymentInfo, nonce],
+      args: [paymentInfo],
     })
     return {
       paymentInfoHash: result.paymentInfoHash,
-      nonce: result.nonce,
       amount: result.amount,
       approvedAmount: result.approvedAmount,
       status: result.status as RefundRequestStatus,

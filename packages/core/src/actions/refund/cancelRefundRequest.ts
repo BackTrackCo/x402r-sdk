@@ -9,7 +9,6 @@ import {
 export interface CancelRefundRequestParameters {
   contractAddress: Address
   paymentInfo: PaymentInfo
-  nonce: bigint
 }
 export type CancelRefundRequestReturnType = Hash
 
@@ -17,7 +16,7 @@ export async function cancelRefundRequest(
   walletClient: WalletClient,
   parameters: CancelRefundRequestParameters,
 ): Promise<CancelRefundRequestReturnType> {
-  const { contractAddress, paymentInfo, nonce } = parameters
+  const { contractAddress, paymentInfo } = parameters
   requireAccount(walletClient, 'cancelRefundRequest')
 
   return wrapContractCall('cancelRefundRequest', () =>
@@ -25,7 +24,7 @@ export async function cancelRefundRequest(
       address: contractAddress,
       abi: refundRequestAbi,
       functionName: 'cancelRefundRequest',
-      args: [paymentInfo, nonce],
+      args: [paymentInfo],
       chain: walletClient.chain,
       account: walletClient.account,
     }),

@@ -6,7 +6,6 @@ import { wrapContractCall } from '../_internal/error-wrapping.js'
 export interface GetCancelledAmountParameters {
   contractAddress: Address
   paymentInfo: PaymentInfo
-  nonce: bigint
   cancelIndex: bigint
 }
 export type GetCancelledAmountReturnType = bigint
@@ -15,14 +14,14 @@ export async function getCancelledAmount(
   publicClient: PublicClient,
   parameters: GetCancelledAmountParameters,
 ): Promise<GetCancelledAmountReturnType> {
-  const { contractAddress, paymentInfo, nonce, cancelIndex } = parameters
+  const { contractAddress, paymentInfo, cancelIndex } = parameters
 
   return wrapContractCall('getCancelledAmount', () =>
     publicClient.readContract({
       address: contractAddress,
       abi: refundRequestAbi,
       functionName: 'getCancelledAmount',
-      args: [paymentInfo, nonce, cancelIndex],
+      args: [paymentInfo, cancelIndex],
     }),
   )
 }

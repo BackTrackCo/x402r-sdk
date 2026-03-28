@@ -38,7 +38,6 @@ describe('evidence read functions', () => {
     const result = await getEvidence(client, {
       contractAddress: MOCK_CONTRACT,
       paymentInfo: pi,
-      nonce: 0n,
       index: 0n,
     })
     expect(result).toEqual(mockEntry)
@@ -50,7 +49,6 @@ describe('evidence read functions', () => {
     const result = await getEvidenceCount(client, {
       contractAddress: MOCK_CONTRACT,
       paymentInfo: pi,
-      nonce: 0n,
     })
     expect(result).toBe(3n)
   })
@@ -62,7 +60,6 @@ describe('evidence read functions', () => {
     const result = await getEvidenceBatch(client, {
       contractAddress: MOCK_CONTRACT,
       paymentInfo: pi,
-      nonce: 0n,
       offset: 0n,
       count: 10n,
     })
@@ -77,7 +74,6 @@ describe('evidence write functions', () => {
       submitEvidence(createMockWalletWithoutAccount(), {
         contractAddress: MOCK_CONTRACT,
         paymentInfo: makePaymentInfo(),
-        nonce: 1n,
         cid: 'QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco',
       }),
     ).rejects.toThrow(ContractCallError)

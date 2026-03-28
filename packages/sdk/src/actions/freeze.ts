@@ -4,7 +4,7 @@ import {
   freezePayment,
   unfreezePayment,
 } from '@x402r/core'
-import type { Address, Hash } from 'viem'
+import type { Address, Hash, Hex } from 'viem'
 import type { FreezeActions, ResolvedConfig } from '../types.js'
 import { requireWallet } from './utils.js'
 
@@ -13,13 +13,13 @@ export function createFreezeActions(
   freezeAddress: Address,
 ): FreezeActions {
   return {
-    async freeze(paymentInfo: PaymentInfo): Promise<Hash> {
+    async freeze(paymentInfo: PaymentInfo, data?: Hex): Promise<Hash> {
       const wallet = requireWallet(config)
-      return freezePayment(wallet, { freezeAddress, paymentInfo })
+      return freezePayment(wallet, { freezeAddress, paymentInfo, data })
     },
-    async unfreeze(paymentInfo: PaymentInfo): Promise<Hash> {
+    async unfreeze(paymentInfo: PaymentInfo, data?: Hex): Promise<Hash> {
       const wallet = requireWallet(config)
-      return unfreezePayment(wallet, { freezeAddress, paymentInfo })
+      return unfreezePayment(wallet, { freezeAddress, paymentInfo, data })
     },
     async isFrozen(paymentInfo: PaymentInfo) {
       return coreIsFrozen(config.publicClient, { freezeAddress, paymentInfo })

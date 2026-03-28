@@ -14,46 +14,33 @@ export function createEvidenceActions(
   contractAddress: Address,
 ): EvidenceActions {
   return {
-    async submit(
-      paymentInfo: PaymentInfo,
-      nonce: bigint,
-      cid: string,
-    ): Promise<Hash> {
+    async submit(paymentInfo: PaymentInfo, cid: string): Promise<Hash> {
       const wallet = requireWallet(config)
       return submitEvidence(wallet, {
         contractAddress,
         paymentInfo,
-        nonce,
         cid,
       })
     },
-    async get(paymentInfo: PaymentInfo, nonce: bigint, index: bigint) {
+    async get(paymentInfo: PaymentInfo, index: bigint) {
       return coreGetEvidence(config.publicClient, {
         contractAddress,
         paymentInfo,
-        nonce,
         index,
       })
     },
-    async getBatch(
-      paymentInfo: PaymentInfo,
-      nonce: bigint,
-      offset: bigint,
-      count: bigint,
-    ) {
+    async getBatch(paymentInfo: PaymentInfo, offset: bigint, count: bigint) {
       return getEvidenceBatch(config.publicClient, {
         contractAddress,
         paymentInfo,
-        nonce,
         offset,
         count,
       })
     },
-    async count(paymentInfo: PaymentInfo, nonce: bigint) {
+    async count(paymentInfo: PaymentInfo) {
       return getEvidenceCount(config.publicClient, {
         contractAddress,
         paymentInfo,
-        nonce,
       })
     },
   }

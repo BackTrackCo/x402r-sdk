@@ -93,18 +93,18 @@ describe('Scenario 5: Deny refund request', () => {
   }, 60_000)
 
   it('payer requests refund', async () => {
-    const hash = await payer.refund!.request(paymentInfo, DEFAULT_AMOUNT, 0n)
+    const hash = await payer.refund!.request(paymentInfo, DEFAULT_AMOUNT)
     await publicClient.waitForTransactionReceipt({ hash })
 
-    const hasRequest = await arbiter.refund!.has(paymentInfo, 0n)
+    const hasRequest = await arbiter.refund!.has(paymentInfo)
     expect(hasRequest).toBe(true)
   }, 60_000)
 
   it('arbiter denies the refund request', async () => {
-    const hash = await arbiter.refund!.deny(paymentInfo, 0n)
+    const hash = await arbiter.refund!.deny(paymentInfo)
     await publicClient.waitForTransactionReceipt({ hash })
 
-    const status = await arbiter.refund!.getStatus(paymentInfo, 0n)
+    const status = await arbiter.refund!.getStatus(paymentInfo)
     // Denied = 2 in RefundRequestStatus enum
     expect(status).toBe(2)
   }, 60_000)
@@ -130,14 +130,15 @@ describe('Scenario 5: Deny refund request', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Scenario 5a-neg: approve() reverts after deny on gated operator
+// Scenario 5a-neg: refundInEscrow reverts after deny on gated operator
 // ---------------------------------------------------------------------------
 
-describe('Scenario 5a-neg: Approve reverts after deny', () => {
+describe('Scenario 5a-neg: refundInEscrow reverts after deny', () => {
   let gatedPaymentInfo: PaymentInfo
   let gatedFacilitator: X402r
   let gatedPayer: PayerClient
   let gatedArbiter: ArbiterClient
+  let gatedMerchant: MerchantClient
 
   beforeAll(async () => {
     // Use arbiterRefund operator — gated by StaticAddressCondition(refundRequest)
@@ -169,6 +170,17 @@ describe('Scenario 5a-neg: Approve reverts after deny', () => {
       refundRequestAddress: fixtures.refundRequestAddress,
       refundRequestEvidenceAddress: fixtures.refundRequestEvidenceAddress,
     })
+
+    gatedMerchant = createMerchantClient({
+      publicClient,
+      walletClient: anvilBaseSepolia.getWalletClient(
+        testRoles.receiver.address,
+      ),
+      operatorAddress: fixtures.arbiterRefundOperatorAddress,
+      escrowPeriodAddress: fixtures.escrowPeriodAddress,
+      refundRequestAddress: fixtures.refundRequestAddress,
+      refundRequestEvidenceAddress: fixtures.refundRequestEvidenceAddress,
+    })
   }, 60_000)
 
   it('authorize + payer requests refund', async () => {
@@ -187,24 +199,23 @@ describe('Scenario 5a-neg: Approve reverts after deny', () => {
     const reqHash = await gatedPayer.refund!.request(
       gatedPaymentInfo,
       DEFAULT_AMOUNT,
-      0n,
     )
     await publicClient.waitForTransactionReceipt({ hash: reqHash })
   }, 60_000)
 
   it('arbiter denies the refund request', async () => {
-    const hash = await gatedArbiter.refund!.deny(gatedPaymentInfo, 0n)
+    const hash = await gatedArbiter.refund!.deny(gatedPaymentInfo)
     await publicClient.waitForTransactionReceipt({ hash })
 
-    const status = await gatedArbiter.refund!.getStatus(gatedPaymentInfo, 0n)
+    const status = await gatedArbiter.refund!.getStatus(gatedPaymentInfo)
     expect(status).toBe(2) // Denied
   }, 60_000)
 
-  it('approve() reverts after deny (RequestNotApprovable)', async () => {
-    // approve() should revert because the request is already Denied
-    const hash = await gatedArbiter.refund!.approve(
+  it('refundInEscrow reverts after deny (RequestNotApprovable)', async () => {
+    // refundInEscrow should revert because the RefundRequest recorder
+    // will fail — the request is already Denied
+    const hash = await gatedMerchant.payment.refundInEscrow(
       gatedPaymentInfo,
-      0n,
       DEFAULT_AMOUNT,
     )
     const receipt = await publicClient.waitForTransactionReceipt({ hash })
@@ -217,11 +228,40 @@ describe('Scenario 5a-neg: Approve reverts after deny', () => {
 // ---------------------------------------------------------------------------
 
 describe('Scenario 5b: Refuse refund request', () => {
-  it('payer requests another refund (nonce 1)', async () => {
-    const hash = await payer.refund!.request(paymentInfo, DEFAULT_AMOUNT, 1n)
+  let refusePaymentInfo: PaymentInfo
+
+  beforeAll(async () => {
+    // Use a separate payment to avoid state leaking from Scenario 5
+    const scenario = await setupScenario({
+      salt: 50n,
+    })
+    refusePaymentInfo = scenario.paymentInfo
+
+    // Authorize a payment
+    const facilitator5b = createX402r({
+      publicClient,
+      walletClient: anvilBaseSepolia.getWalletClient(testRoles.payer.address),
+      operatorAddress: fixtures.operatorAddress,
+      escrowPeriodAddress: fixtures.escrowPeriodAddress,
+    })
+    const { collectorData, tokenCollector } = await createCollectorData(
+      anvilBaseSepolia.getWalletClient(testRoles.payer.address),
+      refusePaymentInfo,
+    )
+    const hash = await facilitator5b.payment.authorize(
+      refusePaymentInfo,
+      DEFAULT_AMOUNT,
+      tokenCollector,
+      collectorData,
+    )
+    await publicClient.waitForTransactionReceipt({ hash })
+  }, 60_000)
+
+  it('payer requests refund', async () => {
+    const hash = await payer.refund!.request(refusePaymentInfo, DEFAULT_AMOUNT)
     await publicClient.waitForTransactionReceipt({ hash })
 
-    const hasRequest = await arbiter.refund!.has(paymentInfo, 1n)
+    const hasRequest = await arbiter.refund!.has(refusePaymentInfo)
     expect(hasRequest).toBe(true)
   }, 60_000)
 
@@ -231,13 +271,12 @@ describe('Scenario 5b: Refuse refund request', () => {
       anvilBaseSepolia.getWalletClient(testRoles.arbiter.address),
       {
         contractAddress: fixtures.refundRequestAddress,
-        paymentInfo,
-        nonce: 1n,
+        paymentInfo: refusePaymentInfo,
       },
     )
     await publicClient.waitForTransactionReceipt({ hash })
 
-    const status = await arbiter.refund!.getStatus(paymentInfo, 1n)
+    const status = await arbiter.refund!.getStatus(refusePaymentInfo)
     // Refused = 4 in RefundRequestStatus enum
     expect(status).toBe(4)
   }, 60_000)

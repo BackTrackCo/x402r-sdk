@@ -40,3 +40,4 @@ docs-generated/
 
 # Git worktrees
 .worktrees/
+.claude/worktrees/

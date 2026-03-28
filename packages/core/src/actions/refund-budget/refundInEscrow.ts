@@ -1,4 +1,4 @@
-import type { Address, Hash, WalletClient } from 'viem'
+import type { Address, Hash, Hex, WalletClient } from 'viem'
 import { paymentOperatorAbi } from '../../abis/generated.js'
 import type { PaymentInfo } from '../../types/index.js'
 import {
@@ -10,6 +10,7 @@ export interface RefundInEscrowParameters {
   operatorAddress: Address
   paymentInfo: PaymentInfo
   amount: bigint
+  data?: Hex
 }
 export type RefundInEscrowReturnType = Hash
 
@@ -17,7 +18,7 @@ export async function refundInEscrow(
   walletClient: WalletClient,
   parameters: RefundInEscrowParameters,
 ): Promise<RefundInEscrowReturnType> {
-  const { operatorAddress, paymentInfo, amount } = parameters
+  const { operatorAddress, paymentInfo, amount, data = '0x' } = parameters
   requireAccount(walletClient, 'refundInEscrow')
 
   return wrapContractCall('refundInEscrow', () =>
@@ -25,7 +26,7 @@ export async function refundInEscrow(
       address: operatorAddress,
       abi: paymentOperatorAbi,
       functionName: 'refundInEscrow',
-      args: [paymentInfo, amount],
+      args: [paymentInfo, amount, data],
       chain: walletClient.chain,
       account: walletClient.account,
     }),
