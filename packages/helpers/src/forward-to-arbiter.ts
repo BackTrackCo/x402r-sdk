@@ -55,6 +55,14 @@ export function forwardToArbiter(
           scheme: 'escrow',
         }),
       })
-      .catch(errorHandler)
+      .catch((err: unknown) =>
+        errorHandler(
+          err instanceof Error
+            ? Object.assign(err, {
+                message: `[forwardToArbiter] ${arbiterUrl}: ${err.message}`,
+              })
+            : new Error(`[forwardToArbiter] ${arbiterUrl}: ${err}`),
+        ),
+      )
   }
 }

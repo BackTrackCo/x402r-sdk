@@ -120,7 +120,7 @@ describe('forwardToArbiter', () => {
     }
   })
 
-  it('calls onError option on fetch failure', async () => {
+  it('calls onError with arbiter context on fetch failure', async () => {
     const original = globalThis.fetch
     globalThis.fetch = vi.fn(async () => {
       throw new Error('network failure')
@@ -133,6 +133,10 @@ describe('forwardToArbiter', () => {
       await new Promise((r) => setTimeout(r, 50))
 
       expect(onError).toHaveBeenCalledWith(expect.any(Error))
+      const msg = (onError.mock.calls[0][0] as Error).message
+      expect(msg).toContain('[forwardToArbiter]')
+      expect(msg).toContain('http://localhost:3001')
+      expect(msg).toContain('network failure')
     } finally {
       globalThis.fetch = original
     }
