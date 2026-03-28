@@ -251,6 +251,14 @@ describe('Deploy Delivery Protection Operator (Fork)', () => {
     )
     // feeCalculator should be zero (no fees)
     expect(preview.operatorConfig.feeCalculator).toBe(zeroAddress)
+    // authorizeCondition should be usdcTvlLimit
+    expect(preview.operatorConfig.authorizeCondition).toBe(
+      baseSepolia.usdcTvlLimit,
+    )
+    // refundPostEscrowCondition should be receiver singleton
+    expect(preview.operatorConfig.refundPostEscrowCondition).toBe(
+      baseSepolia.conditions!.receiver,
+    )
   })
 
   it('deployDeliveryProtectionOperator deploys all components matching preview', async () => {

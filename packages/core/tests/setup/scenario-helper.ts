@@ -16,6 +16,7 @@ export interface ScenarioFixtures {
   publicClient: PublicClient
   testClient: TestClient
   fixtures: DeployedFixtures
+  escrowPeriodAddress: Address
   paymentInfo: PaymentInfo
 }
 
@@ -59,6 +60,11 @@ export async function setupScenario(
           ? fixtures.deliveryProtectionOperatorAddress
           : fixtures.operatorAddress
 
+  const escrowPeriodAddress: Address =
+    opts.operator === 'deliveryProtection'
+      ? fixtures.deliveryProtectionEscrowPeriodAddress
+      : fixtures.escrowPeriodAddress
+
   const paymentInfo: PaymentInfo = {
     operator: operatorAddress,
     payer: testRoles.payer.address,
@@ -74,5 +80,5 @@ export async function setupScenario(
     salt: opts.salt,
   }
 
-  return { publicClient, testClient, fixtures, paymentInfo }
+  return { publicClient, testClient, fixtures, escrowPeriodAddress, paymentInfo }
 }

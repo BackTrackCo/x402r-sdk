@@ -1,7 +1,7 @@
 import type { Address } from 'viem'
 import { zeroAddress } from 'viem'
 import { describe, expect, it, type vi } from 'vitest'
-import { getFactoryAddresses } from '../../src/config/index.js'
+import { getFactoryAddresses, x402rChains } from '../../src/config/index.js'
 import {
   type ArbiterSetupOptions,
   type DeliveryProtectionOperatorOptions,
@@ -763,6 +763,12 @@ describe('previewDeliveryProtectionOperator', () => {
     expect(result.operatorConfig.releaseCondition).toBe(arbiterCondAddr)
     expect(result.operatorConfig.refundInEscrowCondition).toBe(escrowAddr)
     expect(result.operatorConfig.feeCalculator).toBe(zeroAddress)
+    expect(result.operatorConfig.authorizeCondition).toBe(
+      x402rChains[84532].usdcTvlLimit,
+    )
+    expect(result.operatorConfig.refundPostEscrowCondition).toBe(
+      x402rChains[84532].conditions!.receiver,
+    )
   })
 
   it('uses provided feeRecipient in operator config', async () => {
@@ -777,6 +783,38 @@ describe('previewDeliveryProtectionOperator', () => {
     )
 
     expect(result.operatorConfig.feeRecipient).toBe(feeRecipient)
+  })
+
+  it('uses provided authorizedCodehash in escrowPeriod computation', async () => {
+    const customCodehash =
+      '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef' as `0x${string}`
+    const defaultAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
+    const customAddr = '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
+    const operatorAddr =
+      '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
+
+    const defaultPublicClient = createMockPublicClient({
+      computeAddress: defaultAddr,
+      [`${F.paymentOperator}:computeAddress`]: operatorAddr,
+    })
+    const customPublicClient = createMockPublicClient({
+      [`${F.escrowPeriod}:computeAddress`]: customAddr,
+      computeAddress: defaultAddr,
+      [`${F.paymentOperator}:computeAddress`]: operatorAddr,
+    })
+
+    const defaultResult = await previewDeliveryProtectionOperator(
+      defaultPublicClient,
+      makeDeliveryProtectionOptions(),
+    )
+    const customResult = await previewDeliveryProtectionOperator(
+      customPublicClient,
+      makeDeliveryProtectionOptions({ authorizedCodehash: customCodehash }),
+    )
+
+    // Different authorizedCodehash should produce different escrowPeriod
+    expect(customResult.escrowPeriodAddress).toBe(customAddr)
+    expect(defaultResult.escrowPeriodAddress).toBe(defaultAddr)
   })
 })
 
@@ -809,6 +847,16 @@ describe('deployDeliveryProtectionOperator', () => {
     expect(result.summary.newCount).toBe(3)
     expect(result.summary.existingCount).toBe(0)
     expect(result.summary.txHashes).toHaveLength(1)
+    // Verify operatorConfig is passed through correctly
+    expect(result.operatorConfig.releaseCondition).toBe(arbiterCondAddr)
+    expect(result.operatorConfig.refundInEscrowCondition).toBe(escrowAddr)
+    expect(result.operatorConfig.feeCalculator).toBe(zeroAddress)
+    expect(result.operatorConfig.authorizeCondition).toBe(
+      x402rChains[84532].usdcTvlLimit,
+    )
+    expect(result.operatorConfig.refundPostEscrowCondition).toBe(
+      x402rChains[84532].conditions!.receiver,
+    )
   })
 
   it('returns all existing when operator already deployed', async () => {

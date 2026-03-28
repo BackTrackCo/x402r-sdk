@@ -152,6 +152,61 @@ async function verifyAndRetryDeploys(
 }
 
 // ---------------------------------------------------------------------------
+// Shared Phase 4: simulate → gas → send → verify batch deploy
+// ---------------------------------------------------------------------------
+
+async function executeBatchDeploy(
+  publicClient: PublicClient,
+  walletClient: WalletClient,
+  calls: Multicall3Call[],
+  deployments: DeployResult[],
+): Promise<{ txHashes: Hex[]; newCount: number; existingCount: number }> {
+  if (!walletClient.account) {
+    throw new ConfigError('walletClient.account is required for deployment')
+  }
+
+  const { request, result: batchResults } = await publicClient.simulateContract(
+    {
+      address: MULTICALL3,
+      abi: multicall3Abi,
+      functionName: 'aggregate3',
+      args: [calls],
+      account: walletClient.account,
+    },
+  )
+
+  for (let i = 0; i < batchResults.length; i++) {
+    if (!batchResults[i].success) {
+      throw new ConfigError(
+        `Multicall3 batch deploy: call ${i} failed in simulation`,
+      )
+    }
+  }
+
+  const gas = await estimateBatchGas(publicClient, calls, walletClient.account!)
+  const txHash = await walletClient.writeContract({ ...request, gas })
+  await publicClient.waitForTransactionReceipt({ hash: txHash })
+
+  for (const d of deployments) {
+    if (d.isNew) d.hash = txHash
+  }
+
+  const txHashes: Hex[] = [txHash]
+  await verifyAndRetryDeploys(
+    publicClient,
+    walletClient,
+    deployments,
+    calls,
+    txHashes,
+  )
+
+  const newCount = deployments.filter((d) => d.isNew).length
+  const existingCount = deployments.filter((d) => !d.isNew).length
+
+  return { txHashes, newCount, existingCount }
+}
+
+// ---------------------------------------------------------------------------
 // Marketplace operator types
 // ---------------------------------------------------------------------------
 
@@ -701,54 +756,12 @@ export async function deployMarketplaceOperator(
   deployments.push({ address: operatorAddress, hash: null, isNew: true })
 
   // ── Phase 4: Send single transaction via Multicall3.aggregate3 ─────────
-  if (!walletClient.account) {
-    throw new ConfigError('walletClient.account is required for deployment')
-  }
-
-  const { request, result: batchResults } = await publicClient.simulateContract(
-    {
-      address: MULTICALL3,
-      abi: multicall3Abi,
-      functionName: 'aggregate3',
-      args: [calls],
-      account: walletClient.account,
-    },
-  )
-
-  // Verify all calls succeeded in simulation before sending the real tx.
-  // Factory deploys use allowFailure:true as a CREATE2 race-condition safety
-  // net, but a simulation failure means something is genuinely wrong.
-  for (let i = 0; i < batchResults.length; i++) {
-    if (!batchResults[i].success) {
-      throw new ConfigError(
-        `Multicall3 batch deploy: call ${i} failed in simulation`,
-      )
-    }
-  }
-
-  const gas = await estimateBatchGas(publicClient, calls, walletClient.account!)
-  const txHash = await walletClient.writeContract({ ...request, gas })
-  await publicClient.waitForTransactionReceipt({ hash: txHash })
-
-  // Fill in txHash for all new deployments
-  for (const d of deployments) {
-    if (d.isNew) d.hash = txHash
-  }
-
-  // Defense-in-depth: verify all new deployments have bytecode and retry
-  // failures individually. The primary fix is gas estimation above, but this
-  // catches edge cases like concurrent deploys or unusual RPC behavior.
-  const txHashes: Hex[] = [txHash]
-  await verifyAndRetryDeploys(
+  const { txHashes, newCount, existingCount } = await executeBatchDeploy(
     publicClient,
     walletClient,
-    deployments,
     calls,
-    txHashes,
+    deployments,
   )
-
-  const newCount = deployments.filter((d) => d.isNew).length
-  const existingCount = deployments.filter((d) => !d.isNew).length
 
   return {
     operatorAddress,
@@ -760,7 +773,7 @@ export async function deployMarketplaceOperator(
     feeCalculatorAddress,
     operatorConfig,
     deployments,
-    summary: { newCount, existingCount, txHashes: txHashes },
+    summary: { newCount, existingCount, txHashes },
   }
 }
 
@@ -970,55 +983,19 @@ export async function deployArbiterSetup(
   }
 
   // Phase 4: Send single transaction via Multicall3.aggregate3
-  if (!walletClient.account) {
-    throw new ConfigError('walletClient.account is required for deployment')
-  }
-
-  const { request, result: arbiterBatchResults } =
-    await publicClient.simulateContract({
-      address: MULTICALL3,
-      abi: multicall3Abi,
-      functionName: 'aggregate3',
-      args: [calls],
-      account: walletClient.account,
-    })
-
-  for (let i = 0; i < arbiterBatchResults.length; i++) {
-    if (!arbiterBatchResults[i].success) {
-      throw new ConfigError(
-        `Multicall3 batch deploy: call ${i} failed in simulation`,
-      )
-    }
-  }
-
-  const gas = await estimateBatchGas(publicClient, calls, walletClient.account!)
-  const txHash = await walletClient.writeContract({ ...request, gas })
-  await publicClient.waitForTransactionReceipt({ hash: txHash })
-
-  for (const d of deployments) {
-    if (d.isNew) d.hash = txHash
-  }
-
-  // Defense-in-depth: verify all new deployments have bytecode and retry
-  // failures individually.
-  const txHashes: Hex[] = [txHash]
-  await verifyAndRetryDeploys(
+  const { txHashes, newCount, existingCount } = await executeBatchDeploy(
     publicClient,
     walletClient,
-    deployments,
     calls,
-    txHashes,
+    deployments,
   )
-
-  const newCount = deployments.filter((d) => d.isNew).length
-  const existingCount = deployments.filter((d) => !d.isNew).length
 
   return {
     signatureConditionAddress,
     refundRequestAddress,
     refundRequestEvidenceAddress,
     deployments,
-    summary: { newCount, existingCount, txHashes: txHashes },
+    summary: { newCount, existingCount, txHashes },
   }
 }
 
@@ -1194,43 +1171,42 @@ export async function deployDeliveryProtectionOperator(
   const calls: Multicall3Call[] = []
   const deployments: DeployResult[] = []
 
-  if (escrowPeriodExists) {
-    deployments.push({ address: escrowPeriodAddress, hash: null, isNew: false })
-  } else {
-    calls.push({
-      target: factories.escrowPeriod,
-      allowFailure: true,
-      callData: encodeFunctionData({
-        abi: escrowPeriodFactoryAbi,
-        functionName: 'deploy',
-        args: [options.escrowPeriodSeconds, authorizedCodehash],
-      }),
-    })
-    deployments.push({ address: escrowPeriodAddress, hash: null, isNew: true })
+  function trackDeploy(
+    address: Address,
+    isExisting: boolean,
+    factory: Address,
+    abi: readonly unknown[],
+    functionName: string,
+    args: readonly unknown[],
+  ) {
+    if (isExisting) {
+      deployments.push({ address, hash: null, isNew: false })
+    } else {
+      calls.push({
+        target: factory,
+        allowFailure: true,
+        callData: encodeFunctionData({ abi, functionName, args }),
+      })
+      deployments.push({ address, hash: null, isNew: true })
+    }
   }
 
-  if (arbiterCondExists) {
-    deployments.push({
-      address: arbiterConditionAddress,
-      hash: null,
-      isNew: false,
-    })
-  } else {
-    calls.push({
-      target: factories.staticAddressCondition,
-      allowFailure: true,
-      callData: encodeFunctionData({
-        abi: staticAddressConditionFactoryAbi,
-        functionName: 'deploy',
-        args: [options.arbiter],
-      }),
-    })
-    deployments.push({
-      address: arbiterConditionAddress,
-      hash: null,
-      isNew: true,
-    })
-  }
+  trackDeploy(
+    escrowPeriodAddress,
+    escrowPeriodExists,
+    factories.escrowPeriod,
+    escrowPeriodFactoryAbi,
+    'deploy',
+    [options.escrowPeriodSeconds, authorizedCodehash],
+  )
+  trackDeploy(
+    arbiterConditionAddress,
+    arbiterCondExists,
+    factories.staticAddressCondition,
+    staticAddressConditionFactoryAbi,
+    'deploy',
+    [options.arbiter],
+  )
 
   // Operator deploy is always included
   calls.push({
@@ -1245,47 +1221,12 @@ export async function deployDeliveryProtectionOperator(
   deployments.push({ address: operatorAddress, hash: null, isNew: true })
 
   // Phase 4: Send single transaction via Multicall3.aggregate3
-  if (!walletClient.account) {
-    throw new ConfigError('walletClient.account is required for deployment')
-  }
-
-  const { request, result: batchResults } = await publicClient.simulateContract(
-    {
-      address: MULTICALL3,
-      abi: multicall3Abi,
-      functionName: 'aggregate3',
-      args: [calls],
-      account: walletClient.account,
-    },
-  )
-
-  for (let i = 0; i < batchResults.length; i++) {
-    if (!batchResults[i].success) {
-      throw new ConfigError(
-        `Multicall3 batch deploy: call ${i} failed in simulation`,
-      )
-    }
-  }
-
-  const gas = await estimateBatchGas(publicClient, calls, walletClient.account!)
-  const txHash = await walletClient.writeContract({ ...request, gas })
-  await publicClient.waitForTransactionReceipt({ hash: txHash })
-
-  for (const d of deployments) {
-    if (d.isNew) d.hash = txHash
-  }
-
-  const txHashes: Hex[] = [txHash]
-  await verifyAndRetryDeploys(
+  const { txHashes, newCount, existingCount } = await executeBatchDeploy(
     publicClient,
     walletClient,
-    deployments,
     calls,
-    txHashes,
+    deployments,
   )
-
-  const newCount = deployments.filter((d) => d.isNew).length
-  const existingCount = deployments.filter((d) => !d.isNew).length
 
   return {
     operatorAddress,
