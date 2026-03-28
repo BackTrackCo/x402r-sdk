@@ -111,7 +111,7 @@ describe('forwardToArbiter', () => {
       await new Promise((r) => setTimeout(r, 50))
 
       expect(warnSpy).toHaveBeenCalledWith(
-        '[forwardToArbiter] failed:',
+        '[forwardToArbiter]',
         expect.any(Error),
       )
     } finally {

@@ -31,7 +31,7 @@ export function forwardToArbiter(
 ): (context: SettleResultContext) => Promise<void> {
   const errorHandler =
     options?.onError ??
-    ((err: unknown) => console.warn('[forwardToArbiter] failed:', err))
+    ((err: unknown) => console.warn('[forwardToArbiter]', err))
 
   return async (context: SettleResultContext): Promise<void> => {
     if (!context.result.success) return
@@ -57,11 +57,10 @@ export function forwardToArbiter(
       })
       .catch((err: unknown) =>
         errorHandler(
-          err instanceof Error
-            ? Object.assign(err, {
-                message: `[forwardToArbiter] ${arbiterUrl}: ${err.message}`,
-              })
-            : new Error(`[forwardToArbiter] ${arbiterUrl}: ${err}`),
+          new Error(
+            `[forwardToArbiter] ${arbiterUrl}: ${err instanceof Error ? err.message : err}`,
+            { cause: err },
+          ),
         ),
       )
   }
