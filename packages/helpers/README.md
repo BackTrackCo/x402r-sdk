@@ -1,6 +1,6 @@
 # @x402r/helpers
 
-Payment option builder for x402r. Adds escrow fields to x402 payment options.
+Lifecycle hooks for x402r escrow payments.
 
 ## Install
 
@@ -11,28 +11,34 @@ pnpm add @x402r/helpers
 ## Usage
 
 ```ts
-import { refundable } from '@x402r/helpers'
+import { forwardToArbiter } from '@x402r/helpers'
 
-const option = refundable(
-  { scheme: 'escrow', network: 'eip155:84532', price: '$0.01' },
-  '0xMyOperator…',
-)
+const resourceServer = new x402ResourceServer(facilitatorClient)
+  .register(networkId, new EscrowServerScheme())
+  .onAfterSettle(forwardToArbiter('http://arbiter:3001'))
 ```
 
 ## API
 
-### `refundable(option, operatorAddress, options?)`
+### `forwardToArbiter(arbiterUrl, options?)`
 
-Augments a payment option with the escrow `extra` fields required by x402r. Addresses and fee defaults come from the chain config for the option's `network`.
+Creates an `onAfterSettle` hook that forwards the response body to an arbiter service for evaluation. Fire-and-forget — does not block the response to the client.
 
-**`RefundableOptions`** (all optional):
+- Only fires for successful escrow scheme settlements
+- POSTs `{ responseBody, network, transaction, scheme }` to `{arbiterUrl}/verify`
+- Errors silently caught (arbiter being down shouldn't break payment flow)
 
-- `escrowAddress` — override the escrow contract address
-- `tokenCollector` — override the token collector address
-- `minFeeBps` — minimum fee in basis points (default: `0`)
-- `maxFeeBps` — maximum fee in basis points (default: `1000`)
-- `settlementMethod` — `'authorize'` (default) or `'charge'`
-- `postCaptureRefundDeadline` — seconds after capture during which refunds are accepted
+#### Options
+
+| Option    | Type                         | Description                                      |
+| --------- | ---------------------------- | ------------------------------------------------ |
+| `onError` | `(error: unknown) => void`   | Custom error handler. Defaults to `console.warn`. |
+
+```ts
+forwardToArbiter('http://arbiter:3001', {
+  onError: (err) => sentry.captureException(err),
+})
+```
 
 ## Docs
 

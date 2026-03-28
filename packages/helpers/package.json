@@ -22,14 +22,11 @@
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "publint --strict && attw --pack --ignore-rules no-resolution cjs-resolves-to-esm"
   },
-  "dependencies": {
-    "@x402r/core": "workspace:*"
-  },
   "peerDependencies": {
-    "@x402r/evm": ">=0.0.3"
+    "@x402/core": ">=2.5.0"
   },
   "devDependencies": {
-    "@x402r/evm": "0.0.3"
+    "@x402/core": "2.5.0"
   },
   "size-limit": [
     {
