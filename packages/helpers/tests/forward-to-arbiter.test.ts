@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import { forwardToArbiter } from '../src/forward-to-arbiter.js'
 
+const MOCK_PAYMENT_PAYLOAD = {
+  x402Version: 2,
+  accepted: { scheme: 'escrow', network: 'eip155:84532' },
+  payload: { paymentInfo: { operator: '0x1', payer: '0x2', salt: '123' } },
+}
+
 function makeContext(overrides: {
   success?: boolean
   scheme?: string
@@ -16,6 +22,7 @@ function makeContext(overrides: {
       scheme: overrides.scheme ?? 'escrow',
       network: 'eip155:84532',
     },
+    paymentPayload: MOCK_PAYMENT_PAYLOAD,
     transportContext: overrides.responseBody
       ? { responseBody: Buffer.from(overrides.responseBody) }
       : undefined,
@@ -41,8 +48,8 @@ describe('forwardToArbiter', () => {
       expect(capturedUrl).toBe('http://localhost:3001/verify')
       const parsed = JSON.parse(capturedBody)
       expect(parsed.responseBody).toBe('{"temp": 72}')
-      expect(parsed.scheme).toBe('escrow')
       expect(parsed.transaction).toBe('0xabc')
+      expect(parsed.paymentPayload).toEqual(MOCK_PAYMENT_PAYLOAD)
     } finally {
       globalThis.fetch = original
     }

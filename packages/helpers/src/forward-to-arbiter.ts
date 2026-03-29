@@ -50,9 +50,8 @@ export function forwardToArbiter(
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           responseBody: responseBody.toString('utf-8'),
-          network: context.requirements.network,
           transaction: context.result.transaction,
-          scheme: 'escrow',
+          paymentPayload: context.paymentPayload,
         }),
       })
       .catch((err: unknown) =>
