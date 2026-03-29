@@ -10,7 +10,7 @@ export interface ForwardToArbiterOptions {
  * arbiter service for evaluation. Fire-and-forget — does not block the
  * response to the client.
  *
- * Only fires for escrow scheme settlements. Non-escrow schemes are skipped.
+ * Only fires for commerce scheme settlements. Non-commerce schemes are skipped.
  *
  * @example
  * ```ts
@@ -35,7 +35,7 @@ export function forwardToArbiter(
 
   return async (context: SettleResultContext): Promise<void> => {
     if (!context.result.success) return
-    if (context.requirements.scheme !== 'escrow') return
+    if (context.requirements.scheme !== 'commerce') return
 
     const transportCtx = context.transportContext as
       | { responseBody?: { toString(encoding: string): string } }

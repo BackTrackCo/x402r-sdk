@@ -3,7 +3,7 @@ import { forwardToArbiter } from '../src/forward-to-arbiter.js'
 
 const MOCK_PAYMENT_PAYLOAD = {
   x402Version: 2,
-  accepted: { scheme: 'escrow', network: 'eip155:84532' },
+  accepted: { scheme: 'commerce', network: 'eip155:84532' },
   payload: { paymentInfo: { operator: '0x1', payer: '0x2', salt: '123' } },
 }
 
@@ -19,7 +19,7 @@ function makeContext(overrides: {
       network: 'eip155:84532',
     },
     requirements: {
-      scheme: overrides.scheme ?? 'escrow',
+      scheme: overrides.scheme ?? 'commerce',
       network: 'eip155:84532',
     },
     paymentPayload: MOCK_PAYMENT_PAYLOAD,
