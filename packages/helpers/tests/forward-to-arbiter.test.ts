@@ -30,7 +30,7 @@ function makeContext(overrides: {
 }
 
 describe('forwardToArbiter', () => {
-  it('POSTs to arbiter on successful escrow settlement', async () => {
+  it('POSTs to arbiter on successful commerce settlement', async () => {
     let capturedUrl = ''
     let capturedBody = ''
     const original = globalThis.fetch
@@ -50,6 +50,8 @@ describe('forwardToArbiter', () => {
       expect(parsed.responseBody).toBe('{"temp": 72}')
       expect(parsed.transaction).toBe('0xabc')
       expect(parsed.paymentPayload).toEqual(MOCK_PAYMENT_PAYLOAD)
+      expect(parsed.scheme).toBeUndefined()
+      expect(parsed.network).toBeUndefined()
     } finally {
       globalThis.fetch = original
     }
@@ -71,7 +73,7 @@ describe('forwardToArbiter', () => {
     }
   })
 
-  it('skips on non-escrow scheme', async () => {
+  it('skips on non-commerce scheme', async () => {
     const original = globalThis.fetch
     const spy = vi.fn()
     globalThis.fetch = spy as any
@@ -121,6 +123,9 @@ describe('forwardToArbiter', () => {
         '[forwardToArbiter]',
         expect.any(Error),
       )
+      const err = warnSpy.mock.calls[0][1] as Error
+      expect(err.message).toContain('http://localhost:3001')
+      expect(err.message).toContain('network failure')
     } finally {
       globalThis.fetch = original
       warnSpy.mockRestore()
@@ -144,6 +149,9 @@ describe('forwardToArbiter', () => {
       expect(msg).toContain('[forwardToArbiter]')
       expect(msg).toContain('http://localhost:3001')
       expect(msg).toContain('network failure')
+      const err = onError.mock.calls[0][0] as Error
+      expect(err.cause).toBeInstanceOf(Error)
+      expect((err.cause as Error).message).toBe('network failure')
     } finally {
       globalThis.fetch = original
     }
