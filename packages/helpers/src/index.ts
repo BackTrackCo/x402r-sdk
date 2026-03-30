@@ -4,8 +4,8 @@
 export {
   arbiterRegistry,
   authCaptureEscrow,
-  conditionAddresses,
-  factoryAddresses,
+  conditions,
+  factories,
   getChainConfig,
   protocolFeeConfig,
   receiverRefundCollector,

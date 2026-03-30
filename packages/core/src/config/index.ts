@@ -57,7 +57,8 @@ export const receiverRefundCollector =
 export const usdcTvlLimit =
   '0x96a585F0e23eE9FD8722C7a61d3b8B3FAd2419df' as const satisfies Address
 
-export const factoryAddresses = {
+/** Chain-invariant CREATE3 factory addresses. Same as `getChainConfig(chainId).factories`. */
+export const factories = {
   paymentOperator: '0x3Cd5c76Fefe46CB07788Ee8f80B93B20D81941D4',
   escrowPeriod: '0x22E42a1bC9Fc64ab77E4Bb9968b105034a978bfb',
   freeze: '0x67657BefCd872A3AF36F437D53b2D4722392a940',
@@ -72,7 +73,8 @@ export const factoryAddresses = {
   refundRequestEvidence: '0x6514e417f48c1828A2443C6173fa6E04324166E3',
 } as const satisfies FactoryAddresses
 
-export const conditionAddresses = {
+/** Chain-invariant CREATE3 condition singleton addresses. Same as `getChainConfig(chainId).conditions`. */
+export const conditions = {
   payer: '0x808bB293AE1473A38Dd4017afa3db941924fD0F3',
   receiver: '0xB82697792e5Fcd644bDEAB23aa4e4511d9024C17',
   alwaysTrue: '0xA367323189f20706488A1D83430eda82a2eA5320',
@@ -85,8 +87,8 @@ const PROTOCOL_ADDRESSES = {
   arbiterRegistry,
   receiverRefundCollector,
   usdcTvlLimit,
-  factories: factoryAddresses,
-  conditions: conditionAddresses,
+  factories,
+  conditions,
 } as const
 
 /** Build a chain config by spreading unified protocol addresses + chain-specific USDC */

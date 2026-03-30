@@ -215,8 +215,8 @@ export type {
 export {
   arbiterRegistry,
   authCaptureEscrow,
-  conditionAddresses,
-  factoryAddresses,
+  conditions,
+  factories,
   fromNetworkId,
   getChainConfig,
   getConditionSingletons,
