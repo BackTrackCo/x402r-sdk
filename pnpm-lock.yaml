@@ -96,6 +96,10 @@ importers:
         version: 0.2.3
 
   packages/helpers:
+    dependencies:
+      '@x402r/core':
+        specifier: workspace:*
+        version: link:../core
     devDependencies:
       '@x402/core':
         specifier: 2.5.0

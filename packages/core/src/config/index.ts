@@ -44,32 +44,51 @@ export interface X402rChainConfig {
 // Unified CREATE3 addresses (same on every chain)
 // ---------------------------------------------------------------------------
 
+export const authCaptureEscrow =
+  '0xBC151792f80C0EB1973d56b0235e6bee2A60e245' as const satisfies Address
+export const tokenCollector =
+  '0x9A12A116a44636F55c9e135189A1321Abcfe2f30' as const satisfies Address
+export const protocolFeeConfig =
+  '0xf62788834C99B2E85a6891C0b46D1EB996f8f596' as const satisfies Address
+export const arbiterRegistry =
+  '0xdd3954f83CF6D65B07A8a88B117300AE73602333' as const satisfies Address
+export const receiverRefundCollector =
+  '0x2C0eC8B33196071cA6d08299844235fD81e1466A' as const satisfies Address
+export const usdcTvlLimit =
+  '0x96a585F0e23eE9FD8722C7a61d3b8B3FAd2419df' as const satisfies Address
+
+/** Chain-invariant CREATE3 factory addresses. Same as `getChainConfig(chainId).factories`. */
+export const factories = {
+  paymentOperator: '0x3Cd5c76Fefe46CB07788Ee8f80B93B20D81941D4',
+  escrowPeriod: '0x22E42a1bC9Fc64ab77E4Bb9968b105034a978bfb',
+  freeze: '0x67657BefCd872A3AF36F437D53b2D4722392a940',
+  staticFeeCalculator: '0x8a9C93F3401A5C712bEd8A52436Ac09cD9aFe2De',
+  staticAddressCondition: '0xE606cA9568c92115a3Deb76E9f3891BEfac141f3',
+  andCondition: '0x6c3c57071C0Ac144D04e6C66BC809d2951dDF47D',
+  orCondition: '0x3dF6b5B840989Ce466161C31A49b8FadF2DA52E5',
+  notCondition: '0x269Db5f049A7225E4968Ef7Dee885922da0B8D73',
+  recorderCombinator: '0xb7571b80C24Ce81C65F6b322a75573B61327cA23',
+  signatureCondition: '0xc34EFa7C20940dc2aB50bE23eF150D8B87aEFAc3',
+  refundRequest: '0x69e9BF2b40Ed472b55E47e9D4205d93Ed673093F',
+  refundRequestEvidence: '0x6514e417f48c1828A2443C6173fa6E04324166E3',
+} as const satisfies FactoryAddresses
+
+/** Chain-invariant CREATE3 condition singleton addresses. Same as `getChainConfig(chainId).conditions`. */
+export const conditions = {
+  payer: '0x808bB293AE1473A38Dd4017afa3db941924fD0F3',
+  receiver: '0xB82697792e5Fcd644bDEAB23aa4e4511d9024C17',
+  alwaysTrue: '0xA367323189f20706488A1D83430eda82a2eA5320',
+} as const satisfies ConditionSingletonAddresses
+
 const PROTOCOL_ADDRESSES = {
-  authCaptureEscrow: '0xBC151792f80C0EB1973d56b0235e6bee2A60e245',
-  tokenCollector: '0x9A12A116a44636F55c9e135189A1321Abcfe2f30',
-  protocolFeeConfig: '0xf62788834C99B2E85a6891C0b46D1EB996f8f596',
-  arbiterRegistry: '0xdd3954f83CF6D65B07A8a88B117300AE73602333',
-  receiverRefundCollector: '0x2C0eC8B33196071cA6d08299844235fD81e1466A',
-  usdcTvlLimit: '0x96a585F0e23eE9FD8722C7a61d3b8B3FAd2419df',
-  factories: {
-    paymentOperator: '0x3Cd5c76Fefe46CB07788Ee8f80B93B20D81941D4',
-    escrowPeriod: '0x22E42a1bC9Fc64ab77E4Bb9968b105034a978bfb',
-    freeze: '0x67657BefCd872A3AF36F437D53b2D4722392a940',
-    staticFeeCalculator: '0x8a9C93F3401A5C712bEd8A52436Ac09cD9aFe2De',
-    staticAddressCondition: '0xE606cA9568c92115a3Deb76E9f3891BEfac141f3',
-    andCondition: '0x6c3c57071C0Ac144D04e6C66BC809d2951dDF47D',
-    orCondition: '0x3dF6b5B840989Ce466161C31A49b8FadF2DA52E5',
-    notCondition: '0x269Db5f049A7225E4968Ef7Dee885922da0B8D73',
-    recorderCombinator: '0xb7571b80C24Ce81C65F6b322a75573B61327cA23',
-    signatureCondition: '0xc34EFa7C20940dc2aB50bE23eF150D8B87aEFAc3',
-    refundRequest: '0x69e9BF2b40Ed472b55E47e9D4205d93Ed673093F',
-    refundRequestEvidence: '0x6514e417f48c1828A2443C6173fa6E04324166E3',
-  },
-  conditions: {
-    payer: '0x808bB293AE1473A38Dd4017afa3db941924fD0F3',
-    receiver: '0xB82697792e5Fcd644bDEAB23aa4e4511d9024C17',
-    alwaysTrue: '0xA367323189f20706488A1D83430eda82a2eA5320',
-  },
+  authCaptureEscrow,
+  tokenCollector,
+  protocolFeeConfig,
+  arbiterRegistry,
+  receiverRefundCollector,
+  usdcTvlLimit,
+  factories,
+  conditions,
 } as const
 
 /** Build a chain config by spreading unified protocol addresses + chain-specific USDC */

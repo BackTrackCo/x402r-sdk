@@ -1,4 +1,5 @@
 import type { SettleResultContext } from '@x402/core/server'
+import { X402rError } from '@x402r/core'
 
 export interface ForwardToArbiterOptions {
   /** Custom error handler. Defaults to `console.warn`. */
@@ -10,7 +11,7 @@ export interface ForwardToArbiterOptions {
  * arbiter service for evaluation. Fire-and-forget — does not block the
  * response to the client.
  *
- * Only fires for escrow scheme settlements. Non-escrow schemes are skipped.
+ * Only fires for commerce scheme settlements. Non-commerce schemes are skipped.
  *
  * @example
  * ```ts
@@ -31,11 +32,11 @@ export function forwardToArbiter(
 ): (context: SettleResultContext) => Promise<void> {
   const errorHandler =
     options?.onError ??
-    ((err: unknown) => console.warn('[forwardToArbiter] failed:', err))
+    ((err: unknown) => console.warn('[forwardToArbiter]', err))
 
   return async (context: SettleResultContext): Promise<void> => {
     if (!context.result.success) return
-    if (context.requirements.scheme !== 'escrow') return
+    if (context.requirements.scheme !== 'commerce') return
 
     const transportCtx = context.transportContext as
       | { responseBody?: { toString(encoding: string): string } }
@@ -50,11 +51,17 @@ export function forwardToArbiter(
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           responseBody: responseBody.toString('utf-8'),
-          network: context.requirements.network,
           transaction: context.result.transaction,
-          scheme: 'escrow',
+          paymentPayload: context.paymentPayload,
         }),
       })
-      .catch(errorHandler)
+      .catch((err: unknown) =>
+        errorHandler(
+          new X402rError(`Arbiter request to ${arbiterUrl} failed`, {
+            cause: err instanceof Error ? err : undefined,
+            details: `POST ${url}`,
+          }),
+        ),
+      )
   }
 }

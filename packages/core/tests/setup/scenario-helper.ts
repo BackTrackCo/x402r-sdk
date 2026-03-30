@@ -80,5 +80,11 @@ export async function setupScenario(
     salt: opts.salt,
   }
 
-  return { publicClient, testClient, fixtures, escrowPeriodAddress, paymentInfo }
+  return {
+    publicClient,
+    testClient,
+    fixtures,
+    escrowPeriodAddress,
+    paymentInfo,
+  }
 }

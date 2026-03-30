@@ -1,13 +1,22 @@
 import { describe, expect, it } from 'vitest'
 import {
+  arbiterRegistry,
+  authCaptureEscrow,
   ConfigError,
+  conditions,
+  factories,
   fromNetworkId,
   getChainConfig,
   getConditionSingletons,
   getFactoryAddress,
   getFactoryAddresses,
   isSupportedChain,
+  protocolFeeConfig,
+  receiverRefundCollector,
+  supportedChainIds,
+  tokenCollector,
   toNetworkId,
+  usdcTvlLimit,
 } from '../src/index.js'
 
 describe('getChainConfig', () => {
@@ -75,6 +84,22 @@ describe('getConditionSingletons', () => {
   it('throws ConfigError for unsupported chain', () => {
     expect(() => getConditionSingletons(999999)).toThrow(ConfigError)
   })
+})
+
+describe('named address constants match getChainConfig()', () => {
+  for (const chainId of supportedChainIds) {
+    it(`chain ${chainId}`, () => {
+      const config = getChainConfig(chainId)
+      expect(config.authCaptureEscrow).toBe(authCaptureEscrow)
+      expect(config.tokenCollector).toBe(tokenCollector)
+      expect(config.protocolFeeConfig).toBe(protocolFeeConfig)
+      expect(config.arbiterRegistry).toBe(arbiterRegistry)
+      expect(config.receiverRefundCollector).toBe(receiverRefundCollector)
+      expect(config.usdcTvlLimit).toBe(usdcTvlLimit)
+      expect(config.factories).toEqual(factories)
+      expect(config.conditions).toEqual(conditions)
+    })
+  }
 })
 
 describe('toNetworkId / fromNetworkId', () => {

@@ -1,5 +1,12 @@
+import { X402rError } from '@x402r/core'
 import { describe, expect, it, vi } from 'vitest'
 import { forwardToArbiter } from '../src/forward-to-arbiter.js'
+
+const MOCK_PAYMENT_PAYLOAD = {
+  x402Version: 2,
+  accepted: { scheme: 'commerce', network: 'eip155:84532' },
+  payload: { paymentInfo: { operator: '0x1', payer: '0x2', salt: '123' } },
+}
 
 function makeContext(overrides: {
   success?: boolean
@@ -13,9 +20,10 @@ function makeContext(overrides: {
       network: 'eip155:84532',
     },
     requirements: {
-      scheme: overrides.scheme ?? 'escrow',
+      scheme: overrides.scheme ?? 'commerce',
       network: 'eip155:84532',
     },
+    paymentPayload: MOCK_PAYMENT_PAYLOAD,
     transportContext: overrides.responseBody
       ? { responseBody: Buffer.from(overrides.responseBody) }
       : undefined,
@@ -23,7 +31,7 @@ function makeContext(overrides: {
 }
 
 describe('forwardToArbiter', () => {
-  it('POSTs to arbiter on successful escrow settlement', async () => {
+  it('POSTs to arbiter on successful commerce settlement', async () => {
     let capturedUrl = ''
     let capturedBody = ''
     const original = globalThis.fetch
@@ -41,8 +49,10 @@ describe('forwardToArbiter', () => {
       expect(capturedUrl).toBe('http://localhost:3001/verify')
       const parsed = JSON.parse(capturedBody)
       expect(parsed.responseBody).toBe('{"temp": 72}')
-      expect(parsed.scheme).toBe('escrow')
       expect(parsed.transaction).toBe('0xabc')
+      expect(parsed.paymentPayload).toEqual(MOCK_PAYMENT_PAYLOAD)
+      expect(parsed.scheme).toBeUndefined()
+      expect(parsed.network).toBeUndefined()
     } finally {
       globalThis.fetch = original
     }
@@ -64,7 +74,7 @@ describe('forwardToArbiter', () => {
     }
   })
 
-  it('skips on non-escrow scheme', async () => {
+  it('skips on non-commerce scheme', async () => {
     const original = globalThis.fetch
     const spy = vi.fn()
     globalThis.fetch = spy as any
@@ -111,16 +121,21 @@ describe('forwardToArbiter', () => {
       await new Promise((r) => setTimeout(r, 50))
 
       expect(warnSpy).toHaveBeenCalledWith(
-        '[forwardToArbiter] failed:',
-        expect.any(Error),
+        '[forwardToArbiter]',
+        expect.any(X402rError),
       )
+      const err = warnSpy.mock.calls[0][1] as X402rError
+      expect(err.shortMessage).toContain('http://localhost:3001')
+      expect(err.cause).toBeInstanceOf(Error)
+      expect((err.cause as Error).message).toBe('network failure')
+      expect(err.details).toContain('/verify')
     } finally {
       globalThis.fetch = original
       warnSpy.mockRestore()
     }
   })
 
-  it('calls onError option on fetch failure', async () => {
+  it('calls onError with arbiter context on fetch failure', async () => {
     const original = globalThis.fetch
     globalThis.fetch = vi.fn(async () => {
       throw new Error('network failure')
@@ -132,7 +147,12 @@ describe('forwardToArbiter', () => {
       await hook(makeContext({ responseBody: '{"temp": 72}' }))
       await new Promise((r) => setTimeout(r, 50))
 
-      expect(onError).toHaveBeenCalledWith(expect.any(Error))
+      expect(onError).toHaveBeenCalledWith(expect.any(X402rError))
+      const err = onError.mock.calls[0][0] as X402rError
+      expect(err.shortMessage).toContain('http://localhost:3001')
+      expect(err.cause).toBeInstanceOf(Error)
+      expect((err.cause as Error).message).toBe('network failure')
+      expect(err.details).toContain('/verify')
     } finally {
       globalThis.fetch = original
     }
