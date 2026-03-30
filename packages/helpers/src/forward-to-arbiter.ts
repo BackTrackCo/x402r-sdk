@@ -1,4 +1,5 @@
 import type { SettleResultContext } from '@x402/core/server'
+import { X402rError } from '@x402r/core'
 
 export interface ForwardToArbiterOptions {
   /** Custom error handler. Defaults to `console.warn`. */
@@ -56,10 +57,10 @@ export function forwardToArbiter(
       })
       .catch((err: unknown) =>
         errorHandler(
-          new Error(
-            `[forwardToArbiter] ${arbiterUrl}: ${err instanceof Error ? err.message : err}`,
-            { cause: err },
-          ),
+          new X402rError(`Arbiter request to ${arbiterUrl} failed`, {
+            cause: err instanceof Error ? err : undefined,
+            details: `POST ${url}`,
+          }),
         ),
       )
   }

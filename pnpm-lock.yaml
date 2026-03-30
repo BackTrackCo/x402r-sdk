@@ -100,6 +100,9 @@ importers:
       '@x402/core':
         specifier: 2.5.0
         version: 2.5.0
+      '@x402r/core':
+        specifier: workspace:*
+        version: link:../core
 
   packages/sdk:
     dependencies:

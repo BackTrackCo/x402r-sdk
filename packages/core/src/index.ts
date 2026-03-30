@@ -213,6 +213,10 @@ export type {
   X402rChainConfig,
 } from './config/index.js'
 export {
+  arbiterRegistry,
+  authCaptureEscrow,
+  conditionAddresses,
+  factoryAddresses,
   fromNetworkId,
   getChainConfig,
   getConditionSingletons,
@@ -221,8 +225,12 @@ export {
   hasConditionSingletons,
   hasFactories,
   isSupportedChain,
+  protocolFeeConfig,
+  receiverRefundCollector,
   supportedChainIds,
+  tokenCollector,
   toNetworkId,
+  usdcTvlLimit,
   x402rChains,
 } from './config/index.js'
 // ---------------------------------------------------------------------------

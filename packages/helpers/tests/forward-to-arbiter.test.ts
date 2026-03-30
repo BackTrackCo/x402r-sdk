@@ -1,3 +1,4 @@
+import { X402rError } from '@x402r/core'
 import { describe, expect, it, vi } from 'vitest'
 import { forwardToArbiter } from '../src/forward-to-arbiter.js'
 
@@ -121,11 +122,13 @@ describe('forwardToArbiter', () => {
 
       expect(warnSpy).toHaveBeenCalledWith(
         '[forwardToArbiter]',
-        expect.any(Error),
+        expect.any(X402rError),
       )
-      const err = warnSpy.mock.calls[0][1] as Error
-      expect(err.message).toContain('http://localhost:3001')
-      expect(err.message).toContain('network failure')
+      const err = warnSpy.mock.calls[0][1] as X402rError
+      expect(err.shortMessage).toContain('http://localhost:3001')
+      expect(err.cause).toBeInstanceOf(Error)
+      expect((err.cause as Error).message).toBe('network failure')
+      expect(err.details).toContain('/verify')
     } finally {
       globalThis.fetch = original
       warnSpy.mockRestore()
@@ -144,14 +147,12 @@ describe('forwardToArbiter', () => {
       await hook(makeContext({ responseBody: '{"temp": 72}' }))
       await new Promise((r) => setTimeout(r, 50))
 
-      expect(onError).toHaveBeenCalledWith(expect.any(Error))
-      const msg = (onError.mock.calls[0][0] as Error).message
-      expect(msg).toContain('[forwardToArbiter]')
-      expect(msg).toContain('http://localhost:3001')
-      expect(msg).toContain('network failure')
-      const err = onError.mock.calls[0][0] as Error
+      expect(onError).toHaveBeenCalledWith(expect.any(X402rError))
+      const err = onError.mock.calls[0][0] as X402rError
+      expect(err.shortMessage).toContain('http://localhost:3001')
       expect(err.cause).toBeInstanceOf(Error)
       expect((err.cause as Error).message).toBe('network failure')
+      expect(err.details).toContain('/verify')
     } finally {
       globalThis.fetch = original
     }
