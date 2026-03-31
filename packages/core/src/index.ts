@@ -355,6 +355,9 @@ export {
   signReceiveAuthorization,
 } from './payment/index.js'
 export {
+  deserializePaymentInfo,
+  type SerializedPaymentInfo,
+  serializePaymentInfo,
   type ToPaymentInfoReturnType,
   toPaymentInfo,
 } from './payment/serialization.js'
