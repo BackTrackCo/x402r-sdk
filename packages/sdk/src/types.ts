@@ -332,7 +332,7 @@ export interface ArbiterClient {
   readonly config: ResolvedWriteConfig
   readonly payment: Pick<
     PaymentActions,
-    'getState' | 'getAmounts' | 'refundInEscrow'
+    'getState' | 'getAmounts' | 'release' | 'refundInEscrow'
   >
   readonly escrow:
     | Pick<
