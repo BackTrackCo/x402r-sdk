@@ -247,26 +247,6 @@ export function getConditionSingletons(
   return config.conditions
 }
 
-export function hasFactories(chainId: number): boolean {
-  const config = x402rChains[chainId as keyof typeof x402rChains] as
-    | X402rChainConfig
-    | undefined
-  return !!config?.factories
-}
-
-export function hasConditionSingletons(chainId: number): boolean {
-  const config = x402rChains[chainId as keyof typeof x402rChains] as
-    | X402rChainConfig
-    | undefined
-  if (!config?.conditions) return false
-  const { payer, receiver, alwaysTrue } = config.conditions
-  return (
-    payer !== zeroAddress &&
-    receiver !== zeroAddress &&
-    alwaysTrue !== zeroAddress
-  )
-}
-
 // ---------------------------------------------------------------------------
 // CAIP-2 bridge
 // ---------------------------------------------------------------------------

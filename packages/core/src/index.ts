@@ -222,8 +222,6 @@ export {
   getConditionSingletons,
   getFactoryAddress,
   getFactoryAddresses,
-  hasConditionSingletons,
-  hasFactories,
   isSupportedChain,
   protocolFeeConfig,
   receiverRefundCollector,

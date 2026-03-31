@@ -9,6 +9,7 @@ import {
   release as coreRelease,
   getPaymentAmounts,
   getPaymentState,
+  receiverRefundCollector,
 } from '@x402r/core'
 import type { Address, Hash, Hex } from 'viem'
 import type { PaymentActions, ResolvedConfig } from '../types.js'
@@ -96,7 +97,7 @@ export function createPaymentActions(config: ResolvedConfig): PaymentActions {
       const wallet = requireWallet(config)
       return coreApprovePostEscrowRefund(wallet, {
         token,
-        collectorAddress: config.chainConfig.receiverRefundCollector,
+        collectorAddress: receiverRefundCollector,
         amount,
       })
     },
@@ -107,7 +108,7 @@ export function createPaymentActions(config: ResolvedConfig): PaymentActions {
       return coreGetPostEscrowRefundAllowance(config.publicClient, {
         token,
         owner,
-        collectorAddress: config.chainConfig.receiverRefundCollector,
+        collectorAddress: receiverRefundCollector,
       })
     },
     async getState(paymentInfo: PaymentInfo) {

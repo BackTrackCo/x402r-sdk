@@ -78,7 +78,7 @@ export function createX402r(config: X402rConfig): X402r {
 
 export function resolveConfig(config: X402rConfig): ResolvedConfig {
   const chainId = resolveChainId(config)
-  const chainConfig = getChainConfig(chainId)
+  const { usdc } = getChainConfig(chainId)
   const refundRequestEvidenceAddress = config.refundRequestEvidenceAddress
 
   if (refundRequestEvidenceAddress && !config.refundRequestAddress) {
@@ -92,7 +92,7 @@ export function resolveConfig(config: X402rConfig): ResolvedConfig {
     walletClient: config.walletClient,
     operatorAddress: config.operatorAddress,
     chainId,
-    chainConfig,
+    usdc,
     refundRequestAddress: config.refundRequestAddress ?? undefined,
     refundRequestEvidenceAddress,
     escrowPeriodAddress: config.escrowPeriodAddress,

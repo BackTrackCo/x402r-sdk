@@ -13,7 +13,6 @@ import type {
   PaymentInfo,
   RefundRequestData,
   RefundRequestStatus,
-  X402rChainConfig,
 } from '@x402r/core'
 import type { Address, Hash, Hex, PublicClient, WalletClient } from 'viem'
 import type { PaymentStore } from './store/types.js'
@@ -58,7 +57,7 @@ export interface ResolvedConfig {
   walletClient: WalletClient | undefined
   operatorAddress: Address
   chainId: number
-  chainConfig: X402rChainConfig
+  usdc: Address
   refundRequestAddress: Address | undefined
   refundRequestEvidenceAddress: Address | undefined
   escrowPeriodAddress: Address | undefined
