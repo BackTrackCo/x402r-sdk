@@ -15,3 +15,5 @@ export {
 } from '@x402r/core'
 export type { ForwardToArbiterOptions } from './forward-to-arbiter.js'
 export { forwardToArbiter } from './forward-to-arbiter.js'
+export type { ParsedForwardedPayload } from './parse-forwarded-payload.js'
+export { parseForwardedPayload } from './parse-forwarded-payload.js'
