@@ -147,6 +147,20 @@ describe('Delivery Protection: arbiter-gated release', () => {
       paymentInfo,
     )
 
+    // Debug: log EXTCODEHASH of key contracts via Anvil
+    const recorderAddr = deployment.authorizeRecorderAddress
+    const pirAddr = deployment.paymentIndexRecorderAddress
+    console.log('authorizeRecorder:', recorderAddr)
+    console.log('paymentIndexRecorder:', pirAddr)
+    console.log(
+      'authorizeRecorder bytecode length:',
+      ((await publicClient.getCode({ address: recorderAddr })) ?? '0x').length,
+    )
+    console.log(
+      'paymentIndexRecorder bytecode length:',
+      ((await publicClient.getCode({ address: pirAddr })) ?? '0x').length,
+    )
+
     const hash = await payerClient.payment.authorize(
       paymentInfo,
       DEFAULT_AMOUNT,
@@ -154,6 +168,38 @@ describe('Delivery Protection: arbiter-gated release', () => {
       collectorData,
     )
     const receipt = await publicClient.waitForTransactionReceipt({ hash })
+    if (receipt.status === 'reverted') {
+      console.log('Authorize tx reverted. Hash:', hash)
+      console.log('Gas used:', receipt.gasUsed.toString())
+      try {
+        const trace = (await publicClient.request({
+          method: 'debug_traceTransaction' as never,
+          params: [hash, { tracer: 'callTracer' }] as never,
+        })) as {
+          calls?: unknown[]
+          error?: string
+          output?: string
+          to?: string
+          from?: string
+        }
+        // Walk the call tree to find the deepest revert
+        function findReverts(node: Record<string, unknown>, depth = 0): void {
+          const prefix = '  '.repeat(depth)
+          if (node.error) {
+            console.log(
+              `${prefix}REVERT at ${node.to}: output=${node.output} error=${node.error}`,
+            )
+          }
+          if (Array.isArray(node.calls)) {
+            for (const c of node.calls)
+              findReverts(c as Record<string, unknown>, depth + 1)
+          }
+        }
+        findReverts(trace as Record<string, unknown>)
+      } catch {
+        console.log('debug_traceTransaction not available')
+      }
+    }
     expect(receipt.status).toBe('success')
 
     const amounts = await merchant.payment.getAmounts(paymentInfo)
@@ -206,9 +252,10 @@ describe('Delivery Protection: arbiter-gated release', () => {
 // ---------------------------------------------------------------------------
 
 describe('Delivery Protection: arbiter immediate refund', () => {
-  const arbiterRefundPaymentInfo = { ...paymentInfo, salt: 203n }
+  let arbiterRefundPaymentInfo: PaymentInfo
 
   beforeAll(async () => {
+    arbiterRefundPaymentInfo = { ...paymentInfo, salt: 203n }
     const { collectorData, tokenCollector } = await createCollectorData(
       anvilBaseSepolia.getWalletClient(testRoles.payer.address),
       arbiterRefundPaymentInfo,
@@ -241,9 +288,10 @@ describe('Delivery Protection: arbiter immediate refund', () => {
 // ---------------------------------------------------------------------------
 
 describe('Delivery Protection: receiver voluntary refund', () => {
-  const receiverRefundPaymentInfo = { ...paymentInfo, salt: 204n }
+  let receiverRefundPaymentInfo: PaymentInfo
 
   beforeAll(async () => {
+    receiverRefundPaymentInfo = { ...paymentInfo, salt: 204n }
     const { collectorData, tokenCollector } = await createCollectorData(
       anvilBaseSepolia.getWalletClient(testRoles.payer.address),
       receiverRefundPaymentInfo,
