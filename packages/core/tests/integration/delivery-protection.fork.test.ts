@@ -10,7 +10,10 @@ import {
   type X402r,
 } from '../../../sdk/src/index.js'
 import { getOperatorConfig } from '../../src/actions/index.js'
-import { x402rChains } from '../../src/config/index.js'
+import {
+  recorderCombinatorCodehash,
+  x402rChains,
+} from '../../src/config/index.js'
 import {
   type DeliveryProtectionOperatorDeployment,
   deployDeliveryProtectionOperator,
@@ -132,7 +135,7 @@ describe('Delivery Protection: operator config verification', () => {
     )
     console.log(
       'Config recorderCombinatorCodehash:',
-      x402rChains[84532].recorderCombinatorCodehash,
+      recorderCombinatorCodehash,
     )
 
     const config = await getOperatorConfig(publicClient, {
@@ -184,6 +187,31 @@ describe('Delivery Protection: arbiter-gated release', () => {
     const amounts = await merchant.payment.getAmounts(paymentInfo)
     expect(amounts.hasCollectedPayment).toBe(true)
     expect(amounts.capturableAmount).toBeGreaterThan(0n)
+  }, 60_000)
+
+  it('payer releases their own payment', async () => {
+    const newPaymentInfo = { ...paymentInfo, salt: 201n }
+    const { collectorData, tokenCollector } = await createCollectorData(
+      anvilBaseSepolia.getWalletClient(testRoles.payer.address),
+      newPaymentInfo,
+    )
+
+    const authHash = await payerClient.payment.authorize(
+      newPaymentInfo,
+      DEFAULT_AMOUNT,
+      tokenCollector,
+      collectorData,
+    )
+    await publicClient.waitForTransactionReceipt({ hash: authHash })
+
+    const releaseHash = await payerClient.payment.release(
+      newPaymentInfo,
+      DEFAULT_AMOUNT,
+    )
+    await publicClient.waitForTransactionReceipt({ hash: releaseHash })
+
+    const amounts = await merchant.payment.getAmounts(newPaymentInfo)
+    expect(amounts.capturableAmount).toBe(0n)
   }, 60_000)
 
   it('arbiter releases funds (no escrow wait required)', async () => {

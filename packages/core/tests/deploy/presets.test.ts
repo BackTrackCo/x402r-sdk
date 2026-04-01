@@ -1,5 +1,5 @@
 import type { Address } from 'viem'
-import { zeroAddress } from 'viem'
+import { pad, zeroAddress } from 'viem'
 import { describe, expect, it, type vi } from 'vitest'
 import { getFactoryAddresses, x402rChains } from '../../src/config/index.js'
 import {
@@ -812,6 +812,29 @@ describe('previewDeliveryProtectionOperator', () => {
 
     expect(result.operatorConfig.feeRecipient).toBe(feeRecipient)
   })
+
+  it('uses recorderCombinatorCodehash as default authorizedCodehash', async () => {
+    const publicClient = createMockPublicClient({
+      computeAddress: COMPUTED_ADDR,
+    })
+    // Default: uses recorderCombinatorCodehash from config
+    const defaultResult = await previewDeliveryProtectionOperator(
+      publicClient,
+      makeDeliveryProtectionOptions(),
+    )
+    expect(defaultResult.escrowPeriodAddress).toBe(COMPUTED_ADDR)
+  })
+
+  it('accepts custom authorizedCodehash override', async () => {
+    const publicClient = createMockPublicClient({
+      computeAddress: COMPUTED_ADDR,
+    })
+    const result = await previewDeliveryProtectionOperator(
+      publicClient,
+      makeDeliveryProtectionOptions({ authorizedCodehash: pad('0x00') }),
+    )
+    expect(result.escrowPeriodAddress).toBe(COMPUTED_ADDR)
+  })
 })
 
 describe('deployDeliveryProtectionOperator', () => {
@@ -858,6 +881,7 @@ describe('deployDeliveryProtectionOperator', () => {
     expect(result.operatorConfig.releaseCondition).toBe(orCondAddr)
     expect(result.operatorConfig.refundInEscrowCondition).toBe(orCondAddr)
     expect(result.operatorConfig.feeCalculator).toBe(zeroAddress)
+    expect(result.operatorConfig.authorizeRecorder).toBe(combinatorAddr)
   })
 
   it('returns all existing when operator already deployed', async () => {
@@ -963,6 +987,7 @@ describe('deployDeliveryProtectionOperator', () => {
 
     expect(result.deployments).toHaveLength(5)
     expect(result.authorizeRecorderAddress).toBe(escrowAddr)
+    expect(result.operatorConfig.authorizeRecorder).toBe(escrowAddr)
     expect(result.summary.newCount).toBe(5)
     expect(result.summary.existingCount).toBe(0)
   })

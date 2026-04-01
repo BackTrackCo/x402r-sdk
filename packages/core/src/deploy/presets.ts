@@ -18,6 +18,7 @@ import {
   getConditionSingletons,
   getFactoryAddresses,
   getRecorderSingletons,
+  recorderCombinatorCodehash,
 } from '../config/index.js'
 import { ConfigError } from '../errors/index.js'
 import type { OperatorConfig } from '../types/index.js'
@@ -273,7 +274,7 @@ function resolveOptions(options: MarketplaceOperatorOptions) {
   const factories = getFactoryAddresses(options.chainId)
   const singletons = getConditionSingletons(options.chainId)
   const authorizedCodehash =
-    options.authorizedCodehash ?? config.recorderCombinatorCodehash
+    options.authorizedCodehash ?? recorderCombinatorCodehash
   const freezeDurationSeconds = options.freezeDurationSeconds ?? 0n
   const operatorFeeBps = options.operatorFeeBps ?? 0n
 
@@ -1059,7 +1060,7 @@ export async function previewDeliveryProtectionOperator(
   const recorderSingletons = getRecorderSingletons(options.chainId)
 
   const authorizedCodehash =
-    options.authorizedCodehash ?? config.recorderCombinatorCodehash
+    options.authorizedCodehash ?? recorderCombinatorCodehash
   const paymentIndexRecorderAddress =
     options.paymentIndexRecorderAddress ??
     recorderSingletons.paymentIndexRecorder
@@ -1160,9 +1161,9 @@ export async function deployDeliveryProtectionOperator(
   options: DeliveryProtectionOperatorOptions,
 ): Promise<DeliveryProtectionOperatorDeployment> {
   const factoryAddrs = getFactoryAddresses(options.chainId)
-  const config = getChainConfig(options.chainId)
+  const singletons = getConditionSingletons(options.chainId)
   const authorizedCodehash =
-    options.authorizedCodehash ?? config.recorderCombinatorCodehash
+    options.authorizedCodehash ?? recorderCombinatorCodehash
 
   // Phase 1: Compute all deterministic addresses
   const preview = await previewDeliveryProtectionOperator(publicClient, options)
@@ -1182,80 +1183,95 @@ export async function deployDeliveryProtectionOperator(
     hasPaymentIndexRecorder && authorizeRecorderAddress !== escrowPeriodAddress
 
   // Phase 2: Batch-check which contracts already exist
-  const existenceEntries: MulticallContract[] = [
+  // Named entries so results are keyed by name, not brittle array indices
+  const existenceEntries: { name: string; contract: MulticallContract }[] = [
     {
-      address: factoryAddrs.escrowPeriod,
-      abi: escrowPeriodFactoryAbi,
-      functionName: 'getDeployed',
-      args: [options.escrowPeriodSeconds, authorizedCodehash],
+      name: 'escrowPeriod',
+      contract: {
+        address: factoryAddrs.escrowPeriod,
+        abi: escrowPeriodFactoryAbi,
+        functionName: 'getDeployed',
+        args: [options.escrowPeriodSeconds, authorizedCodehash],
+      },
     },
     {
-      address: factoryAddrs.staticAddressCondition,
-      abi: staticAddressConditionFactoryAbi,
-      functionName: 'getDeployed',
-      args: [options.arbiter],
+      name: 'arbiterCondition',
+      contract: {
+        address: factoryAddrs.staticAddressCondition,
+        abi: staticAddressConditionFactoryAbi,
+        functionName: 'getDeployed',
+        args: [options.arbiter],
+      },
     },
     {
-      address: factoryAddrs.orCondition,
-      abi: orConditionFactoryAbi,
-      functionName: 'getDeployed',
-      args: [
-        [
-          arbiterConditionAddress,
-          getConditionSingletons(options.chainId).payer,
+      name: 'releaseCondition',
+      contract: {
+        address: factoryAddrs.orCondition,
+        abi: orConditionFactoryAbi,
+        functionName: 'getDeployed',
+        args: [[arbiterConditionAddress, singletons.payer]],
+      },
+    },
+    {
+      name: 'refundCondition',
+      contract: {
+        address: factoryAddrs.orCondition,
+        abi: orConditionFactoryAbi,
+        functionName: 'getDeployed',
+        args: [
+          [escrowPeriodAddress, singletons.receiver, arbiterConditionAddress],
         ],
-      ],
+      },
     },
-    {
-      address: factoryAddrs.orCondition,
-      abi: orConditionFactoryAbi,
-      functionName: 'getDeployed',
-      args: [
-        [
-          escrowPeriodAddress,
-          getConditionSingletons(options.chainId).receiver,
-          arbiterConditionAddress,
-        ],
-      ],
-    },
-    ...(hasCombinator
-      ? [
-          {
-            address: factoryAddrs.recorderCombinator,
-            abi: recorderCombinatorFactoryAbi,
-            functionName: 'getDeployed',
-            args: [[escrowPeriodAddress, paymentIndexRecorderAddress]],
-          },
-        ]
-      : []),
-    {
+  ]
+  if (hasCombinator) {
+    existenceEntries.push({
+      name: 'combinator',
+      contract: {
+        address: factoryAddrs.recorderCombinator,
+        abi: recorderCombinatorFactoryAbi,
+        functionName: 'getDeployed',
+        args: [[escrowPeriodAddress, paymentIndexRecorderAddress]],
+      },
+    })
+  }
+  existenceEntries.push({
+    name: 'operator',
+    contract: {
       address: factoryAddrs.paymentOperator,
       abi: paymentOperatorFactoryAbi,
       functionName: 'getOperator',
       args: [operatorConfig],
     },
-  ]
+  })
 
   const existenceResults = await publicClient.multicall({
-    contracts: existenceEntries as Parameters<
+    contracts: existenceEntries.map((e) => e.contract) as Parameters<
       typeof publicClient.multicall
     >[0]['contracts'],
   })
 
-  let idx = 0
-  const escrowPeriodExists = existenceResults[idx++].result !== zeroAddress
-  const arbiterCondExists = existenceResults[idx++].result !== zeroAddress
-  const releaseCondExists = existenceResults[idx++].result !== zeroAddress
-  const refundCondExists = existenceResults[idx++].result !== zeroAddress
-  const combinatorExists = hasCombinator
-    ? existenceResults[idx++].result !== zeroAddress
-    : true // no combinator needed
-  const operatorExists = existenceResults[idx++].result !== zeroAddress
+  const existsMap = new Map<string, boolean>()
+  for (let i = 0; i < existenceEntries.length; i++) {
+    existsMap.set(
+      existenceEntries[i].name,
+      existenceResults[i].result !== zeroAddress,
+    )
+  }
+
+  const exists = {
+    escrowPeriod: existsMap.get('escrowPeriod') ?? false,
+    arbiterCondition: existsMap.get('arbiterCondition') ?? false,
+    releaseCondition: existsMap.get('releaseCondition') ?? false,
+    refundCondition: existsMap.get('refundCondition') ?? false,
+    combinator: existsMap.get('combinator') ?? !hasCombinator,
+    operator: existsMap.get('operator') ?? false,
+  }
 
   const totalContracts = hasCombinator ? 6 : 5
 
   // If operator already deployed, return immediately
-  if (operatorExists) {
+  if (exists.operator) {
     const existingDeployments: DeployResult[] = [
       { address: escrowPeriodAddress, hash: null, isNew: false },
       { address: arbiterConditionAddress, hash: null, isNew: false },
@@ -1287,7 +1303,6 @@ export async function deployDeliveryProtectionOperator(
   // Phase 3: Build deploy calls for missing contracts
   const calls: Multicall3Call[] = []
   const deployments: DeployResult[] = []
-  const singletons = getConditionSingletons(options.chainId)
 
   function trackDeploy(
     address: Address,
@@ -1312,7 +1327,7 @@ export async function deployDeliveryProtectionOperator(
   // 1. EscrowPeriod
   trackDeploy(
     escrowPeriodAddress,
-    escrowPeriodExists,
+    exists.escrowPeriod,
     factoryAddrs.escrowPeriod,
     escrowPeriodFactoryAbi,
     'deploy',
@@ -1322,7 +1337,7 @@ export async function deployDeliveryProtectionOperator(
   // 2. StaticAddressCondition(arbiter)
   trackDeploy(
     arbiterConditionAddress,
-    arbiterCondExists,
+    exists.arbiterCondition,
     factoryAddrs.staticAddressCondition,
     staticAddressConditionFactoryAbi,
     'deploy',
@@ -1332,7 +1347,7 @@ export async function deployDeliveryProtectionOperator(
   // 3. OrCondition for release: arbiter OR payer
   trackDeploy(
     releaseConditionAddress,
-    releaseCondExists,
+    exists.releaseCondition,
     factoryAddrs.orCondition,
     orConditionFactoryAbi,
     'deploy',
@@ -1342,7 +1357,7 @@ export async function deployDeliveryProtectionOperator(
   // 4. OrCondition for refundInEscrow: escrow period OR receiver OR arbiter
   trackDeploy(
     refundInEscrowConditionAddress,
-    refundCondExists,
+    exists.refundCondition,
     factoryAddrs.orCondition,
     orConditionFactoryAbi,
     'deploy',
@@ -1353,7 +1368,7 @@ export async function deployDeliveryProtectionOperator(
   if (hasCombinator) {
     trackDeploy(
       authorizeRecorderAddress,
-      combinatorExists,
+      exists.combinator,
       factoryAddrs.recorderCombinator,
       recorderCombinatorFactoryAbi,
       'deploy',

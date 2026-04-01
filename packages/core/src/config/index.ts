@@ -44,8 +44,6 @@ export interface X402rChainConfig {
   factories: FactoryAddresses
   conditions: ConditionSingletonAddresses
   recorders: RecorderSingletonAddresses
-  /** Runtime codehash of RecorderCombinator contract (same for all instances) */
-  recorderCombinatorCodehash: Hex
 }
 
 // ---------------------------------------------------------------------------
@@ -113,7 +111,6 @@ const PROTOCOL_ADDRESSES = {
   factories,
   conditions,
   recorders,
-  recorderCombinatorCodehash,
 } as const
 
 /** Build a chain config by spreading unified protocol addresses + chain-specific USDC */
