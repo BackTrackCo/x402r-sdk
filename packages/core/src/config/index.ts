@@ -89,14 +89,14 @@ export const conditions = {
 /** Chain-invariant CREATE3 recorder singleton addresses. Same as `getChainConfig(chainId).recorders`. */
 export const recorders = {
   paymentIndexRecorder:
-    '0x3134920b77565767adf9559E747bED01918B0763' as const satisfies Address,
+    '0xA9D08f4642104AC10837C0736f7bc44E801CF9dF' as const satisfies Address,
 } as const satisfies RecorderSingletonAddresses
 
 /**
  * Runtime codehash of RecorderCombinator contract.
  * All RecorderCombinator instances share identical runtime bytecode —
  * constructor args affect storage, not deployed code.
- * Verified on-chain via EXTCODEHASH of deployed RecorderCombinator instances.
+ * Verified via: cast codehash <factory-deployed-instance> --rpc-url base-sepolia
  */
 export const recorderCombinatorCodehash: Hex =
   '0xeb3902c8489414d014e6b67d18755bc0d2cca05d84ee2c6db9de44120def49ea'
