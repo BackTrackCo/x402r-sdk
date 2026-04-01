@@ -147,20 +147,6 @@ describe('Delivery Protection: arbiter-gated release', () => {
       paymentInfo,
     )
 
-    // Debug: log EXTCODEHASH of key contracts via Anvil
-    const recorderAddr = deployment.authorizeRecorderAddress
-    const pirAddr = deployment.paymentIndexRecorderAddress
-    console.log('authorizeRecorder:', recorderAddr)
-    console.log('paymentIndexRecorder:', pirAddr)
-    console.log(
-      'authorizeRecorder bytecode length:',
-      ((await publicClient.getCode({ address: recorderAddr })) ?? '0x').length,
-    )
-    console.log(
-      'paymentIndexRecorder bytecode length:',
-      ((await publicClient.getCode({ address: pirAddr })) ?? '0x').length,
-    )
-
     const hash = await payerClient.payment.authorize(
       paymentInfo,
       DEFAULT_AMOUNT,

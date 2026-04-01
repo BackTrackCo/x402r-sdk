@@ -89,7 +89,7 @@ export const conditions = {
 /** Chain-invariant CREATE3 recorder singleton addresses. Same as `getChainConfig(chainId).recorders`. */
 export const recorders = {
   paymentIndexRecorder:
-    '0xA9D08f4642104AC10837C0736f7bc44E801CF9dF' as const satisfies Address,
+    '0xa83A44836e16A35505EFA9c6b6a1BD9C0Ecc40E9' as const satisfies Address,
 } as const satisfies RecorderSingletonAddresses
 
 /**
