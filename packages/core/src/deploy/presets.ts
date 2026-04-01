@@ -231,6 +231,8 @@ export interface MarketplaceOperatorPreview {
   refundRequestEvidenceAddress: Address
   refundInEscrowConditionAddress: Address
   feeCalculatorAddress: Address | null
+  authorizeRecorderAddress: Address
+  paymentIndexRecorderAddress: Address
   operatorConfig: OperatorConfig
 }
 
@@ -242,6 +244,8 @@ export interface MarketplaceOperatorDeployment {
   refundRequestEvidenceAddress: Address
   refundInEscrowConditionAddress: Address
   feeCalculatorAddress: Address | null
+  authorizeRecorderAddress: Address
+  paymentIndexRecorderAddress: Address
   operatorConfig: OperatorConfig
   deployments: DeployResult[]
   summary: {
@@ -272,6 +276,7 @@ function resolveOptions(options: MarketplaceOperatorOptions) {
 
   const factories = getFactoryAddresses(options.chainId)
   const singletons = getConditionSingletons(options.chainId)
+  const recorderSingletons = getRecorderSingletons(options.chainId)
   const authorizedCodehash =
     options.authorizedCodehash ?? config.recorderCombinatorCodehash
   const freezeDurationSeconds = options.freezeDurationSeconds ?? 0n
@@ -281,6 +286,7 @@ function resolveOptions(options: MarketplaceOperatorOptions) {
     config,
     factories,
     singletons,
+    recorderSingletons,
     authorizedCodehash,
     freezeDurationSeconds,
     operatorFeeBps,
@@ -299,6 +305,7 @@ export async function previewMarketplaceOperator(
     config,
     factories,
     singletons,
+    recorderSingletons,
     authorizedCodehash,
     freezeDurationSeconds,
     operatorFeeBps,
@@ -370,12 +377,22 @@ export async function previewMarketplaceOperator(
   const releaseConditionAddress: Address =
     andConditionAddress ?? escrowPeriodAddress
 
+  // Batch 3b: RecorderCombinator for authorize (if PaymentIndexRecorder available)
+  const paymentIndexRecorderAddress = recorderSingletons.paymentIndexRecorder
+  const hasPaymentIndexRecorder = paymentIndexRecorderAddress !== zeroAddress
+  const authorizeRecorderAddress: Address = hasPaymentIndexRecorder
+    ? await computeRecorderCombinatorAddress(publicClient, {
+        factoryAddress: factories.recorderCombinator,
+        recorders: [escrowPeriodAddress, paymentIndexRecorderAddress],
+      })
+    : escrowPeriodAddress
+
   // Batch 4: operator (depends on everything)
   const operatorConfig: OperatorConfig = {
     feeRecipient: options.feeRecipient,
     feeCalculator: feeCalculatorAddress ?? zeroAddress,
     authorizeCondition: config.usdcTvlLimit,
-    authorizeRecorder: escrowPeriodAddress,
+    authorizeRecorder: authorizeRecorderAddress,
     chargeCondition: zeroAddress,
     chargeRecorder: zeroAddress,
     releaseCondition: releaseConditionAddress,
@@ -399,6 +416,8 @@ export async function previewMarketplaceOperator(
     refundRequestEvidenceAddress,
     refundInEscrowConditionAddress,
     feeCalculatorAddress,
+    authorizeRecorderAddress,
+    paymentIndexRecorderAddress,
     operatorConfig,
   }
 }
@@ -443,12 +462,17 @@ export async function deployMarketplaceOperator(
     refundRequestAddress,
     refundRequestEvidenceAddress,
     refundInEscrowConditionAddress,
+    authorizeRecorderAddress,
+    paymentIndexRecorderAddress,
     operatorAddress,
     operatorConfig,
   } = preview
 
   const hasFee = operatorFeeBps > 0n
   const hasFreeze = freezeDurationSeconds > 0n
+  const hasPaymentIndexRecorder = paymentIndexRecorderAddress !== zeroAddress
+  const hasCombinator =
+    hasPaymentIndexRecorder && authorizeRecorderAddress !== escrowPeriodAddress
 
   // SAC(arbiter) is always needed: used for refundInEscrow OrCondition + freeze unfreeze gate.
   const staticAddrCondArbiterAddr = await computeStaticAddressConditionAddress(
@@ -568,6 +592,17 @@ export async function deployMarketplaceOperator(
       },
     })
   }
+  if (hasCombinator) {
+    existenceEntries.push({
+      name: 'recorderCombinator',
+      contract: {
+        address: factories.recorderCombinator,
+        abi: recorderCombinatorFactoryAbi,
+        functionName: 'getDeployed',
+        args: [[escrowPeriodAddress, paymentIndexRecorderAddress]],
+      },
+    })
+  }
 
   const existenceResults = await publicClient.multicall({
     contracts: existenceEntries.map((e) => e.contract) as Parameters<
@@ -594,6 +629,7 @@ export async function deployMarketplaceOperator(
     freeze: existsMap.get('freeze') ?? false,
     andCondition: existsMap.get('andCondition') ?? false,
     feeCalculator: existsMap.get('feeCalculator') ?? !hasFee,
+    recorderCombinator: existsMap.get('recorderCombinator') ?? !hasCombinator,
   }
 
   // If operator already deployed, return immediately
@@ -624,6 +660,13 @@ export async function deployMarketplaceOperator(
         isNew: false,
       })
     }
+    if (hasCombinator) {
+      existingDeployments.push({
+        address: authorizeRecorderAddress,
+        hash: null,
+        isNew: false,
+      })
+    }
     existingDeployments.push({
       address: operatorAddress,
       hash: null,
@@ -637,6 +680,8 @@ export async function deployMarketplaceOperator(
       refundRequestEvidenceAddress,
       refundInEscrowConditionAddress,
       feeCalculatorAddress,
+      authorizeRecorderAddress,
+      paymentIndexRecorderAddress,
       operatorConfig,
       deployments: existingDeployments,
       summary: {
@@ -745,6 +790,16 @@ export async function deployMarketplaceOperator(
       [operatorFeeBps],
     )
   }
+  if (hasCombinator) {
+    trackDeploy(
+      authorizeRecorderAddress,
+      exists.recorderCombinator,
+      factories.recorderCombinator,
+      recorderCombinatorFactoryAbi,
+      'deploy',
+      [[escrowPeriodAddress, paymentIndexRecorderAddress]],
+    )
+  }
 
   // Operator deploy is always included (we checked it doesn't exist above)
   calls.push({
@@ -774,6 +829,8 @@ export async function deployMarketplaceOperator(
     refundRequestEvidenceAddress,
     refundInEscrowConditionAddress,
     feeCalculatorAddress,
+    authorizeRecorderAddress,
+    paymentIndexRecorderAddress,
     operatorConfig,
     deployments,
     summary: { newCount, existingCount, txHashes },
