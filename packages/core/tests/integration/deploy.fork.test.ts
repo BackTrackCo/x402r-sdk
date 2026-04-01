@@ -281,10 +281,10 @@ describe('Deploy Delivery Protection Operator (Fork)', () => {
       preview.arbiterConditionAddress,
     )
 
-    // escrowPeriod + arbiterCondition + 2 OrConditions + operator = 5 components
-    expect(deployment.deployments).toHaveLength(5)
+    // escrowPeriod + arbiterCondition + 2 OrConditions + recorderCombinator + operator = 6
+    expect(deployment.deployments).toHaveLength(6)
     expect(deployment.summary.newCount + deployment.summary.existingCount).toBe(
-      5,
+      6,
     )
     expect(deployment.summary.txHashes).toHaveLength(
       deployment.summary.newCount > 0 ? 1 : 0,
@@ -300,9 +300,9 @@ describe('Deploy Delivery Protection Operator (Fork)', () => {
       options,
     )
 
-    expect(deployment.deployments).toHaveLength(5)
+    expect(deployment.deployments).toHaveLength(6)
     expect(deployment.summary.newCount).toBe(0)
-    expect(deployment.summary.existingCount).toBe(5)
+    expect(deployment.summary.existingCount).toBe(6)
     expect(deployment.summary.txHashes).toHaveLength(0)
     for (const d of deployment.deployments) {
       expect(d.isNew).toBe(false)

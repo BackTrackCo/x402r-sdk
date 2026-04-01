@@ -1151,8 +1151,7 @@ export async function previewDeliveryProtectionOperator(
 // - RefundInEscrow: OrCondition([EscrowPeriod, ReceiverCondition, SAC(arbiter)])
 //   — after escrow window, or receiver, or arbiter
 // - AuthorizeRecorder: RecorderCombinator([EscrowPeriod, PaymentIndexRecorder])
-//   — records auth time + indexes payments (falls back to EscrowPeriod-only
-//   if PaymentIndexRecorder is not deployed)
+//   — records auth time + indexes payments
 // ---------------------------------------------------------------------------
 
 export async function deployDeliveryProtectionOperator(
