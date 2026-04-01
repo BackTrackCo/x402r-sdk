@@ -201,12 +201,78 @@ describe('Delivery Protection: arbiter-gated release', () => {
 })
 
 // ---------------------------------------------------------------------------
+// Arbiter immediate refund (FAIL-fast): arbiter calls refundInEscrow()
+// without waiting for escrow period
+// ---------------------------------------------------------------------------
+
+describe('Delivery Protection: arbiter immediate refund', () => {
+  const arbiterRefundPaymentInfo = { ...paymentInfo, salt: 203n }
+
+  beforeAll(async () => {
+    const { collectorData, tokenCollector } = await createCollectorData(
+      anvilBaseSepolia.getWalletClient(testRoles.payer.address),
+      arbiterRefundPaymentInfo,
+    )
+
+    const hash = await payerClient.payment.authorize(
+      arbiterRefundPaymentInfo,
+      DEFAULT_AMOUNT,
+      tokenCollector,
+      collectorData,
+    )
+    await publicClient.waitForTransactionReceipt({ hash })
+  }, 60_000)
+
+  it('arbiter refunds immediately without escrow wait', async () => {
+    // No time-forwarding — arbiter is in the OrCondition, can refund immediately
+    const hash = await arbiterClient.payment.refundInEscrow(
+      arbiterRefundPaymentInfo,
+      DEFAULT_AMOUNT,
+    )
+    await publicClient.waitForTransactionReceipt({ hash })
+
+    const amounts = await merchant.payment.getAmounts(arbiterRefundPaymentInfo)
+    expect(amounts.capturableAmount).toBe(0n)
+  }, 60_000)
+})
+
+// ---------------------------------------------------------------------------
+// Receiver voluntary refund: merchant calls refundInEscrow() during escrow
+// ---------------------------------------------------------------------------
+
+describe('Delivery Protection: receiver voluntary refund', () => {
+  const receiverRefundPaymentInfo = { ...paymentInfo, salt: 204n }
+
+  beforeAll(async () => {
+    const { collectorData, tokenCollector } = await createCollectorData(
+      anvilBaseSepolia.getWalletClient(testRoles.payer.address),
+      receiverRefundPaymentInfo,
+    )
+
+    const hash = await payerClient.payment.authorize(
+      receiverRefundPaymentInfo,
+      DEFAULT_AMOUNT,
+      tokenCollector,
+      collectorData,
+    )
+    await publicClient.waitForTransactionReceipt({ hash })
+  }, 60_000)
+
+  it('receiver refunds during escrow without arbiter', async () => {
+    // No time-forwarding — receiver is in the OrCondition, can refund immediately
+    const hash = await merchant.payment.refundInEscrow(
+      receiverRefundPaymentInfo,
+      DEFAULT_AMOUNT,
+    )
+    await publicClient.waitForTransactionReceipt({ hash })
+
+    const amounts = await merchant.payment.getAmounts(receiverRefundPaymentInfo)
+    expect(amounts.capturableAmount).toBe(0n)
+  }, 60_000)
+})
+
+// ---------------------------------------------------------------------------
 // Timeout path: authorize → escrow expires → anyone calls refundInEscrow()
-//
-// NOTE: Condition enforcement (non-arbiter cannot release, refundInEscrow
-// reverts during escrow) is tested in Foundry contract tests, not here.
-// The on-chain operator bytecode at the current fork block does not enforce
-// condition checks via revert — no existing fork test uses rejects.toThrow().
 // ---------------------------------------------------------------------------
 
 describe('Delivery Protection: timeout auto-refund', () => {
@@ -241,5 +307,27 @@ describe('Delivery Protection: timeout auto-refund', () => {
 
     const amounts = await merchant.payment.getAmounts(timeoutPaymentInfo)
     expect(amounts.capturableAmount).toBe(0n)
+  }, 60_000)
+})
+
+// ---------------------------------------------------------------------------
+// PaymentIndexRecorder: verify on-chain payment indexing after authorize
+// ---------------------------------------------------------------------------
+
+describe('Delivery Protection: PaymentIndexRecorder', () => {
+  it('indexes authorized payment by payer', async () => {
+    const { paymentIndexRecorderAbi } = await import(
+      '../../src/abis/generated.js'
+    )
+
+    const [, total] = await publicClient.readContract({
+      address: deployment.paymentIndexRecorderAddress,
+      abi: paymentIndexRecorderAbi,
+      functionName: 'getPayerPayments',
+      args: [testRoles.payer.address, 0n, 10n],
+    })
+
+    // At least 1 payment indexed (the authorize from the first test)
+    expect(total).toBeGreaterThan(0n)
   }, 60_000)
 })
