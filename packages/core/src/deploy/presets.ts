@@ -272,7 +272,6 @@ function resolveOptions(options: MarketplaceOperatorOptions) {
 
   const factories = getFactoryAddresses(options.chainId)
   const singletons = getConditionSingletons(options.chainId)
-  const recorderSingletons = getRecorderSingletons(options.chainId)
   const authorizedCodehash =
     options.authorizedCodehash ?? config.recorderCombinatorCodehash
   const freezeDurationSeconds = options.freezeDurationSeconds ?? 0n
@@ -282,7 +281,6 @@ function resolveOptions(options: MarketplaceOperatorOptions) {
     config,
     factories,
     singletons,
-    recorderSingletons,
     authorizedCodehash,
     freezeDurationSeconds,
     operatorFeeBps,
@@ -301,7 +299,6 @@ export async function previewMarketplaceOperator(
     config,
     factories,
     singletons,
-    recorderSingletons,
     authorizedCodehash,
     freezeDurationSeconds,
     operatorFeeBps,
@@ -373,22 +370,12 @@ export async function previewMarketplaceOperator(
   const releaseConditionAddress: Address =
     andConditionAddress ?? escrowPeriodAddress
 
-  // Batch 3b: RecorderCombinator for authorize (if PaymentIndexRecorder available)
-  const paymentIndexRecorderAddress = recorderSingletons.paymentIndexRecorder
-  const hasPaymentIndexRecorder = paymentIndexRecorderAddress !== zeroAddress
-  const authorizeRecorderAddress: Address = hasPaymentIndexRecorder
-    ? await computeRecorderCombinatorAddress(publicClient, {
-        factoryAddress: factories.recorderCombinator,
-        recorders: [escrowPeriodAddress, paymentIndexRecorderAddress],
-      })
-    : escrowPeriodAddress
-
   // Batch 4: operator (depends on everything)
   const operatorConfig: OperatorConfig = {
     feeRecipient: options.feeRecipient,
     feeCalculator: feeCalculatorAddress ?? zeroAddress,
     authorizeCondition: config.usdcTvlLimit,
-    authorizeRecorder: authorizeRecorderAddress,
+    authorizeRecorder: escrowPeriodAddress,
     chargeCondition: zeroAddress,
     chargeRecorder: zeroAddress,
     releaseCondition: releaseConditionAddress,
