@@ -1,4 +1,4 @@
-import { type Address, zeroAddress } from 'viem'
+import { type Address, type Hex, pad, zeroAddress } from 'viem'
 import { ConfigError } from '../errors/index.js'
 
 // ---------------------------------------------------------------------------
@@ -26,6 +26,11 @@ export interface ConditionSingletonAddresses {
   alwaysTrue: Address
 }
 
+export interface RecorderSingletonAddresses {
+  /** PaymentIndexRecorder(escrow, recorderCombinatorCodehash) — deploy once, share across operators */
+  paymentIndexRecorder: Address
+}
+
 export interface X402rChainConfig {
   name: string
   chainId: number
@@ -38,6 +43,9 @@ export interface X402rChainConfig {
   usdc: Address
   factories: FactoryAddresses
   conditions: ConditionSingletonAddresses
+  recorders: RecorderSingletonAddresses
+  /** Runtime codehash of RecorderCombinator contract (same for all instances) */
+  recorderCombinatorCodehash: Hex
 }
 
 // ---------------------------------------------------------------------------
@@ -80,6 +88,23 @@ export const conditions = {
   alwaysTrue: '0xA367323189f20706488A1D83430eda82a2eA5320',
 } as const satisfies ConditionSingletonAddresses
 
+/** Chain-invariant CREATE3 recorder singleton addresses. Same as `getChainConfig(chainId).recorders`. */
+export const recorders = {
+  // TODO: Deploy PaymentIndexRecorder via CREATE3 and set address here.
+  // Until deployed, delivery protection preset falls back to EscrowPeriod-only recorder.
+  paymentIndexRecorder: zeroAddress,
+} as const satisfies RecorderSingletonAddresses
+
+/**
+ * Runtime codehash of RecorderCombinator contract.
+ * All RecorderCombinator instances share identical runtime bytecode —
+ * constructor args affect storage, not deployed code.
+ *
+ * TODO: Compute from x402r-contracts build artifacts and set here.
+ * Until set, delivery protection preset uses pad('0x00') (operator-only mode).
+ */
+export const recorderCombinatorCodehash: Hex = pad('0x00')
+
 const PROTOCOL_ADDRESSES = {
   authCaptureEscrow,
   tokenCollector,
@@ -89,6 +114,8 @@ const PROTOCOL_ADDRESSES = {
   usdcTvlLimit,
   factories,
   conditions,
+  recorders,
+  recorderCombinatorCodehash,
 } as const
 
 /** Build a chain config by spreading unified protocol addresses + chain-specific USDC */
@@ -245,6 +272,13 @@ export function getConditionSingletons(
     )
   }
   return config.conditions
+}
+
+export function getRecorderSingletons(
+  chainId: number,
+): RecorderSingletonAddresses {
+  const config = getChainConfig(chainId)
+  return config.recorders
 }
 
 export function hasFactories(chainId: number): boolean {

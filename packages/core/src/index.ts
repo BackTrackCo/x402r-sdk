@@ -209,6 +209,7 @@ export {
 export type {
   ConditionSingletonAddresses,
   FactoryAddresses,
+  RecorderSingletonAddresses,
   SupportedChainId,
   X402rChainConfig,
 } from './config/index.js'
@@ -222,11 +223,14 @@ export {
   getConditionSingletons,
   getFactoryAddress,
   getFactoryAddresses,
+  getRecorderSingletons,
   hasConditionSingletons,
   hasFactories,
   isSupportedChain,
   protocolFeeConfig,
   receiverRefundCollector,
+  recorderCombinatorCodehash,
+  recorders,
   supportedChainIds,
   tokenCollector,
   toNetworkId,

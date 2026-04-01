@@ -114,21 +114,21 @@ describe('Delivery Protection: operator config verification', () => {
       operatorAddress: deployment.operatorAddress,
     })
 
-    // releaseCondition must be the arbiter StaticAddressCondition (not zero)
+    // releaseCondition: OrCondition([SAC(arbiter), PayerCondition])
     expect(config.releaseCondition.toLowerCase()).toBe(
-      deployment.arbiterConditionAddress.toLowerCase(),
+      deployment.releaseConditionAddress.toLowerCase(),
     )
     expect(config.releaseCondition).not.toBe(zeroAddress)
 
-    // refundInEscrowCondition must be the EscrowPeriod (not zero)
+    // refundInEscrowCondition: OrCondition([EscrowPeriod, ReceiverCondition, SAC(arbiter)])
     expect(config.refundInEscrowCondition.toLowerCase()).toBe(
-      deployment.escrowPeriodAddress.toLowerCase(),
+      deployment.refundInEscrowConditionAddress.toLowerCase(),
     )
     expect(config.refundInEscrowCondition).not.toBe(zeroAddress)
 
-    // authorizeRecorder must be the EscrowPeriod (records auth time)
+    // authorizeRecorder: EscrowPeriod (or RecorderCombinator when PaymentIndexRecorder available)
     expect(config.authorizeRecorder.toLowerCase()).toBe(
-      deployment.escrowPeriodAddress.toLowerCase(),
+      deployment.authorizeRecorderAddress.toLowerCase(),
     )
 
     // feeCalculator should be zero (no fees)
@@ -161,8 +161,8 @@ describe('Delivery Protection: arbiter-gated release', () => {
   }, 60_000)
 
   it('arbiter releases funds (no escrow wait required)', async () => {
-    // Arbiter can release immediately — releaseCondition is StaticAddressCondition(arbiter),
-    // not EscrowPeriod, so no time delay is needed.
+    // Arbiter can release immediately — releaseCondition is
+    // OrCondition([SAC(arbiter), PayerCondition]), no time delay needed.
     const hash = await arbiterClient.payment.release(
       paymentInfo,
       DEFAULT_AMOUNT,
