@@ -110,6 +110,31 @@ beforeAll(async () => {
 
 describe('Delivery Protection: operator config verification', () => {
   it('operator has correct condition addresses', async () => {
+    console.log('Deployment addresses:', {
+      operator: deployment.operatorAddress,
+      escrowPeriod: deployment.escrowPeriodAddress,
+      arbiterCondition: deployment.arbiterConditionAddress,
+      releaseCondition: deployment.releaseConditionAddress,
+      refundInEscrowCondition: deployment.refundInEscrowConditionAddress,
+      authorizeRecorder: deployment.authorizeRecorderAddress,
+      paymentIndexRecorder: deployment.paymentIndexRecorderAddress,
+    })
+
+    // Verify RecorderCombinator codehash matches config
+    const combinatorCodehash = await publicClient.request({
+      method: 'eth_getCode' as never,
+      params: [deployment.authorizeRecorderAddress, 'latest'] as never,
+    })
+    const { keccak256: k256 } = await import('viem')
+    console.log(
+      'RecorderCombinator codehash:',
+      k256(combinatorCodehash as `0x${string}`),
+    )
+    console.log(
+      'Config recorderCombinatorCodehash:',
+      x402rChains[84532].recorderCombinatorCodehash,
+    )
+
     const config = await getOperatorConfig(publicClient, {
       operatorAddress: deployment.operatorAddress,
     })
@@ -153,7 +178,8 @@ describe('Delivery Protection: arbiter-gated release', () => {
       tokenCollector,
       collectorData,
     )
-    await publicClient.waitForTransactionReceipt({ hash })
+    const receipt = await publicClient.waitForTransactionReceipt({ hash })
+    expect(receipt.status).toBe('success')
 
     const amounts = await merchant.payment.getAmounts(paymentInfo)
     expect(amounts.hasCollectedPayment).toBe(true)
