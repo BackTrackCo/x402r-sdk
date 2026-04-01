@@ -1,5 +1,5 @@
 import type { Address, Hex, PublicClient, WalletClient } from 'viem'
-import { encodeFunctionData, pad, zeroAddress } from 'viem'
+import { encodeFunctionData, zeroAddress } from 'viem'
 import {
   andConditionFactoryAbi,
   escrowPeriodFactoryAbi,
@@ -272,8 +272,9 @@ function resolveOptions(options: MarketplaceOperatorOptions) {
 
   const factories = getFactoryAddresses(options.chainId)
   const singletons = getConditionSingletons(options.chainId)
-  // bytes32(0) = no authorized codehash restriction (operator-only recording)
-  const authorizedCodehash = options.authorizedCodehash ?? pad('0x00')
+  const recorderSingletons = getRecorderSingletons(options.chainId)
+  const authorizedCodehash =
+    options.authorizedCodehash ?? config.recorderCombinatorCodehash
   const freezeDurationSeconds = options.freezeDurationSeconds ?? 0n
   const operatorFeeBps = options.operatorFeeBps ?? 0n
 
@@ -281,6 +282,7 @@ function resolveOptions(options: MarketplaceOperatorOptions) {
     config,
     factories,
     singletons,
+    recorderSingletons,
     authorizedCodehash,
     freezeDurationSeconds,
     operatorFeeBps,
@@ -299,6 +301,7 @@ export async function previewMarketplaceOperator(
     config,
     factories,
     singletons,
+    recorderSingletons,
     authorizedCodehash,
     freezeDurationSeconds,
     operatorFeeBps,
@@ -370,12 +373,22 @@ export async function previewMarketplaceOperator(
   const releaseConditionAddress: Address =
     andConditionAddress ?? escrowPeriodAddress
 
+  // Batch 3b: RecorderCombinator for authorize (if PaymentIndexRecorder available)
+  const paymentIndexRecorderAddress = recorderSingletons.paymentIndexRecorder
+  const hasPaymentIndexRecorder = paymentIndexRecorderAddress !== zeroAddress
+  const authorizeRecorderAddress: Address = hasPaymentIndexRecorder
+    ? await computeRecorderCombinatorAddress(publicClient, {
+        factoryAddress: factories.recorderCombinator,
+        recorders: [escrowPeriodAddress, paymentIndexRecorderAddress],
+      })
+    : escrowPeriodAddress
+
   // Batch 4: operator (depends on everything)
   const operatorConfig: OperatorConfig = {
     feeRecipient: options.feeRecipient,
     feeCalculator: feeCalculatorAddress ?? zeroAddress,
     authorizeCondition: config.usdcTvlLimit,
-    authorizeRecorder: escrowPeriodAddress,
+    authorizeRecorder: authorizeRecorderAddress,
     chargeCondition: zeroAddress,
     chargeRecorder: zeroAddress,
     releaseCondition: releaseConditionAddress,

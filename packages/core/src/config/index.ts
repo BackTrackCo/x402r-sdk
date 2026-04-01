@@ -1,4 +1,4 @@
-import { type Address, type Hex, pad, zeroAddress } from 'viem'
+import { type Address, type Hex, zeroAddress } from 'viem'
 import { ConfigError } from '../errors/index.js'
 
 // ---------------------------------------------------------------------------
@@ -90,20 +90,18 @@ export const conditions = {
 
 /** Chain-invariant CREATE3 recorder singleton addresses. Same as `getChainConfig(chainId).recorders`. */
 export const recorders = {
-  // TODO: Deploy PaymentIndexRecorder via CREATE3 and set address here.
-  // Until deployed, delivery protection preset falls back to EscrowPeriod-only recorder.
-  paymentIndexRecorder: zeroAddress,
+  paymentIndexRecorder:
+    '0x3134920b77565767adf9559E747bED01918B0763' as const satisfies Address,
 } as const satisfies RecorderSingletonAddresses
 
 /**
  * Runtime codehash of RecorderCombinator contract.
  * All RecorderCombinator instances share identical runtime bytecode —
  * constructor args affect storage, not deployed code.
- *
- * TODO: Compute from x402r-contracts build artifacts and set here.
- * Until set, delivery protection preset uses pad('0x00') (operator-only mode).
+ * Computed via: forge script script/ComputeCodehash.s.sol
  */
-export const recorderCombinatorCodehash: Hex = pad('0x00')
+export const recorderCombinatorCodehash: Hex =
+  '0x489c83194f171a41ed97057e542ffb877d7a787f7888341ee379288f4f02691e'
 
 const PROTOCOL_ADDRESSES = {
   authCaptureEscrow,
