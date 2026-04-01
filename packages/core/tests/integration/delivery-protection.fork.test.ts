@@ -10,10 +10,7 @@ import {
   type X402r,
 } from '../../../sdk/src/index.js'
 import { getOperatorConfig } from '../../src/actions/index.js'
-import {
-  recorderCombinatorCodehash,
-  x402rChains,
-} from '../../src/config/index.js'
+import { x402rChains } from '../../src/config/index.js'
 import {
   type DeliveryProtectionOperatorDeployment,
   deployDeliveryProtectionOperator,
@@ -113,31 +110,6 @@ beforeAll(async () => {
 
 describe('Delivery Protection: operator config verification', () => {
   it('operator has correct condition addresses', async () => {
-    console.log('Deployment addresses:', {
-      operator: deployment.operatorAddress,
-      escrowPeriod: deployment.escrowPeriodAddress,
-      arbiterCondition: deployment.arbiterConditionAddress,
-      releaseCondition: deployment.releaseConditionAddress,
-      refundInEscrowCondition: deployment.refundInEscrowConditionAddress,
-      authorizeRecorder: deployment.authorizeRecorderAddress,
-      paymentIndexRecorder: deployment.paymentIndexRecorderAddress,
-    })
-
-    // Verify RecorderCombinator codehash matches config
-    const combinatorCodehash = await publicClient.request({
-      method: 'eth_getCode' as never,
-      params: [deployment.authorizeRecorderAddress, 'latest'] as never,
-    })
-    const { keccak256: k256 } = await import('viem')
-    console.log(
-      'RecorderCombinator codehash:',
-      k256(combinatorCodehash as `0x${string}`),
-    )
-    console.log(
-      'Config recorderCombinatorCodehash:',
-      recorderCombinatorCodehash,
-    )
-
     const config = await getOperatorConfig(publicClient, {
       operatorAddress: deployment.operatorAddress,
     })

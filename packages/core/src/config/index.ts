@@ -96,10 +96,10 @@ export const recorders = {
  * Runtime codehash of RecorderCombinator contract.
  * All RecorderCombinator instances share identical runtime bytecode —
  * constructor args affect storage, not deployed code.
- * Computed via: forge script script/ComputeCodehash.s.sol
+ * Verified on-chain via EXTCODEHASH of deployed RecorderCombinator instances.
  */
 export const recorderCombinatorCodehash: Hex =
-  '0x489c83194f171a41ed97057e542ffb877d7a787f7888341ee379288f4f02691e'
+  '0xeb3902c8489414d014e6b67d18755bc0d2cca05d84ee2c6db9de44120def49ea'
 
 const PROTOCOL_ADDRESSES = {
   authCaptureEscrow,
