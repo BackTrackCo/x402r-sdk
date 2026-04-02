@@ -1,4 +1,4 @@
-import { type Address, zeroAddress } from 'viem'
+import { type Address, type Hex, zeroAddress } from 'viem'
 import { ConfigError } from '../errors/index.js'
 
 // ---------------------------------------------------------------------------
@@ -26,6 +26,11 @@ export interface ConditionSingletonAddresses {
   alwaysTrue: Address
 }
 
+export interface RecorderSingletonAddresses {
+  /** PaymentIndexRecorder(escrow, recorderCombinatorCodehash) — deploy once, share across operators */
+  paymentIndexRecorder: Address
+}
+
 export interface X402rChainConfig {
   name: string
   chainId: number
@@ -38,6 +43,7 @@ export interface X402rChainConfig {
   usdc: Address
   factories: FactoryAddresses
   conditions: ConditionSingletonAddresses
+  recorders: RecorderSingletonAddresses
 }
 
 // ---------------------------------------------------------------------------
@@ -80,6 +86,21 @@ export const conditions = {
   alwaysTrue: '0xA367323189f20706488A1D83430eda82a2eA5320',
 } as const satisfies ConditionSingletonAddresses
 
+/** Chain-invariant CREATE3 recorder singleton addresses. Same as `getChainConfig(chainId).recorders`. */
+export const recorders = {
+  paymentIndexRecorder:
+    '0xa83A44836e16A35505EFA9c6b6a1BD9C0Ecc40E9' as const satisfies Address,
+} as const satisfies RecorderSingletonAddresses
+
+/**
+ * Runtime codehash of RecorderCombinator contract.
+ * All RecorderCombinator instances share identical runtime bytecode —
+ * constructor args affect storage, not deployed code.
+ * Verified via: cast codehash <factory-deployed-instance> --rpc-url base-sepolia
+ */
+export const recorderCombinatorCodehash: Hex =
+  '0xeb3902c8489414d014e6b67d18755bc0d2cca05d84ee2c6db9de44120def49ea'
+
 const PROTOCOL_ADDRESSES = {
   authCaptureEscrow,
   tokenCollector,
@@ -89,6 +110,7 @@ const PROTOCOL_ADDRESSES = {
   usdcTvlLimit,
   factories,
   conditions,
+  recorders,
 } as const
 
 /** Build a chain config by spreading unified protocol addresses + chain-specific USDC */
@@ -245,6 +267,13 @@ export function getConditionSingletons(
     )
   }
   return config.conditions
+}
+
+export function getRecorderSingletons(
+  chainId: number,
+): RecorderSingletonAddresses {
+  const config = getChainConfig(chainId)
+  return config.recorders
 }
 
 export function hasFactories(chainId: number): boolean {

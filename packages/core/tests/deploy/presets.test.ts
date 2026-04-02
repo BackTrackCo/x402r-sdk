@@ -1,5 +1,5 @@
 import type { Address } from 'viem'
-import { zeroAddress } from 'viem'
+import { pad, zeroAddress } from 'viem'
 import { describe, expect, it, type vi } from 'vitest'
 import { getFactoryAddresses, x402rChains } from '../../src/config/index.js'
 import {
@@ -741,14 +741,19 @@ describe('previewDeliveryProtectionOperator', () => {
     ).rejects.toThrow(ConfigError)
   })
 
-  it('computes escrowPeriod, arbiterCondition, and operator addresses', async () => {
+  it('computes all addresses including OrConditions and RecorderCombinator', async () => {
     const escrowAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
     const arbiterCondAddr =
       '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
+    const orCondAddr = '0xDDdDddDdDdddDDddDDddDDDDdDdDDdDDdDDDDDDd' as Address
+    const combinatorAddr =
+      '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' as Address
     const operatorAddr = '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
     const publicClient = createMockPublicClient({
       [`${F.escrowPeriod}:computeAddress`]: escrowAddr,
       [`${F.staticAddressCondition}:computeAddress`]: arbiterCondAddr,
+      [`${F.orCondition}:computeAddress`]: orCondAddr,
+      [`${F.recorderCombinator}:computeAddress`]: combinatorAddr,
       [`${F.paymentOperator}:computeAddress`]: operatorAddr,
     })
 
@@ -759,9 +764,12 @@ describe('previewDeliveryProtectionOperator', () => {
 
     expect(result.escrowPeriodAddress).toBe(escrowAddr)
     expect(result.arbiterConditionAddress).toBe(arbiterCondAddr)
-    expect(result.operatorAddress).toBe(operatorAddr)
-    expect(result.operatorConfig.releaseCondition).toBe(arbiterCondAddr)
-    expect(result.operatorConfig.refundInEscrowCondition).toBe(escrowAddr)
+    expect(result.releaseConditionAddress).toBe(orCondAddr)
+    expect(result.refundInEscrowConditionAddress).toBe(orCondAddr)
+    expect(result.authorizeRecorderAddress).toBe(combinatorAddr)
+    expect(result.operatorConfig.authorizeRecorder).toBe(combinatorAddr)
+    expect(result.operatorConfig.releaseCondition).toBe(orCondAddr)
+    expect(result.operatorConfig.refundInEscrowCondition).toBe(orCondAddr)
     expect(result.operatorConfig.feeCalculator).toBe(zeroAddress)
     expect(result.operatorConfig.authorizeCondition).toBe(
       x402rChains[84532].usdcTvlLimit,
@@ -769,6 +777,26 @@ describe('previewDeliveryProtectionOperator', () => {
     expect(result.operatorConfig.refundPostEscrowCondition).toBe(
       x402rChains[84532].conditions!.receiver,
     )
+  })
+
+  it('falls back to EscrowPeriod recorder when PaymentIndexRecorder is zeroAddress', async () => {
+    const escrowAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
+    const operatorAddr = '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
+    const publicClient = createMockPublicClient({
+      computeAddress: escrowAddr,
+      [`${F.paymentOperator}:computeAddress`]: operatorAddr,
+    })
+
+    const result = await previewDeliveryProtectionOperator(
+      publicClient,
+      makeDeliveryProtectionOptions({
+        paymentIndexRecorderAddress: zeroAddress,
+      }),
+    )
+
+    // Without PaymentIndexRecorder, authorizeRecorder falls back to escrowPeriod
+    expect(result.authorizeRecorderAddress).toBe(escrowAddr)
+    expect(result.paymentIndexRecorderAddress).toBe(zeroAddress)
   })
 
   it('uses provided feeRecipient in operator config', async () => {
@@ -785,49 +813,78 @@ describe('previewDeliveryProtectionOperator', () => {
     expect(result.operatorConfig.feeRecipient).toBe(feeRecipient)
   })
 
-  it('uses provided authorizedCodehash in escrowPeriod computation', async () => {
-    const customCodehash =
-      '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef' as `0x${string}`
-    const defaultAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
-    const customAddr = '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
-    const operatorAddr = '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
-
-    const defaultPublicClient = createMockPublicClient({
-      computeAddress: defaultAddr,
-      [`${F.paymentOperator}:computeAddress`]: operatorAddr,
+  it('uses recorderCombinatorCodehash as default authorizedCodehash', async () => {
+    const publicClient = createMockPublicClient({
+      computeAddress: COMPUTED_ADDR,
     })
-    const customPublicClient = createMockPublicClient({
-      [`${F.escrowPeriod}:computeAddress`]: customAddr,
-      computeAddress: defaultAddr,
-      [`${F.paymentOperator}:computeAddress`]: operatorAddr,
-    })
-
+    // Default: uses recorderCombinatorCodehash from config
     const defaultResult = await previewDeliveryProtectionOperator(
-      defaultPublicClient,
+      publicClient,
       makeDeliveryProtectionOptions(),
     )
-    const customResult = await previewDeliveryProtectionOperator(
-      customPublicClient,
-      makeDeliveryProtectionOptions({ authorizedCodehash: customCodehash }),
+    expect(defaultResult.escrowPeriodAddress).toBe(COMPUTED_ADDR)
+  })
+
+  it('accepts custom authorizedCodehash override', async () => {
+    const publicClient = createMockPublicClient({
+      computeAddress: COMPUTED_ADDR,
+    })
+    const result = await previewDeliveryProtectionOperator(
+      publicClient,
+      makeDeliveryProtectionOptions({ authorizedCodehash: pad('0x00') }),
+    )
+    expect(result.escrowPeriodAddress).toBe(COMPUTED_ADDR)
+  })
+
+  it('excludes arbiter from refundInEscrow OrCondition when allowArbiterRefund is false', async () => {
+    const escrowAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
+    const arbiterCondAddr =
+      '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
+    const orCondAddr = '0xDDdDddDdDdddDDddDDddDDDDdDdDDdDDdDDDDDDd' as Address
+    const combinatorAddr =
+      '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' as Address
+    const operatorAddr = '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
+    const publicClient = createMockPublicClient({
+      [`${F.escrowPeriod}:computeAddress`]: escrowAddr,
+      [`${F.staticAddressCondition}:computeAddress`]: arbiterCondAddr,
+      [`${F.orCondition}:computeAddress`]: orCondAddr,
+      [`${F.recorderCombinator}:computeAddress`]: combinatorAddr,
+      [`${F.paymentOperator}:computeAddress`]: operatorAddr,
+    })
+
+    const result = await previewDeliveryProtectionOperator(
+      publicClient,
+      makeDeliveryProtectionOptions({ allowArbiterRefund: false }),
     )
 
-    // Different authorizedCodehash should produce different escrowPeriod
-    expect(customResult.escrowPeriodAddress).toBe(customAddr)
-    expect(defaultResult.escrowPeriodAddress).toBe(defaultAddr)
+    // Release still includes arbiter (arbiter OR payer)
+    expect(result.releaseConditionAddress).toBe(orCondAddr)
+    // RefundInEscrow is still an OrCondition (escrow period OR receiver — no arbiter)
+    expect(result.refundInEscrowConditionAddress).toBe(orCondAddr)
+    expect(result.operatorAddress).toBe(operatorAddr)
   })
 })
 
 describe('deployDeliveryProtectionOperator', () => {
-  it('deploys exactly 3 contracts (escrowPeriod + arbiterCondition + operator)', async () => {
+  // Deploys 6 contracts: escrowPeriod, arbiterCondition, orCondition(release),
+  // orCondition(refund), recorderCombinator, operator
+  it('deploys 6 contracts', async () => {
     const escrowAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
     const arbiterCondAddr =
       '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
+    const orCondAddr = '0xDDdDddDdDdddDDddDDddDDDDdDdDDdDDdDDDDDDd' as Address
+    const combinatorAddr =
+      '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' as Address
     const operatorAddr = '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
     const publicClient = createMockPublicClient({
       [`${F.escrowPeriod}:computeAddress`]: escrowAddr,
       [`${F.escrowPeriod}:getDeployed`]: zeroAddress,
       [`${F.staticAddressCondition}:computeAddress`]: arbiterCondAddr,
       [`${F.staticAddressCondition}:getDeployed`]: zeroAddress,
+      [`${F.orCondition}:computeAddress`]: orCondAddr,
+      [`${F.orCondition}:getDeployed`]: zeroAddress,
+      [`${F.recorderCombinator}:computeAddress`]: combinatorAddr,
+      [`${F.recorderCombinator}:getDeployed`]: zeroAddress,
       [`${F.paymentOperator}:computeAddress`]: operatorAddr,
       [`${F.paymentOperator}:getOperator`]: zeroAddress,
     })
@@ -839,35 +896,39 @@ describe('deployDeliveryProtectionOperator', () => {
       makeDeliveryProtectionOptions(),
     )
 
-    expect(result.deployments).toHaveLength(3)
+    expect(result.deployments).toHaveLength(6)
     expect(result.escrowPeriodAddress).toBe(escrowAddr)
     expect(result.arbiterConditionAddress).toBe(arbiterCondAddr)
+    expect(result.releaseConditionAddress).toBe(orCondAddr)
+    expect(result.refundInEscrowConditionAddress).toBe(orCondAddr)
+    expect(result.authorizeRecorderAddress).toBe(combinatorAddr)
     expect(result.operatorAddress).toBe(operatorAddr)
-    expect(result.summary.newCount).toBe(3)
+    expect(result.summary.newCount).toBe(6)
     expect(result.summary.existingCount).toBe(0)
     expect(result.summary.txHashes).toHaveLength(1)
-    // Verify operatorConfig is passed through correctly
-    expect(result.operatorConfig.releaseCondition).toBe(arbiterCondAddr)
-    expect(result.operatorConfig.refundInEscrowCondition).toBe(escrowAddr)
+    expect(result.operatorConfig.releaseCondition).toBe(orCondAddr)
+    expect(result.operatorConfig.refundInEscrowCondition).toBe(orCondAddr)
     expect(result.operatorConfig.feeCalculator).toBe(zeroAddress)
-    expect(result.operatorConfig.authorizeCondition).toBe(
-      x402rChains[84532].usdcTvlLimit,
-    )
-    expect(result.operatorConfig.refundPostEscrowCondition).toBe(
-      x402rChains[84532].conditions!.receiver,
-    )
+    expect(result.operatorConfig.authorizeRecorder).toBe(combinatorAddr)
   })
 
   it('returns all existing when operator already deployed', async () => {
     const escrowAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
     const arbiterCondAddr =
       '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
+    const orCondAddr = '0xDDdDddDdDdddDDddDDddDDDDdDdDDdDDdDDDDDDd' as Address
+    const combinatorAddr =
+      '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' as Address
     const operatorAddr = '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
     const publicClient = createMockPublicClient({
       [`${F.escrowPeriod}:computeAddress`]: escrowAddr,
       [`${F.escrowPeriod}:getDeployed`]: escrowAddr,
       [`${F.staticAddressCondition}:computeAddress`]: arbiterCondAddr,
       [`${F.staticAddressCondition}:getDeployed`]: arbiterCondAddr,
+      [`${F.orCondition}:computeAddress`]: orCondAddr,
+      [`${F.orCondition}:getDeployed`]: orCondAddr,
+      [`${F.recorderCombinator}:computeAddress`]: combinatorAddr,
+      [`${F.recorderCombinator}:getDeployed`]: combinatorAddr,
       [`${F.paymentOperator}:computeAddress`]: operatorAddr,
       [`${F.paymentOperator}:getOperator`]: operatorAddr,
     })
@@ -879,9 +940,9 @@ describe('deployDeliveryProtectionOperator', () => {
       makeDeliveryProtectionOptions(),
     )
 
-    expect(result.deployments).toHaveLength(3)
+    expect(result.deployments).toHaveLength(6)
     expect(result.summary.newCount).toBe(0)
-    expect(result.summary.existingCount).toBe(3)
+    expect(result.summary.existingCount).toBe(6)
     expect(result.summary.txHashes).toHaveLength(0)
     for (const d of result.deployments) {
       expect(d.isNew).toBe(false)
@@ -893,13 +954,20 @@ describe('deployDeliveryProtectionOperator', () => {
     const escrowAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
     const arbiterCondAddr =
       '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
+    const orCondAddr = '0xDDdDddDdDdddDDddDDddDDDDdDdDDdDDdDDDDDDd' as Address
+    const combinatorAddr =
+      '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' as Address
     const operatorAddr = '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
-    // escrowPeriod exists, arbiterCondition is new, operator always new
+    // escrowPeriod + combinator exist, everything else is new
     const publicClient = createMockPublicClient({
       [`${F.escrowPeriod}:computeAddress`]: escrowAddr,
       [`${F.escrowPeriod}:getDeployed`]: escrowAddr,
       [`${F.staticAddressCondition}:computeAddress`]: arbiterCondAddr,
       [`${F.staticAddressCondition}:getDeployed`]: zeroAddress,
+      [`${F.orCondition}:computeAddress`]: orCondAddr,
+      [`${F.orCondition}:getDeployed`]: zeroAddress,
+      [`${F.recorderCombinator}:computeAddress`]: combinatorAddr,
+      [`${F.recorderCombinator}:getDeployed`]: combinatorAddr,
       [`${F.paymentOperator}:computeAddress`]: operatorAddr,
       [`${F.paymentOperator}:getOperator`]: zeroAddress,
     })
@@ -911,12 +979,81 @@ describe('deployDeliveryProtectionOperator', () => {
       makeDeliveryProtectionOptions(),
     )
 
-    expect(result.deployments).toHaveLength(3)
-    expect(result.summary.newCount).toBe(2)
-    expect(result.summary.existingCount).toBe(1)
+    expect(result.deployments).toHaveLength(6)
+    expect(result.summary.newCount).toBe(4)
+    expect(result.summary.existingCount).toBe(2)
     expect(result.deployments[0].isNew).toBe(false) // escrowPeriod
     expect(result.deployments[1].isNew).toBe(true) // arbiterCondition
-    expect(result.deployments[2].isNew).toBe(true) // operator
+    expect(result.deployments[4].isNew).toBe(false) // recorderCombinator
+  })
+
+  it('deploys 5 contracts when PaymentIndexRecorder is zeroAddress', async () => {
+    const escrowAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
+    const arbiterCondAddr =
+      '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
+    const orCondAddr = '0xDDdDddDdDdddDDddDDddDDDDdDdDDdDDdDDDDDDd' as Address
+    const operatorAddr = '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
+    const publicClient = createMockPublicClient({
+      [`${F.escrowPeriod}:computeAddress`]: escrowAddr,
+      [`${F.escrowPeriod}:getDeployed`]: zeroAddress,
+      [`${F.staticAddressCondition}:computeAddress`]: arbiterCondAddr,
+      [`${F.staticAddressCondition}:getDeployed`]: zeroAddress,
+      [`${F.orCondition}:computeAddress`]: orCondAddr,
+      [`${F.orCondition}:getDeployed`]: zeroAddress,
+      [`${F.paymentOperator}:computeAddress`]: operatorAddr,
+      [`${F.paymentOperator}:getOperator`]: zeroAddress,
+    })
+    const walletClient = createMockWalletClient()
+
+    const result = await deployDeliveryProtectionOperator(
+      walletClient,
+      publicClient,
+      makeDeliveryProtectionOptions({
+        paymentIndexRecorderAddress: zeroAddress,
+      }),
+    )
+
+    expect(result.deployments).toHaveLength(5)
+    expect(result.authorizeRecorderAddress).toBe(escrowAddr)
+    expect(result.operatorConfig.authorizeRecorder).toBe(escrowAddr)
+    expect(result.summary.newCount).toBe(5)
+    expect(result.summary.existingCount).toBe(0)
+  })
+
+  it('deploys 6 contracts with allowArbiterRefund false', async () => {
+    const escrowAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
+    const arbiterCondAddr =
+      '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
+    const orCondAddr = '0xDDdDddDdDdddDDddDDddDDDDdDdDDdDDdDDDDDDd' as Address
+    const combinatorAddr =
+      '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' as Address
+    const operatorAddr = '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
+    const publicClient = createMockPublicClient({
+      [`${F.escrowPeriod}:computeAddress`]: escrowAddr,
+      [`${F.escrowPeriod}:getDeployed`]: zeroAddress,
+      [`${F.staticAddressCondition}:computeAddress`]: arbiterCondAddr,
+      [`${F.staticAddressCondition}:getDeployed`]: zeroAddress,
+      [`${F.orCondition}:computeAddress`]: orCondAddr,
+      [`${F.orCondition}:getDeployed`]: zeroAddress,
+      [`${F.recorderCombinator}:computeAddress`]: combinatorAddr,
+      [`${F.recorderCombinator}:getDeployed`]: zeroAddress,
+      [`${F.paymentOperator}:computeAddress`]: operatorAddr,
+      [`${F.paymentOperator}:getOperator`]: zeroAddress,
+    })
+    const walletClient = createMockWalletClient()
+
+    const result = await deployDeliveryProtectionOperator(
+      walletClient,
+      publicClient,
+      makeDeliveryProtectionOptions({ allowArbiterRefund: false }),
+    )
+
+    expect(result.deployments).toHaveLength(6)
+    expect(result.summary.newCount).toBe(6)
+    // Release still includes arbiter (arbiter OR payer)
+    expect(result.operatorConfig.releaseCondition).toBe(orCondAddr)
+    // RefundInEscrow OrCondition still deployed (escrow period OR receiver — no arbiter)
+    expect(result.operatorConfig.refundInEscrowCondition).toBe(orCondAddr)
   })
 
   it('throws ConfigError when walletClient has no account', async () => {

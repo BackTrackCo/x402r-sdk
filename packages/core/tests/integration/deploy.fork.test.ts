@@ -241,13 +241,13 @@ describe('Deploy Delivery Protection Operator (Fork)', () => {
     expect(preview.arbiterConditionAddress).toMatch(/^0x[0-9a-fA-F]{40}$/)
     expect(preview.arbiterConditionAddress).not.toBe(zero)
 
-    // releaseCondition should be the arbiter SAC (not escrowPeriod)
+    // releaseCondition: OrCondition([SAC(arbiter), PayerCondition])
     expect(preview.operatorConfig.releaseCondition).toBe(
-      preview.arbiterConditionAddress,
+      preview.releaseConditionAddress,
     )
-    // refundInEscrowCondition should be escrowPeriod
+    // refundInEscrowCondition: OrCondition([EscrowPeriod, ReceiverCondition, SAC(arbiter)])
     expect(preview.operatorConfig.refundInEscrowCondition).toBe(
-      preview.escrowPeriodAddress,
+      preview.refundInEscrowConditionAddress,
     )
     // feeCalculator should be zero (no fees)
     expect(preview.operatorConfig.feeCalculator).toBe(zeroAddress)
@@ -280,11 +280,20 @@ describe('Deploy Delivery Protection Operator (Fork)', () => {
     expect(deployment.arbiterConditionAddress).toBe(
       preview.arbiterConditionAddress,
     )
+    expect(deployment.releaseConditionAddress).toBe(
+      preview.releaseConditionAddress,
+    )
+    expect(deployment.refundInEscrowConditionAddress).toBe(
+      preview.refundInEscrowConditionAddress,
+    )
+    expect(deployment.authorizeRecorderAddress).toBe(
+      preview.authorizeRecorderAddress,
+    )
 
-    // escrowPeriod + arbiterCondition + operator = 3 components
-    expect(deployment.deployments).toHaveLength(3)
+    // escrowPeriod + arbiterCondition + 2 OrConditions + recorderCombinator + operator = 6
+    expect(deployment.deployments).toHaveLength(6)
     expect(deployment.summary.newCount + deployment.summary.existingCount).toBe(
-      3,
+      6,
     )
     expect(deployment.summary.txHashes).toHaveLength(
       deployment.summary.newCount > 0 ? 1 : 0,
@@ -300,9 +309,9 @@ describe('Deploy Delivery Protection Operator (Fork)', () => {
       options,
     )
 
-    expect(deployment.deployments).toHaveLength(3)
+    expect(deployment.deployments).toHaveLength(6)
     expect(deployment.summary.newCount).toBe(0)
-    expect(deployment.summary.existingCount).toBe(3)
+    expect(deployment.summary.existingCount).toBe(6)
     expect(deployment.summary.txHashes).toHaveLength(0)
     for (const d of deployment.deployments) {
       expect(d.isNew).toBe(false)
