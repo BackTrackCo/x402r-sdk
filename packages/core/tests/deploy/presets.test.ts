@@ -836,7 +836,7 @@ describe('previewDeliveryProtectionOperator', () => {
     expect(result.escrowPeriodAddress).toBe(COMPUTED_ADDR)
   })
 
-  it('excludes arbiter from refundInEscrow OrCondition when allowArbiterRefund is false', async () => {
+  it('includes arbiter in refundInEscrow OrCondition when allowArbiterRefund is true', async () => {
     const escrowAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
     const arbiterCondAddr =
       '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
@@ -854,12 +854,12 @@ describe('previewDeliveryProtectionOperator', () => {
 
     const result = await previewDeliveryProtectionOperator(
       publicClient,
-      makeDeliveryProtectionOptions({ allowArbiterRefund: false }),
+      makeDeliveryProtectionOptions({ allowArbiterRefund: true }),
     )
 
-    // Release still includes arbiter (arbiter OR payer)
+    // Release includes arbiter (arbiter OR payer)
     expect(result.releaseConditionAddress).toBe(orCondAddr)
-    // RefundInEscrow is still an OrCondition (escrow period OR receiver — no arbiter)
+    // RefundInEscrow includes arbiter (escrow period OR receiver OR arbiter)
     expect(result.refundInEscrowConditionAddress).toBe(orCondAddr)
     expect(result.operatorAddress).toBe(operatorAddr)
   })
@@ -1020,7 +1020,7 @@ describe('deployDeliveryProtectionOperator', () => {
     expect(result.summary.existingCount).toBe(0)
   })
 
-  it('deploys 6 contracts with allowArbiterRefund false', async () => {
+  it('deploys 6 contracts with allowArbiterRefund true', async () => {
     const escrowAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
     const arbiterCondAddr =
       '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
@@ -1045,14 +1045,14 @@ describe('deployDeliveryProtectionOperator', () => {
     const result = await deployDeliveryProtectionOperator(
       walletClient,
       publicClient,
-      makeDeliveryProtectionOptions({ allowArbiterRefund: false }),
+      makeDeliveryProtectionOptions({ allowArbiterRefund: true }),
     )
 
     expect(result.deployments).toHaveLength(6)
     expect(result.summary.newCount).toBe(6)
-    // Release still includes arbiter (arbiter OR payer)
+    // Release includes arbiter (arbiter OR payer)
     expect(result.operatorConfig.releaseCondition).toBe(orCondAddr)
-    // RefundInEscrow OrCondition still deployed (escrow period OR receiver — no arbiter)
+    // RefundInEscrow includes arbiter (escrow period OR receiver OR arbiter)
     expect(result.operatorConfig.refundInEscrowCondition).toBe(orCondAddr)
   })
 

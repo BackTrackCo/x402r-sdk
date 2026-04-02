@@ -1016,7 +1016,7 @@ export interface DeliveryProtectionOperatorOptions {
   authorizedCodehash?: Hex
   /** Override PaymentIndexRecorder address (default: from config, zeroAddress = skip) */
   paymentIndexRecorderAddress?: Address
-  /** Allow arbiter to refund immediately during escrow (default: true). When false, refund requires escrow expiry or receiver action. */
+  /** Allow arbiter to refund immediately during escrow (default: false). When true, arbiter is added to the refundInEscrow OrCondition. */
   allowArbiterRefund?: boolean
 }
 
@@ -1067,7 +1067,7 @@ export async function previewDeliveryProtectionOperator(
     options.paymentIndexRecorderAddress ??
     recorderSingletons.paymentIndexRecorder
   const hasPaymentIndexRecorder = paymentIndexRecorderAddress !== zeroAddress
-  const allowArbiterRefund = options.allowArbiterRefund ?? true
+  const allowArbiterRefund = options.allowArbiterRefund ?? false
 
   // Batch 1 (parallel, no dependencies)
   const [escrowPeriodAddress, arbiterConditionAddress] = await Promise.all([
@@ -1168,7 +1168,7 @@ export async function deployDeliveryProtectionOperator(
   const singletons = getConditionSingletons(options.chainId)
   const authorizedCodehash =
     options.authorizedCodehash ?? recorderCombinatorCodehash
-  const allowArbiterRefund = options.allowArbiterRefund ?? true
+  const allowArbiterRefund = options.allowArbiterRefund ?? false
 
   // Phase 1: Compute all deterministic addresses
   const preview = await previewDeliveryProtectionOperator(publicClient, options)

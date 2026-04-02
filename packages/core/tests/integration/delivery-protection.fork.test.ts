@@ -61,6 +61,7 @@ beforeAll(async () => {
       arbiter: testRoles.arbiter.address,
       feeRecipient: testRoles.operatorFeeRecipient.address,
       escrowPeriodSeconds: ESCROW_PERIOD_SECONDS,
+      allowArbiterRefund: true,
     },
   )
 
