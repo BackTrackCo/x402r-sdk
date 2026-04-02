@@ -1016,6 +1016,8 @@ export interface DeliveryProtectionOperatorOptions {
   authorizedCodehash?: Hex
   /** Override PaymentIndexRecorder address (default: from config, zeroAddress = skip) */
   paymentIndexRecorderAddress?: Address
+  /** Allow arbiter to refund immediately during escrow (default: true). When false, refund requires escrow expiry or receiver action. */
+  allowArbiterRefund?: boolean
 }
 
 export interface DeliveryProtectionOperatorPreview {
@@ -1065,6 +1067,7 @@ export async function previewDeliveryProtectionOperator(
     options.paymentIndexRecorderAddress ??
     recorderSingletons.paymentIndexRecorder
   const hasPaymentIndexRecorder = paymentIndexRecorderAddress !== zeroAddress
+  const allowArbiterRefund = options.allowArbiterRefund ?? true
 
   // Batch 1 (parallel, no dependencies)
   const [escrowPeriodAddress, arbiterConditionAddress] = await Promise.all([
@@ -1079,6 +1082,11 @@ export async function previewDeliveryProtectionOperator(
     }),
   ])
 
+  // RefundInEscrow legs: always escrow period + receiver, optionally arbiter
+  const refundInEscrowLegs: Address[] = allowArbiterRefund
+    ? [escrowPeriodAddress, singletons.receiver, arbiterConditionAddress]
+    : [escrowPeriodAddress, singletons.receiver]
+
   // Batch 2 (parallel, depends on batch 1)
   const [
     releaseConditionAddress,
@@ -1090,14 +1098,10 @@ export async function previewDeliveryProtectionOperator(
       factoryAddress: factoryAddrs.orCondition,
       conditions: [arbiterConditionAddress, singletons.payer],
     }),
-    // RefundInEscrow: escrow period expired OR receiver OR arbiter
+    // RefundInEscrow: escrow period expired OR receiver [OR arbiter]
     computeOrConditionAddress(publicClient, {
       factoryAddress: factoryAddrs.orCondition,
-      conditions: [
-        escrowPeriodAddress,
-        singletons.receiver,
-        arbiterConditionAddress,
-      ],
+      conditions: refundInEscrowLegs,
     }),
     // AuthorizeRecorder: EscrowPeriod + PaymentIndexRecorder (if available)
     hasPaymentIndexRecorder
@@ -1164,6 +1168,7 @@ export async function deployDeliveryProtectionOperator(
   const singletons = getConditionSingletons(options.chainId)
   const authorizedCodehash =
     options.authorizedCodehash ?? recorderCombinatorCodehash
+  const allowArbiterRefund = options.allowArbiterRefund ?? true
 
   // Phase 1: Compute all deterministic addresses
   const preview = await previewDeliveryProtectionOperator(publicClient, options)
@@ -1219,7 +1224,13 @@ export async function deployDeliveryProtectionOperator(
         abi: orConditionFactoryAbi,
         functionName: 'getDeployed',
         args: [
-          [escrowPeriodAddress, singletons.receiver, arbiterConditionAddress],
+          allowArbiterRefund
+            ? [
+                escrowPeriodAddress,
+                singletons.receiver,
+                arbiterConditionAddress,
+              ]
+            : [escrowPeriodAddress, singletons.receiver],
         ],
       },
     },
@@ -1354,14 +1365,18 @@ export async function deployDeliveryProtectionOperator(
     [[arbiterConditionAddress, singletons.payer]],
   )
 
-  // 4. OrCondition for refundInEscrow: escrow period OR receiver OR arbiter
+  // 4. OrCondition for refundInEscrow: escrow period OR receiver [OR arbiter]
   trackDeploy(
     refundInEscrowConditionAddress,
     exists.refundCondition,
     factoryAddrs.orCondition,
     orConditionFactoryAbi,
     'deploy',
-    [[escrowPeriodAddress, singletons.receiver, arbiterConditionAddress]],
+    [
+      allowArbiterRefund
+        ? [escrowPeriodAddress, singletons.receiver, arbiterConditionAddress]
+        : [escrowPeriodAddress, singletons.receiver],
+    ],
   )
 
   // 5. RecorderCombinator (if PaymentIndexRecorder available)

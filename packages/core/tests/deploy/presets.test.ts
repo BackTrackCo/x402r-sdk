@@ -835,6 +835,34 @@ describe('previewDeliveryProtectionOperator', () => {
     )
     expect(result.escrowPeriodAddress).toBe(COMPUTED_ADDR)
   })
+
+  it('excludes arbiter from refundInEscrow OrCondition when allowArbiterRefund is false', async () => {
+    const escrowAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
+    const arbiterCondAddr =
+      '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
+    const orCondAddr = '0xDDdDddDdDdddDDddDDddDDDDdDdDDdDDdDDDDDDd' as Address
+    const combinatorAddr =
+      '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' as Address
+    const operatorAddr = '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
+    const publicClient = createMockPublicClient({
+      [`${F.escrowPeriod}:computeAddress`]: escrowAddr,
+      [`${F.staticAddressCondition}:computeAddress`]: arbiterCondAddr,
+      [`${F.orCondition}:computeAddress`]: orCondAddr,
+      [`${F.recorderCombinator}:computeAddress`]: combinatorAddr,
+      [`${F.paymentOperator}:computeAddress`]: operatorAddr,
+    })
+
+    const result = await previewDeliveryProtectionOperator(
+      publicClient,
+      makeDeliveryProtectionOptions({ allowArbiterRefund: false }),
+    )
+
+    // Release still includes arbiter (arbiter OR payer)
+    expect(result.releaseConditionAddress).toBe(orCondAddr)
+    // RefundInEscrow is still an OrCondition (escrow period OR receiver — no arbiter)
+    expect(result.refundInEscrowConditionAddress).toBe(orCondAddr)
+    expect(result.operatorAddress).toBe(operatorAddr)
+  })
 })
 
 describe('deployDeliveryProtectionOperator', () => {
@@ -990,6 +1018,42 @@ describe('deployDeliveryProtectionOperator', () => {
     expect(result.operatorConfig.authorizeRecorder).toBe(escrowAddr)
     expect(result.summary.newCount).toBe(5)
     expect(result.summary.existingCount).toBe(0)
+  })
+
+  it('deploys 6 contracts with allowArbiterRefund false', async () => {
+    const escrowAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
+    const arbiterCondAddr =
+      '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
+    const orCondAddr = '0xDDdDddDdDdddDDddDDddDDDDdDdDDdDDdDDDDDDd' as Address
+    const combinatorAddr =
+      '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' as Address
+    const operatorAddr = '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
+    const publicClient = createMockPublicClient({
+      [`${F.escrowPeriod}:computeAddress`]: escrowAddr,
+      [`${F.escrowPeriod}:getDeployed`]: zeroAddress,
+      [`${F.staticAddressCondition}:computeAddress`]: arbiterCondAddr,
+      [`${F.staticAddressCondition}:getDeployed`]: zeroAddress,
+      [`${F.orCondition}:computeAddress`]: orCondAddr,
+      [`${F.orCondition}:getDeployed`]: zeroAddress,
+      [`${F.recorderCombinator}:computeAddress`]: combinatorAddr,
+      [`${F.recorderCombinator}:getDeployed`]: zeroAddress,
+      [`${F.paymentOperator}:computeAddress`]: operatorAddr,
+      [`${F.paymentOperator}:getOperator`]: zeroAddress,
+    })
+    const walletClient = createMockWalletClient()
+
+    const result = await deployDeliveryProtectionOperator(
+      walletClient,
+      publicClient,
+      makeDeliveryProtectionOptions({ allowArbiterRefund: false }),
+    )
+
+    expect(result.deployments).toHaveLength(6)
+    expect(result.summary.newCount).toBe(6)
+    // Release still includes arbiter (arbiter OR payer)
+    expect(result.operatorConfig.releaseCondition).toBe(orCondAddr)
+    // RefundInEscrow OrCondition still deployed (escrow period OR receiver — no arbiter)
+    expect(result.operatorConfig.refundInEscrowCondition).toBe(orCondAddr)
   })
 
   it('throws ConfigError when walletClient has no account', async () => {
