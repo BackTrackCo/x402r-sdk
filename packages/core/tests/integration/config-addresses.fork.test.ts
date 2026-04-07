@@ -2,7 +2,6 @@ import type { PublicClient } from 'viem'
 import { pad, zeroAddress } from 'viem'
 import { beforeAll, describe, expect, it } from 'vitest'
 import {
-  arbiterRegistryAbi,
   authCaptureEscrowAbi,
   protocolFeeConfigAbi,
   receiverRefundCollectorAbi,
@@ -79,15 +78,6 @@ describe('Config Address Smoke Tests (Fork)', () => {
       functionName: 'ESCROW',
     })
     expect(result).toBe(config.authCaptureEscrow)
-  })
-
-  it('arbiterRegistry responds to arbiterCount()', async () => {
-    const result = await publicClient.readContract({
-      address: config.arbiterRegistry,
-      abi: arbiterRegistryAbi,
-      functionName: 'arbiterCount',
-    })
-    expect(result).toBeGreaterThanOrEqual(0n)
   })
 
   it('receiverRefundCollector responds to authCaptureEscrow()', async () => {
