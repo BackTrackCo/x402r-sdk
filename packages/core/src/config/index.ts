@@ -38,7 +38,6 @@ export interface X402rChainConfig {
   tokenCollector: Address
   protocolFeeConfig: Address
   usdcTvlLimit: Address
-  arbiterRegistry: Address
   receiverRefundCollector: Address
   usdc: Address
   factories: FactoryAddresses
@@ -56,8 +55,6 @@ export const tokenCollector =
   '0x9A12A116a44636F55c9e135189A1321Abcfe2f30' as const satisfies Address
 export const protocolFeeConfig =
   '0xf62788834C99B2E85a6891C0b46D1EB996f8f596' as const satisfies Address
-export const arbiterRegistry =
-  '0xdd3954f83CF6D65B07A8a88B117300AE73602333' as const satisfies Address
 export const receiverRefundCollector =
   '0x2C0eC8B33196071cA6d08299844235fD81e1466A' as const satisfies Address
 export const usdcTvlLimit =
@@ -105,7 +102,6 @@ const PROTOCOL_ADDRESSES = {
   authCaptureEscrow,
   tokenCollector,
   protocolFeeConfig,
-  arbiterRegistry,
   receiverRefundCollector,
   usdcTvlLimit,
   factories,
