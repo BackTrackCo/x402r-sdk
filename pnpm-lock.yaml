@@ -111,6 +111,9 @@ importers:
       '@x402r/core':
         specifier: workspace:*
         version: link:../core
+      '@x402r/erc8004':
+        specifier: ^0.1.0-alpha.1
+        version: 0.1.0-alpha.1(viem@2.47.1(typescript@5.9.3)(zod@4.3.6))
       viem:
         specifier: ^2.46.3
         version: 2.47.1(typescript@5.9.3)(zod@4.3.6)
@@ -1130,6 +1133,12 @@ packages:
 
   '@x402/extensions@2.5.0':
     resolution: {integrity: sha512-e7IQShbGUM/XQmzI8DQh2tX/k2XDUGI9DNF+ij2NHUyPEqAt5/mJCwOlaxS/60FWFdfFRfWjTsqaoS7Z8WLi+A==}
+
+  '@x402r/erc8004@0.1.0-alpha.1':
+    resolution: {integrity: sha512-fmxSbpFAR/bVLmzcLpxyPZhr/8wAeEaLthZ8Q0PqNeO4oTGNTeoLBXOHTZMaLdETsileDHcSJJmwxbXJ3z214Q==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      viem: ^2.0.0
 
   '@x402r/evm@0.0.3':
     resolution: {integrity: sha512-b8sEZ5VTRpVdy/kxCgZFW1YVQvmZCUpRa7x4tdpoDZPZQannnlJn0haNF2Bxsl2jVhLzLXBCjOrTKKBCy/lQ1g==}
@@ -3300,6 +3309,10 @@ snapshots:
       - ethers
       - typescript
       - utf-8-validate
+
+  '@x402r/erc8004@0.1.0-alpha.1(viem@2.47.1(typescript@5.9.3)(zod@4.3.6))':
+    dependencies:
+      viem: 2.47.1(typescript@5.9.3)(zod@4.3.6)
 
   '@x402r/evm@0.0.3(@x402/core@2.5.0)(@x402/evm@2.5.0(ethers@6.16.0)(typescript@5.9.3))(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))':
     dependencies:

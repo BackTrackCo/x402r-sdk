@@ -15,6 +15,9 @@ import type {
   RefundRequestStatus,
   X402rChainConfig,
 } from '@x402r/core'
+import type { ResolvedAgent } from '@x402r/erc8004/identity'
+import type { ResolvedServiceEndpoint } from '@x402r/erc8004/registration'
+import type { ReputationSummary } from '@x402r/erc8004/reputation'
 import type { Address, Hash, Hex, PublicClient, WalletClient } from 'viem'
 import type { PaymentStore } from './store/types.js'
 
@@ -200,6 +203,63 @@ export interface WatchActions {
   onRefundRequest(callback: (log: unknown) => void): () => void
   onRefundExecuted(callback: (log: unknown) => void): () => void
   onFeeDistribution(callback: (log: unknown) => void): () => void
+}
+
+// ---------------------------------------------------------------------------
+// ERC-8004 action groups
+// ---------------------------------------------------------------------------
+
+export interface Erc8004PluginOptions {
+  /** Identity registry address override (auto-resolved from chain by default). */
+  registryAddress?: Address
+  /** Reputation registry address override (auto-resolved from chain by default). */
+  reputationRegistryAddress?: Address
+  /** Default tag1 for rate() and getSummary() convenience methods. Default: 'starred'. */
+  defaultTag1?: string
+  /** Default tag2 for rate() and getSummary() convenience methods. Default: 'x402'. */
+  defaultTag2?: string
+}
+
+/** Raw parameters for giveFeedback — full control over tags and metadata. */
+export interface Erc8004GiveFeedbackParams {
+  /** int128 on-chain — negative values represent negative feedback. */
+  value: bigint
+  valueDecimals: number
+  tag1: string
+  tag2: string
+  endpoint?: string
+  feedbackURI?: string
+  feedbackHash?: Hex
+}
+
+export interface Erc8004IdentityActions {
+  register(agentURI?: string): Promise<Hash>
+  verifyAgentId(agentId: bigint, claimedAddress: Address): Promise<boolean>
+  resolveAgent(agentId: bigint): Promise<ResolvedAgent>
+  isRegistered(address: Address): Promise<boolean>
+}
+
+export interface Erc8004ReputationActions {
+  /** Convenience — uses default tags and valueDecimals: 0. */
+  rate(agentId: bigint, score: number): Promise<Hash>
+  /** Convenience — uses default tags unless overridden via options. */
+  getSummary(
+    agentId: bigint,
+    reviewers: readonly Address[],
+    options?: { tag1?: string; tag2?: string },
+  ): Promise<ReputationSummary>
+  /** Raw — full control over tags, value, and metadata. */
+  giveFeedback(
+    agentId: bigint,
+    params: Erc8004GiveFeedbackParams,
+  ): Promise<Hash>
+}
+
+export interface Erc8004DiscoveryActions {
+  resolveServiceEndpoint(
+    agentId: bigint,
+    serviceName: string,
+  ): Promise<ResolvedServiceEndpoint>
 }
 
 // ---------------------------------------------------------------------------
