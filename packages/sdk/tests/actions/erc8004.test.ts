@@ -100,6 +100,22 @@ describe('erc8004Actions plugin', () => {
   })
 })
 
+describe('rate() score validation', () => {
+  it('rejects score above 100', async () => {
+    const extended = createX402r(baseConfig).extend(erc8004Actions())
+    await expect(extended.reputation.rate(1n, 150)).rejects.toThrow(
+      'rate() score must be 0–100',
+    )
+  })
+
+  it('rejects negative score', async () => {
+    const extended = createX402r(baseConfig).extend(erc8004Actions())
+    await expect(extended.reputation.rate(1n, -1)).rejects.toThrow(
+      'rate() score must be 0–100',
+    )
+  })
+})
+
 describe('default tag constants', () => {
   it('exports default feedback tags', () => {
     expect(DEFAULT_FEEDBACK_TAG1).toBe('starred')

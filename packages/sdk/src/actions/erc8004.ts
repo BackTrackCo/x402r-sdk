@@ -1,3 +1,4 @@
+import { ValidationError } from '@x402r/core'
 import {
   isRegistered as coreIsRegistered,
   resolveAgent as coreResolveAgent,
@@ -67,6 +68,11 @@ export function createErc8004ReputationActions(
   const tag2 = options?.defaultTag2 ?? DEFAULT_FEEDBACK_TAG2
   return {
     async rate(agentId: bigint, score: number): Promise<Hash> {
+      if (score < 0 || score > 100) {
+        throw new ValidationError(
+          `rate() score must be 0–100 (got ${score}). Use giveFeedback() for unconstrained values.`,
+        )
+      }
       const wallet = requireWallet(config)
       return coreGiveFeedback(wallet, {
         agentId,
