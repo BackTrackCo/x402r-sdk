@@ -1,6 +1,6 @@
 {
   "name": "@x402r/sdk",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "type": "module",
   "license": "Apache-2.0",
   "exports": {
@@ -32,7 +32,7 @@
     "prepublishOnly": "publint --strict && attw --pack --ignore-rules no-resolution cjs-resolves-to-esm"
   },
   "dependencies": {
-    "@x402r/core": "workspace:*",
+    "@x402r/core": "^0.2.0",
     "@x402r/erc8004": "^0.1.0-alpha.1",
     "viem": "^2.46.3"
   },
