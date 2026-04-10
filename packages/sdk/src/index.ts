@@ -41,8 +41,15 @@ export {
   validatePaymentInfo,
   X402rError,
 } from '@x402r/core'
+export type { ResolvedAgent } from '@x402r/erc8004/identity'
+export type { ResolvedServiceEndpoint } from '@x402r/erc8004/registration'
+export type { ReputationSummary } from '@x402r/erc8004/reputation'
+export {
+  DEFAULT_FEEDBACK_TAG1,
+  DEFAULT_FEEDBACK_TAG2,
+} from './actions/erc8004.js'
 export { createX402r } from './client.js'
-export { queryActions } from './plugins/index.js'
+export { erc8004Actions, queryActions } from './plugins/index.js'
 export {
   createArbiterClient,
   createMerchantClient,
@@ -52,6 +59,11 @@ export { createMemoryStore } from './store/index.js'
 export type { PaymentStore } from './store/types.js'
 export type {
   ArbiterClient,
+  Erc8004DiscoveryActions,
+  Erc8004GiveFeedbackParams,
+  Erc8004IdentityActions,
+  Erc8004PluginOptions,
+  Erc8004ReputationActions,
   EscrowActions,
   EvidenceActions,
   FreezeActions,
