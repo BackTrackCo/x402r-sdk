@@ -86,13 +86,13 @@ export function createErc8004ReputationActions(
     async getSummary(
       agentId: bigint,
       reviewers: readonly Address[],
-      opts?: { tag1?: string; tag2?: string },
+      options?: { tag1?: string; tag2?: string },
     ) {
       return coreGetSummary(config.publicClient, {
         agentId,
         clientAddresses: reviewers,
-        tag1: opts?.tag1 ?? tag1,
-        tag2: opts?.tag2 ?? tag2,
+        tag1: options?.tag1 ?? tag1,
+        tag2: options?.tag2 ?? tag2,
         registryAddress,
       })
     },

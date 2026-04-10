@@ -24,7 +24,7 @@ vi.mock('@x402r/erc8004/identity', () => ({
   resolveAgent: vi.fn().mockResolvedValue({
     agentId: 42n,
     owner: '0x1111111111111111111111111111111111111111',
-    agentWallet: '0x0000000000000000000000000000000000000000',
+    agentWallet: '0x1111111111111111111111111111111111111111',
     agentURI: 'https://example.com/agent.json',
     ownerMismatch: false,
   }),
@@ -82,6 +82,21 @@ describe('erc8004Actions plugin', () => {
     const extended = createX402r(baseConfig).extend(erc8004Actions())
     expect(extended.payment.authorize).toBeTypeOf('function')
     expect(extended.config.chainId).toBe(84532)
+  })
+
+  it('eagerly resolves registry addresses from chainId', async () => {
+    const { registerAgent } = await import('@x402r/erc8004/identity')
+    const extended = createX402r(baseConfig).extend(erc8004Actions())
+
+    await extended.identity.register('https://example.com/agent.json')
+
+    // Base Sepolia testnet identity registry
+    expect(registerAgent).toHaveBeenCalledWith(
+      baseConfig.walletClient,
+      expect.objectContaining({
+        registryAddress: '0x8004A818BFB912233c491871b3d84c89A494BD9e',
+      }),
+    )
   })
 })
 
@@ -191,6 +206,20 @@ describe('createErc8004ReputationActions', () => {
       tag2: 'x402',
       registryAddress: undefined,
     })
+  })
+
+  it('rate accepts boundary score 0', async () => {
+    const config = createTestConfig()
+    const actions = createErc8004ReputationActions(config)
+    const result = await actions.rate(42n, 0)
+    expect(result).toBe('0xfeedbackhash')
+  })
+
+  it('rate accepts boundary score 100', async () => {
+    const config = createTestConfig()
+    const actions = createErc8004ReputationActions(config)
+    const result = await actions.rate(42n, 100)
+    expect(result).toBe('0xfeedbackhash')
   })
 
   it('rate rejects score above 100', async () => {
