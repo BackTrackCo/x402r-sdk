@@ -1,5 +1,5 @@
 import type { Address } from 'viem'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createErc8004DiscoveryActions,
   createErc8004IdentityActions,
@@ -57,6 +57,8 @@ const baseConfig: X402rConfig = {
 }
 
 const TEST_ADDR = '0x1111111111111111111111111111111111111111' as Address
+
+beforeEach(() => vi.clearAllMocks())
 
 // ---------------------------------------------------------------------------
 // Plugin shape
@@ -209,17 +211,31 @@ describe('createErc8004ReputationActions', () => {
   })
 
   it('rate accepts boundary score 0', async () => {
+    const { giveFeedback } = await import('@x402r/erc8004/reputation')
     const config = createTestConfig()
     const actions = createErc8004ReputationActions(config)
+
     const result = await actions.rate(42n, 0)
+
     expect(result).toBe('0xfeedbackhash')
+    expect(giveFeedback).toHaveBeenCalledWith(
+      config.walletClient,
+      expect.objectContaining({ value: 0n }),
+    )
   })
 
   it('rate accepts boundary score 100', async () => {
+    const { giveFeedback } = await import('@x402r/erc8004/reputation')
     const config = createTestConfig()
     const actions = createErc8004ReputationActions(config)
+
     const result = await actions.rate(42n, 100)
+
     expect(result).toBe('0xfeedbackhash')
+    expect(giveFeedback).toHaveBeenCalledWith(
+      config.walletClient,
+      expect.objectContaining({ value: 100n }),
+    )
   })
 
   it('rate rejects score above 100', async () => {
