@@ -232,11 +232,38 @@ export interface Erc8004GiveFeedbackParams {
   feedbackHash?: Hex
 }
 
+/** Parsed arbiter identity from attestation extension response. */
+export interface ArbiterIdentity {
+  agentId: bigint
+  address: Address
+}
+
+/**
+ * Parsed merchant identity from upstream reputation extension.
+ * @experimental Upstream x402 reputation extension (PR #1024/#1070) is not merged.
+ * The shape of `extensions["8004-reputation"]` may change.
+ */
+export interface MerchantIdentity {
+  agentId: bigint
+  agentRegistry: string
+}
+
+export interface CheckAgentResult {
+  verified: boolean
+  reputation: ReputationSummary | null
+}
+
 export interface Erc8004IdentityActions {
   register(agentURI?: string): Promise<Hash>
   verifyAgentId(agentId: bigint, claimedAddress: Address): Promise<boolean>
   resolveAgent(agentId: bigint): Promise<ResolvedAgent>
   isRegistered(address: Address): Promise<boolean>
+  /** Verify agent on-chain and optionally check reputation in one call. */
+  check(
+    agentId: bigint,
+    address: Address,
+    reviewers?: readonly Address[],
+  ): Promise<CheckAgentResult>
 }
 
 export interface Erc8004ReputationActions {

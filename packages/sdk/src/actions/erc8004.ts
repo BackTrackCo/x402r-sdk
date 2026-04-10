@@ -12,6 +12,7 @@ import {
 } from '@x402r/erc8004/reputation'
 import type { Address, Hash } from 'viem'
 import type {
+  CheckAgentResult,
   Erc8004DiscoveryActions,
   Erc8004GiveFeedbackParams,
   Erc8004IdentityActions,
@@ -55,6 +56,28 @@ export function createErc8004IdentityActions(
         address,
         registryAddress,
       })
+    },
+    async check(
+      agentId: bigint,
+      address: Address,
+      reviewers?: readonly Address[],
+    ): Promise<CheckAgentResult> {
+      const verified = await coreVerifyAgentId(config.publicClient, {
+        agentId,
+        claimedAddress: address,
+        registryAddress,
+      })
+      const reputation =
+        reviewers && reviewers.length > 0
+          ? await coreGetSummary(config.publicClient, {
+              agentId,
+              clientAddresses: reviewers,
+              tag1: options?.defaultTag1 ?? DEFAULT_FEEDBACK_TAG1,
+              tag2: options?.defaultTag2 ?? DEFAULT_FEEDBACK_TAG2,
+              registryAddress: options?.reputationRegistryAddress,
+            })
+          : null
+      return { verified, reputation }
     },
   }
 }
