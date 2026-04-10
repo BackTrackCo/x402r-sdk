@@ -441,6 +441,22 @@ describe('createErc8004IdentityActions — check', () => {
     expect(result.reputation).toBeNull()
   })
 
+  it('returns verified false but still fetches reputation', async () => {
+    const { verifyAgentId } = await import('@x402r/erc8004/identity')
+    const { getSummary } = await import('@x402r/erc8004/reputation')
+    vi.mocked(verifyAgentId).mockResolvedValueOnce(false)
+
+    const config = createTestConfig()
+    const actions = createErc8004IdentityActions(config)
+
+    const result = await actions.check(42n, TEST_ADDR, [TEST_ADDR])
+
+    expect(result.verified).toBe(false)
+    expect(result.reputation).toBeDefined()
+    expect(result.reputation!.count).toBe(5n)
+    expect(getSummary).toHaveBeenCalled()
+  })
+
   it('delegates to verifyAgentId and getSummary with correct args', async () => {
     const { verifyAgentId } = await import('@x402r/erc8004/identity')
     const { getSummary } = await import('@x402r/erc8004/reputation')

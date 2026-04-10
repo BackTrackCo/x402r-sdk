@@ -37,6 +37,12 @@ describe('extractArbiterIdentity', () => {
     expect(result).toEqual({ agentId: 42n, address: VALID_ADDRESS })
   })
 
+  it('returns undefined for float agentId', () => {
+    expect(
+      extractArbiterIdentity({ arbiter: VALID_ADDRESS, agentId: 1.5 }),
+    ).toBeUndefined()
+  })
+
   it('returns undefined for non-numeric string agentId', () => {
     expect(
       extractArbiterIdentity({ arbiter: VALID_ADDRESS, agentId: 'abc' }),

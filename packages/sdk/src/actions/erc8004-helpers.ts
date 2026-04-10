@@ -4,10 +4,11 @@ import type { AgentRegistration, ArbiterIdentity } from '../types.js'
 
 const REPUTATION_EXTENSION_KEY = 'reputation'
 
-/** Coerce a raw value to bigint. Accepts bigint, number, or numeric string. */
+/** Coerce a raw value to bigint. Accepts bigint, integer number, or numeric string. */
 function coerceAgentId(raw: unknown): bigint | undefined {
   if (typeof raw === 'bigint') return raw
-  if (typeof raw === 'number') return BigInt(raw)
+  if (typeof raw === 'number')
+    return Number.isInteger(raw) ? BigInt(raw) : undefined
   if (typeof raw === 'string') {
     try {
       return BigInt(raw)
@@ -113,9 +114,8 @@ export function extractReputationRegistrations(
 export async function fetchArbiterIdentity(
   arbiterUrl: string,
 ): Promise<ArbiterIdentity | undefined> {
-  const base = arbiterUrl.endsWith('/') ? arbiterUrl.slice(0, -1) : arbiterUrl
-  const url = `${base}/attest/identity`
-  const response = await fetch(url, {
+  const url = new URL('/attest/identity', arbiterUrl).toString()
+  const response = await globalThis.fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: '{}',
