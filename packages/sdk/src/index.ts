@@ -50,7 +50,7 @@ export {
 } from './actions/erc8004.js'
 export {
   extractArbiterIdentity,
-  extractMerchantIdentity,
+  extractReputationRegistrations,
   fetchArbiterIdentity,
 } from './actions/erc8004-helpers.js'
 export { createX402r } from './client.js'
@@ -63,6 +63,7 @@ export {
 export { createMemoryStore } from './store/index.js'
 export type { PaymentStore } from './store/types.js'
 export type {
+  AgentRegistration,
   ArbiterClient,
   ArbiterIdentity,
   CheckAgentResult,
@@ -75,7 +76,6 @@ export type {
   EvidenceActions,
   FreezeActions,
   MerchantClient,
-  MerchantIdentity,
   OperatorActions,
   PayerClient,
   PaymentActions,

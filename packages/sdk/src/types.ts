@@ -239,14 +239,16 @@ export interface ArbiterIdentity {
 }
 
 /**
- * Parsed merchant identity from upstream reputation extension.
- * @experimental Upstream x402 reputation extension (PR #1024/#1070) is not merged.
- * The shape of `extensions["8004-reputation"]` may change.
+ * A single agent registration from the upstream x402 reputation extension.
+ * Matches the `AgentRegistration` object in the upstream spec (PR #1024).
+ *
+ * @experimental Upstream x402 reputation extension is not merged.
+ * The shape may change. See x402-foundation/x402#931.
  */
-export interface MerchantIdentity {
+export interface AgentRegistration {
   agentId: bigint
-  /** CAIP-10 identifier for the agent registry contract (e.g. `eip155:8453:0x8004...`). */
-  agentRegistry: `eip155:${number}:0x${string}`
+  /** CAIP-10 identity registry address (e.g. `eip155:8453:0x8004...` or `solana:5eykt4...:satiRkx...`). */
+  agentRegistry: string
 }
 
 export interface CheckAgentResult {

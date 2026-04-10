@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   extractArbiterIdentity,
-  extractMerchantIdentity,
+  extractReputationRegistrations,
   fetchArbiterIdentity,
 } from '../../src/actions/erc8004-helpers.js'
 
@@ -76,83 +76,130 @@ describe('extractArbiterIdentity', () => {
 })
 
 // ---------------------------------------------------------------------------
-// extractMerchantIdentity
+// extractReputationRegistrations
 // ---------------------------------------------------------------------------
 
-describe('extractMerchantIdentity', () => {
-  const VALID_REGISTRY =
-    'eip155:8453:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432'
+describe('extractReputationRegistrations', () => {
+  const EVM_REGISTRY = 'eip155:8453:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432'
+  const SOLANA_REGISTRY =
+    'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp:satiRkxEiwZ51cv8PRu8UMzuaqeaNU9jABo6oAFMsLe'
 
-  it('extracts from valid 8004-reputation extension', () => {
-    const result = extractMerchantIdentity({
-      '8004-reputation': { agentId: 99, agentRegistry: VALID_REGISTRY },
-    })
-    expect(result).toEqual({ agentId: 99n, agentRegistry: VALID_REGISTRY })
-  })
-
-  it('handles bigint agentId', () => {
-    const result = extractMerchantIdentity({
-      '8004-reputation': {
-        agentId: 5n,
-        agentRegistry:
-          'eip155:84532:0x8004A818BFB912233c491871b3d84c89A494BD9e',
+  it('extracts EVM registrations, skips non-numeric Solana agentIds', () => {
+    const result = extractReputationRegistrations({
+      reputation: {
+        info: {
+          version: '1.0.0',
+          registrations: [
+            { agentRegistry: EVM_REGISTRY, agentId: '42' },
+            { agentRegistry: SOLANA_REGISTRY, agentId: '7xKXtg2CW87dNon' },
+          ],
+        },
       },
     })
-    expect(result?.agentId).toBe(5n)
+    // Solana agentId is non-numeric (base58 mint address) → skipped by coerceAgentId
+    expect(result).toEqual([{ agentId: 42n, agentRegistry: EVM_REGISTRY }])
   })
 
-  it('handles string-encoded agentId', () => {
-    const result = extractMerchantIdentity({
-      '8004-reputation': { agentId: '42', agentRegistry: VALID_REGISTRY },
-    })
-    expect(result?.agentId).toBe(42n)
-  })
-
-  it('rejects non-CAIP-10 agentRegistry', () => {
-    expect(
-      extractMerchantIdentity({
-        '8004-reputation': { agentId: 1, agentRegistry: 'hello world' },
-      }),
-    ).toBeUndefined()
-  })
-
-  it('rejects agentRegistry missing chain prefix', () => {
-    expect(
-      extractMerchantIdentity({
-        '8004-reputation': {
-          agentId: 1,
-          agentRegistry: '0x8004A169FB4a3325136EB29fA0ceB6D2e539a432',
+  it('extracts multiple EVM registrations', () => {
+    const result = extractReputationRegistrations({
+      reputation: {
+        info: {
+          version: '1.0.0',
+          registrations: [
+            { agentRegistry: EVM_REGISTRY, agentId: '42' },
+            {
+              agentRegistry:
+                'eip155:84532:0x8004A818BFB912233c491871b3d84c89A494BD9e',
+              agentId: '7',
+            },
+          ],
         },
+      },
+    })
+    expect(result).toHaveLength(2)
+    expect(result[0].agentId).toBe(42n)
+    expect(result[1].agentId).toBe(7n)
+  })
+
+  it('handles single EVM registration', () => {
+    const result = extractReputationRegistrations({
+      reputation: {
+        info: {
+          version: '1.0.0',
+          registrations: [{ agentRegistry: EVM_REGISTRY, agentId: '99' }],
+        },
+      },
+    })
+    expect(result).toHaveLength(1)
+    expect(result[0].agentId).toBe(99n)
+  })
+
+  it('handles numeric agentId (coerces to bigint)', () => {
+    const result = extractReputationRegistrations({
+      reputation: {
+        info: {
+          registrations: [{ agentRegistry: EVM_REGISTRY, agentId: 5 }],
+        },
+      },
+    })
+    expect(result[0].agentId).toBe(5n)
+  })
+
+  it('skips entries with invalid agentId', () => {
+    const result = extractReputationRegistrations({
+      reputation: {
+        info: {
+          registrations: [
+            { agentRegistry: EVM_REGISTRY, agentId: '42' },
+            { agentRegistry: EVM_REGISTRY, agentId: 'not-a-number' },
+          ],
+        },
+      },
+    })
+    expect(result).toHaveLength(1)
+    expect(result[0].agentId).toBe(42n)
+  })
+
+  it('skips entries with empty agentRegistry', () => {
+    const result = extractReputationRegistrations({
+      reputation: {
+        info: {
+          registrations: [
+            { agentRegistry: EVM_REGISTRY, agentId: '1' },
+            { agentRegistry: '', agentId: '2' },
+          ],
+        },
+      },
+    })
+    expect(result).toHaveLength(1)
+  })
+
+  it('returns empty array when extensions is undefined', () => {
+    expect(extractReputationRegistrations(undefined)).toEqual([])
+  })
+
+  it('returns empty array when reputation key is missing', () => {
+    expect(extractReputationRegistrations({ attestation: {} })).toEqual([])
+  })
+
+  it('returns empty array when info is missing', () => {
+    expect(
+      extractReputationRegistrations({ reputation: { schema: {} } }),
+    ).toEqual([])
+  })
+
+  it('returns empty array when registrations is not an array', () => {
+    expect(
+      extractReputationRegistrations({
+        reputation: { info: { registrations: 'invalid' } },
       }),
-    ).toBeUndefined()
+    ).toEqual([])
   })
 
-  it('returns undefined when extensions is undefined', () => {
-    expect(extractMerchantIdentity(undefined)).toBeUndefined()
-  })
-
-  it('returns undefined when 8004-reputation is missing', () => {
-    expect(extractMerchantIdentity({ attestation: {} })).toBeUndefined()
-  })
-
-  it('returns undefined when agentId is missing', () => {
-    expect(
-      extractMerchantIdentity({
-        '8004-reputation': { agentRegistry: VALID_REGISTRY },
-      }),
-    ).toBeUndefined()
-  })
-
-  it('returns undefined when agentRegistry is missing', () => {
-    expect(
-      extractMerchantIdentity({ '8004-reputation': { agentId: 42 } }),
-    ).toBeUndefined()
-  })
-
-  it('returns undefined when 8004-reputation is not an object', () => {
-    expect(
-      extractMerchantIdentity({ '8004-reputation': 'invalid' }),
-    ).toBeUndefined()
+  it('returns empty array when reputation is not an object', () => {
+    expect(extractReputationRegistrations({ reputation: 'invalid' })).toEqual(
+      [],
+    )
   })
 })
 

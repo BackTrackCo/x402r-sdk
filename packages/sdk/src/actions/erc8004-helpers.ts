@@ -1,9 +1,8 @@
 import type { Address } from 'viem'
 import { isAddress } from 'viem'
-import type { ArbiterIdentity, MerchantIdentity } from '../types.js'
+import type { AgentRegistration, ArbiterIdentity } from '../types.js'
 
-const REPUTATION_EXTENSION_KEY = '8004-reputation'
-const CAIP10_PATTERN = /^eip155:\d+:0x[0-9a-fA-F]{40}$/
+const REPUTATION_EXTENSION_KEY = 'reputation'
 
 /** Coerce a raw value to bigint. Accepts bigint, number, or numeric string. */
 function coerceAgentId(raw: unknown): bigint | undefined {
@@ -52,39 +51,52 @@ export function extractArbiterIdentity(
 }
 
 /**
- * Extract merchant identity from the upstream x402 reputation extension.
+ * Extract agent registrations from the upstream x402 reputation extension.
  *
- * Parses `extensions["8004-reputation"]` for `{ agentId, agentRegistry }`.
- * Returns `undefined` if the extension is not present or the shape doesn't match.
+ * Parses `extensions["reputation"].info.registrations` per the upstream spec
+ * (x402-foundation/x402 PR #1024). Returns validated registrations as an array.
  *
- * @experimental The upstream x402 reputation extension (PR #1024 spec, PR #1070
- * implementation) is not merged. The shape of `extensions["8004-reputation"]`
- * may change. This helper is subject to breaking changes.
+ * Agents can have multiple registrations across chains (EVM + Solana).
+ * Each registration has a CAIP-10 `agentRegistry` and a string `agentId`.
+ *
+ * @experimental The upstream x402 reputation extension is not merged.
+ * The shape of `extensions["reputation"]` may change.
+ * See x402-foundation/x402#931.
  *
  * @param extensions - Extensions object from PaymentRequired or PaymentPayload
+ * @returns Array of validated registrations, or empty array if extension is absent
  */
-export function extractMerchantIdentity(
+export function extractReputationRegistrations(
   extensions: Record<string, unknown> | undefined,
-): MerchantIdentity | undefined {
-  if (!extensions) return undefined
+): AgentRegistration[] {
+  if (!extensions) return []
 
-  const raw = extensions[REPUTATION_EXTENSION_KEY]
-  if (raw === null || raw === undefined || typeof raw !== 'object')
-    return undefined
+  const ext = extensions[REPUTATION_EXTENSION_KEY]
+  if (ext === null || ext === undefined || typeof ext !== 'object') return []
 
-  const data = raw as Record<string, unknown>
+  const info = (ext as Record<string, unknown>).info
+  if (info === null || info === undefined || typeof info !== 'object') return []
 
-  const agentId = coerceAgentId(data.agentId)
-  if (agentId === undefined) return undefined
+  const registrations = (info as Record<string, unknown>).registrations
+  if (!Array.isArray(registrations)) return []
 
-  const agentRegistry = data.agentRegistry
-  if (typeof agentRegistry !== 'string' || !CAIP10_PATTERN.test(agentRegistry))
-    return undefined
+  const result: AgentRegistration[] = []
+  for (const entry of registrations) {
+    if (entry === null || entry === undefined || typeof entry !== 'object')
+      continue
 
-  return {
-    agentId,
-    agentRegistry: agentRegistry as MerchantIdentity['agentRegistry'],
+    const record = entry as Record<string, unknown>
+    const agentId = coerceAgentId(record.agentId)
+    if (agentId === undefined) continue
+
+    const agentRegistry = record.agentRegistry
+    if (typeof agentRegistry !== 'string' || agentRegistry.length === 0)
+      continue
+
+    result.push({ agentId, agentRegistry })
   }
+
+  return result
 }
 
 /**
