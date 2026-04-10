@@ -417,7 +417,7 @@ describe('createErc8004IdentityActions — check', () => {
     const result = await actions.check(42n, TEST_ADDR, [TEST_ADDR])
 
     expect(result.verified).toBe(true)
-    expect(result.reputation).toBeDefined()
+    expect(result.reputation).not.toBeNull()
     expect(result.reputation!.count).toBe(5n)
   })
 
@@ -452,7 +452,7 @@ describe('createErc8004IdentityActions — check', () => {
     const result = await actions.check(42n, TEST_ADDR, [TEST_ADDR])
 
     expect(result.verified).toBe(false)
-    expect(result.reputation).toBeDefined()
+    expect(result.reputation).not.toBeNull()
     expect(result.reputation!.count).toBe(5n)
     expect(getSummary).toHaveBeenCalled()
   })
