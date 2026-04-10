@@ -232,11 +232,41 @@ export interface Erc8004GiveFeedbackParams {
   feedbackHash?: Hex
 }
 
+/** Parsed arbiter identity from attestation extension response. */
+export interface ArbiterIdentity {
+  agentId: bigint
+  address: Address
+}
+
+/**
+ * A single agent registration from the upstream x402 reputation extension.
+ * Matches the `AgentRegistration` object in the upstream spec (PR #1024).
+ *
+ * @experimental Upstream x402 reputation extension is not merged.
+ * The shape may change. See x402-foundation/x402#931.
+ */
+export interface AgentRegistration {
+  agentId: bigint
+  /** CAIP-10 identity registry address (e.g. `eip155:8453:0x8004...` or `solana:5eykt4...:satiRkx...`). */
+  agentRegistry: string
+}
+
+export interface CheckAgentResult {
+  verified: boolean
+  reputation: ReputationSummary | null
+}
+
 export interface Erc8004IdentityActions {
   register(agentURI?: string): Promise<Hash>
   verifyAgentId(agentId: bigint, claimedAddress: Address): Promise<boolean>
   resolveAgent(agentId: bigint): Promise<ResolvedAgent>
   isRegistered(address: Address): Promise<boolean>
+  /** Verify agent on-chain and optionally check reputation in one call. */
+  check(
+    agentId: bigint,
+    address: Address,
+    reviewers?: readonly Address[],
+  ): Promise<CheckAgentResult>
 }
 
 export interface Erc8004ReputationActions {

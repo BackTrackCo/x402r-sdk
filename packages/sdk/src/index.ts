@@ -48,6 +48,11 @@ export {
   DEFAULT_FEEDBACK_TAG1,
   DEFAULT_FEEDBACK_TAG2,
 } from './actions/erc8004.js'
+export {
+  extractArbiterIdentity,
+  extractReputationRegistrations,
+  fetchArbiterIdentity,
+} from './actions/erc8004-helpers.js'
 export { createX402r } from './client.js'
 export { erc8004Actions, queryActions } from './plugins/index.js'
 export {
@@ -58,7 +63,10 @@ export {
 export { createMemoryStore } from './store/index.js'
 export type { PaymentStore } from './store/types.js'
 export type {
+  AgentRegistration,
   ArbiterClient,
+  ArbiterIdentity,
+  CheckAgentResult,
   Erc8004DiscoveryActions,
   Erc8004GiveFeedbackParams,
   Erc8004IdentityActions,

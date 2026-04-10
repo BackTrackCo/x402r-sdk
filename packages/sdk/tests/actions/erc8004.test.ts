@@ -406,6 +406,81 @@ describe('createErc8004DiscoveryActions', () => {
 })
 
 // ---------------------------------------------------------------------------
+// identity.check()
+// ---------------------------------------------------------------------------
+
+describe('createErc8004IdentityActions — check', () => {
+  it('returns verified true with reputation when reviewers provided', async () => {
+    const config = createTestConfig()
+    const actions = createErc8004IdentityActions(config)
+
+    const result = await actions.check(42n, TEST_ADDR, [TEST_ADDR])
+
+    expect(result.verified).toBe(true)
+    expect(result.reputation).not.toBeNull()
+    expect(result.reputation!.count).toBe(5n)
+  })
+
+  it('returns reputation null when no reviewers provided', async () => {
+    const config = createTestConfig()
+    const actions = createErc8004IdentityActions(config)
+
+    const result = await actions.check(42n, TEST_ADDR)
+
+    expect(result.verified).toBe(true)
+    expect(result.reputation).toBeNull()
+  })
+
+  it('returns reputation null when reviewers is empty array', async () => {
+    const config = createTestConfig()
+    const actions = createErc8004IdentityActions(config)
+
+    const result = await actions.check(42n, TEST_ADDR, [])
+
+    expect(result.verified).toBe(true)
+    expect(result.reputation).toBeNull()
+  })
+
+  it('returns verified false but still fetches reputation', async () => {
+    const { verifyAgentId } = await import('@x402r/erc8004/identity')
+    const { getSummary } = await import('@x402r/erc8004/reputation')
+    vi.mocked(verifyAgentId).mockResolvedValueOnce(false)
+
+    const config = createTestConfig()
+    const actions = createErc8004IdentityActions(config)
+
+    const result = await actions.check(42n, TEST_ADDR, [TEST_ADDR])
+
+    expect(result.verified).toBe(false)
+    expect(result.reputation).not.toBeNull()
+    expect(result.reputation!.count).toBe(5n)
+    expect(getSummary).toHaveBeenCalled()
+  })
+
+  it('delegates to verifyAgentId and getSummary with correct args', async () => {
+    const { verifyAgentId } = await import('@x402r/erc8004/identity')
+    const { getSummary } = await import('@x402r/erc8004/reputation')
+    const config = createTestConfig()
+    const actions = createErc8004IdentityActions(config)
+
+    await actions.check(42n, TEST_ADDR, [TEST_ADDR])
+
+    expect(verifyAgentId).toHaveBeenCalledWith(config.publicClient, {
+      agentId: 42n,
+      claimedAddress: TEST_ADDR,
+      registryAddress: undefined,
+    })
+    expect(getSummary).toHaveBeenCalledWith(config.publicClient, {
+      agentId: 42n,
+      clientAddresses: [TEST_ADDR],
+      tag1: 'starred',
+      tag2: 'x402',
+      registryAddress: undefined,
+    })
+  })
+})
+
+// ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
