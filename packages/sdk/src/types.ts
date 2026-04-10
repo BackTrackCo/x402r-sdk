@@ -245,7 +245,8 @@ export interface ArbiterIdentity {
  */
 export interface MerchantIdentity {
   agentId: bigint
-  agentRegistry: string
+  /** CAIP-10 identifier for the agent registry contract (e.g. `eip155:8453:0x8004...`). */
+  agentRegistry: `eip155:${number}:0x${string}`
 }
 
 export interface CheckAgentResult {

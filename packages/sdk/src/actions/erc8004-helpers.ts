@@ -3,6 +3,21 @@ import { isAddress } from 'viem'
 import type { ArbiterIdentity, MerchantIdentity } from '../types.js'
 
 const REPUTATION_EXTENSION_KEY = '8004-reputation'
+const CAIP10_PATTERN = /^eip155:\d+:0x[0-9a-fA-F]{40}$/
+
+/** Coerce a raw value to bigint. Accepts bigint, number, or numeric string. */
+function coerceAgentId(raw: unknown): bigint | undefined {
+  if (typeof raw === 'bigint') return raw
+  if (typeof raw === 'number') return BigInt(raw)
+  if (typeof raw === 'string') {
+    try {
+      return BigInt(raw)
+    } catch {
+      return undefined
+    }
+  }
+  return undefined
+}
 
 /**
  * Extract arbiter identity from an attestation extension response.
@@ -27,15 +42,7 @@ export function extractArbiterIdentity(
 
   const info = attestationInfo as Record<string, unknown>
 
-  const rawAgentId = info.agentId
-  if (rawAgentId === undefined || rawAgentId === null) return undefined
-
-  const agentId =
-    typeof rawAgentId === 'bigint'
-      ? rawAgentId
-      : typeof rawAgentId === 'number'
-        ? BigInt(rawAgentId)
-        : undefined
+  const agentId = coerceAgentId(info.agentId)
   if (agentId === undefined) return undefined
 
   const address = info.arbiter
@@ -67,21 +74,17 @@ export function extractMerchantIdentity(
 
   const data = raw as Record<string, unknown>
 
-  const rawAgentId = data.agentId
-  if (rawAgentId === undefined || rawAgentId === null) return undefined
-
-  const agentId =
-    typeof rawAgentId === 'bigint'
-      ? rawAgentId
-      : typeof rawAgentId === 'number'
-        ? BigInt(rawAgentId)
-        : undefined
+  const agentId = coerceAgentId(data.agentId)
   if (agentId === undefined) return undefined
 
   const agentRegistry = data.agentRegistry
-  if (typeof agentRegistry !== 'string') return undefined
+  if (typeof agentRegistry !== 'string' || !CAIP10_PATTERN.test(agentRegistry))
+    return undefined
 
-  return { agentId, agentRegistry }
+  return {
+    agentId,
+    agentRegistry: agentRegistry as MerchantIdentity['agentRegistry'],
+  }
 }
 
 /**
@@ -91,6 +94,7 @@ export function extractMerchantIdentity(
  * Use at merchant startup to verify the arbiter before serving customers.
  *
  * Returns `undefined` if the arbiter doesn't include an agentId.
+ * Network errors (DNS, connection refused) propagate as thrown exceptions.
  *
  * @param arbiterUrl - Base URL of the arbiter service
  */
@@ -99,11 +103,7 @@ export async function fetchArbiterIdentity(
 ): Promise<ArbiterIdentity | undefined> {
   const base = arbiterUrl.endsWith('/') ? arbiterUrl.slice(0, -1) : arbiterUrl
   const url = `${base}/attest/identity`
-  const fetchFn = (globalThis as Record<string, unknown>).fetch as (
-    url: string,
-    init: Record<string, unknown>,
-  ) => Promise<{ ok: boolean; json(): Promise<unknown> }>
-  const response = await fetchFn(url, {
+  const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: '{}',

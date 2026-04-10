@@ -29,6 +29,20 @@ describe('extractArbiterIdentity', () => {
     expect(result).toEqual({ agentId: 7n, address: VALID_ADDRESS })
   })
 
+  it('handles string-encoded agentId (JSON deserialization)', () => {
+    const result = extractArbiterIdentity({
+      arbiter: VALID_ADDRESS,
+      agentId: '42',
+    })
+    expect(result).toEqual({ agentId: 42n, address: VALID_ADDRESS })
+  })
+
+  it('returns undefined for non-numeric string agentId', () => {
+    expect(
+      extractArbiterIdentity({ arbiter: VALID_ADDRESS, agentId: 'abc' }),
+    ).toBeUndefined()
+  })
+
   it('returns undefined when agentId is missing', () => {
     expect(
       extractArbiterIdentity({
@@ -59,12 +73,6 @@ describe('extractArbiterIdentity', () => {
   it('returns undefined for non-object input', () => {
     expect(extractArbiterIdentity('string')).toBeUndefined()
   })
-
-  it('returns undefined when agentId is a string', () => {
-    expect(
-      extractArbiterIdentity({ arbiter: VALID_ADDRESS, agentId: 'abc' }),
-    ).toBeUndefined()
-  })
 })
 
 // ---------------------------------------------------------------------------
@@ -72,17 +80,14 @@ describe('extractArbiterIdentity', () => {
 // ---------------------------------------------------------------------------
 
 describe('extractMerchantIdentity', () => {
+  const VALID_REGISTRY =
+    'eip155:8453:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432'
+
   it('extracts from valid 8004-reputation extension', () => {
     const result = extractMerchantIdentity({
-      '8004-reputation': {
-        agentId: 99,
-        agentRegistry: 'eip155:8453:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432',
-      },
+      '8004-reputation': { agentId: 99, agentRegistry: VALID_REGISTRY },
     })
-    expect(result).toEqual({
-      agentId: 99n,
-      agentRegistry: 'eip155:8453:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432',
-    })
+    expect(result).toEqual({ agentId: 99n, agentRegistry: VALID_REGISTRY })
   })
 
   it('handles bigint agentId', () => {
@@ -96,6 +101,32 @@ describe('extractMerchantIdentity', () => {
     expect(result?.agentId).toBe(5n)
   })
 
+  it('handles string-encoded agentId', () => {
+    const result = extractMerchantIdentity({
+      '8004-reputation': { agentId: '42', agentRegistry: VALID_REGISTRY },
+    })
+    expect(result?.agentId).toBe(42n)
+  })
+
+  it('rejects non-CAIP-10 agentRegistry', () => {
+    expect(
+      extractMerchantIdentity({
+        '8004-reputation': { agentId: 1, agentRegistry: 'hello world' },
+      }),
+    ).toBeUndefined()
+  })
+
+  it('rejects agentRegistry missing chain prefix', () => {
+    expect(
+      extractMerchantIdentity({
+        '8004-reputation': {
+          agentId: 1,
+          agentRegistry: '0x8004A169FB4a3325136EB29fA0ceB6D2e539a432',
+        },
+      }),
+    ).toBeUndefined()
+  })
+
   it('returns undefined when extensions is undefined', () => {
     expect(extractMerchantIdentity(undefined)).toBeUndefined()
   })
@@ -107,16 +138,14 @@ describe('extractMerchantIdentity', () => {
   it('returns undefined when agentId is missing', () => {
     expect(
       extractMerchantIdentity({
-        '8004-reputation': { agentRegistry: 'eip155:1:0xabc' },
+        '8004-reputation': { agentRegistry: VALID_REGISTRY },
       }),
     ).toBeUndefined()
   })
 
   it('returns undefined when agentRegistry is missing', () => {
     expect(
-      extractMerchantIdentity({
-        '8004-reputation': { agentId: 42 },
-      }),
+      extractMerchantIdentity({ '8004-reputation': { agentId: 42 } }),
     ).toBeUndefined()
   })
 
@@ -184,15 +213,22 @@ describe('fetchArbiterIdentity', () => {
   it('returns undefined when arbiter has no agentId', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(
-        JSON.stringify({
-          arbiter: VALID_ADDRESS,
-          type: 'some-arbiter',
-        }),
+        JSON.stringify({ arbiter: VALID_ADDRESS, type: 'some-arbiter' }),
         { status: 200 },
       ),
     )
 
     const result = await fetchArbiterIdentity('https://arbiter.example.com')
     expect(result).toBeUndefined()
+  })
+
+  it('propagates network errors', async () => {
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(
+      new TypeError('fetch failed'),
+    )
+
+    await expect(
+      fetchArbiterIdentity('https://arbiter.example.com'),
+    ).rejects.toThrow('fetch failed')
   })
 })
