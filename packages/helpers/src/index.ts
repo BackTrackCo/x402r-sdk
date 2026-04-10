@@ -2,7 +2,6 @@
 // Re-exports from @x402r/core — unified CREATE3 addresses (same on every chain)
 // ---------------------------------------------------------------------------
 export {
-  arbiterRegistry,
   authCaptureEscrow,
   conditions,
   factories,

@@ -5,7 +5,6 @@ export {
   alwaysTrueConditionAbi,
   andConditionAbi,
   andConditionFactoryAbi,
-  arbiterRegistryAbi,
   authCaptureEscrowAbi,
   authorizationTimeRecorderAbi,
   escrowPeriodAbi,
@@ -214,7 +213,6 @@ export type {
   X402rChainConfig,
 } from './config/index.js'
 export {
-  arbiterRegistry,
   authCaptureEscrow,
   conditions,
   factories,

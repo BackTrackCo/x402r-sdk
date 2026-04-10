@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  arbiterRegistry,
   authCaptureEscrow,
   ConfigError,
   conditions,
@@ -93,7 +92,6 @@ describe('named address constants match getChainConfig()', () => {
       expect(config.authCaptureEscrow).toBe(authCaptureEscrow)
       expect(config.tokenCollector).toBe(tokenCollector)
       expect(config.protocolFeeConfig).toBe(protocolFeeConfig)
-      expect(config.arbiterRegistry).toBe(arbiterRegistry)
       expect(config.receiverRefundCollector).toBe(receiverRefundCollector)
       expect(config.usdcTvlLimit).toBe(usdcTvlLimit)
       expect(config.factories).toEqual(factories)
