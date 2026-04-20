@@ -1,6 +1,7 @@
 import { isAbsolute, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import type { Account } from 'viem'
+import { isAddress } from 'viem'
 import type { ResolvedSigner, SignerFlags } from '../types.js'
 import { SignerResolutionError } from './error.js'
 
@@ -66,7 +67,7 @@ function isAccount(value: unknown): value is Account {
   const a = value as Record<string, unknown>
   return (
     typeof a.address === 'string' &&
-    /^0x[0-9a-fA-F]{40}$/.test(a.address) &&
+    isAddress(a.address, { strict: false }) &&
     typeof a.signTypedData === 'function'
   )
 }

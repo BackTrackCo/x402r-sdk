@@ -13,5 +13,3 @@ export interface SignerFlags {
   signerAddress?: string
   signerModule?: string
 }
-
-export type SignerFactory = (flags: SignerFlags) => Promise<ResolvedSigner>

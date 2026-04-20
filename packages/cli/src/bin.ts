@@ -2,7 +2,6 @@
 import { parseArgs } from 'node:util'
 import { CliError } from './errors.js'
 import { type PayFlags, type PayResult, pay } from './pay.js'
-import { SignerResolutionError } from './signers/index.js'
 
 const USAGE = `@x402r/cli — one-shot x402 payment CLI
 
@@ -112,10 +111,6 @@ function emit(result: PayResult, json: boolean): void {
 }
 
 function handleError(err: unknown, json: boolean): number {
-  if (err instanceof SignerResolutionError) {
-    emitError(err.message, 6, json)
-    return 6
-  }
   if (err instanceof CliError) {
     emitError(err.message, err.exitCode, json)
     return err.exitCode

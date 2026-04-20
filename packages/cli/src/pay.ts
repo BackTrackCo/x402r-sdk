@@ -150,7 +150,7 @@ function parsePaymentRequired(
   }
 }
 
-function pickAccept(
+export function pickAccept(
   accepts: PaymentRequirements[],
   chainFilter: string | undefined,
 ): PaymentRequirements {
@@ -175,7 +175,7 @@ function pickAccept(
   return match
 }
 
-function enforceMaxAmount(
+export function enforceMaxAmount(
   accept: PaymentRequirements,
   maxAmount: string | undefined,
 ): void {

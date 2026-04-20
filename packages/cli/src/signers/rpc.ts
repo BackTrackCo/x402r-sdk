@@ -1,10 +1,8 @@
 import type { Hex } from 'viem'
-import { createClient, http } from 'viem'
+import { createClient, http, isAddress, stringToHex } from 'viem'
 import { toAccount } from 'viem/accounts'
 import type { ResolvedSigner, SignerFlags } from '../types.js'
 import { SignerResolutionError } from './error.js'
-
-const ADDRESS = /^0x[0-9a-fA-F]{40}$/
 
 /**
  * Remote JSON-RPC signer. Delegates EIP-712 signing to any endpoint speaking
@@ -21,7 +19,7 @@ export function resolveRpcSigner(flags: SignerFlags): ResolvedSigner | null {
       'remote RPC signer requires both --signer-url/SIGNER_URL and --signer-address/SIGNER_ADDRESS',
     )
   }
-  if (!ADDRESS.test(address)) {
+  if (!isAddress(address, { strict: false })) {
     throw new SignerResolutionError(
       'remote signer address is not a valid 0x-prefixed 20-byte hex',
     )
@@ -34,7 +32,9 @@ export function resolveRpcSigner(flags: SignerFlags): ResolvedSigner | null {
     address: addr,
     async signMessage({ message }) {
       const data =
-        typeof message === 'string' ? toHex(message) : (message.raw as Hex)
+        typeof message === 'string'
+          ? stringToHex(message)
+          : (message.raw as Hex)
       return (await client.request({
         method: 'personal_sign',
         params: [data, addr],
@@ -61,11 +61,4 @@ export function resolveRpcSigner(flags: SignerFlags): ResolvedSigner | null {
   })
 
   return { account, kind: 'rpc' }
-}
-
-function toHex(value: string): Hex {
-  const bytes = new TextEncoder().encode(value)
-  let out = '0x'
-  for (const b of bytes) out += b.toString(16).padStart(2, '0')
-  return out as Hex
 }
