@@ -46,7 +46,13 @@ export function resolveRpcSigner(flags: SignerFlags): ResolvedSigner | null {
       )
     },
     async signTypedData(typedData) {
-      const json = JSON.stringify(typedData)
+      // EIP-3009 payloads carry `value`, `validAfter`, and `validBefore` as
+      // BigInt. `JSON.stringify` throws on BigInt by default, so we coerce
+      // them to decimal strings (the encoding every `eth_signTypedData_v4`
+      // endpoint accepts for uint256 fields).
+      const json = JSON.stringify(typedData, (_key, value) =>
+        typeof value === 'bigint' ? value.toString() : value,
+      )
       return (await client.request({
         method: 'eth_signTypedData_v4',
         params: [addr, json],
