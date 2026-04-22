@@ -14,6 +14,9 @@
     },
     "packages/sdk": {
       "entry": ["tests/**/*.test.ts", "tests/**/*.ts", "vitest.config.ts"]
+    },
+    "packages/cli": {
+      "entry": ["tests/**/*.test.ts", "tests/**/*.ts", "vitest.config.ts"]
     }
   }
 }
