@@ -8,7 +8,7 @@ export default defineConfig({
       provider: 'v8',
       reporter: [process.env.CI ? 'lcov' : 'text', 'json', 'html'],
       include: ['src/**/*.ts'],
-      exclude: ['src/**/index.ts', 'src/bin.ts'],
+      exclude: ['src/index.ts', 'src/bin.ts'],
     },
   },
 })

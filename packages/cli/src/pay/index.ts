@@ -1,23 +1,19 @@
 import { x402Client, x402HTTPClient } from '@x402/core/client'
-import type {
-  PaymentPayload,
-  PaymentRequired,
-  PaymentRequirements,
-} from '@x402/core/types'
+import type { PaymentPayload, PaymentRequired } from '@x402/core/types'
 import { toClientEvmSigner } from '@x402/evm'
 import { registerCommerceEvmScheme } from '@x402r/evm/commerce/client'
 import type { Account } from 'viem'
 import { createPublicClient, http } from 'viem'
-import { parseChainId, resolveChain } from './chain.js'
+import { parseChainId, resolveChain } from '../chain.js'
 import {
   Malformed402Error,
-  MaxAmountExceededError,
   NetworkError,
   SettlementError,
   SignatureRejectedError,
-} from './errors.js'
-import { resolveSigner } from './signers/index.js'
-import type { SignerFlags, SignerKind } from './types.js'
+} from '../errors.js'
+import { resolveSigner } from '../signers/index.js'
+import type { SignerFlags, SignerKind } from '../types.js'
+import { enforceMaxAmount, pickAccept } from './policy.js'
 
 export interface PayFlags extends SignerFlags {
   url: string
@@ -146,53 +142,6 @@ function parsePaymentRequired(
   } catch (err) {
     throw new Malformed402Error(
       `failed to parse 402 payment-required: ${errorMessage(err)}`,
-    )
-  }
-}
-
-export function pickAccept(
-  accepts: PaymentRequirements[],
-  chainFilter: string | undefined,
-): PaymentRequirements {
-  if (accepts.length === 0) {
-    throw new Malformed402Error('402 response has no accepts[] entries')
-  }
-  if (!chainFilter) {
-    if (accepts.length > 1) {
-      throw new Malformed402Error(
-        `402 offers ${accepts.length} payment options; pass --chain <eip155:id> to pick one`,
-      )
-    }
-    return accepts[0]!
-  }
-
-  const match = accepts.find((a) => a.network === chainFilter)
-  if (!match) {
-    throw new Malformed402Error(
-      `no accepts[] entry matches --chain ${chainFilter}; offered: ${accepts.map((a) => a.network).join(', ')}`,
-    )
-  }
-  return match
-}
-
-export function enforceMaxAmount(
-  accept: PaymentRequirements,
-  maxAmount: string | undefined,
-): void {
-  if (!maxAmount) return
-  let amount: bigint
-  let max: bigint
-  try {
-    amount = BigInt(accept.amount)
-    max = BigInt(maxAmount)
-  } catch {
-    throw new MaxAmountExceededError(
-      `invalid amount comparison: accept.amount=${accept.amount}, max=${maxAmount}`,
-    )
-  }
-  if (amount > max) {
-    throw new MaxAmountExceededError(
-      `price ${amount} exceeds --max-amount ${max} (atomic units of ${accept.asset})`,
     )
   }
 }

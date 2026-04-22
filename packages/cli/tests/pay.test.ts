@@ -2,7 +2,7 @@ import { encodePaymentRequiredHeader } from '@x402/core/http'
 import type { PaymentRequired, PaymentRequirements } from '@x402/core/types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Malformed402Error, MaxAmountExceededError } from '../src/errors.js'
-import { pay } from '../src/pay.js'
+import { pay } from '../src/pay/index.js'
 
 const USDC = '0x036CbD53842c5426634e7929541eC2318f3dCF7e'
 const KEY = `0x${'1'.repeat(64)}`

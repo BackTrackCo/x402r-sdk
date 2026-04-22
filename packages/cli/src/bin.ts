@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { parseArgs } from 'node:util'
 import { CliError } from './errors.js'
-import { type PayFlags, type PayResult, pay } from './pay.js'
+import { type PayFlags, type PayResult, pay } from './pay/index.js'
 
 const USAGE = `@x402r/cli — one-shot x402 payment CLI
 
