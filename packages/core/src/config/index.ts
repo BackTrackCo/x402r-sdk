@@ -89,6 +89,44 @@ export const recorders = {
     '0xa83A44836e16A35505EFA9c6b6a1BD9C0Ecc40E9' as const satisfies Address,
 } as const satisfies RecorderSingletonAddresses
 
+// ---------------------------------------------------------------------------
+// commerce-payments v1 primitives — canonical CREATE2 addresses
+// ---------------------------------------------------------------------------
+//
+// Upstream `base/commerce-payments@v1.0.0` contracts redeployed at canonical
+// CREATE2 addresses via CreateX permissionless salts. Same address on every
+// chain. These replace the legacy CREATE3 `authCaptureEscrow` /
+// `tokenCollector` constants above; the existing legacy addresses are kept in
+// place for now to avoid breaking existing tests/consumers, and will be
+// retired in the SDK v2 migration.
+//
+// Salt namespace: `commerce-payments::v1::<ContractName>`.
+// Source of truth: `x402r-contracts/script/PredictAddresses.s.sol`.
+
+/** AuthCaptureEscrow at canonical CREATE2 address (commerce-payments v1.0.0). */
+export const commercePaymentsAuthCaptureEscrow =
+  '0xF8211868187974a7Fb9d99b8fFB171AD70665Dc6' as const satisfies Address
+
+/** ERC3009PaymentCollector(escrow, multicall3) at canonical CREATE2 address. */
+export const commercePaymentsErc3009PaymentCollector =
+  '0x7561DC178D9aD5bc5fb103C01f448A510d2A36D0' as const satisfies Address
+
+/** Permit2PaymentCollector(escrow, permit2, multicall3) at canonical CREATE2 address. */
+export const commercePaymentsPermit2PaymentCollector =
+  '0xD8490609d2da0ee626b0e676941b225cbc1A8C08' as const satisfies Address
+
+/** Convenience bundle of all three primitive addresses. */
+export const commercePaymentsAddresses = {
+  authCaptureEscrow: commercePaymentsAuthCaptureEscrow,
+  erc3009PaymentCollector: commercePaymentsErc3009PaymentCollector,
+  permit2PaymentCollector: commercePaymentsPermit2PaymentCollector,
+} as const
+
+// `x402rChains` below is the canonical chain registry. The commerce-payments
+// v1 primitives + the x402r-authored contracts deploy to the same set of
+// chains; the registry is the source of truth for both. Ethereum mainnet and
+// Monad are listed pending an imminent primitives deploy.
+
 /**
  * Runtime codehash of RecorderCombinator contract.
  * All RecorderCombinator instances share identical runtime bytecode —
@@ -174,12 +212,6 @@ export const x402rChains = {
     'Linea',
     59144,
     '0x176211869cA2b568f2A7D4EE941E073a821EE1ff',
-  ),
-
-  1187947933: chainConfig(
-    'SKALE Base',
-    1187947933,
-    '0x85889c8c714505E0c94b30fcfcF64fE3Ac8FCb20',
   ),
 } as const satisfies Record<number, X402rChainConfig>
 

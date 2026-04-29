@@ -214,6 +214,10 @@ export type {
 } from './config/index.js'
 export {
   authCaptureEscrow,
+  commercePaymentsAddresses,
+  commercePaymentsAuthCaptureEscrow,
+  commercePaymentsErc3009PaymentCollector,
+  commercePaymentsPermit2PaymentCollector,
   conditions,
   factories,
   fromNetworkId,
