@@ -2,8 +2,6 @@
 
 TypeScript SDK for x402r refundable payments on EVM chains.
 
-> **Not production-ready.** Packages are not yet published to npm. Expect breaking changes.
-
 ## Packages
 
 | Package | Description |
