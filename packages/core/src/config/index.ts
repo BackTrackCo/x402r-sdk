@@ -124,8 +124,8 @@ export const commercePaymentsAddresses = {
 
 // `x402rChains` below is the canonical chain registry. The commerce-payments
 // v1 primitives + the x402r-authored contracts deploy to the same set of
-// chains; the registry is the source of truth for both. Ethereum mainnet and
-// Monad are listed pending an imminent primitives deploy.
+// chains; the registry is the source of truth for both. As of 2026-04-29,
+// the primitives are deployed on every chain listed here.
 
 /**
  * Runtime codehash of RecorderCombinator contract.
