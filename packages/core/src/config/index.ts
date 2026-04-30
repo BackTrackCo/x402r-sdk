@@ -213,6 +213,18 @@ export const x402rChains = {
     59144,
     '0x176211869cA2b568f2A7D4EE941E073a821EE1ff',
   ),
+  56: chainConfig(
+    'BNB Smart Chain',
+    56,
+    '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d',
+  ),
+  // Tempo's canonical USD-pegged stablecoin is pathUSD (predeploy TIP-20).
+  // Native USDC is not yet issued on Tempo.
+  4217: chainConfig(
+    'Tempo',
+    4217,
+    '0x20c0000000000000000000000000000000000000',
+  ),
 } as const satisfies Record<number, X402rChainConfig>
 
 // ---------------------------------------------------------------------------
