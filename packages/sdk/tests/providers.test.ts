@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockPaymentInfo } from './fixtures.js'
 
-const mockGetPayerPaymentsFromRecorder = vi.fn()
-const mockGetReceiverPaymentsFromRecorder = vi.fn()
-const mockGetRecorderPaymentInfo = vi.fn()
+const mockGetPayerPaymentsFromHook = vi.fn()
+const mockGetReceiverPaymentsFromHook = vi.fn()
+const mockGetHookPaymentInfo = vi.fn()
 const mockGetPayerPaymentsByEvents = vi.fn()
 const mockGetReceiverPaymentsByEvents = vi.fn()
 
@@ -11,12 +11,11 @@ vi.mock('@x402r/core', async (importOriginal) => {
   const actual = (await importOriginal()) as Record<string, unknown>
   return {
     ...actual,
-    getPayerPaymentsFromRecorder: (...args: unknown[]) =>
-      mockGetPayerPaymentsFromRecorder(...args),
-    getReceiverPaymentsFromRecorder: (...args: unknown[]) =>
-      mockGetReceiverPaymentsFromRecorder(...args),
-    getRecorderPaymentInfo: (...args: unknown[]) =>
-      mockGetRecorderPaymentInfo(...args),
+    getPayerPaymentsFromHook: (...args: unknown[]) =>
+      mockGetPayerPaymentsFromHook(...args),
+    getReceiverPaymentsFromHook: (...args: unknown[]) =>
+      mockGetReceiverPaymentsFromHook(...args),
+    getHookPaymentInfo: (...args: unknown[]) => mockGetHookPaymentInfo(...args),
     getPayerPaymentsByEvents: (...args: unknown[]) =>
       mockGetPayerPaymentsByEvents(...args),
     getReceiverPaymentsByEvents: (...args: unknown[]) =>
@@ -105,7 +104,7 @@ describe('createStoreProvider', () => {
 
 describe('createRecorderProvider', () => {
   it('getByPayer delegates to core with correct args', async () => {
-    mockGetPayerPaymentsFromRecorder.mockResolvedValue({
+    mockGetPayerPaymentsFromHook.mockResolvedValue({
       payments: [mockPaymentInfo],
       total: 1n,
     })
@@ -114,10 +113,10 @@ describe('createRecorderProvider', () => {
     const result = await provider.getByPayer(84532, PAYER)
 
     expect(result).toEqual([mockPaymentInfo])
-    expect(mockGetPayerPaymentsFromRecorder).toHaveBeenCalledWith(
+    expect(mockGetPayerPaymentsFromHook).toHaveBeenCalledWith(
       mockPublicClient,
       expect.objectContaining({
-        recorderAddress: RECORDER,
+        hookAddress: RECORDER,
         payer: PAYER,
         offset: 0n,
       }),
@@ -125,7 +124,7 @@ describe('createRecorderProvider', () => {
   })
 
   it('getByReceiver delegates to core with correct args', async () => {
-    mockGetReceiverPaymentsFromRecorder.mockResolvedValue({
+    mockGetReceiverPaymentsFromHook.mockResolvedValue({
       payments: [mockPaymentInfo],
       total: 1n,
     })
@@ -134,25 +133,25 @@ describe('createRecorderProvider', () => {
     const result = await provider.getByReceiver(84532, RECEIVER)
 
     expect(result).toEqual([mockPaymentInfo])
-    expect(mockGetReceiverPaymentsFromRecorder).toHaveBeenCalledWith(
+    expect(mockGetReceiverPaymentsFromHook).toHaveBeenCalledWith(
       mockPublicClient,
       expect.objectContaining({
-        recorderAddress: RECORDER,
+        hookAddress: RECORDER,
         receiver: RECEIVER,
         offset: 0n,
       }),
     )
   })
 
-  it('getByHash delegates to getRecorderPaymentInfo', async () => {
-    mockGetRecorderPaymentInfo.mockResolvedValue(mockPaymentInfo)
+  it('getByHash delegates to getHookPaymentInfo', async () => {
+    mockGetHookPaymentInfo.mockResolvedValue(mockPaymentInfo)
     const provider = createRecorderProvider(mockPublicClient, RECORDER)
 
     const result = await provider.getByHash(84532, HASH)
 
     expect(result).toEqual(mockPaymentInfo)
-    expect(mockGetRecorderPaymentInfo).toHaveBeenCalledWith(mockPublicClient, {
-      recorderAddress: RECORDER,
+    expect(mockGetHookPaymentInfo).toHaveBeenCalledWith(mockPublicClient, {
+      hookAddress: RECORDER,
       hash: HASH,
     })
   })
@@ -162,7 +161,7 @@ describe('createRecorderProvider', () => {
     const info2 = { ...mockPaymentInfo, salt: 2n } as PaymentInfo
     const info3 = { ...mockPaymentInfo, salt: 3n } as PaymentInfo
 
-    mockGetPayerPaymentsFromRecorder
+    mockGetPayerPaymentsFromHook
       .mockResolvedValueOnce({ payments: [info1, info2], total: 3n })
       .mockResolvedValueOnce({ payments: [info3], total: 3n })
 
@@ -170,8 +169,8 @@ describe('createRecorderProvider', () => {
     const result = await provider.getByPayer(84532, PAYER)
 
     expect(result).toEqual([info1, info2, info3])
-    expect(mockGetPayerPaymentsFromRecorder).toHaveBeenCalledTimes(2)
-    expect(mockGetPayerPaymentsFromRecorder).toHaveBeenNthCalledWith(
+    expect(mockGetPayerPaymentsFromHook).toHaveBeenCalledTimes(2)
+    expect(mockGetPayerPaymentsFromHook).toHaveBeenNthCalledWith(
       2,
       mockPublicClient,
       expect.objectContaining({ offset: 2n, count: 2n }),
@@ -179,7 +178,7 @@ describe('createRecorderProvider', () => {
   })
 
   it('returns empty array when total is 0', async () => {
-    mockGetPayerPaymentsFromRecorder.mockResolvedValueOnce({
+    mockGetPayerPaymentsFromHook.mockResolvedValueOnce({
       payments: [],
       total: 0n,
     })
@@ -188,14 +187,14 @@ describe('createRecorderProvider', () => {
     const result = await provider.getByPayer(84532, PAYER)
 
     expect(result).toEqual([])
-    expect(mockGetPayerPaymentsFromRecorder).toHaveBeenCalledTimes(1)
+    expect(mockGetPayerPaymentsFromHook).toHaveBeenCalledTimes(1)
   })
 
   it('exactly page-size results — no extra page fetch', async () => {
     const info1 = { ...mockPaymentInfo, salt: 1n } as PaymentInfo
     const info2 = { ...mockPaymentInfo, salt: 2n } as PaymentInfo
 
-    mockGetPayerPaymentsFromRecorder.mockResolvedValueOnce({
+    mockGetPayerPaymentsFromHook.mockResolvedValueOnce({
       payments: [info1, info2],
       total: 2n,
     })
@@ -204,11 +203,11 @@ describe('createRecorderProvider', () => {
     const result = await provider.getByPayer(84532, PAYER)
 
     expect(result).toEqual([info1, info2])
-    expect(mockGetPayerPaymentsFromRecorder).toHaveBeenCalledTimes(1)
+    expect(mockGetPayerPaymentsFromHook).toHaveBeenCalledTimes(1)
   })
 
   it('pagination stall guard — stops when page returns empty', async () => {
-    mockGetPayerPaymentsFromRecorder
+    mockGetPayerPaymentsFromHook
       .mockResolvedValueOnce({
         payments: [mockPaymentInfo],
         total: 5n,
@@ -219,7 +218,7 @@ describe('createRecorderProvider', () => {
     const result = await provider.getByPayer(84532, PAYER)
 
     expect(result).toEqual([mockPaymentInfo])
-    expect(mockGetPayerPaymentsFromRecorder).toHaveBeenCalledTimes(2)
+    expect(mockGetPayerPaymentsFromHook).toHaveBeenCalledTimes(2)
   })
 
   it('multi-page receiver pagination', async () => {
@@ -227,7 +226,7 @@ describe('createRecorderProvider', () => {
     const info2 = { ...mockPaymentInfo, salt: 20n } as PaymentInfo
     const info3 = { ...mockPaymentInfo, salt: 30n } as PaymentInfo
 
-    mockGetReceiverPaymentsFromRecorder
+    mockGetReceiverPaymentsFromHook
       .mockResolvedValueOnce({ payments: [info1, info2], total: 3n })
       .mockResolvedValueOnce({ payments: [info3], total: 3n })
 
@@ -235,8 +234,8 @@ describe('createRecorderProvider', () => {
     const result = await provider.getByReceiver(84532, RECEIVER)
 
     expect(result).toEqual([info1, info2, info3])
-    expect(mockGetReceiverPaymentsFromRecorder).toHaveBeenCalledTimes(2)
-    expect(mockGetReceiverPaymentsFromRecorder).toHaveBeenNthCalledWith(
+    expect(mockGetReceiverPaymentsFromHook).toHaveBeenCalledTimes(2)
+    expect(mockGetReceiverPaymentsFromHook).toHaveBeenNthCalledWith(
       2,
       mockPublicClient,
       expect.objectContaining({ offset: 2n, count: 2n }),

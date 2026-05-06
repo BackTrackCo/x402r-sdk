@@ -4,7 +4,7 @@ import type { PaymentInfo } from '../../types/index.js'
 import { wrapContractCall } from '../_internal/error-wrapping.js'
 
 export interface GetReceiverPaymentParameters {
-  recorderAddress: Address
+  hookAddress: Address
   receiver: Address
   index: bigint
 }
@@ -13,11 +13,11 @@ export async function getReceiverPayment(
   publicClient: PublicClient,
   parameters: GetReceiverPaymentParameters,
 ): Promise<PaymentInfo> {
-  const { recorderAddress, receiver, index } = parameters
+  const { hookAddress, receiver, index } = parameters
 
   const result = await wrapContractCall('getReceiverPayment', () =>
     publicClient.readContract({
-      address: recorderAddress,
+      address: hookAddress,
       abi: paymentIndexHookAbi,
       functionName: 'getReceiverPayment',
       args: [receiver, index],

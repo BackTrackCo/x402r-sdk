@@ -83,7 +83,7 @@ describe('queryActions plugin', () => {
   it('does not override query when already configured', () => {
     const client = createX402r({
       ...baseConfig,
-      paymentIndexRecorderAddress: TEST_RECORDER,
+      paymentIndexHookAddress: TEST_RECORDER,
     })
     expect(client.query).toBeDefined()
 

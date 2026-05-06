@@ -23,14 +23,14 @@
     "prepublishOnly": "publint --strict && attw --pack --ignore-rules no-resolution cjs-resolves-to-esm"
   },
   "dependencies": {
-    "@x402r/core": "^0.2.0"
+    "@x402r/core": "workspace:^"
   },
   "peerDependencies": {
     "@x402/core": ">=2.5.0"
   },
   "devDependencies": {
     "@x402/core": "2.5.0",
-    "@x402r/core": "^0.2.0"
+    "@x402r/core": "workspace:^"
   },
   "size-limit": [
     {

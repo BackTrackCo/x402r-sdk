@@ -1,9 +1,9 @@
 import {
+  getHookPaymentInfo,
   getPayerPaymentsByEvents,
-  getPayerPaymentsFromRecorder,
+  getPayerPaymentsFromHook,
   getReceiverPaymentsByEvents,
-  getReceiverPaymentsFromRecorder,
-  getRecorderPaymentInfo,
+  getReceiverPaymentsFromHook,
   type PaymentInfo,
 } from '@x402r/core'
 import type { Address, PublicClient } from 'viem'
@@ -25,7 +25,7 @@ const DEFAULT_PAGE_SIZE = 1000n
 
 export function createRecorderProvider(
   publicClient: PublicClient,
-  recorderAddress: Address,
+  hookAddress: Address,
   pageSize: bigint = DEFAULT_PAGE_SIZE,
 ): PaymentInfoProvider {
   return {
@@ -35,8 +35,8 @@ export function createRecorderProvider(
       let offset = 0n
       let total: bigint
       do {
-        const result = await getPayerPaymentsFromRecorder(publicClient, {
-          recorderAddress,
+        const result = await getPayerPaymentsFromHook(publicClient, {
+          hookAddress,
           payer,
           offset,
           count: pageSize,
@@ -53,8 +53,8 @@ export function createRecorderProvider(
       let offset = 0n
       let total: bigint
       do {
-        const result = await getReceiverPaymentsFromRecorder(publicClient, {
-          recorderAddress,
+        const result = await getReceiverPaymentsFromHook(publicClient, {
+          hookAddress,
           receiver,
           offset,
           count: pageSize,
@@ -67,8 +67,8 @@ export function createRecorderProvider(
       return all
     },
     async getByHash(_, hash) {
-      return getRecorderPaymentInfo(publicClient, {
-        recorderAddress,
+      return getHookPaymentInfo(publicClient, {
+        hookAddress,
         hash,
       })
     },

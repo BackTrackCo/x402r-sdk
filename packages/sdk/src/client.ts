@@ -58,8 +58,8 @@ export function createX402r(config: X402rConfig): X402r {
     freeze: resolved.freezeAddress
       ? createFreezeActions(resolved, resolved.freezeAddress)
       : undefined,
-    query: resolved.paymentIndexRecorderAddress
-      ? createQueryActions(resolved, resolved.paymentIndexRecorderAddress)
+    query: resolved.paymentIndexHookAddress
+      ? createQueryActions(resolved, resolved.paymentIndexHookAddress)
       : undefined,
     operator: createOperatorActions(resolved),
     watch: createWatchActions(resolved),
@@ -98,7 +98,7 @@ export function resolveConfig(config: X402rConfig): ResolvedConfig {
     escrowPeriodAddress: config.escrowPeriodAddress,
     freezeAddress: config.freezeAddress,
     paymentStore: config.paymentStore,
-    paymentIndexRecorderAddress: config.paymentIndexRecorderAddress,
+    paymentIndexHookAddress: config.paymentIndexHookAddress,
     eventFromBlock: config.eventFromBlock,
   }
 }

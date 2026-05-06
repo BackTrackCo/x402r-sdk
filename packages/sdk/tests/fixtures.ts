@@ -58,7 +58,7 @@ export function createTestConfig(
     refundRequestEvidenceAddress: TEST_EVIDENCE,
     escrowPeriodAddress: undefined,
     freezeAddress: undefined,
-    paymentIndexRecorderAddress: undefined,
+    paymentIndexHookAddress: undefined,
     paymentStore: undefined,
     eventFromBlock: undefined,
     ...overrides,

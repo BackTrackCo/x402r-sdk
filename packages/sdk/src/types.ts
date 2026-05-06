@@ -46,7 +46,7 @@ export interface X402rConfig {
   freezeAddress?: Address
 
   // Payment retrieval
-  paymentIndexRecorderAddress?: Address
+  paymentIndexHookAddress?: Address
   paymentStore?: PaymentStore
   /** Starting block for event-based payment lookups. Required to enable the event fallback provider. */
   eventFromBlock?: bigint
@@ -66,7 +66,7 @@ export interface ResolvedConfig {
   refundRequestEvidenceAddress: Address | undefined
   escrowPeriodAddress: Address | undefined
   freezeAddress: Address | undefined
-  paymentIndexRecorderAddress: Address | undefined
+  paymentIndexHookAddress: Address | undefined
   paymentStore: PaymentStore | undefined
   eventFromBlock: bigint | undefined
 }

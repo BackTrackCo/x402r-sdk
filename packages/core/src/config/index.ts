@@ -14,7 +14,7 @@ export interface FactoryAddresses {
   andCondition: Address
   orCondition: Address
   notCondition: Address
-  recorderCombinator: Address
+  hookCombinator: Address
   signatureCondition: Address
   refundRequest: Address
   refundRequestEvidence: Address
@@ -26,9 +26,9 @@ export interface ConditionSingletonAddresses {
   alwaysTrue: Address
 }
 
-export interface RecorderSingletonAddresses {
-  /** PaymentIndexRecorder(escrow, recorderCombinatorCodehash) — deploy once, share across operators */
-  paymentIndexRecorder: Address
+export interface HookSingletonAddresses {
+  /** PaymentIndexHook(escrow, hookCombinatorCodehash) — deploy once, share across operators */
+  paymentIndexHook: Address
 }
 
 export interface X402rChainConfig {
@@ -41,7 +41,7 @@ export interface X402rChainConfig {
   usdc: Address
   factories: FactoryAddresses
   conditions: ConditionSingletonAddresses
-  recorders: RecorderSingletonAddresses
+  hooks: HookSingletonAddresses
 }
 
 // ---------------------------------------------------------------------------
@@ -67,7 +67,7 @@ export const factories = {
   andCondition: '0x6c3c57071C0Ac144D04e6C66BC809d2951dDF47D',
   orCondition: '0x3dF6b5B840989Ce466161C31A49b8FadF2DA52E5',
   notCondition: '0x269Db5f049A7225E4968Ef7Dee885922da0B8D73',
-  recorderCombinator: '0xb7571b80C24Ce81C65F6b322a75573B61327cA23',
+  hookCombinator: '0xb7571b80C24Ce81C65F6b322a75573B61327cA23',
   signatureCondition: '0xc34EFa7C20940dc2aB50bE23eF150D8B87aEFAc3',
   refundRequest: '0x69e9BF2b40Ed472b55E47e9D4205d93Ed673093F',
   refundRequestEvidence: '0x6514e417f48c1828A2443C6173fa6E04324166E3',
@@ -80,19 +80,19 @@ export const conditions = {
   alwaysTrue: '0xA367323189f20706488A1D83430eda82a2eA5320',
 } as const satisfies ConditionSingletonAddresses
 
-/** Chain-invariant CREATE3 recorder singleton addresses. Same as `getChainConfig(chainId).recorders`. */
-export const recorders = {
-  paymentIndexRecorder:
+/** Chain-invariant CREATE3 hook singleton addresses. Same as `getChainConfig(chainId).hooks`. */
+export const hooks = {
+  paymentIndexHook:
     '0xa83A44836e16A35505EFA9c6b6a1BD9C0Ecc40E9' as const satisfies Address,
-} as const satisfies RecorderSingletonAddresses
+} as const satisfies HookSingletonAddresses
 
 /**
- * Runtime codehash of RecorderCombinator contract.
- * All RecorderCombinator instances share identical runtime bytecode —
+ * Runtime codehash of HookCombinator contract.
+ * All HookCombinator instances share identical runtime bytecode —
  * constructor args affect storage, not deployed code.
  * Verified via: cast codehash <factory-deployed-instance> --rpc-url base-sepolia
  */
-export const recorderCombinatorCodehash: Hex =
+export const hookCombinatorCodehash: Hex =
   '0xeb3902c8489414d014e6b67d18755bc0d2cca05d84ee2c6db9de44120def49ea'
 
 const PROTOCOL_ADDRESSES = {
@@ -102,7 +102,7 @@ const PROTOCOL_ADDRESSES = {
   receiverRefundCollector,
   factories,
   conditions,
-  recorders,
+  hooks,
 } as const
 
 /** Build a chain config by spreading unified protocol addresses + chain-specific USDC */
@@ -255,11 +255,9 @@ export function getConditionSingletons(
   return config.conditions
 }
 
-export function getRecorderSingletons(
-  chainId: number,
-): RecorderSingletonAddresses {
+export function getHookSingletons(chainId: number): HookSingletonAddresses {
   const config = getChainConfig(chainId)
-  return config.recorders
+  return config.hooks
 }
 
 export function hasFactories(chainId: number): boolean {

@@ -13,10 +13,10 @@ import {
   computeEscrowPeriodAddress,
   computeFeeCalculatorAddress,
   computeFreezeAddress,
+  computeHookCombinatorAddress,
   computeNotConditionAddress,
   computeOperatorAddress,
   computeOrConditionAddress,
-  computeRecorderCombinatorAddress,
   computeRefundRequestAddress,
   computeRefundRequestEvidenceAddress,
   computeSignatureConditionAddress,
@@ -175,9 +175,9 @@ describe('Config Address Smoke Tests (Fork)', () => {
     expect(addr).not.toBe(zeroAddress)
   })
 
-  it('recorderCombinator factory responds to computeAddress', async () => {
-    const addr = await computeRecorderCombinatorAddress(publicClient, {
-      factoryAddress: config.factories.recorderCombinator,
+  it('hookCombinator factory responds to computeAddress', async () => {
+    const addr = await computeHookCombinatorAddress(publicClient, {
+      factoryAddress: config.factories.hookCombinator,
       recorders: [zeroAddress],
     })
     expect(addr).toMatch(/^0x[0-9a-fA-F]{40}$/)

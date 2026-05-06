@@ -98,6 +98,25 @@ export type {
 } from './freeze/index.js'
 export { freezePayment, isFrozen, unfreezePayment } from './freeze/index.js'
 // ---------------------------------------------------------------------------
+// Recorder
+// ---------------------------------------------------------------------------
+export type {
+  GetHookPaymentInfoParameters,
+  GetPayerPaymentParameters,
+  GetPayerPaymentsFromHookParameters,
+  GetPayerPaymentsFromHookReturnType,
+  GetReceiverPaymentParameters,
+  GetReceiverPaymentsFromHookParameters,
+  GetReceiverPaymentsFromHookReturnType,
+} from './hook/index.js'
+export {
+  getHookPaymentInfo,
+  getPayerPayment,
+  getPayerPaymentsFromHook,
+  getReceiverPayment,
+  getReceiverPaymentsFromHook,
+} from './hook/index.js'
+// ---------------------------------------------------------------------------
 // Operator
 // ---------------------------------------------------------------------------
 export type {
@@ -124,25 +143,6 @@ export {
   getOperatorConfig,
   release,
 } from './operator/index.js'
-// ---------------------------------------------------------------------------
-// Recorder
-// ---------------------------------------------------------------------------
-export type {
-  GetPayerPaymentParameters,
-  GetPayerPaymentsFromRecorderParameters,
-  GetPayerPaymentsFromRecorderReturnType,
-  GetReceiverPaymentParameters,
-  GetReceiverPaymentsFromRecorderParameters,
-  GetReceiverPaymentsFromRecorderReturnType,
-  GetRecorderPaymentInfoParameters,
-} from './recorder/index.js'
-export {
-  getPayerPayment,
-  getPayerPaymentsFromRecorder,
-  getReceiverPayment,
-  getReceiverPaymentsFromRecorder,
-  getRecorderPaymentInfo,
-} from './recorder/index.js'
 // ---------------------------------------------------------------------------
 // Refund
 // ---------------------------------------------------------------------------

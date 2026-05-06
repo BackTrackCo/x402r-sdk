@@ -10,7 +10,7 @@ import type { QueryActions, ResolvedConfig } from '../types.js'
 
 export function createQueryActions(
   config: ResolvedConfig,
-  recorderAddress: Address,
+  hookAddress: Address,
 ): QueryActions {
   const providers: PaymentInfoProvider[] = []
 
@@ -18,7 +18,7 @@ export function createQueryActions(
     providers.push(createStoreProvider(config.paymentStore))
   }
 
-  providers.push(createRecorderProvider(config.publicClient, recorderAddress))
+  providers.push(createRecorderProvider(config.publicClient, hookAddress))
 
   if (config.eventFromBlock !== undefined) {
     providers.push(

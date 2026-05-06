@@ -286,11 +286,9 @@ describe('Deploy Delivery Protection Operator (Fork)', () => {
     expect(deployment.refundInEscrowConditionAddress).toBe(
       preview.refundInEscrowConditionAddress,
     )
-    expect(deployment.authorizeRecorderAddress).toBe(
-      preview.authorizeRecorderAddress,
-    )
+    expect(deployment.authorizeHookAddress).toBe(preview.authorizeHookAddress)
 
-    // escrowPeriod + arbiterCondition + 2 OrConditions + recorderCombinator + operator = 6
+    // escrowPeriod + arbiterCondition + 2 OrConditions + hookCombinator + operator = 6
     expect(deployment.deployments).toHaveLength(6)
     expect(deployment.summary.newCount + deployment.summary.existingCount).toBe(
       6,

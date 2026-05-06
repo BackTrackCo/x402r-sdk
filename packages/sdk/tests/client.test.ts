@@ -198,15 +198,15 @@ describe('createX402r', () => {
     expect(client.freeze!.isFrozen).toBeTypeOf('function')
   })
 
-  it('query is undefined when no paymentIndexRecorderAddress', () => {
+  it('query is undefined when no paymentIndexHookAddress', () => {
     const client = createX402r(baseConfig)
     expect(client.query).toBeUndefined()
   })
 
-  it('query is defined when paymentIndexRecorderAddress provided', () => {
+  it('query is defined when paymentIndexHookAddress provided', () => {
     const client = createX402r({
       ...baseConfig,
-      paymentIndexRecorderAddress: TEST_RECORDER,
+      paymentIndexHookAddress: TEST_RECORDER,
     })
     expect(client.query).toBeDefined()
     expect(client.query!.getPayerPayments).toBeTypeOf('function')

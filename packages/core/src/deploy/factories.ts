@@ -319,19 +319,19 @@ export function deployNotCondition(
 }
 
 // ---------------------------------------------------------------------------
-// RecorderCombinator
+// HookCombinator
 // ---------------------------------------------------------------------------
 
-export interface ComputeRecorderCombinatorAddressParameters {
+export interface ComputeHookCombinatorAddressParameters {
   factoryAddress: Address
   recorders: readonly Address[]
 }
-export type ComputeRecorderCombinatorAddressReturnType = Address
+export type ComputeHookCombinatorAddressReturnType = Address
 
-export function computeRecorderCombinatorAddress(
+export function computeHookCombinatorAddress(
   publicClient: PublicClient,
-  parameters: ComputeRecorderCombinatorAddressParameters,
-): Promise<ComputeRecorderCombinatorAddressReturnType> {
+  parameters: ComputeHookCombinatorAddressParameters,
+): Promise<ComputeHookCombinatorAddressReturnType> {
   return computeViaFactory(publicClient, {
     factoryAddress: parameters.factoryAddress,
     abi: hookCombinatorFactoryAbi,
@@ -339,22 +339,22 @@ export function computeRecorderCombinatorAddress(
   })
 }
 
-export interface DeployRecorderCombinatorParameters {
+export interface DeployHookCombinatorParameters {
   factoryAddress: Address
   recorders: readonly Address[]
 }
-export type DeployRecorderCombinatorReturnType = DeployResult
+export type DeployHookCombinatorReturnType = DeployResult
 
-export function deployRecorderCombinator(
+export function deployHookCombinator(
   walletClient: WalletClient,
   publicClient: PublicClient,
-  parameters: DeployRecorderCombinatorParameters,
-): Promise<DeployRecorderCombinatorReturnType> {
+  parameters: DeployHookCombinatorParameters,
+): Promise<DeployHookCombinatorReturnType> {
   return deployViaFactory(walletClient, publicClient, {
     factoryAddress: parameters.factoryAddress,
     abi: hookCombinatorFactoryAbi,
     args: [parameters.recorders],
-    opName: 'deployRecorderCombinator',
+    opName: 'deployHookCombinator',
   })
 }
 

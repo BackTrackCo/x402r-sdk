@@ -7,7 +7,7 @@ export function createWatchActions(config: ResolvedConfig): WatchActions {
       const unwatchAuth = config.publicClient.watchContractEvent({
         address: config.operatorAddress,
         abi: paymentOperatorAbi,
-        eventName: 'AuthorizationCreated',
+        eventName: 'AuthorizeExecuted',
         onLogs: (logs) => logs.forEach(callback),
       })
       const unwatchCharge = config.publicClient.watchContractEvent({
@@ -19,7 +19,7 @@ export function createWatchActions(config: ResolvedConfig): WatchActions {
       const unwatchRelease = config.publicClient.watchContractEvent({
         address: config.operatorAddress,
         abi: paymentOperatorAbi,
-        eventName: 'ReleaseExecuted',
+        eventName: 'CaptureExecuted',
         onLogs: (logs) => logs.forEach(callback),
       })
       return () => {
@@ -41,13 +41,13 @@ export function createWatchActions(config: ResolvedConfig): WatchActions {
       const unwatchInEscrow = config.publicClient.watchContractEvent({
         address: config.operatorAddress,
         abi: paymentOperatorAbi,
-        eventName: 'RefundInEscrowExecuted',
+        eventName: 'VoidExecuted',
         onLogs: (logs) => logs.forEach(callback),
       })
       const unwatchPostEscrow = config.publicClient.watchContractEvent({
         address: config.operatorAddress,
         abi: paymentOperatorAbi,
-        eventName: 'RefundPostEscrowExecuted',
+        eventName: 'RefundExecuted',
         onLogs: (logs) => logs.forEach(callback),
       })
       return () => {

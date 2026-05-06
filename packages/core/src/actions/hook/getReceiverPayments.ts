@@ -3,32 +3,32 @@ import { paymentIndexHookAbi } from '../../abis/generated.js'
 import type { PaymentInfo } from '../../types/index.js'
 import { wrapContractCall } from '../_internal/error-wrapping.js'
 
-export interface GetPayerPaymentsFromRecorderParameters {
-  recorderAddress: Address
-  payer: Address
+export interface GetReceiverPaymentsFromHookParameters {
+  hookAddress: Address
+  receiver: Address
   offset: bigint
   count: bigint
 }
 
-export interface GetPayerPaymentsFromRecorderReturnType {
+export interface GetReceiverPaymentsFromHookReturnType {
   payments: PaymentInfo[]
   total: bigint
 }
 
-export async function getPayerPaymentsFromRecorder(
+export async function getReceiverPaymentsFromHook(
   publicClient: PublicClient,
-  parameters: GetPayerPaymentsFromRecorderParameters,
-): Promise<GetPayerPaymentsFromRecorderReturnType> {
-  const { recorderAddress, payer, offset, count } = parameters
+  parameters: GetReceiverPaymentsFromHookParameters,
+): Promise<GetReceiverPaymentsFromHookReturnType> {
+  const { hookAddress, receiver, offset, count } = parameters
 
   const [payments, total] = await wrapContractCall(
-    'getPayerPaymentsFromRecorder',
+    'getReceiverPaymentsFromHook',
     () =>
       publicClient.readContract({
-        address: recorderAddress,
+        address: hookAddress,
         abi: paymentIndexHookAbi,
-        functionName: 'getPayerPayments',
-        args: [payer, offset, count],
+        functionName: 'getReceiverPayments',
+        args: [receiver, offset, count],
       }),
   )
 
