@@ -3,17 +3,17 @@ import type { Address } from 'viem'
 export interface OperatorSlots {
   escrow: Address
   authorizeCondition: Address
-  authorizeRecorder: Address
+  authorizeHook: Address
   chargeCondition: Address
-  chargeRecorder: Address
-  releaseCondition: Address
-  releaseRecorder: Address
-  refundInEscrowCondition: Address
-  refundInEscrowRecorder: Address
-  refundPostEscrowCondition: Address
-  refundPostEscrowRecorder: Address
+  chargeHook: Address
+  captureCondition: Address
+  captureHook: Address
+  voidCondition: Address
+  voidHook: Address
+  refundCondition: Address
+  refundHook: Address
   feeCalculator: Address
-  feeRecipient: Address
+  feeReceiver: Address
   protocolFeeConfig: Address
 }
 
