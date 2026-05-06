@@ -25,7 +25,7 @@ export async function getReceiverPaymentsByEvents(
     address: operatorAddress,
     event: getAbiItem({
       abi: paymentOperatorAbi,
-      name: 'AuthorizationCreated',
+      name: 'AuthorizeExecuted',
     }),
     args: { receiver },
     fromBlock,

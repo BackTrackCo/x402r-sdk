@@ -351,13 +351,11 @@ describe('Delivery Protection: timeout auto-refund', () => {
 
 describe('Delivery Protection: PaymentIndexRecorder', () => {
   it('indexes authorized payment by payer', async () => {
-    const { paymentIndexRecorderAbi } = await import(
-      '../../src/abis/generated.js'
-    )
+    const { paymentIndexHookAbi } = await import('../../src/abis/generated.js')
 
     const [, total] = await publicClient.readContract({
       address: deployment.paymentIndexRecorderAddress,
-      abi: paymentIndexRecorderAbi,
+      abi: paymentIndexHookAbi,
       functionName: 'getPayerPayments',
       args: [testRoles.payer.address, 0n, 10n],
     })

@@ -3,10 +3,10 @@ import {
   andConditionFactoryAbi,
   escrowPeriodFactoryAbi,
   freezeFactoryAbi,
+  hookCombinatorFactoryAbi,
   notConditionFactoryAbi,
   orConditionFactoryAbi,
   paymentOperatorFactoryAbi,
-  recorderCombinatorFactoryAbi,
   refundRequestEvidenceFactoryAbi,
   refundRequestFactoryAbi,
   signatureConditionFactoryAbi,
@@ -334,7 +334,7 @@ export function computeRecorderCombinatorAddress(
 ): Promise<ComputeRecorderCombinatorAddressReturnType> {
   return computeViaFactory(publicClient, {
     factoryAddress: parameters.factoryAddress,
-    abi: recorderCombinatorFactoryAbi,
+    abi: hookCombinatorFactoryAbi,
     args: [parameters.recorders],
   })
 }
@@ -352,7 +352,7 @@ export function deployRecorderCombinator(
 ): Promise<DeployRecorderCombinatorReturnType> {
   return deployViaFactory(walletClient, publicClient, {
     factoryAddress: parameters.factoryAddress,
-    abi: recorderCombinatorFactoryAbi,
+    abi: hookCombinatorFactoryAbi,
     args: [parameters.recorders],
     opName: 'deployRecorderCombinator',
   })

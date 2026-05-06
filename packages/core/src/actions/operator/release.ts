@@ -25,7 +25,7 @@ export async function release(
     walletClient.writeContract({
       address: operatorAddress,
       abi: paymentOperatorAbi,
-      functionName: 'release',
+      functionName: 'capture',
       args: [paymentInfo, amount, data],
       chain: walletClient.chain,
       account: walletClient.account,

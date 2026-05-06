@@ -4,9 +4,9 @@ import {
   andConditionFactoryAbi,
   escrowPeriodFactoryAbi,
   freezeFactoryAbi,
+  hookCombinatorFactoryAbi,
   orConditionFactoryAbi,
   paymentOperatorFactoryAbi,
-  recorderCombinatorFactoryAbi,
   refundRequestEvidenceFactoryAbi,
   refundRequestFactoryAbi,
   signatureConditionFactoryAbi,
@@ -373,18 +373,18 @@ export async function previewMarketplaceOperator(
 
   // Batch 4: operator (depends on everything)
   const operatorConfig: OperatorConfig = {
-    feeRecipient: options.feeRecipient,
+    feeReceiver: options.feeRecipient,
     feeCalculator: feeCalculatorAddress ?? zeroAddress,
-    authorizeCondition: config.usdcTvlLimit,
-    authorizeRecorder: escrowPeriodAddress,
-    chargeCondition: zeroAddress,
-    chargeRecorder: zeroAddress,
-    releaseCondition: releaseConditionAddress,
-    releaseRecorder: zeroAddress,
-    refundInEscrowCondition: refundInEscrowConditionAddress,
-    refundInEscrowRecorder: refundRequestAddress,
-    refundPostEscrowCondition: singletons.receiver,
-    refundPostEscrowRecorder: zeroAddress,
+    authorizePreActionCondition: config.usdcTvlLimit,
+    authorizePostActionHook: escrowPeriodAddress,
+    chargePreActionCondition: zeroAddress,
+    chargePostActionHook: zeroAddress,
+    capturePreActionCondition: releaseConditionAddress,
+    capturePostActionHook: zeroAddress,
+    voidPreActionCondition: refundInEscrowConditionAddress,
+    voidPostActionHook: refundRequestAddress,
+    refundPreActionCondition: singletons.receiver,
+    refundPostActionHook: zeroAddress,
   }
 
   const operatorAddress = await computeOperatorAddress(publicClient, {
@@ -613,7 +613,7 @@ export async function deployMarketplaceOperator(
         isNew: false,
       })
       existingDeployments.push({
-        address: preview.operatorConfig.releaseCondition,
+        address: preview.operatorConfig.capturePreActionCondition,
         hash: null,
         isNew: false,
       })
@@ -725,10 +725,10 @@ export async function deployMarketplaceOperator(
   }
   if (
     andCondArgs &&
-    preview.operatorConfig.releaseCondition !== escrowPeriodAddress
+    preview.operatorConfig.capturePreActionCondition !== escrowPeriodAddress
   ) {
     trackDeploy(
-      preview.operatorConfig.releaseCondition,
+      preview.operatorConfig.capturePreActionCondition,
       exists.andCondition,
       factories.andCondition,
       andConditionFactoryAbi,
@@ -1117,18 +1117,18 @@ export async function previewDeliveryProtectionOperator(
   // operator: when a fee calculator is added later, the recipient is already
   // set — no redeployment needed.
   const operatorConfig: OperatorConfig = {
-    feeRecipient: options.feeRecipient,
+    feeReceiver: options.feeRecipient,
     feeCalculator: zeroAddress,
-    authorizeCondition: config.usdcTvlLimit,
-    authorizeRecorder: authorizeRecorderAddress,
-    chargeCondition: zeroAddress,
-    chargeRecorder: zeroAddress,
-    releaseCondition: releaseConditionAddress,
-    releaseRecorder: zeroAddress,
-    refundInEscrowCondition: refundInEscrowConditionAddress,
-    refundInEscrowRecorder: zeroAddress,
-    refundPostEscrowCondition: singletons.receiver,
-    refundPostEscrowRecorder: zeroAddress,
+    authorizePreActionCondition: config.usdcTvlLimit,
+    authorizePostActionHook: authorizeRecorderAddress,
+    chargePreActionCondition: zeroAddress,
+    chargePostActionHook: zeroAddress,
+    capturePreActionCondition: releaseConditionAddress,
+    capturePostActionHook: zeroAddress,
+    voidPreActionCondition: refundInEscrowConditionAddress,
+    voidPostActionHook: zeroAddress,
+    refundPreActionCondition: singletons.receiver,
+    refundPostActionHook: zeroAddress,
   }
 
   const operatorAddress = await computeOperatorAddress(publicClient, {
@@ -1240,7 +1240,7 @@ export async function deployDeliveryProtectionOperator(
       name: 'combinator',
       contract: {
         address: factoryAddrs.recorderCombinator,
-        abi: recorderCombinatorFactoryAbi,
+        abi: hookCombinatorFactoryAbi,
         functionName: 'getDeployed',
         args: [[escrowPeriodAddress, paymentIndexRecorderAddress]],
       },
@@ -1385,7 +1385,7 @@ export async function deployDeliveryProtectionOperator(
       authorizeRecorderAddress,
       exists.combinator,
       factoryAddrs.recorderCombinator,
-      recorderCombinatorFactoryAbi,
+      hookCombinatorFactoryAbi,
       'deploy',
       [[escrowPeriodAddress, paymentIndexRecorderAddress]],
     )

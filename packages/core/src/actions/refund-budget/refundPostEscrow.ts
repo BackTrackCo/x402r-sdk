@@ -32,7 +32,7 @@ export async function refundPostEscrow(
     walletClient.writeContract({
       address: operatorAddress,
       abi: paymentOperatorAbi,
-      functionName: 'refundPostEscrow',
+      functionName: 'refund',
       args: [paymentInfo, amount, tokenCollector, collectorData],
       chain: walletClient.chain,
       account: walletClient.account,

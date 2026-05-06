@@ -58,7 +58,7 @@ export const andConditionAbi = [
   {
     type: 'function',
     inputs: [],
-    name: 'MAX_CONDITIONS',
+    name: 'MAX_PRE_ACTION_CONDITIONS',
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
@@ -124,7 +124,7 @@ export const andConditionFactoryAbi = [
   {
     type: 'function',
     inputs: [],
-    name: 'MAX_CONDITIONS',
+    name: 'MAX_PRE_ACTION_CONDITIONS',
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
@@ -364,38 +364,6 @@ export const authCaptureEscrowAbi = [
     name: 'getTokenStore',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
     stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      {
-        name: 'paymentInfo',
-        internalType: 'struct AuthCaptureEscrow.PaymentInfo',
-        type: 'tuple',
-        components: [
-          { name: 'operator', internalType: 'address', type: 'address' },
-          { name: 'payer', internalType: 'address', type: 'address' },
-          { name: 'receiver', internalType: 'address', type: 'address' },
-          { name: 'token', internalType: 'address', type: 'address' },
-          { name: 'maxAmount', internalType: 'uint120', type: 'uint120' },
-          { name: 'preApprovalExpiry', internalType: 'uint48', type: 'uint48' },
-          {
-            name: 'authorizationExpiry',
-            internalType: 'uint48',
-            type: 'uint48',
-          },
-          { name: 'refundExpiry', internalType: 'uint48', type: 'uint48' },
-          { name: 'minFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'maxFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'feeReceiver', internalType: 'address', type: 'address' },
-          { name: 'salt', internalType: 'uint256', type: 'uint256' },
-        ],
-      },
-      { name: 'amount', internalType: 'uint120', type: 'uint120' },
-    ],
-    name: 'partialVoid',
-    outputs: [],
-    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
@@ -670,31 +638,6 @@ export const authCaptureEscrowAbi = [
         type: 'uint256',
         indexed: false,
       },
-      {
-        name: 'remainingCapturable',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-    ],
-    name: 'PaymentPartiallyVoided',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'paymentInfoHash',
-        internalType: 'bytes32',
-        type: 'bytes32',
-        indexed: true,
-      },
-      {
-        name: 'amount',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
     ],
     name: 'PaymentReclaimed',
   },
@@ -869,14 +812,6 @@ export const authCaptureEscrowAbi = [
   {
     type: 'error',
     inputs: [
-      { name: 'requested', internalType: 'uint256', type: 'uint256' },
-      { name: 'available', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'PartialVoidExceedsCapturable',
-  },
-  {
-    type: 'error',
-    inputs: [
       { name: 'paymentInfoHash', internalType: 'bytes32', type: 'bytes32' },
     ],
     name: 'PaymentAlreadyCollected',
@@ -903,10 +838,10 @@ export const authCaptureEscrowAbi = [
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// AuthorizationTimeRecorder
+// AuthorizationTimeHook
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-export const authorizationTimeRecorderAbi = [
+export const authorizationTimeHookAbi = [
   {
     type: 'constructor',
     inputs: [
@@ -999,7 +934,7 @@ export const authorizationTimeRecorderAbi = [
       { name: '', internalType: 'address', type: 'address' },
       { name: '', internalType: 'bytes', type: 'bytes' },
     ],
-    name: 'record',
+    name: 'run',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -1037,6 +972,20 @@ export const authorizationTimeRecorderAbi = [
   { type: 'error', inputs: [], name: 'OnlyOperator' },
   { type: 'error', inputs: [], name: 'PaymentDoesNotExist' },
   { type: 'error', inputs: [], name: 'ZeroAddress' },
+] as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Create2Deployer
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const create2DeployerAbi = [
+  {
+    type: 'function',
+    inputs: [],
+    name: 'IS_SCRIPT',
+    outputs: [{ name: '', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1209,7 +1158,7 @@ export const escrowPeriodAbi = [
       { name: '', internalType: 'address', type: 'address' },
       { name: '', internalType: 'bytes', type: 'bytes' },
     ],
-    name: 'record',
+    name: 'run',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -1381,7 +1330,14 @@ export const freezeAbi = [
   {
     type: 'function',
     inputs: [],
-    name: 'FREEZE_CONDITION',
+    name: 'FREEZE_DURATION',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'FREEZE_PRE_ACTION_CONDITION',
     outputs: [
       { name: '', internalType: 'contract ICondition', type: 'address' },
     ],
@@ -1390,14 +1346,7 @@ export const freezeAbi = [
   {
     type: 'function',
     inputs: [],
-    name: 'FREEZE_DURATION',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'UNFREEZE_CONDITION',
+    name: 'UNFREEZE_PRE_ACTION_CONDITION',
     outputs: [
       { name: '', internalType: 'contract ICondition', type: 'address' },
     ],
@@ -1751,6 +1700,177 @@ export const freezeFactoryAbi = [
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// HookCombinator
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const hookCombinatorAbi = [
+  {
+    type: 'constructor',
+    inputs: [
+      { name: '_hooks', internalType: 'contract IHook[]', type: 'address[]' },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'MAX_POST_ACTION_HOOKS',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getHookCount',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getHooks',
+    outputs: [
+      { name: '', internalType: 'contract IHook[]', type: 'address[]' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    name: 'hooks',
+    outputs: [{ name: '', internalType: 'contract IHook', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: 'paymentInfo',
+        internalType: 'struct AuthCaptureEscrow.PaymentInfo',
+        type: 'tuple',
+        components: [
+          { name: 'operator', internalType: 'address', type: 'address' },
+          { name: 'payer', internalType: 'address', type: 'address' },
+          { name: 'receiver', internalType: 'address', type: 'address' },
+          { name: 'token', internalType: 'address', type: 'address' },
+          { name: 'maxAmount', internalType: 'uint120', type: 'uint120' },
+          { name: 'preApprovalExpiry', internalType: 'uint48', type: 'uint48' },
+          {
+            name: 'authorizationExpiry',
+            internalType: 'uint48',
+            type: 'uint48',
+          },
+          { name: 'refundExpiry', internalType: 'uint48', type: 'uint48' },
+          { name: 'minFeeBps', internalType: 'uint16', type: 'uint16' },
+          { name: 'maxFeeBps', internalType: 'uint16', type: 'uint16' },
+          { name: 'feeReceiver', internalType: 'address', type: 'address' },
+          { name: 'salt', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+      { name: 'caller', internalType: 'address', type: 'address' },
+      { name: 'data', internalType: 'bytes', type: 'bytes' },
+    ],
+    name: 'run',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  { type: 'error', inputs: [], name: 'EmptyHooks' },
+  { type: 'error', inputs: [], name: 'OnlyOperator' },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'count', internalType: 'uint256', type: 'uint256' },
+      { name: 'max', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'TooManyHooks',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'index', internalType: 'uint256', type: 'uint256' }],
+    name: 'ZeroHook',
+  },
+] as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// HookCombinatorFactory
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const hookCombinatorFactoryAbi = [
+  {
+    type: 'function',
+    inputs: [],
+    name: 'MAX_POST_ACTION_HOOKS',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
+    name: 'combinators',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_hooks', internalType: 'contract IHook[]', type: 'address[]' },
+    ],
+    name: 'computeAddress',
+    outputs: [{ name: 'combinator', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_hooks', internalType: 'contract IHook[]', type: 'address[]' },
+    ],
+    name: 'deploy',
+    outputs: [{ name: 'combinator', internalType: 'address', type: 'address' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_hooks', internalType: 'contract IHook[]', type: 'address[]' },
+    ],
+    name: 'getDeployed',
+    outputs: [{ name: 'combinator', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '_hooks', internalType: 'contract IHook[]', type: 'address[]' },
+    ],
+    name: 'getKey',
+    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
+    stateMutability: 'pure',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'combinator',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'hooks',
+        internalType: 'contract IHook[]',
+        type: 'address[]',
+        indexed: false,
+      },
+    ],
+    name: 'HookCombinatorDeployed',
+  },
+  { type: 'error', inputs: [], name: 'EmptyHooks' },
+  { type: 'error', inputs: [], name: 'TooManyHooks' },
+] as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // ICondition
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1787,6 +1907,37 @@ export const iConditionAbi = [
     ],
     name: 'check',
     outputs: [{ name: 'allowed', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+] as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ICreateX
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const iCreateXAbi = [
+  {
+    type: 'function',
+    inputs: [
+      { name: 'salt', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'initCode', internalType: 'bytes', type: 'bytes' },
+    ],
+    name: 'deployCreate2',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'payable',
+  },
+] as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// IEIP712
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const ieip712Abi = [
+  {
+    type: 'function',
+    inputs: [],
+    name: 'DOMAIN_SEPARATOR',
+    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
     stateMutability: 'view',
   },
 ] as const
@@ -1832,10 +1983,10 @@ export const iFeeCalculatorAbi = [
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// IRecorder
+// IHook
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-export const iRecorderAbi = [
+export const iHookAbi = [
   {
     type: 'function',
     inputs: [
@@ -1866,10 +2017,227 @@ export const iRecorderAbi = [
       { name: 'caller', internalType: 'address', type: 'address' },
       { name: 'data', internalType: 'bytes', type: 'bytes' },
     ],
-    name: 'record',
+    name: 'run',
     outputs: [],
     stateMutability: 'nonpayable',
   },
+] as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ISignatureTransfer
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const iSignatureTransferAbi = [
+  {
+    type: 'function',
+    inputs: [],
+    name: 'DOMAIN_SEPARATOR',
+    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'wordPos', internalType: 'uint256', type: 'uint256' },
+      { name: 'mask', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'invalidateUnorderedNonces',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: '', internalType: 'address', type: 'address' },
+      { name: '', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'nonceBitmap',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: 'permit',
+        internalType: 'struct ISignatureTransfer.PermitTransferFrom',
+        type: 'tuple',
+        components: [
+          {
+            name: 'permitted',
+            internalType: 'struct ISignatureTransfer.TokenPermissions',
+            type: 'tuple',
+            components: [
+              { name: 'token', internalType: 'address', type: 'address' },
+              { name: 'amount', internalType: 'uint256', type: 'uint256' },
+            ],
+          },
+          { name: 'nonce', internalType: 'uint256', type: 'uint256' },
+          { name: 'deadline', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+      {
+        name: 'transferDetails',
+        internalType: 'struct ISignatureTransfer.SignatureTransferDetails',
+        type: 'tuple',
+        components: [
+          { name: 'to', internalType: 'address', type: 'address' },
+          { name: 'requestedAmount', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+      { name: 'owner', internalType: 'address', type: 'address' },
+      { name: 'signature', internalType: 'bytes', type: 'bytes' },
+    ],
+    name: 'permitTransferFrom',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: 'permit',
+        internalType: 'struct ISignatureTransfer.PermitBatchTransferFrom',
+        type: 'tuple',
+        components: [
+          {
+            name: 'permitted',
+            internalType: 'struct ISignatureTransfer.TokenPermissions[]',
+            type: 'tuple[]',
+            components: [
+              { name: 'token', internalType: 'address', type: 'address' },
+              { name: 'amount', internalType: 'uint256', type: 'uint256' },
+            ],
+          },
+          { name: 'nonce', internalType: 'uint256', type: 'uint256' },
+          { name: 'deadline', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+      {
+        name: 'transferDetails',
+        internalType: 'struct ISignatureTransfer.SignatureTransferDetails[]',
+        type: 'tuple[]',
+        components: [
+          { name: 'to', internalType: 'address', type: 'address' },
+          { name: 'requestedAmount', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+      { name: 'owner', internalType: 'address', type: 'address' },
+      { name: 'signature', internalType: 'bytes', type: 'bytes' },
+    ],
+    name: 'permitTransferFrom',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: 'permit',
+        internalType: 'struct ISignatureTransfer.PermitTransferFrom',
+        type: 'tuple',
+        components: [
+          {
+            name: 'permitted',
+            internalType: 'struct ISignatureTransfer.TokenPermissions',
+            type: 'tuple',
+            components: [
+              { name: 'token', internalType: 'address', type: 'address' },
+              { name: 'amount', internalType: 'uint256', type: 'uint256' },
+            ],
+          },
+          { name: 'nonce', internalType: 'uint256', type: 'uint256' },
+          { name: 'deadline', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+      {
+        name: 'transferDetails',
+        internalType: 'struct ISignatureTransfer.SignatureTransferDetails',
+        type: 'tuple',
+        components: [
+          { name: 'to', internalType: 'address', type: 'address' },
+          { name: 'requestedAmount', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+      { name: 'owner', internalType: 'address', type: 'address' },
+      { name: 'witness', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'witnessTypeString', internalType: 'string', type: 'string' },
+      { name: 'signature', internalType: 'bytes', type: 'bytes' },
+    ],
+    name: 'permitWitnessTransferFrom',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: 'permit',
+        internalType: 'struct ISignatureTransfer.PermitBatchTransferFrom',
+        type: 'tuple',
+        components: [
+          {
+            name: 'permitted',
+            internalType: 'struct ISignatureTransfer.TokenPermissions[]',
+            type: 'tuple[]',
+            components: [
+              { name: 'token', internalType: 'address', type: 'address' },
+              { name: 'amount', internalType: 'uint256', type: 'uint256' },
+            ],
+          },
+          { name: 'nonce', internalType: 'uint256', type: 'uint256' },
+          { name: 'deadline', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+      {
+        name: 'transferDetails',
+        internalType: 'struct ISignatureTransfer.SignatureTransferDetails[]',
+        type: 'tuple[]',
+        components: [
+          { name: 'to', internalType: 'address', type: 'address' },
+          { name: 'requestedAmount', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+      { name: 'owner', internalType: 'address', type: 'address' },
+      { name: 'witness', internalType: 'bytes32', type: 'bytes32' },
+      { name: 'witnessTypeString', internalType: 'string', type: 'string' },
+      { name: 'signature', internalType: 'bytes', type: 'bytes' },
+    ],
+    name: 'permitWitnessTransferFrom',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'owner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'word',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'mask',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'UnorderedNonceInvalidation',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'maxAmount', internalType: 'uint256', type: 'uint256' }],
+    name: 'InvalidAmount',
+  },
+  { type: 'error', inputs: [], name: 'LengthMismatch' },
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2039,7 +2407,7 @@ export const orConditionAbi = [
   {
     type: 'function',
     inputs: [],
-    name: 'MAX_CONDITIONS',
+    name: 'MAX_PRE_ACTION_CONDITIONS',
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
@@ -2105,7 +2473,7 @@ export const orConditionFactoryAbi = [
   {
     type: 'function',
     inputs: [],
-    name: 'MAX_CONDITIONS',
+    name: 'MAX_PRE_ACTION_CONDITIONS',
     outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
@@ -2233,10 +2601,10 @@ export const payerConditionAbi = [
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// PaymentIndexRecorder
+// PaymentIndexHook
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-export const paymentIndexRecorderAbi = [
+export const paymentIndexHookAbi = [
   {
     type: 'constructor',
     inputs: [
@@ -2476,7 +2844,7 @@ export const paymentIndexRecorderAbi = [
       { name: '', internalType: 'address', type: 'address' },
       { name: '', internalType: 'bytes', type: 'bytes' },
     ],
-    name: 'record',
+    name: 'run',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -2533,48 +2901,60 @@ export const paymentOperatorAbi = [
     inputs: [
       { name: '_escrow', internalType: 'address', type: 'address' },
       { name: '_protocolFeeConfig', internalType: 'address', type: 'address' },
-      { name: '_feeRecipient', internalType: 'address', type: 'address' },
+      { name: '_feeReceiver', internalType: 'address', type: 'address' },
       { name: '_feeCalculator', internalType: 'address', type: 'address' },
       {
         name: '_conditions',
-        internalType: 'struct PaymentOperator.ConditionConfig',
+        internalType: 'struct PaymentOperator.PluginConfig',
         type: 'tuple',
         components: [
           {
-            name: 'authorizeCondition',
+            name: 'authorizePreActionCondition',
             internalType: 'address',
             type: 'address',
           },
           {
-            name: 'authorizeRecorder',
-            internalType: 'address',
-            type: 'address',
-          },
-          { name: 'chargeCondition', internalType: 'address', type: 'address' },
-          { name: 'chargeRecorder', internalType: 'address', type: 'address' },
-          {
-            name: 'releaseCondition',
-            internalType: 'address',
-            type: 'address',
-          },
-          { name: 'releaseRecorder', internalType: 'address', type: 'address' },
-          {
-            name: 'refundInEscrowCondition',
+            name: 'authorizePostActionHook',
             internalType: 'address',
             type: 'address',
           },
           {
-            name: 'refundInEscrowRecorder',
+            name: 'chargePreActionCondition',
             internalType: 'address',
             type: 'address',
           },
           {
-            name: 'refundPostEscrowCondition',
+            name: 'chargePostActionHook',
             internalType: 'address',
             type: 'address',
           },
           {
-            name: 'refundPostEscrowRecorder',
+            name: 'capturePreActionCondition',
+            internalType: 'address',
+            type: 'address',
+          },
+          {
+            name: 'capturePostActionHook',
+            internalType: 'address',
+            type: 'address',
+          },
+          {
+            name: 'voidPreActionCondition',
+            internalType: 'address',
+            type: 'address',
+          },
+          {
+            name: 'voidPostActionHook',
+            internalType: 'address',
+            type: 'address',
+          },
+          {
+            name: 'refundPreActionCondition',
+            internalType: 'address',
+            type: 'address',
+          },
+          {
+            name: 'refundPostActionHook',
             internalType: 'address',
             type: 'address',
           },
@@ -2586,7 +2966,14 @@ export const paymentOperatorAbi = [
   {
     type: 'function',
     inputs: [],
-    name: 'AUTHORIZE_CONDITION',
+    name: 'AUTHORIZE_POST_ACTION_HOOK',
+    outputs: [{ name: '', internalType: 'contract IHook', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'AUTHORIZE_PRE_ACTION_CONDITION',
     outputs: [
       { name: '', internalType: 'contract ICondition', type: 'address' },
     ],
@@ -2595,16 +2982,14 @@ export const paymentOperatorAbi = [
   {
     type: 'function',
     inputs: [],
-    name: 'AUTHORIZE_RECORDER',
-    outputs: [
-      { name: '', internalType: 'contract IRecorder', type: 'address' },
-    ],
+    name: 'CAPTURE_POST_ACTION_HOOK',
+    outputs: [{ name: '', internalType: 'contract IHook', type: 'address' }],
     stateMutability: 'view',
   },
   {
     type: 'function',
     inputs: [],
-    name: 'CHARGE_CONDITION',
+    name: 'CAPTURE_PRE_ACTION_CONDITION',
     outputs: [
       { name: '', internalType: 'contract ICondition', type: 'address' },
     ],
@@ -2613,9 +2998,16 @@ export const paymentOperatorAbi = [
   {
     type: 'function',
     inputs: [],
-    name: 'CHARGE_RECORDER',
+    name: 'CHARGE_POST_ACTION_HOOK',
+    outputs: [{ name: '', internalType: 'contract IHook', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'CHARGE_PRE_ACTION_CONDITION',
     outputs: [
-      { name: '', internalType: 'contract IRecorder', type: 'address' },
+      { name: '', internalType: 'contract ICondition', type: 'address' },
     ],
     stateMutability: 'view',
   },
@@ -2640,7 +3032,7 @@ export const paymentOperatorAbi = [
   {
     type: 'function',
     inputs: [],
-    name: 'FEE_RECIPIENT',
+    name: 'FEE_RECEIVER',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
     stateMutability: 'view',
   },
@@ -2656,7 +3048,14 @@ export const paymentOperatorAbi = [
   {
     type: 'function',
     inputs: [],
-    name: 'REFUND_IN_ESCROW_CONDITION',
+    name: 'REFUND_POST_ACTION_HOOK',
+    outputs: [{ name: '', internalType: 'contract IHook', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'REFUND_PRE_ACTION_CONDITION',
     outputs: [
       { name: '', internalType: 'contract ICondition', type: 'address' },
     ],
@@ -2665,45 +3064,16 @@ export const paymentOperatorAbi = [
   {
     type: 'function',
     inputs: [],
-    name: 'REFUND_IN_ESCROW_RECORDER',
-    outputs: [
-      { name: '', internalType: 'contract IRecorder', type: 'address' },
-    ],
+    name: 'VOID_POST_ACTION_HOOK',
+    outputs: [{ name: '', internalType: 'contract IHook', type: 'address' }],
     stateMutability: 'view',
   },
   {
     type: 'function',
     inputs: [],
-    name: 'REFUND_POST_ESCROW_CONDITION',
+    name: 'VOID_PRE_ACTION_CONDITION',
     outputs: [
       { name: '', internalType: 'contract ICondition', type: 'address' },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'REFUND_POST_ESCROW_RECORDER',
-    outputs: [
-      { name: '', internalType: 'contract IRecorder', type: 'address' },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'RELEASE_CONDITION',
-    outputs: [
-      { name: '', internalType: 'contract ICondition', type: 'address' },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'RELEASE_RECORDER',
-    outputs: [
-      { name: '', internalType: 'contract IRecorder', type: 'address' },
     ],
     stateMutability: 'view',
   },
@@ -2787,6 +3157,39 @@ export const paymentOperatorAbi = [
         ],
       },
       { name: 'amount', internalType: 'uint256', type: 'uint256' },
+      { name: 'data', internalType: 'bytes', type: 'bytes' },
+    ],
+    name: 'capture',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: 'paymentInfo',
+        internalType: 'struct AuthCaptureEscrow.PaymentInfo',
+        type: 'tuple',
+        components: [
+          { name: 'operator', internalType: 'address', type: 'address' },
+          { name: 'payer', internalType: 'address', type: 'address' },
+          { name: 'receiver', internalType: 'address', type: 'address' },
+          { name: 'token', internalType: 'address', type: 'address' },
+          { name: 'maxAmount', internalType: 'uint120', type: 'uint120' },
+          { name: 'preApprovalExpiry', internalType: 'uint48', type: 'uint48' },
+          {
+            name: 'authorizationExpiry',
+            internalType: 'uint48',
+            type: 'uint48',
+          },
+          { name: 'refundExpiry', internalType: 'uint48', type: 'uint48' },
+          { name: 'minFeeBps', internalType: 'uint16', type: 'uint16' },
+          { name: 'maxFeeBps', internalType: 'uint16', type: 'uint16' },
+          { name: 'feeReceiver', internalType: 'address', type: 'address' },
+          { name: 'salt', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+      { name: 'amount', internalType: 'uint256', type: 'uint256' },
       { name: 'tokenCollector', internalType: 'address', type: 'address' },
       { name: 'collectorData', internalType: 'bytes', type: 'bytes' },
     ],
@@ -2827,44 +3230,11 @@ export const paymentOperatorAbi = [
           { name: 'salt', internalType: 'uint256', type: 'uint256' },
         ],
       },
-      { name: 'amount', internalType: 'uint120', type: 'uint120' },
-      { name: 'data', internalType: 'bytes', type: 'bytes' },
-    ],
-    name: 'refundInEscrow',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      {
-        name: 'paymentInfo',
-        internalType: 'struct AuthCaptureEscrow.PaymentInfo',
-        type: 'tuple',
-        components: [
-          { name: 'operator', internalType: 'address', type: 'address' },
-          { name: 'payer', internalType: 'address', type: 'address' },
-          { name: 'receiver', internalType: 'address', type: 'address' },
-          { name: 'token', internalType: 'address', type: 'address' },
-          { name: 'maxAmount', internalType: 'uint120', type: 'uint120' },
-          { name: 'preApprovalExpiry', internalType: 'uint48', type: 'uint48' },
-          {
-            name: 'authorizationExpiry',
-            internalType: 'uint48',
-            type: 'uint48',
-          },
-          { name: 'refundExpiry', internalType: 'uint48', type: 'uint48' },
-          { name: 'minFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'maxFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'feeReceiver', internalType: 'address', type: 'address' },
-          { name: 'salt', internalType: 'uint256', type: 'uint256' },
-        ],
-      },
       { name: 'amount', internalType: 'uint256', type: 'uint256' },
       { name: 'tokenCollector', internalType: 'address', type: 'address' },
       { name: 'collectorData', internalType: 'bytes', type: 'bytes' },
     ],
-    name: 'refundPostEscrow',
+    name: 'refund',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -2894,10 +3264,9 @@ export const paymentOperatorAbi = [
           { name: 'salt', internalType: 'uint256', type: 'uint256' },
         ],
       },
-      { name: 'amount', internalType: 'uint256', type: 'uint256' },
       { name: 'data', internalType: 'bytes', type: 'bytes' },
     ],
-    name: 'release',
+    name: 'void',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -2954,7 +3323,62 @@ export const paymentOperatorAbi = [
         indexed: false,
       },
     ],
-    name: 'AuthorizationCreated',
+    name: 'AuthorizeExecuted',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'paymentInfo',
+        internalType: 'struct AuthCaptureEscrow.PaymentInfo',
+        type: 'tuple',
+        components: [
+          { name: 'operator', internalType: 'address', type: 'address' },
+          { name: 'payer', internalType: 'address', type: 'address' },
+          { name: 'receiver', internalType: 'address', type: 'address' },
+          { name: 'token', internalType: 'address', type: 'address' },
+          { name: 'maxAmount', internalType: 'uint120', type: 'uint120' },
+          { name: 'preApprovalExpiry', internalType: 'uint48', type: 'uint48' },
+          {
+            name: 'authorizationExpiry',
+            internalType: 'uint48',
+            type: 'uint48',
+          },
+          { name: 'refundExpiry', internalType: 'uint48', type: 'uint48' },
+          { name: 'minFeeBps', internalType: 'uint16', type: 'uint16' },
+          { name: 'maxFeeBps', internalType: 'uint16', type: 'uint16' },
+          { name: 'feeReceiver', internalType: 'address', type: 'address' },
+          { name: 'salt', internalType: 'uint256', type: 'uint256' },
+        ],
+        indexed: false,
+      },
+      {
+        name: 'paymentInfoHash',
+        internalType: 'bytes32',
+        type: 'bytes32',
+        indexed: true,
+      },
+      {
+        name: 'payer',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'receiver',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'amount',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'CaptureExecuted',
   },
   {
     type: 'event',
@@ -3028,7 +3452,7 @@ export const paymentOperatorAbi = [
         indexed: false,
       },
       {
-        name: 'arbiterAmount',
+        name: 'operatorAmount',
         internalType: 'uint256',
         type: 'uint256',
         indexed: false,
@@ -3089,7 +3513,7 @@ export const paymentOperatorAbi = [
         indexed: false,
       },
     ],
-    name: 'RefundInEscrowExecuted',
+    name: 'RefundExecuted',
   },
   {
     type: 'event',
@@ -3137,71 +3561,9 @@ export const paymentOperatorAbi = [
         type: 'address',
         indexed: true,
       },
-      {
-        name: 'amount',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
     ],
-    name: 'RefundPostEscrowExecuted',
+    name: 'VoidExecuted',
   },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'paymentInfo',
-        internalType: 'struct AuthCaptureEscrow.PaymentInfo',
-        type: 'tuple',
-        components: [
-          { name: 'operator', internalType: 'address', type: 'address' },
-          { name: 'payer', internalType: 'address', type: 'address' },
-          { name: 'receiver', internalType: 'address', type: 'address' },
-          { name: 'token', internalType: 'address', type: 'address' },
-          { name: 'maxAmount', internalType: 'uint120', type: 'uint120' },
-          { name: 'preApprovalExpiry', internalType: 'uint48', type: 'uint48' },
-          {
-            name: 'authorizationExpiry',
-            internalType: 'uint48',
-            type: 'uint48',
-          },
-          { name: 'refundExpiry', internalType: 'uint48', type: 'uint48' },
-          { name: 'minFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'maxFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'feeReceiver', internalType: 'address', type: 'address' },
-          { name: 'salt', internalType: 'uint256', type: 'uint256' },
-        ],
-        indexed: false,
-      },
-      {
-        name: 'paymentInfoHash',
-        internalType: 'bytes32',
-        type: 'bytes32',
-        indexed: true,
-      },
-      {
-        name: 'payer',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-      {
-        name: 'receiver',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-      {
-        name: 'amount',
-        internalType: 'uint256',
-        type: 'uint256',
-        indexed: false,
-      },
-    ],
-    name: 'ReleaseExecuted',
-  },
-  { type: 'error', inputs: [], name: 'ConditionNotMet' },
   {
     type: 'error',
     inputs: [
@@ -3213,6 +3575,7 @@ export const paymentOperatorAbi = [
   },
   { type: 'error', inputs: [], name: 'FeeTooHigh' },
   { type: 'error', inputs: [], name: 'InvalidFeeReceiver' },
+  { type: 'error', inputs: [], name: 'PreActionConditionNotMet' },
   { type: 'error', inputs: [], name: 'Reentrancy' },
   { type: 'error', inputs: [], name: 'ZeroAddress' },
   { type: 'error', inputs: [], name: 'ZeroEscrow' },
@@ -3253,43 +3616,55 @@ export const paymentOperatorFactoryAbi = [
         internalType: 'struct PaymentOperatorFactory.OperatorConfig',
         type: 'tuple',
         components: [
-          { name: 'feeRecipient', internalType: 'address', type: 'address' },
+          { name: 'feeReceiver', internalType: 'address', type: 'address' },
           { name: 'feeCalculator', internalType: 'address', type: 'address' },
           {
-            name: 'authorizeCondition',
+            name: 'authorizePreActionCondition',
             internalType: 'address',
             type: 'address',
           },
           {
-            name: 'authorizeRecorder',
-            internalType: 'address',
-            type: 'address',
-          },
-          { name: 'chargeCondition', internalType: 'address', type: 'address' },
-          { name: 'chargeRecorder', internalType: 'address', type: 'address' },
-          {
-            name: 'releaseCondition',
-            internalType: 'address',
-            type: 'address',
-          },
-          { name: 'releaseRecorder', internalType: 'address', type: 'address' },
-          {
-            name: 'refundInEscrowCondition',
+            name: 'authorizePostActionHook',
             internalType: 'address',
             type: 'address',
           },
           {
-            name: 'refundInEscrowRecorder',
+            name: 'chargePreActionCondition',
             internalType: 'address',
             type: 'address',
           },
           {
-            name: 'refundPostEscrowCondition',
+            name: 'chargePostActionHook',
             internalType: 'address',
             type: 'address',
           },
           {
-            name: 'refundPostEscrowRecorder',
+            name: 'capturePreActionCondition',
+            internalType: 'address',
+            type: 'address',
+          },
+          {
+            name: 'capturePostActionHook',
+            internalType: 'address',
+            type: 'address',
+          },
+          {
+            name: 'voidPreActionCondition',
+            internalType: 'address',
+            type: 'address',
+          },
+          {
+            name: 'voidPostActionHook',
+            internalType: 'address',
+            type: 'address',
+          },
+          {
+            name: 'refundPreActionCondition',
+            internalType: 'address',
+            type: 'address',
+          },
+          {
+            name: 'refundPostActionHook',
             internalType: 'address',
             type: 'address',
           },
@@ -3308,43 +3683,55 @@ export const paymentOperatorFactoryAbi = [
         internalType: 'struct PaymentOperatorFactory.OperatorConfig',
         type: 'tuple',
         components: [
-          { name: 'feeRecipient', internalType: 'address', type: 'address' },
+          { name: 'feeReceiver', internalType: 'address', type: 'address' },
           { name: 'feeCalculator', internalType: 'address', type: 'address' },
           {
-            name: 'authorizeCondition',
+            name: 'authorizePreActionCondition',
             internalType: 'address',
             type: 'address',
           },
           {
-            name: 'authorizeRecorder',
-            internalType: 'address',
-            type: 'address',
-          },
-          { name: 'chargeCondition', internalType: 'address', type: 'address' },
-          { name: 'chargeRecorder', internalType: 'address', type: 'address' },
-          {
-            name: 'releaseCondition',
-            internalType: 'address',
-            type: 'address',
-          },
-          { name: 'releaseRecorder', internalType: 'address', type: 'address' },
-          {
-            name: 'refundInEscrowCondition',
+            name: 'authorizePostActionHook',
             internalType: 'address',
             type: 'address',
           },
           {
-            name: 'refundInEscrowRecorder',
+            name: 'chargePreActionCondition',
             internalType: 'address',
             type: 'address',
           },
           {
-            name: 'refundPostEscrowCondition',
+            name: 'chargePostActionHook',
             internalType: 'address',
             type: 'address',
           },
           {
-            name: 'refundPostEscrowRecorder',
+            name: 'capturePreActionCondition',
+            internalType: 'address',
+            type: 'address',
+          },
+          {
+            name: 'capturePostActionHook',
+            internalType: 'address',
+            type: 'address',
+          },
+          {
+            name: 'voidPreActionCondition',
+            internalType: 'address',
+            type: 'address',
+          },
+          {
+            name: 'voidPostActionHook',
+            internalType: 'address',
+            type: 'address',
+          },
+          {
+            name: 'refundPreActionCondition',
+            internalType: 'address',
+            type: 'address',
+          },
+          {
+            name: 'refundPostActionHook',
             internalType: 'address',
             type: 'address',
           },
@@ -3363,43 +3750,55 @@ export const paymentOperatorFactoryAbi = [
         internalType: 'struct PaymentOperatorFactory.OperatorConfig',
         type: 'tuple',
         components: [
-          { name: 'feeRecipient', internalType: 'address', type: 'address' },
+          { name: 'feeReceiver', internalType: 'address', type: 'address' },
           { name: 'feeCalculator', internalType: 'address', type: 'address' },
           {
-            name: 'authorizeCondition',
+            name: 'authorizePreActionCondition',
             internalType: 'address',
             type: 'address',
           },
           {
-            name: 'authorizeRecorder',
-            internalType: 'address',
-            type: 'address',
-          },
-          { name: 'chargeCondition', internalType: 'address', type: 'address' },
-          { name: 'chargeRecorder', internalType: 'address', type: 'address' },
-          {
-            name: 'releaseCondition',
-            internalType: 'address',
-            type: 'address',
-          },
-          { name: 'releaseRecorder', internalType: 'address', type: 'address' },
-          {
-            name: 'refundInEscrowCondition',
+            name: 'authorizePostActionHook',
             internalType: 'address',
             type: 'address',
           },
           {
-            name: 'refundInEscrowRecorder',
+            name: 'chargePreActionCondition',
             internalType: 'address',
             type: 'address',
           },
           {
-            name: 'refundPostEscrowCondition',
+            name: 'chargePostActionHook',
             internalType: 'address',
             type: 'address',
           },
           {
-            name: 'refundPostEscrowRecorder',
+            name: 'capturePreActionCondition',
+            internalType: 'address',
+            type: 'address',
+          },
+          {
+            name: 'capturePostActionHook',
+            internalType: 'address',
+            type: 'address',
+          },
+          {
+            name: 'voidPreActionCondition',
+            internalType: 'address',
+            type: 'address',
+          },
+          {
+            name: 'voidPostActionHook',
+            internalType: 'address',
+            type: 'address',
+          },
+          {
+            name: 'refundPreActionCondition',
+            internalType: 'address',
+            type: 'address',
+          },
+          {
+            name: 'refundPostActionHook',
             internalType: 'address',
             type: 'address',
           },
@@ -3434,7 +3833,7 @@ export const paymentOperatorFactoryAbi = [
         indexed: true,
       },
       {
-        name: 'feeRecipient',
+        name: 'feeReceiver',
         internalType: 'address',
         type: 'address',
         indexed: true,
@@ -3443,6 +3842,101 @@ export const paymentOperatorFactoryAbi = [
     name: 'OperatorDeployed',
   },
   { type: 'error', inputs: [], name: 'ZeroAddress' },
+] as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Permit2PaymentCollector
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const permit2PaymentCollectorAbi = [
+  {
+    type: 'constructor',
+    inputs: [
+      { name: 'authCaptureEscrow_', internalType: 'address', type: 'address' },
+      { name: 'permit2_', internalType: 'address', type: 'address' },
+      { name: 'multicall3_', internalType: 'address', type: 'address' },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'authCaptureEscrow',
+    outputs: [
+      { name: '', internalType: 'contract AuthCaptureEscrow', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: 'paymentInfo',
+        internalType: 'struct AuthCaptureEscrow.PaymentInfo',
+        type: 'tuple',
+        components: [
+          { name: 'operator', internalType: 'address', type: 'address' },
+          { name: 'payer', internalType: 'address', type: 'address' },
+          { name: 'receiver', internalType: 'address', type: 'address' },
+          { name: 'token', internalType: 'address', type: 'address' },
+          { name: 'maxAmount', internalType: 'uint120', type: 'uint120' },
+          { name: 'preApprovalExpiry', internalType: 'uint48', type: 'uint48' },
+          {
+            name: 'authorizationExpiry',
+            internalType: 'uint48',
+            type: 'uint48',
+          },
+          { name: 'refundExpiry', internalType: 'uint48', type: 'uint48' },
+          { name: 'minFeeBps', internalType: 'uint16', type: 'uint16' },
+          { name: 'maxFeeBps', internalType: 'uint16', type: 'uint16' },
+          { name: 'feeReceiver', internalType: 'address', type: 'address' },
+          { name: 'salt', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+      { name: 'tokenStore', internalType: 'address', type: 'address' },
+      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+      { name: 'collectorData', internalType: 'bytes', type: 'bytes' },
+    ],
+    name: 'collectTokens',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'collectorType',
+    outputs: [
+      {
+        name: '',
+        internalType: 'enum TokenCollector.CollectorType',
+        type: 'uint8',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'multicall3',
+    outputs: [
+      { name: '', internalType: 'contract IMulticall3', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'permit2',
+    outputs: [
+      {
+        name: '',
+        internalType: 'contract ISignatureTransfer',
+        type: 'address',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  { type: 'error', inputs: [], name: 'OnlyAuthCaptureEscrow' },
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3791,6 +4285,7 @@ export const protocolFeeConfigAbi = [
   { type: 'error', inputs: [], name: 'NoPendingRecipientChange' },
   { type: 'error', inputs: [], name: 'RecipientTimelockNotElapsed' },
   { type: 'error', inputs: [], name: 'Unauthorized' },
+  { type: 'error', inputs: [], name: 'ZeroAddress' },
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3911,206 +4406,17 @@ export const receiverRefundCollectorAbi = [
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// RecorderCombinator
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-export const recorderCombinatorAbi = [
-  {
-    type: 'constructor',
-    inputs: [
-      {
-        name: '_recorders',
-        internalType: 'contract IRecorder[]',
-        type: 'address[]',
-      },
-    ],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'MAX_RECORDERS',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getRecorderCount',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [],
-    name: 'getRecorders',
-    outputs: [
-      { name: '', internalType: 'contract IRecorder[]', type: 'address[]' },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      {
-        name: 'paymentInfo',
-        internalType: 'struct AuthCaptureEscrow.PaymentInfo',
-        type: 'tuple',
-        components: [
-          { name: 'operator', internalType: 'address', type: 'address' },
-          { name: 'payer', internalType: 'address', type: 'address' },
-          { name: 'receiver', internalType: 'address', type: 'address' },
-          { name: 'token', internalType: 'address', type: 'address' },
-          { name: 'maxAmount', internalType: 'uint120', type: 'uint120' },
-          { name: 'preApprovalExpiry', internalType: 'uint48', type: 'uint48' },
-          {
-            name: 'authorizationExpiry',
-            internalType: 'uint48',
-            type: 'uint48',
-          },
-          { name: 'refundExpiry', internalType: 'uint48', type: 'uint48' },
-          { name: 'minFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'maxFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'feeReceiver', internalType: 'address', type: 'address' },
-          { name: 'salt', internalType: 'uint256', type: 'uint256' },
-        ],
-      },
-      { name: 'amount', internalType: 'uint256', type: 'uint256' },
-      { name: 'caller', internalType: 'address', type: 'address' },
-      { name: 'data', internalType: 'bytes', type: 'bytes' },
-    ],
-    name: 'record',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    name: 'recorders',
-    outputs: [
-      { name: '', internalType: 'contract IRecorder', type: 'address' },
-    ],
-    stateMutability: 'view',
-  },
-  { type: 'error', inputs: [], name: 'EmptyRecorders' },
-  { type: 'error', inputs: [], name: 'OnlyOperator' },
-  {
-    type: 'error',
-    inputs: [
-      { name: 'count', internalType: 'uint256', type: 'uint256' },
-      { name: 'max', internalType: 'uint256', type: 'uint256' },
-    ],
-    name: 'TooManyRecorders',
-  },
-  {
-    type: 'error',
-    inputs: [{ name: 'index', internalType: 'uint256', type: 'uint256' }],
-    name: 'ZeroRecorder',
-  },
-] as const
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// RecorderCombinatorFactory
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-export const recorderCombinatorFactoryAbi = [
-  {
-    type: 'function',
-    inputs: [],
-    name: 'MAX_RECORDERS',
-    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
-    name: 'combinators',
-    outputs: [{ name: '', internalType: 'address', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      {
-        name: '_recorders',
-        internalType: 'contract IRecorder[]',
-        type: 'address[]',
-      },
-    ],
-    name: 'computeAddress',
-    outputs: [{ name: 'combinator', internalType: 'address', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      {
-        name: '_recorders',
-        internalType: 'contract IRecorder[]',
-        type: 'address[]',
-      },
-    ],
-    name: 'deploy',
-    outputs: [{ name: 'combinator', internalType: 'address', type: 'address' }],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      {
-        name: '_recorders',
-        internalType: 'contract IRecorder[]',
-        type: 'address[]',
-      },
-    ],
-    name: 'getDeployed',
-    outputs: [{ name: 'combinator', internalType: 'address', type: 'address' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    inputs: [
-      {
-        name: '_recorders',
-        internalType: 'contract IRecorder[]',
-        type: 'address[]',
-      },
-    ],
-    name: 'getKey',
-    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
-    stateMutability: 'pure',
-  },
-  {
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      {
-        name: 'combinator',
-        internalType: 'address',
-        type: 'address',
-        indexed: true,
-      },
-      {
-        name: 'recorders',
-        internalType: 'contract IRecorder[]',
-        type: 'address[]',
-        indexed: false,
-      },
-    ],
-    name: 'RecorderCombinatorDeployed',
-  },
-  { type: 'error', inputs: [], name: 'EmptyRecorders' },
-  { type: 'error', inputs: [], name: 'TooManyRecorders' },
-] as const
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // RefundRequest
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 export const refundRequestAbi = [
   {
     type: 'constructor',
-    inputs: [{ name: '_arbiter', internalType: 'address', type: 'address' }],
+    inputs: [
+      { name: '_arbiter', internalType: 'address', type: 'address' },
+      { name: '_escrow', internalType: 'address', type: 'address' },
+      { name: '_authorizedCodehash', internalType: 'bytes32', type: 'bytes32' },
+    ],
     stateMutability: 'nonpayable',
   },
   {
@@ -4118,6 +4424,22 @@ export const refundRequestAbi = [
     inputs: [],
     name: 'ARBITER',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'AUTHORIZED_CODEHASH',
+    outputs: [{ name: '', internalType: 'bytes32', type: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'ESCROW',
+    outputs: [
+      { name: '', internalType: 'contract AuthCaptureEscrow', type: 'address' },
+    ],
     stateMutability: 'view',
   },
   {
@@ -4562,40 +4884,6 @@ export const refundRequestAbi = [
           { name: 'salt', internalType: 'uint256', type: 'uint256' },
         ],
       },
-      { name: 'amount', internalType: 'uint256', type: 'uint256' },
-      { name: 'caller', internalType: 'address', type: 'address' },
-      { name: '', internalType: 'bytes', type: 'bytes' },
-    ],
-    name: 'record',
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    inputs: [
-      {
-        name: 'paymentInfo',
-        internalType: 'struct AuthCaptureEscrow.PaymentInfo',
-        type: 'tuple',
-        components: [
-          { name: 'operator', internalType: 'address', type: 'address' },
-          { name: 'payer', internalType: 'address', type: 'address' },
-          { name: 'receiver', internalType: 'address', type: 'address' },
-          { name: 'token', internalType: 'address', type: 'address' },
-          { name: 'maxAmount', internalType: 'uint120', type: 'uint120' },
-          { name: 'preApprovalExpiry', internalType: 'uint48', type: 'uint48' },
-          {
-            name: 'authorizationExpiry',
-            internalType: 'uint48',
-            type: 'uint48',
-          },
-          { name: 'refundExpiry', internalType: 'uint48', type: 'uint48' },
-          { name: 'minFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'maxFeeBps', internalType: 'uint16', type: 'uint16' },
-          { name: 'feeReceiver', internalType: 'address', type: 'address' },
-          { name: 'salt', internalType: 'uint256', type: 'uint256' },
-        ],
-      },
     ],
     name: 'refuse',
     outputs: [],
@@ -4630,6 +4918,40 @@ export const refundRequestAbi = [
       { name: 'amount', internalType: 'uint120', type: 'uint120' },
     ],
     name: 'requestRefund',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: 'paymentInfo',
+        internalType: 'struct AuthCaptureEscrow.PaymentInfo',
+        type: 'tuple',
+        components: [
+          { name: 'operator', internalType: 'address', type: 'address' },
+          { name: 'payer', internalType: 'address', type: 'address' },
+          { name: 'receiver', internalType: 'address', type: 'address' },
+          { name: 'token', internalType: 'address', type: 'address' },
+          { name: 'maxAmount', internalType: 'uint120', type: 'uint120' },
+          { name: 'preApprovalExpiry', internalType: 'uint48', type: 'uint48' },
+          {
+            name: 'authorizationExpiry',
+            internalType: 'uint48',
+            type: 'uint48',
+          },
+          { name: 'refundExpiry', internalType: 'uint48', type: 'uint48' },
+          { name: 'minFeeBps', internalType: 'uint16', type: 'uint16' },
+          { name: 'maxFeeBps', internalType: 'uint16', type: 'uint16' },
+          { name: 'feeReceiver', internalType: 'address', type: 'address' },
+          { name: 'salt', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+      { name: 'caller', internalType: 'address', type: 'address' },
+      { name: '', internalType: 'bytes', type: 'bytes' },
+    ],
+    name: 'run',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -4778,9 +5100,12 @@ export const refundRequestAbi = [
   { type: 'error', inputs: [], name: 'InvalidOperator' },
   { type: 'error', inputs: [], name: 'NotArbiter' },
   { type: 'error', inputs: [], name: 'NotPayer' },
+  { type: 'error', inputs: [], name: 'OnlyOperator' },
+  { type: 'error', inputs: [], name: 'PaymentDoesNotExist' },
   { type: 'error', inputs: [], name: 'RequestAlreadyExists' },
   { type: 'error', inputs: [], name: 'RequestDoesNotExist' },
   { type: 'error', inputs: [], name: 'RequestNotPending' },
+  { type: 'error', inputs: [], name: 'ZeroAddress' },
   { type: 'error', inputs: [], name: 'ZeroArbiter' },
   { type: 'error', inputs: [], name: 'ZeroRefundAmount' },
 ] as const
@@ -5092,6 +5417,20 @@ export const refundRequestEvidenceFactoryAbi = [
 
 export const refundRequestFactoryAbi = [
   {
+    type: 'constructor',
+    inputs: [{ name: 'escrow', internalType: 'address', type: 'address' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'ESCROW',
+    outputs: [
+      { name: '', internalType: 'contract AuthCaptureEscrow', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
     type: 'function',
     inputs: [{ name: 'arbiter', internalType: 'address', type: 'address' }],
     name: 'computeAddress',
@@ -5151,6 +5490,7 @@ export const refundRequestFactoryAbi = [
     ],
     name: 'RefundRequestDeployed',
   },
+  { type: 'error', inputs: [], name: 'ZeroAddress' },
   { type: 'error', inputs: [], name: 'ZeroArbiter' },
 ] as const
 

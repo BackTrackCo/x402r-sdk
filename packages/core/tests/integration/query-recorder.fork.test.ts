@@ -6,7 +6,7 @@ import { pad, zeroAddress } from 'viem'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { createX402r, type X402r } from '../../../sdk/src/index.js'
 import {
-  paymentIndexRecorderAbi,
+  paymentIndexHookAbi,
   paymentOperatorFactoryAbi,
 } from '../../src/abis/generated.js'
 import {
@@ -75,7 +75,7 @@ beforeAll(async () => {
   // 1. Deploy PaymentIndexRecorder (operator calls it directly — no combinator needed)
   //    AUTHORIZED_CODEHASH = bytes32(0) means only paymentInfo.operator can call record()
   const deployHash = await deployerWallet.deployContract({
-    abi: paymentIndexRecorderAbi,
+    abi: paymentIndexHookAbi,
     bytecode: PAYMENT_INDEX_RECORDER_BYTECODE,
     args: [baseSepolia.authCaptureEscrow, pad('0x00')],
     chain: deployerWallet.chain,

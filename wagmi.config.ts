@@ -11,7 +11,7 @@ export default defineConfig({
 
         // Test helpers and mocks
         'Mock*.sol/**',
-        'MaliciousRecorder.sol/**',
+        'MaliciousHook.sol/**',
         '*Invariants*/**',
         '*Handler*/**',
 
@@ -24,7 +24,7 @@ export default defineConfig({
         'Types.sol/**',
 
         // Abstract base contracts
-        'BaseRecorder.sol/**',
+        'BaseHook.sol/**',
 
         // External library contracts (commerce-payments, OZ, solady)
         'TokenCollector.sol/**',
