@@ -27,8 +27,8 @@ export interface ConditionSingletonAddresses {
 }
 
 export interface HookSingletonAddresses {
-  /** PaymentIndexHook(escrow, hookCombinatorCodehash) — deploy once, share across operators */
-  paymentIndexHook: Address
+  /** PaymentIndexRecorderHook(escrow, hookCombinatorCodehash) — deploy once, share across operators */
+  paymentIndexRecorderHook: Address
 }
 
 export interface X402rChainConfig {
@@ -103,14 +103,17 @@ export const conditions = {
 /**
  * Chain-invariant hook singleton addresses.
  *
- * `paymentIndexHook` is currently `zeroAddress` because the canonical CREATE2
- * deploy script does not include a chain-singleton `PaymentIndexHook` — it's
- * deployed per-operator (constructor args fold the operator's hook combinator
- * codehash). Consumers can instantiate one via `new PaymentIndexHook(escrow,
- * hookCombinatorCodehash)`. A future canonical singleton may fill this slot.
+ * `paymentIndexRecorderHook` is a chain singleton because both ctor args are
+ * chain-invariants — `escrow` is the canonical AuthCaptureEscrow CREATE2 and
+ * `authorizedCodehash` is `keccak256(type(HookCombinator).runtimeCode)` (every
+ * `HookCombinator` instance shares the same runtime code regardless of stored
+ * hooks; per-instance config lives in storage, not bytecode). Routing your
+ * operator's post-action through `HookCombinator` lets it reuse this single
+ * deployment instead of per-operator instances.
  */
 export const hooks = {
-  paymentIndexHook: zeroAddress satisfies Address,
+  paymentIndexRecorderHook:
+    '0x16CF99e10f05E4CB9E3E6d805045378f87Ef084E' as const satisfies Address,
 } as const satisfies HookSingletonAddresses
 
 /**

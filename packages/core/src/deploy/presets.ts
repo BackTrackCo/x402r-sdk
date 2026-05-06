@@ -1014,8 +1014,8 @@ export interface DeliveryProtectionOperatorOptions {
   escrowPeriodSeconds: bigint
   /** Override default authorizedCodehash (default: hookCombinatorCodehash from config) */
   authorizedCodehash?: Hex
-  /** Override PaymentIndexHook address (default: from config, zeroAddress = skip) */
-  paymentIndexHookAddress?: Address
+  /** Override PaymentIndexRecorderHook address (default: from config, zeroAddress = skip) */
+  paymentIndexRecorderHookAddress?: Address
   /** Allow arbiter to refund immediately during escrow (default: false). When true, arbiter is added to the refundInEscrow OrCondition. */
   allowArbiterRefund?: boolean
 }
@@ -1027,7 +1027,7 @@ export interface DeliveryProtectionOperatorPreview {
   releaseConditionAddress: Address
   refundInEscrowConditionAddress: Address
   authorizeHookAddress: Address
-  paymentIndexHookAddress: Address
+  paymentIndexRecorderHookAddress: Address
   operatorConfig: OperatorConfig
 }
 
@@ -1038,7 +1038,7 @@ export interface DeliveryProtectionOperatorDeployment {
   releaseConditionAddress: Address
   refundInEscrowConditionAddress: Address
   authorizeHookAddress: Address
-  paymentIndexHookAddress: Address
+  paymentIndexRecorderHookAddress: Address
   operatorConfig: OperatorConfig
   deployments: DeployResult[]
   summary: {
@@ -1062,9 +1062,11 @@ export async function previewDeliveryProtectionOperator(
 
   const authorizedCodehash =
     options.authorizedCodehash ?? hookCombinatorCodehash
-  const paymentIndexHookAddress =
-    options.paymentIndexHookAddress ?? recorderSingletons.paymentIndexHook
-  const hasPaymentIndexHook = paymentIndexHookAddress !== zeroAddress
+  const paymentIndexRecorderHookAddress =
+    options.paymentIndexRecorderHookAddress ??
+    recorderSingletons.paymentIndexRecorderHook
+  const hasPaymentIndexRecorderHook =
+    paymentIndexRecorderHookAddress !== zeroAddress
   const allowArbiterRefund = options.allowArbiterRefund ?? false
 
   // Batch 1 (parallel, no dependencies)
@@ -1101,11 +1103,11 @@ export async function previewDeliveryProtectionOperator(
       factoryAddress: factoryAddrs.orCondition,
       conditions: refundInEscrowLegs,
     }),
-    // AuthorizeRecorder: EscrowPeriod + PaymentIndexHook (if available)
-    hasPaymentIndexHook
+    // AuthorizeRecorder: EscrowPeriod + PaymentIndexRecorderHook (if available)
+    hasPaymentIndexRecorderHook
       ? computeHookCombinatorAddress(publicClient, {
           factoryAddress: factoryAddrs.hookCombinator,
-          recorders: [escrowPeriodAddress, paymentIndexHookAddress],
+          recorders: [escrowPeriodAddress, paymentIndexRecorderHookAddress],
         })
       : Promise.resolve(escrowPeriodAddress),
   ])
@@ -1141,7 +1143,7 @@ export async function previewDeliveryProtectionOperator(
     releaseConditionAddress,
     refundInEscrowConditionAddress,
     authorizeHookAddress,
-    paymentIndexHookAddress,
+    paymentIndexRecorderHookAddress,
     operatorConfig,
   }
 }
@@ -1153,7 +1155,7 @@ export async function previewDeliveryProtectionOperator(
 // - Release: OrCondition([SAC(arbiter), PayerCondition]) — arbiter or payer
 // - RefundInEscrow: OrCondition([EscrowPeriod, ReceiverCondition, SAC(arbiter)])
 //   — after escrow window, or receiver, or arbiter
-// - AuthorizeRecorder: HookCombinator([EscrowPeriod, PaymentIndexHook])
+// - AuthorizeRecorder: HookCombinator([EscrowPeriod, PaymentIndexRecorderHook])
 //   — records auth time + indexes payments
 // ---------------------------------------------------------------------------
 
@@ -1176,14 +1178,15 @@ export async function deployDeliveryProtectionOperator(
     releaseConditionAddress,
     refundInEscrowConditionAddress,
     authorizeHookAddress,
-    paymentIndexHookAddress,
+    paymentIndexRecorderHookAddress,
     operatorAddress,
     operatorConfig,
   } = preview
 
-  const hasPaymentIndexHook = paymentIndexHookAddress !== zeroAddress
+  const hasPaymentIndexRecorderHook =
+    paymentIndexRecorderHookAddress !== zeroAddress
   const hasCombinator =
-    hasPaymentIndexHook && authorizeHookAddress !== escrowPeriodAddress
+    hasPaymentIndexRecorderHook && authorizeHookAddress !== escrowPeriodAddress
 
   // Phase 2: Batch-check which contracts already exist
   // Named entries so results are keyed by name, not brittle array indices
@@ -1240,7 +1243,7 @@ export async function deployDeliveryProtectionOperator(
         address: factoryAddrs.hookCombinator,
         abi: hookCombinatorFactoryAbi,
         functionName: 'getDeployed',
-        args: [[escrowPeriodAddress, paymentIndexHookAddress]],
+        args: [[escrowPeriodAddress, paymentIndexRecorderHookAddress]],
       },
     })
   }
@@ -1298,7 +1301,7 @@ export async function deployDeliveryProtectionOperator(
       releaseConditionAddress,
       refundInEscrowConditionAddress,
       authorizeHookAddress,
-      paymentIndexHookAddress,
+      paymentIndexRecorderHookAddress,
       operatorConfig,
       deployments: existingDeployments,
       summary: {
@@ -1377,7 +1380,7 @@ export async function deployDeliveryProtectionOperator(
     ],
   )
 
-  // 5. HookCombinator (if PaymentIndexHook available)
+  // 5. HookCombinator (if PaymentIndexRecorderHook available)
   if (hasCombinator) {
     trackDeploy(
       authorizeHookAddress,
@@ -1385,7 +1388,7 @@ export async function deployDeliveryProtectionOperator(
       factoryAddrs.hookCombinator,
       hookCombinatorFactoryAbi,
       'deploy',
-      [[escrowPeriodAddress, paymentIndexHookAddress]],
+      [[escrowPeriodAddress, paymentIndexRecorderHookAddress]],
     )
   }
 
@@ -1416,7 +1419,7 @@ export async function deployDeliveryProtectionOperator(
     releaseConditionAddress,
     refundInEscrowConditionAddress,
     authorizeHookAddress,
-    paymentIndexHookAddress,
+    paymentIndexRecorderHookAddress,
     operatorConfig,
     deployments,
     summary: { newCount, existingCount, txHashes },

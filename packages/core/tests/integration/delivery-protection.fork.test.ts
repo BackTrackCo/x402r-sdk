@@ -127,7 +127,7 @@ describe('Delivery Protection: operator config verification', () => {
     )
     expect(config.refundInEscrowCondition).not.toBe(zeroAddress)
 
-    // authorizeRecorder: EscrowPeriod (or HookCombinator when PaymentIndexHook available)
+    // authorizeRecorder: EscrowPeriod (or HookCombinator when PaymentIndexRecorderHook available)
     expect(config.authorizeRecorder.toLowerCase()).toBe(
       deployment.authorizeHookAddress.toLowerCase(),
     )
@@ -346,16 +346,18 @@ describe('Delivery Protection: timeout auto-refund', () => {
 })
 
 // ---------------------------------------------------------------------------
-// PaymentIndexHook: verify on-chain payment indexing after authorize
+// PaymentIndexRecorderHook: verify on-chain payment indexing after authorize
 // ---------------------------------------------------------------------------
 
-describe('Delivery Protection: PaymentIndexHook', () => {
+describe('Delivery Protection: PaymentIndexRecorderHook', () => {
   it('indexes authorized payment by payer', async () => {
-    const { paymentIndexHookAbi } = await import('../../src/abis/generated.js')
+    const { paymentIndexRecorderHookAbi } = await import(
+      '../../src/abis/generated.js'
+    )
 
     const [, total] = await publicClient.readContract({
-      address: deployment.paymentIndexHookAddress,
-      abi: paymentIndexHookAbi,
+      address: deployment.paymentIndexRecorderHookAddress,
+      abi: paymentIndexRecorderHookAbi,
       functionName: 'getPayerPayments',
       args: [testRoles.payer.address, 0n, 10n],
     })

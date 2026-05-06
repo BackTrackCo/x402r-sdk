@@ -65,7 +65,7 @@ describe('createQueryActions', () => {
 
   it('recorder is primary source — events not called when recorder returns results', async () => {
     const config = createTestConfig({
-      paymentIndexHookAddress: TEST_RECORDER,
+      paymentIndexRecorderHookAddress: TEST_RECORDER,
       eventFromBlock: 1000n,
     })
     const query = createQueryActions(config, TEST_RECORDER)
@@ -81,7 +81,7 @@ describe('createQueryActions', () => {
     mockRecorderGetByPayer.mockResolvedValueOnce([])
 
     const config = createTestConfig({
-      paymentIndexHookAddress: TEST_RECORDER,
+      paymentIndexRecorderHookAddress: TEST_RECORDER,
       eventFromBlock: 1000n,
     })
     const query = createQueryActions(config, TEST_RECORDER)
@@ -97,7 +97,7 @@ describe('createQueryActions', () => {
     mockRecorderGetByReceiver.mockRejectedValueOnce(new Error('RPC error'))
 
     const config = createTestConfig({
-      paymentIndexHookAddress: TEST_RECORDER,
+      paymentIndexRecorderHookAddress: TEST_RECORDER,
       eventFromBlock: 1000n,
     })
     const query = createQueryActions(config, TEST_RECORDER)
@@ -113,7 +113,7 @@ describe('createQueryActions', () => {
     await store.save(84532, '0xdeadbeef', mockPaymentInfo)
 
     const config = createTestConfig({
-      paymentIndexHookAddress: TEST_RECORDER,
+      paymentIndexRecorderHookAddress: TEST_RECORDER,
       paymentStore: store,
     })
     const query = createQueryActions(config, TEST_RECORDER)
@@ -127,7 +127,7 @@ describe('createQueryActions', () => {
 
   it('getPayment by hash — recorder hit returns result', async () => {
     const config = createTestConfig({
-      paymentIndexHookAddress: TEST_RECORDER,
+      paymentIndexRecorderHookAddress: TEST_RECORDER,
     })
     const query = createQueryActions(config, TEST_RECORDER)
 
@@ -141,7 +141,7 @@ describe('createQueryActions', () => {
     mockRecorderGetByHash.mockResolvedValueOnce(null)
 
     const config = createTestConfig({
-      paymentIndexHookAddress: TEST_RECORDER,
+      paymentIndexRecorderHookAddress: TEST_RECORDER,
     })
     const query = createQueryActions(config, TEST_RECORDER)
 
@@ -154,7 +154,7 @@ describe('createQueryActions', () => {
     mockRecorderGetByPayer.mockResolvedValueOnce([])
 
     const config = createTestConfig({
-      paymentIndexHookAddress: TEST_RECORDER,
+      paymentIndexRecorderHookAddress: TEST_RECORDER,
     })
     const query = createQueryActions(config, TEST_RECORDER)
 
@@ -170,7 +170,7 @@ describe('createQueryActions', () => {
     )
 
     const config = createTestConfig({
-      paymentIndexHookAddress: TEST_RECORDER,
+      paymentIndexRecorderHookAddress: TEST_RECORDER,
       eventFromBlock: 500n,
     })
     createQueryActions(config, TEST_RECORDER)
@@ -191,7 +191,7 @@ describe('createQueryActions', () => {
     mockEventGetByPayer.mockResolvedValueOnce([])
 
     const config = createTestConfig({
-      paymentIndexHookAddress: TEST_RECORDER,
+      paymentIndexRecorderHookAddress: TEST_RECORDER,
       eventFromBlock: 1000n,
     })
     const query = createQueryActions(config, TEST_RECORDER)
@@ -205,7 +205,7 @@ describe('createQueryActions', () => {
     mockRecorderGetByHash.mockResolvedValueOnce(null)
 
     const config = createTestConfig({
-      paymentIndexHookAddress: TEST_RECORDER,
+      paymentIndexRecorderHookAddress: TEST_RECORDER,
       eventFromBlock: 1000n,
     })
     const query = createQueryActions(config, TEST_RECORDER)

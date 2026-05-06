@@ -6,7 +6,7 @@ import { pad, zeroAddress } from 'viem'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { createX402r, type X402r } from '../../../sdk/src/index.js'
 import {
-  paymentIndexHookAbi,
+  paymentIndexRecorderHookAbi,
   paymentOperatorFactoryAbi,
 } from '../../src/abis/generated.js'
 import {
@@ -28,7 +28,7 @@ import { createCollectorData } from '../setup/erc3009-helper.js'
 import { setupScenario } from '../setup/scenario-helper.js'
 
 // ---------------------------------------------------------------------------
-// PaymentIndexHook bytecode — loaded from contract build artifacts.
+// PaymentIndexRecorderHook bytecode — loaded from contract build artifacts.
 // In CI the `test-fork` job clones x402r-contracts and runs `forge build`.
 // Locally, the workspace layout places x402r-contracts at the same level.
 // ---------------------------------------------------------------------------
@@ -38,7 +38,7 @@ const artifact = JSON.parse(
   readFileSync(
     resolve(
       __dirname,
-      '../../../../../x402r-contracts/out/PaymentIndexHook.sol/PaymentIndexHook.json',
+      '../../../../../x402r-contracts/out/PaymentIndexRecorderHook.sol/PaymentIndexRecorderHook.json',
     ),
     'utf-8',
   ),
@@ -62,7 +62,7 @@ let publicClient: PublicClient
 let fixtures: DeployedFixtures
 let payerClient: X402r
 let paymentInfo: PaymentInfo
-let paymentIndexHookAddress: Address
+let paymentIndexRecorderHookAddress: Address
 let recorderOperatorAddress: Address
 let authBlock: bigint
 
@@ -72,10 +72,10 @@ beforeAll(async () => {
   const deployer = testRoles.deployer.address
   const deployerWallet = anvilBaseSepolia.getWalletClient(deployer)
 
-  // 1. Deploy PaymentIndexHook (operator calls it directly — no combinator needed)
+  // 1. Deploy PaymentIndexRecorderHook (operator calls it directly — no combinator needed)
   //    AUTHORIZED_CODEHASH = bytes32(0) means only paymentInfo.operator can call record()
   const deployHash = await deployerWallet.deployContract({
-    abi: paymentIndexHookAbi,
+    abi: paymentIndexRecorderHookAbi,
     bytecode: PAYMENT_INDEX_RECORDER_BYTECODE,
     args: [baseSepolia.authCaptureEscrow, pad('0x00')],
     chain: deployerWallet.chain,
@@ -83,16 +83,16 @@ beforeAll(async () => {
   const receipt = await publicClient.waitForTransactionReceipt({
     hash: deployHash,
   })
-  paymentIndexHookAddress = receipt.contractAddress!
+  paymentIndexRecorderHookAddress = receipt.contractAddress!
 
-  // 2. Deploy PaymentOperator with PaymentIndexHook as authorizeRecorder
+  // 2. Deploy PaymentOperator with PaymentIndexRecorderHook as authorizeRecorder
   //    Note: Using recorder directly (not combinator) — release won't work
   //    without EscrowPeriod, but this test only needs authorize + query.
   const operatorConfig = {
     feeRecipient: testRoles.operatorFeeRecipient.address,
     feeCalculator: fixtures.feeCalculatorAddress,
     authorizeCondition: zeroAddress,
-    authorizeRecorder: paymentIndexHookAddress,
+    authorizeRecorder: paymentIndexRecorderHookAddress,
     chargeCondition: zeroAddress,
     chargeRecorder: zeroAddress,
     releaseCondition: zeroAddress,
@@ -165,7 +165,7 @@ beforeAll(async () => {
 describe('Recorder queries after authorize', () => {
   it('getPayerPaymentsFromHook returns the authorized payment', async () => {
     const result = await getPayerPaymentsFromHook(publicClient, {
-      hookAddress: paymentIndexHookAddress,
+      hookAddress: paymentIndexRecorderHookAddress,
       payer: testRoles.payer.address,
       offset: 0n,
       count: 100n,
@@ -184,7 +184,7 @@ describe('Recorder queries after authorize', () => {
 
   it('getReceiverPaymentsFromHook returns the authorized payment', async () => {
     const result = await getReceiverPaymentsFromHook(publicClient, {
-      hookAddress: paymentIndexHookAddress,
+      hookAddress: paymentIndexRecorderHookAddress,
       receiver: testRoles.receiver.address,
       offset: 0n,
       count: 100n,
@@ -199,7 +199,7 @@ describe('Recorder queries after authorize', () => {
 
   it('getPayerPayment returns correct PaymentInfo by index', async () => {
     const result = await getPayerPayment(publicClient, {
-      hookAddress: paymentIndexHookAddress,
+      hookAddress: paymentIndexRecorderHookAddress,
       payer: testRoles.payer.address,
       index: 0n,
     })
@@ -212,7 +212,7 @@ describe('Recorder queries after authorize', () => {
 
   it('getReceiverPayment returns correct PaymentInfo by index', async () => {
     const result = await getReceiverPayment(publicClient, {
-      hookAddress: paymentIndexHookAddress,
+      hookAddress: paymentIndexRecorderHookAddress,
       receiver: testRoles.receiver.address,
       index: 0n,
     })
@@ -231,7 +231,7 @@ describe('Recorder queries after authorize', () => {
     )
 
     const result = await getHookPaymentInfo(publicClient, {
-      hookAddress: paymentIndexHookAddress,
+      hookAddress: paymentIndexRecorderHookAddress,
       hash,
     })
 

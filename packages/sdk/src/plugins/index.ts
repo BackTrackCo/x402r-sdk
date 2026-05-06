@@ -49,7 +49,7 @@ export function freezeActions(freezeAddress: Address) {
   })
 }
 
-/** Extend plugin — attaches query actions for the given PaymentIndexHook address. */
+/** Extend plugin — attaches query actions for the given PaymentIndexRecorderHook address. */
 export function queryActions(
   hookAddress: Address,
   options?: { store?: PaymentStore; eventFromBlock?: bigint },
@@ -58,7 +58,7 @@ export function queryActions(
     query: createQueryActions(
       {
         ...client.config,
-        paymentIndexHookAddress: hookAddress,
+        paymentIndexRecorderHookAddress: hookAddress,
         paymentStore: options?.store,
         eventFromBlock: options?.eventFromBlock,
       },

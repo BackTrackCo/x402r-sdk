@@ -1,6 +1,6 @@
 import type { Address, Hex, PublicClient } from 'viem'
 import { zeroAddress } from 'viem'
-import { paymentIndexHookAbi } from '../../abis/generated.js'
+import { paymentIndexRecorderHookAbi } from '../../abis/generated.js'
 import type { PaymentInfo } from '../../types/index.js'
 import { wrapContractCall } from '../_internal/error-wrapping.js'
 
@@ -18,7 +18,7 @@ export async function getHookPaymentInfo(
   const result = await wrapContractCall('getHookPaymentInfo', () =>
     publicClient.readContract({
       address: hookAddress,
-      abi: paymentIndexHookAbi,
+      abi: paymentIndexRecorderHookAbi,
       functionName: 'getPaymentInfo',
       args: [hash],
     }),

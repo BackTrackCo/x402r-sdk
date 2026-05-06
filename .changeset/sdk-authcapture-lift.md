@@ -18,7 +18,7 @@ Breaking changes — clean break, no shims:
 - `recorder`/`Recorder` → `hook`/`Hook` everywhere (ABIs, factories, types, files, exports, addresses).
 - `actions/recorder/` directory renamed to `actions/hook/`. Action functions: `getRecorderPaymentInfo` → `getHookPaymentInfo`, `getPayerPaymentsFromRecorder` → `getPayerPaymentsFromHook`, `getReceiverPaymentsFromRecorder` → `getReceiverPaymentsFromHook`.
 - `recorderCombinator`/`recorderCombinatorFactory` → `hookCombinator`/`hookCombinatorFactory` in factory function names, types, and `factories.*` config field.
-- `paymentIndexRecorder` → `paymentIndexHook`; `authorizationTimeRecorder` → `authorizationTimeHook`.
+- `paymentIndexRecorder` → `paymentIndexRecorderHook`; `authorizationTimeRecorder` → `authorizationTimeRecorderHook`. (Tracks the `BackTrackCo/x402r-contracts#36` rename — the post-action slot needs to distinguish recorder-style hooks from arbitrary ones, so `RecorderHook` is back as a suffix.)
 - `recorders` config field on `X402rChainConfig` → `hooks`; `RecorderSingletonAddresses` → `HookSingletonAddresses`; `getRecorderSingletons` → `getHookSingletons`.
 - `recorderCombinatorCodehash` → `hookCombinatorCodehash`.
 - `iRecorderAbi` → `iHookAbi` (and the rest of the recorder→hook ABI consts).
@@ -43,7 +43,7 @@ Breaking changes — clean break, no shims:
 
 **Canonical CREATE2 addresses**
 - `authCaptureEscrow`, `tokenCollector`, `protocolFeeConfig`, `receiverRefundCollector`, `factories.*`, `conditions.*`, and `hookCombinatorCodehash` now point at the canonical CREATE2 deployment (salt namespaces `commerce-payments::v1::*` and `x402r-canonical-v1::*`). New `commercePayments*` exports surface the three primitive addresses individually (escrow + ERC3009 collector + Permit2 collector).
-- `hooks.paymentIndexHook` is `zeroAddress`: the canonical CREATE2 deploy script does not include a chain-singleton `PaymentIndexHook` (it's per-operator since constructor args fold the operator's hook combinator codehash). Consumers can pass an instance via `paymentIndexHookAddress` on the preset, or instantiate `new PaymentIndexHook(escrow, hookCombinatorCodehash)`.
+- `hooks.paymentIndexRecorderHook` is the canonical chain singleton at `0x16CF99e10f05E4CB9E3E6d805045378f87Ef084E`. Both ctor args are chain-invariants (canonical escrow + `keccak256(type(HookCombinator).runtimeCode)`), so a single deploy per chain serves every operator that routes its post-action slot through `HookCombinator`. Live on Base Sepolia, Eth Sepolia, Arb Sepolia, Base, Optimism, Celo, Avalanche, Arbitrum One.
 - Owner / fee recipient on `ProtocolFeeConfig` is `0x773dBcB5BDb3Df8359ba4e42D7Ce7AE3fC9Ee235`; protocol-fee calculator is unset (`address(0)`), so `getProtocolFeeBps()` returns `0`.
 
 **Workspace dev**

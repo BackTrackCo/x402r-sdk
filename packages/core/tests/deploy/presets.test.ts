@@ -726,11 +726,6 @@ function makeDeliveryProtectionOptions(
     arbiter: '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65',
     feeReceiver: '0x5678901234567890123456789012345678901234',
     escrowPeriodSeconds: 86400n,
-    // Default to a non-zero PaymentIndexHook so the HookCombinator path is
-    // exercised. The canonical config sets this slot to `zeroAddress` (no
-    // canonical singleton in the new CREATE2 deploy); tests that need the
-    // fallback path set this explicitly to `zeroAddress` in their override.
-    paymentIndexHookAddress: '0x1111111111111111111111111111111111111111',
     ...overrides,
   }
 }
@@ -782,7 +777,7 @@ describe('previewDeliveryProtectionOperator', () => {
     )
   })
 
-  it('falls back to EscrowPeriod recorder when PaymentIndexHook is zeroAddress', async () => {
+  it('falls back to EscrowPeriod recorder when PaymentIndexRecorderHook is zeroAddress', async () => {
     const escrowAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
     const operatorAddr = '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
     const publicClient = createMockPublicClient({
@@ -793,13 +788,13 @@ describe('previewDeliveryProtectionOperator', () => {
     const result = await previewDeliveryProtectionOperator(
       publicClient,
       makeDeliveryProtectionOptions({
-        paymentIndexHookAddress: zeroAddress,
+        paymentIndexRecorderHookAddress: zeroAddress,
       }),
     )
 
-    // Without PaymentIndexHook, authorizeRecorder falls back to escrowPeriod
+    // Without PaymentIndexRecorderHook, authorizeRecorder falls back to escrowPeriod
     expect(result.authorizeHookAddress).toBe(escrowAddr)
-    expect(result.paymentIndexHookAddress).toBe(zeroAddress)
+    expect(result.paymentIndexRecorderHookAddress).toBe(zeroAddress)
   })
 
   it('uses provided feeReceiver in operator config', async () => {
@@ -990,7 +985,7 @@ describe('deployDeliveryProtectionOperator', () => {
     expect(result.deployments[4].isNew).toBe(false) // hookCombinator
   })
 
-  it('deploys 5 contracts when PaymentIndexHook is zeroAddress', async () => {
+  it('deploys 5 contracts when PaymentIndexRecorderHook is zeroAddress', async () => {
     const escrowAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
     const arbiterCondAddr =
       '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
@@ -1012,7 +1007,7 @@ describe('deployDeliveryProtectionOperator', () => {
       walletClient,
       publicClient,
       makeDeliveryProtectionOptions({
-        paymentIndexHookAddress: zeroAddress,
+        paymentIndexRecorderHookAddress: zeroAddress,
       }),
     )
 
