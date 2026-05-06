@@ -92,7 +92,7 @@ export interface PaymentActions {
     tokenCollector: Address,
     collectorData: Hex,
   ): Promise<Hash>
-  release(paymentInfo: PaymentInfo, amount: bigint, data?: Hex): Promise<Hash>
+  capture(paymentInfo: PaymentInfo, amount: bigint, data?: Hex): Promise<Hash>
   /** Executes an in-escrow refund. Gated by ReceiverCondition — only the receiver (merchant) can call. */
   refundInEscrow(
     paymentInfo: PaymentInfo,
@@ -374,7 +374,7 @@ export interface MerchantClient {
     PaymentActions,
     | 'authorize'
     | 'charge'
-    | 'release'
+    | 'capture'
     | 'refundInEscrow'
     | 'refundPostEscrow'
     | 'approvePostEscrowRefund'

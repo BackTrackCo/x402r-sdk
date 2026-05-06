@@ -6,22 +6,22 @@ import {
   wrapContractCall,
 } from '../_internal/error-wrapping.js'
 
-export interface ReleaseParameters {
+export interface CaptureParameters {
   operatorAddress: Address
   paymentInfo: PaymentInfo
   amount: bigint
   data?: Hex
 }
-export type ReleaseReturnType = Hash
+export type CaptureReturnType = Hash
 
-export async function release(
+export async function capture(
   walletClient: WalletClient,
-  parameters: ReleaseParameters,
-): Promise<ReleaseReturnType> {
+  parameters: CaptureParameters,
+): Promise<CaptureReturnType> {
   const { operatorAddress, paymentInfo, amount, data = '0x' } = parameters
-  requireAccount(walletClient, 'release')
+  requireAccount(walletClient, 'capture')
 
-  return wrapContractCall('release', () =>
+  return wrapContractCall('capture', () =>
     walletClient.writeContract({
       address: operatorAddress,
       abi: paymentOperatorAbi,

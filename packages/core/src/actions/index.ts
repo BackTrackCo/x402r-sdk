@@ -122,6 +122,8 @@ export {
 export type {
   AuthorizeParameters,
   AuthorizeReturnType,
+  CaptureParameters,
+  CaptureReturnType,
   ChargeParameters,
   ChargeReturnType,
   ConditionSlot,
@@ -132,16 +134,14 @@ export type {
   GetOperatorConfigParameters,
   GetOperatorConfigReturnType,
   OperatorSlots,
-  ReleaseParameters,
-  ReleaseReturnType,
 } from './operator/index.js'
 export {
   authorize,
+  capture,
   charge,
   getConditionAddress,
   getEscrowAddress,
   getOperatorConfig,
-  release,
 } from './operator/index.js'
 // ---------------------------------------------------------------------------
 // Refund

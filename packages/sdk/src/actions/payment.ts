@@ -2,11 +2,11 @@ import type { PaymentInfo } from '@x402r/core'
 import {
   approvePostEscrowRefund as coreApprovePostEscrowRefund,
   authorize as coreAuthorize,
+  capture as coreCapture,
   charge as coreCharge,
   getPostEscrowRefundAllowance as coreGetPostEscrowRefundAllowance,
   refundInEscrow as coreRefundInEscrow,
   refundPostEscrow as coreRefundPostEscrow,
-  release as coreRelease,
   getPaymentAmounts,
   getPaymentState,
 } from '@x402r/core'
@@ -16,7 +16,7 @@ import { requireWallet } from './utils.js'
 
 export function createPaymentActions(config: ResolvedConfig): PaymentActions {
   return {
-    /** Collects tokens into escrow. Use `release()` to claim after escrow period. Mutually exclusive with `charge()`. */
+    /** Collects tokens into escrow. Use `capture()` to claim after escrow period. Mutually exclusive with `charge()`. */
     async authorize(
       paymentInfo: PaymentInfo,
       amount: bigint,
@@ -48,13 +48,13 @@ export function createPaymentActions(config: ResolvedConfig): PaymentActions {
         collectorData,
       })
     },
-    async release(
+    async capture(
       paymentInfo: PaymentInfo,
       amount: bigint,
       data?: Hex,
     ): Promise<Hash> {
       const wallet = requireWallet(config)
-      return coreRelease(wallet, {
+      return coreCapture(wallet, {
         operatorAddress: config.operatorAddress,
         paymentInfo,
         amount,

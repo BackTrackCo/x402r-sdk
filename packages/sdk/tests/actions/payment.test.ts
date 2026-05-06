@@ -99,7 +99,7 @@ describe('createPaymentActions', () => {
     const config = createTestConfig()
     const payment = createPaymentActions(config)
 
-    const hash = await payment.release(mockPaymentInfo, 500000n)
+    const hash = await payment.capture(mockPaymentInfo, 500000n)
 
     expect(coreRelease).toHaveBeenCalledWith(config.walletClient, {
       operatorAddress: TEST_OPERATOR,

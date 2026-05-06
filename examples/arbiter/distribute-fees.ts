@@ -21,7 +21,7 @@ try {
   // Fast-forward past escrow and release to generate fees
   await ctx.testClient.increaseTime({ seconds: ESCROW_FAST_FORWARD })
   await ctx.testClient.mine({ blocks: 1 })
-  const releaseTx = await ctx.merchant.payment.release(
+  const releaseTx = await ctx.merchant.payment.capture(
     ctx.paymentInfo,
     ctx.PAYMENT_AMOUNT,
   )

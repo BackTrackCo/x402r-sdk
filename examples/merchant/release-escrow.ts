@@ -27,7 +27,7 @@ try {
   console.log(`During escrow after fast-forward: ${afterEscrow}`)
 
   // Release remaining authorized funds
-  const tx = await ctx.merchant.payment.release(
+  const tx = await ctx.merchant.payment.capture(
     ctx.paymentInfo,
     ctx.PAYMENT_AMOUNT,
   )
