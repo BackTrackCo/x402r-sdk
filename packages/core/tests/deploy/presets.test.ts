@@ -771,9 +771,7 @@ describe('previewDeliveryProtectionOperator', () => {
     expect(result.operatorConfig.capturePreActionCondition).toBe(orCondAddr)
     expect(result.operatorConfig.voidPreActionCondition).toBe(orCondAddr)
     expect(result.operatorConfig.feeCalculator).toBe(zeroAddress)
-    expect(result.operatorConfig.authorizePreActionCondition).toBe(
-      x402rChains[84532].usdcTvlLimit,
-    )
+    expect(result.operatorConfig.authorizePreActionCondition).toBe(zeroAddress)
     expect(result.operatorConfig.refundPreActionCondition).toBe(
       x402rChains[84532].conditions!.receiver,
     )

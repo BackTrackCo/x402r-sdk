@@ -37,7 +37,6 @@ export {
   staticAddressConditionFactoryAbi,
   staticFeeCalculatorAbi,
   staticFeeCalculatorFactoryAbi,
-  usdcTvlLimitAbi,
 } from './abis/generated.js'
 // ---------------------------------------------------------------------------
 // Actions
@@ -232,7 +231,6 @@ export {
   supportedChainIds,
   tokenCollector,
   toNetworkId,
-  usdcTvlLimit,
   x402rChains,
 } from './config/index.js'
 // ---------------------------------------------------------------------------

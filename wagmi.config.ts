@@ -18,6 +18,10 @@ export default defineConfig({
         // Internal access control
         '*Access.sol/**',
 
+        // Dropped from canonical authCapture deploys (chain-specific, kept in
+        // contracts source for ad-hoc per-chain integrations only)
+        'UsdcTvlLimit.sol/**',
+
         // Internal Solidity types/errors/events
         'Errors.sol/**',
         'Events.sol/**',

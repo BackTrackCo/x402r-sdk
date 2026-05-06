@@ -297,7 +297,6 @@ export async function previewMarketplaceOperator(
   options: MarketplaceOperatorOptions,
 ): Promise<MarketplaceOperatorPreview> {
   const {
-    config,
     factories,
     singletons,
     authorizedCodehash,
@@ -375,7 +374,7 @@ export async function previewMarketplaceOperator(
   const operatorConfig: OperatorConfig = {
     feeReceiver: options.feeRecipient,
     feeCalculator: feeCalculatorAddress ?? zeroAddress,
-    authorizePreActionCondition: config.usdcTvlLimit,
+    authorizePreActionCondition: zeroAddress,
     authorizePostActionHook: escrowPeriodAddress,
     chargePreActionCondition: zeroAddress,
     chargePostActionHook: zeroAddress,
@@ -1057,7 +1056,6 @@ export async function previewDeliveryProtectionOperator(
   publicClient: PublicClient,
   options: DeliveryProtectionOperatorOptions,
 ): Promise<DeliveryProtectionOperatorPreview> {
-  const config = getChainConfig(options.chainId)
   const factoryAddrs = getFactoryAddresses(options.chainId)
   const singletons = getConditionSingletons(options.chainId)
   const recorderSingletons = getRecorderSingletons(options.chainId)
@@ -1120,7 +1118,7 @@ export async function previewDeliveryProtectionOperator(
   const operatorConfig: OperatorConfig = {
     feeReceiver: options.feeRecipient,
     feeCalculator: zeroAddress,
-    authorizePreActionCondition: config.usdcTvlLimit,
+    authorizePreActionCondition: zeroAddress,
     authorizePostActionHook: authorizeRecorderAddress,
     chargePreActionCondition: zeroAddress,
     chargePostActionHook: zeroAddress,

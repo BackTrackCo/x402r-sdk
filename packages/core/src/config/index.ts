@@ -37,7 +37,6 @@ export interface X402rChainConfig {
   authCaptureEscrow: Address
   tokenCollector: Address
   protocolFeeConfig: Address
-  usdcTvlLimit: Address
   receiverRefundCollector: Address
   usdc: Address
   factories: FactoryAddresses
@@ -57,8 +56,6 @@ export const protocolFeeConfig =
   '0xf62788834C99B2E85a6891C0b46D1EB996f8f596' as const satisfies Address
 export const receiverRefundCollector =
   '0x2C0eC8B33196071cA6d08299844235fD81e1466A' as const satisfies Address
-export const usdcTvlLimit =
-  '0x96a585F0e23eE9FD8722C7a61d3b8B3FAd2419df' as const satisfies Address
 
 /** Chain-invariant CREATE3 factory addresses. Same as `getChainConfig(chainId).factories`. */
 export const factories = {
@@ -103,7 +100,6 @@ const PROTOCOL_ADDRESSES = {
   tokenCollector,
   protocolFeeConfig,
   receiverRefundCollector,
-  usdcTvlLimit,
   factories,
   conditions,
   recorders,

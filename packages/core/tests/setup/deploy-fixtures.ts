@@ -334,7 +334,7 @@ export async function deployTestFixtures(
   const deliveryProtectionOperatorConfig = {
     feeRecipient: testRoles.operatorFeeRecipient.address,
     feeCalculator: zeroAddress,
-    authorizeCondition: baseSepolia.usdcTvlLimit,
+    authorizeCondition: zeroAddress,
     authorizeRecorder: deliveryProtectionEscrowPeriodAddress,
     chargeCondition: zeroAddress,
     chargeRecorder: zeroAddress,
