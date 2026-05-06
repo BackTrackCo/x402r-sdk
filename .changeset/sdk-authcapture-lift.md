@@ -43,7 +43,7 @@ Breaking changes — clean break, no shims:
 
 **Canonical CREATE2 addresses**
 - `authCaptureEscrow`, `tokenCollector`, `protocolFeeConfig`, `receiverRefundCollector`, `factories.*`, `conditions.*`, and `hookCombinatorCodehash` now point at the canonical CREATE2 deployment (salt namespaces `commerce-payments::v1::*` and `x402r-canonical-v1::*`). New `commercePayments*` exports surface the three primitive addresses individually (escrow + ERC3009 collector + Permit2 collector).
-- `hooks.paymentIndexRecorderHook` is the canonical chain singleton at `0x16CF99e10f05E4CB9E3E6d805045378f87Ef084E`. Both ctor args are chain-invariants (canonical escrow + `keccak256(type(HookCombinator).runtimeCode)`), so a single deploy per chain serves every operator that routes its post-action slot through `HookCombinator`. Live on Base Sepolia, Eth Sepolia, Arb Sepolia, Base, Optimism, Celo, Avalanche, Arbitrum One.
+- `hooks.paymentIndexRecorderHook` is the canonical chain singleton at `0x16CF99e10f05E4CB9E3E6d805045378f87Ef084E`. Both ctor args are chain-invariants (canonical escrow + `keccak256(type(HookCombinator).runtimeCode)`), so a single deploy per chain serves every operator that routes its post-action slot through `HookCombinator`. Live on every chain in `x402rChains` except Ethereum mainnet (deployer balance top-up pending).
 - Owner / fee recipient on `ProtocolFeeConfig` is `0x773dBcB5BDb3Df8359ba4e42D7Ce7AE3fC9Ee235`; protocol-fee calculator is unset (`address(0)`), so `getProtocolFeeBps()` returns `0`.
 
 **Workspace dev**
