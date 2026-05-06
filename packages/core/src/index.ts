@@ -368,7 +368,7 @@ export { validatePaymentInfo } from './payment/validation.js'
 // Types
 // ---------------------------------------------------------------------------
 export type {
-  ConditionConfig,
   OperatorConfig,
   PaymentInfo,
+  PluginConfig,
 } from './types/index.js'

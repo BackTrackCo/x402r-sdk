@@ -18,7 +18,7 @@ type AuthorizeFn = Extract<
 export type PaymentInfo = AbiParameterToPrimitiveType<AuthorizeFn['inputs'][0]>
 
 // ---------------------------------------------------------------------------
-// ConditionConfig — derived from PaymentOperator constructor's _conditions param
+// PluginConfig — derived from PaymentOperator constructor's _pluginConfig param
 // ---------------------------------------------------------------------------
 
 type ConstructorDef = Extract<
@@ -26,7 +26,7 @@ type ConstructorDef = Extract<
   { type: 'constructor' }
 >
 
-export type ConditionConfig = AbiParameterToPrimitiveType<
+export type PluginConfig = AbiParameterToPrimitiveType<
   ConstructorDef['inputs'][4]
 >
 
