@@ -1,11 +1,11 @@
 import type { PaymentInfo } from '@x402r/core'
 import {
-  approvePostEscrowRefund as coreApprovePostEscrowRefund,
+  approveRefundAllowance as coreApproveRefundAllowance,
   authorize as coreAuthorize,
   capture as coreCapture,
   charge as coreCharge,
-  getPostEscrowRefundAllowance as coreGetPostEscrowRefundAllowance,
-  refundPostEscrow as coreRefundPostEscrow,
+  getRefundAllowance as coreGetRefundAllowance,
+  refund as coreRefund,
   voidPayment as coreVoidPayment,
   getPaymentAmounts,
   getPaymentState,
@@ -69,14 +69,14 @@ export function createPaymentActions(config: ResolvedConfig): PaymentActions {
         data,
       })
     },
-    async refundPostEscrow(
+    async refund(
       paymentInfo: PaymentInfo,
       amount: bigint,
       tokenCollector: Address,
       collectorData: Hex,
     ): Promise<Hash> {
       const wallet = requireWallet(config)
-      return coreRefundPostEscrow(wallet, {
+      return coreRefund(wallet, {
         operatorAddress: config.operatorAddress,
         paymentInfo,
         amount,
@@ -84,22 +84,19 @@ export function createPaymentActions(config: ResolvedConfig): PaymentActions {
         collectorData,
       })
     },
-    async approvePostEscrowRefund(
+    async approveRefundAllowance(
       token: Address,
       amount: bigint,
     ): Promise<Hash> {
       const wallet = requireWallet(config)
-      return coreApprovePostEscrowRefund(wallet, {
+      return coreApproveRefundAllowance(wallet, {
         token,
         collectorAddress: config.chainConfig.receiverRefundCollector,
         amount,
       })
     },
-    async getPostEscrowRefundAllowance(
-      token: Address,
-      owner: Address,
-    ): Promise<bigint> {
-      return coreGetPostEscrowRefundAllowance(config.publicClient, {
+    async getRefundAllowance(token: Address, owner: Address): Promise<bigint> {
+      return coreGetRefundAllowance(config.publicClient, {
         token,
         owner,
         collectorAddress: config.chainConfig.receiverRefundCollector,

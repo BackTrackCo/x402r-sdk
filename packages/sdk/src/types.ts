@@ -101,14 +101,14 @@ export interface PaymentActions {
    * receiver (merchant) can call.
    */
   voidPayment(paymentInfo: PaymentInfo, data?: Hex): Promise<Hash>
-  refundPostEscrow(
+  refund(
     paymentInfo: PaymentInfo,
     amount: bigint,
     tokenCollector: Address,
     collectorData: Hex,
   ): Promise<Hash>
-  approvePostEscrowRefund(token: Address, amount: bigint): Promise<Hash>
-  getPostEscrowRefundAllowance(token: Address, owner: Address): Promise<bigint>
+  approveRefundAllowance(token: Address, amount: bigint): Promise<Hash>
+  getRefundAllowance(token: Address, owner: Address): Promise<bigint>
   getState(
     paymentInfo: PaymentInfo,
   ): Promise<readonly [boolean, bigint, bigint]>
@@ -379,9 +379,9 @@ export interface MerchantClient {
     | 'charge'
     | 'capture'
     | 'voidPayment'
-    | 'refundPostEscrow'
-    | 'approvePostEscrowRefund'
-    | 'getPostEscrowRefundAllowance'
+    | 'refund'
+    | 'approveRefundAllowance'
+    | 'getRefundAllowance'
     | 'getState'
     | 'getAmounts'
   >

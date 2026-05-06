@@ -37,12 +37,12 @@ describe('PayerClient type narrowing', () => {
     void payer.payment.capture
     // @ts-expect-error — payer cannot voidPayment
     void payer.payment.voidPayment
-    // @ts-expect-error — payer cannot refundPostEscrow
-    void payer.payment.refundPostEscrow
-    // @ts-expect-error — payer cannot approvePostEscrowRefund
-    void payer.payment.approvePostEscrowRefund
-    // @ts-expect-error — payer cannot getPostEscrowRefundAllowance
-    void payer.payment.getPostEscrowRefundAllowance
+    // @ts-expect-error — payer cannot refund
+    void payer.payment.refund
+    // @ts-expect-error — payer cannot approveRefundAllowance
+    void payer.payment.approveRefundAllowance
+    // @ts-expect-error — payer cannot getRefundAllowance
+    void payer.payment.getRefundAllowance
   })
 
   it('refund exposes payer methods', () => {
@@ -96,9 +96,9 @@ describe('MerchantClient type narrowing', () => {
     expectTypeOf(merchant.payment.getState).toBeFunction()
     expectTypeOf(merchant.payment.getAmounts).toBeFunction()
     expectTypeOf(merchant.payment.voidPayment).toBeFunction()
-    expectTypeOf(merchant.payment.refundPostEscrow).toBeFunction()
-    expectTypeOf(merchant.payment.approvePostEscrowRefund).toBeFunction()
-    expectTypeOf(merchant.payment.getPostEscrowRefundAllowance).toBeFunction()
+    expectTypeOf(merchant.payment.refund).toBeFunction()
+    expectTypeOf(merchant.payment.approveRefundAllowance).toBeFunction()
+    expectTypeOf(merchant.payment.getRefundAllowance).toBeFunction()
   })
 
   it('refund exposes merchant dispute methods', () => {
@@ -149,10 +149,10 @@ describe('ArbiterClient type narrowing', () => {
     void arbiter.payment.capture
     // @ts-expect-error — arbiter cannot voidPayment
     void arbiter.payment.voidPayment
-    // @ts-expect-error — arbiter cannot refundPostEscrow
-    void arbiter.payment.refundPostEscrow
-    // @ts-expect-error — arbiter cannot approvePostEscrowRefund
-    void arbiter.payment.approvePostEscrowRefund
+    // @ts-expect-error — arbiter cannot refund
+    void arbiter.payment.refund
+    // @ts-expect-error — arbiter cannot approveRefundAllowance
+    void arbiter.payment.approveRefundAllowance
   })
 
   it('refund exposes arbiter methods', () => {

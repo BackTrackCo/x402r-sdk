@@ -180,9 +180,9 @@ describe('createX402r', () => {
     })
     expect(client.refund).toBeUndefined()
     expect(client.payment.voidPayment).toBeTypeOf('function')
-    expect(client.payment.refundPostEscrow).toBeTypeOf('function')
-    expect(client.payment.approvePostEscrowRefund).toBeTypeOf('function')
-    expect(client.payment.getPostEscrowRefundAllowance).toBeTypeOf('function')
+    expect(client.payment.refund).toBeTypeOf('function')
+    expect(client.payment.approveRefundAllowance).toBeTypeOf('function')
+    expect(client.payment.getRefundAllowance).toBeTypeOf('function')
   })
 
   it('freeze is undefined when no freezeAddress', () => {

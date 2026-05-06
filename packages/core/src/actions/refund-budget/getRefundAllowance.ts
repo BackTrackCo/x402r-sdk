@@ -2,20 +2,24 @@ import type { Address, PublicClient } from 'viem'
 import { erc20Abi } from 'viem'
 import { wrapContractCall } from '../_internal/error-wrapping.js'
 
-export interface GetPostEscrowRefundAllowanceParameters {
+export interface GetRefundAllowanceParameters {
   token: Address
   owner: Address
   collectorAddress: Address
 }
-export type GetPostEscrowRefundAllowanceReturnType = bigint
+export type GetRefundAllowanceReturnType = bigint
 
-export async function getPostEscrowRefundAllowance(
+/**
+ * Read the ERC-20 allowance set on a refund token collector. Pair with
+ * `approveRefundAllowance` to manage the merchant's refund budget.
+ */
+export async function getRefundAllowance(
   publicClient: PublicClient,
-  parameters: GetPostEscrowRefundAllowanceParameters,
-): Promise<GetPostEscrowRefundAllowanceReturnType> {
+  parameters: GetRefundAllowanceParameters,
+): Promise<GetRefundAllowanceReturnType> {
   const { token, owner, collectorAddress } = parameters
 
-  return wrapContractCall('getPostEscrowRefundAllowance', () =>
+  return wrapContractCall('getRefundAllowance', () =>
     publicClient.readContract({
       address: token,
       abi: erc20Abi,

@@ -6,19 +6,25 @@ import {
   wrapContractCall,
 } from '../_internal/error-wrapping.js'
 
-export interface RefundPostEscrowParameters {
+export interface RefundParameters {
   operatorAddress: Address
   paymentInfo: PaymentInfo
   amount: bigint
   tokenCollector: Address
   collectorData: Hex
 }
-export type RefundPostEscrowReturnType = Hash
+export type RefundReturnType = Hash
 
-export async function refundPostEscrow(
+/**
+ * Refund a captured payment back to the payer. Pulls tokens from the source
+ * the `tokenCollector` is wired to (typically the merchant via
+ * ReceiverRefundCollector). For full-void during escrow, use `voidPayment`
+ * instead.
+ */
+export async function refund(
   walletClient: WalletClient,
-  parameters: RefundPostEscrowParameters,
-): Promise<RefundPostEscrowReturnType> {
+  parameters: RefundParameters,
+): Promise<RefundReturnType> {
   const {
     operatorAddress,
     paymentInfo,
@@ -26,9 +32,9 @@ export async function refundPostEscrow(
     tokenCollector,
     collectorData,
   } = parameters
-  requireAccount(walletClient, 'refundPostEscrow')
+  requireAccount(walletClient, 'refund')
 
-  return wrapContractCall('refundPostEscrow', () =>
+  return wrapContractCall('refund', () =>
     walletClient.writeContract({
       address: operatorAddress,
       abi: paymentOperatorAbi,
