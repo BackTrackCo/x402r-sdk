@@ -20,14 +20,14 @@ Each example starts a local Anvil fork, deploys contracts, and runs — no walle
 |---------|-------------|
 | [`payer/request-refund.ts`](payer/request-refund.ts) | Request a refund for a payment in escrow |
 | [`payer/submit-evidence.ts`](payer/submit-evidence.ts) | Submit evidence CID for a dispute |
-| [`payer/freeze-payment.ts`](payer/freeze-payment.ts) | Freeze a payment to block release during investigation |
+| [`payer/freeze-payment.ts`](payer/freeze-payment.ts) | Freeze a payment to block capture during investigation |
 
 ### Merchant
 
 | Example | Description |
 |---------|-------------|
 | [`merchant/charge-payment.ts`](merchant/charge-payment.ts) | Charge an authorized payment |
-| [`merchant/release-escrow.ts`](merchant/release-escrow.ts) | Release remaining funds after escrow expires |
+| [`merchant/capture-payment.ts`](merchant/capture-payment.ts) | Capture funds after escrow expires |
 
 ### Arbiter
 
@@ -43,7 +43,7 @@ Multi-role integration scenarios running against a local Anvil fork.
 
 | Scenario | Description |
 |----------|-------------|
-| [`scenarios/happy-path-release.ts`](scenarios/happy-path-release.ts) | authorize → release (2 roles) |
+| [`scenarios/happy-path-capture.ts`](scenarios/happy-path-capture.ts) | authorize → capture (2 roles) |
 | [`scenarios/dispute-resolution.ts`](scenarios/dispute-resolution.ts) | Full lifecycle with arbitration (3 roles) |
 
 See [`scenarios/README.md`](scenarios/README.md) for details.
@@ -57,6 +57,6 @@ pnpm example:merchant:charge
 pnpm example:arbiter:approve-refund
 
 # Scenarios
-pnpm scenario:release
+pnpm scenario:capture
 pnpm scenario:dispute
 ```

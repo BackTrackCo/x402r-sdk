@@ -6,7 +6,7 @@ Examples demonstrating payer-side SDK operations using `createPayerClient()`.
 
 - **request-refund.ts** — Request a refund for a payment in escrow
 - **submit-evidence.ts** — Submit evidence CID for a dispute
-- **freeze-payment.ts** — Freeze a payment to block release during investigation
+- **freeze-payment.ts** — Freeze a payment to block capture during investigation
 
 ## Running
 

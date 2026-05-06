@@ -5,14 +5,14 @@ Examples demonstrating merchant-side SDK operations using `createMerchantClient(
 ## Available Examples
 
 - **charge-payment.ts** — Charge an authorized payment during escrow
-- **release-escrow.ts** — Release remaining funds after escrow expires
+- **capture-payment.ts** — Capture funds after escrow expires
 
 ## Running
 
 ```bash
 # From x402r-sdk root
 pnpm example:merchant:charge
-pnpm example:merchant:release
+pnpm example:merchant:capture
 ```
 
 ## What's Happening

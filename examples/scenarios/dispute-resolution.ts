@@ -10,7 +10,7 @@ import { StepRunner } from './runner.js'
 //
 // Flow: authorize → payer requests refund → payer + merchant submit evidence →
 //       arbiter reviews evidence → merchant executes voidPayment
-//       (recorder approves automatically) → verify refund amounts →
+//       (hook approves automatically) → verify refund amounts →
 //       merchant distributes fees
 // ---------------------------------------------------------------------------
 
@@ -128,9 +128,9 @@ async function main() {
     }
 
     // ================================================================
-    // Step 5: Merchant executes refund (recorder approves automatically)
+    // Step 5: Merchant executes refund (hook approves automatically)
     // ================================================================
-    runner.step('Merchant executes voidPayment (recorder approves)')
+    runner.step('Merchant executes voidPayment (hook approves)')
 
     // voidPayment empties the entire authorization in one transaction
     // (escrow.void is full-only — partial in-escrow refunds use

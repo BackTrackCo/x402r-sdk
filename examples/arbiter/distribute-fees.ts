@@ -7,7 +7,7 @@ const ctx = await setup()
 try {
   // ============ Example: Distribute Fees ============
   // Distribute accumulated protocol fees after releasing payment.
-  // Fees accumulate on the operator when payments are released.
+  // Fees accumulate on the operator when payments are captured.
   // distributeFees is permissionless — any role can call it.
 
   if (!ctx.merchant.escrow) {
@@ -18,15 +18,15 @@ try {
 
   const chainConfig = getChainConfig(84532)
 
-  // Fast-forward past escrow and release to generate fees
+  // Fast-forward past escrow and capture to generate fees
   await ctx.testClient.increaseTime({ seconds: ESCROW_FAST_FORWARD })
   await ctx.testClient.mine({ blocks: 1 })
-  const releaseTx = await ctx.merchant.payment.capture(
+  const captureTx = await ctx.merchant.payment.capture(
     ctx.paymentInfo,
     ctx.PAYMENT_AMOUNT,
   )
-  await ctx.waitForTx(releaseTx)
-  console.log('Payment released — fees accumulated')
+  await ctx.waitForTx(captureTx)
+  console.log('Payment captured — fees accumulated')
 
   // Check accumulated fees
   const accumulatedFees = await ctx.arbiter.operator.getAccumulatedProtocolFees(

@@ -4,8 +4,8 @@ const ctx = await setup()
 
 try {
   // ============ Example: Approve Refund ============
-  // Whoever is authorized by the operator's voidPaymentCondition can call
-  // voidPayment(). The RefundRequest recorder auto-approves the pending request.
+  // Whoever is authorized by the operator's voidCondition can call
+  // voidPayment(). The RefundRequest hook auto-approves the pending request.
   // The condition could be ReceiverCondition, StaticAddressCondition(arbiter), etc.
 
   if (!ctx.payer.refund) {
