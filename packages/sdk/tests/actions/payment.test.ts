@@ -17,8 +17,8 @@ vi.mock('@x402r/core', async (importOriginal) => {
     ...actual,
     authorize: vi.fn().mockResolvedValue('0xauthorize_hash'),
     charge: vi.fn().mockResolvedValue('0xcharge_hash'),
-    release: vi.fn().mockResolvedValue('0xrelease_hash'),
-    refundInEscrow: vi.fn().mockResolvedValue('0xrefund_escrow_hash'),
+    capture: vi.fn().mockResolvedValue('0xcapture_hash'),
+    voidPayment: vi.fn().mockResolvedValue('0xrefund_escrow_hash'),
     refundPostEscrow: vi.fn().mockResolvedValue('0xrefund_post_hash'),
     approvePostEscrowRefund: vi.fn().mockResolvedValue('0xapprove_hash'),
     getPostEscrowRefundAllowance: vi.fn().mockResolvedValue(500000n),
@@ -34,10 +34,10 @@ vi.mock('@x402r/core', async (importOriginal) => {
 import {
   approvePostEscrowRefund as coreApprovePostEscrowRefund,
   authorize as coreAuthorize,
+  capture as coreCapture,
   getPostEscrowRefundAllowance as coreGetPostEscrowRefundAllowance,
-  refundInEscrow as coreRefundInEscrow,
   refundPostEscrow as coreRefundPostEscrow,
-  release as coreRelease,
+  voidPayment as coreVoidPayment,
   getPaymentAmounts,
   getPaymentState,
 } from '@x402r/core'
@@ -95,18 +95,18 @@ describe('createPaymentActions', () => {
     ).rejects.toThrow(ValidationError)
   })
 
-  it('release delegates correctly', async () => {
+  it('capture delegates correctly', async () => {
     const config = createTestConfig()
     const payment = createPaymentActions(config)
 
     const hash = await payment.capture(mockPaymentInfo, 500000n)
 
-    expect(coreRelease).toHaveBeenCalledWith(config.walletClient, {
+    expect(coreCapture).toHaveBeenCalledWith(config.walletClient, {
       operatorAddress: TEST_OPERATOR,
       paymentInfo: mockPaymentInfo,
       amount: 500000n,
     })
-    expect(hash).toBe('0xrelease_hash')
+    expect(hash).toBe('0xcapture_hash')
   })
 
   it('charge throws ValidationError without walletClient', async () => {
@@ -143,22 +143,21 @@ describe('createPaymentActions', () => {
 
   // ---- Refund execution ops (moved from refund action group) ---------------
 
-  it('refundInEscrow injects operatorAddress', async () => {
+  it('voidPayment injects operatorAddress', async () => {
     const config = createTestConfig()
     const payment = createPaymentActions(config)
-    const hash = await payment.refundInEscrow(mockPaymentInfo, 50n)
-    expect(coreRefundInEscrow).toHaveBeenCalledWith(config.walletClient, {
+    const hash = await payment.voidPayment(mockPaymentInfo)
+    expect(coreVoidPayment).toHaveBeenCalledWith(config.walletClient, {
       operatorAddress: TEST_OPERATOR,
       paymentInfo: mockPaymentInfo,
-      amount: 50n,
     })
     expect(hash).toBe('0xrefund_escrow_hash')
   })
 
-  it('refundInEscrow throws ValidationError without walletClient', async () => {
+  it('voidPayment throws ValidationError without walletClient', async () => {
     const config = createTestConfig({ walletClient: undefined })
     const payment = createPaymentActions(config)
-    await expect(payment.refundInEscrow(mockPaymentInfo, 50n)).rejects.toThrow(
+    await expect(payment.voidPayment(mockPaymentInfo)).rejects.toThrow(
       ValidationError,
     )
   })

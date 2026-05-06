@@ -35,8 +35,8 @@ describe('PayerClient type narrowing', () => {
     void payer.payment.charge
     // @ts-expect-error — payer cannot release
     void payer.payment.capture
-    // @ts-expect-error — payer cannot refundInEscrow
-    void payer.payment.refundInEscrow
+    // @ts-expect-error — payer cannot voidPayment
+    void payer.payment.voidPayment
     // @ts-expect-error — payer cannot refundPostEscrow
     void payer.payment.refundPostEscrow
     // @ts-expect-error — payer cannot approvePostEscrowRefund
@@ -95,7 +95,7 @@ describe('MerchantClient type narrowing', () => {
     expectTypeOf(merchant.payment.capture).toBeFunction()
     expectTypeOf(merchant.payment.getState).toBeFunction()
     expectTypeOf(merchant.payment.getAmounts).toBeFunction()
-    expectTypeOf(merchant.payment.refundInEscrow).toBeFunction()
+    expectTypeOf(merchant.payment.voidPayment).toBeFunction()
     expectTypeOf(merchant.payment.refundPostEscrow).toBeFunction()
     expectTypeOf(merchant.payment.approvePostEscrowRefund).toBeFunction()
     expectTypeOf(merchant.payment.getPostEscrowRefundAllowance).toBeFunction()
@@ -147,8 +147,8 @@ describe('ArbiterClient type narrowing', () => {
     void arbiter.payment.charge
     // @ts-expect-error — arbiter cannot release
     void arbiter.payment.capture
-    // @ts-expect-error — arbiter cannot refundInEscrow
-    void arbiter.payment.refundInEscrow
+    // @ts-expect-error — arbiter cannot voidPayment
+    void arbiter.payment.voidPayment
     // @ts-expect-error — arbiter cannot refundPostEscrow
     void arbiter.payment.refundPostEscrow
     // @ts-expect-error — arbiter cannot approvePostEscrowRefund

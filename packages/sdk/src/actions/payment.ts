@@ -5,8 +5,8 @@ import {
   capture as coreCapture,
   charge as coreCharge,
   getPostEscrowRefundAllowance as coreGetPostEscrowRefundAllowance,
-  refundInEscrow as coreRefundInEscrow,
   refundPostEscrow as coreRefundPostEscrow,
+  voidPayment as coreVoidPayment,
   getPaymentAmounts,
   getPaymentState,
 } from '@x402r/core'
@@ -61,16 +61,11 @@ export function createPaymentActions(config: ResolvedConfig): PaymentActions {
         data,
       })
     },
-    async refundInEscrow(
-      paymentInfo: PaymentInfo,
-      amount: bigint,
-      data?: Hex,
-    ): Promise<Hash> {
+    async voidPayment(paymentInfo: PaymentInfo, data?: Hex): Promise<Hash> {
       const wallet = requireWallet(config)
-      return coreRefundInEscrow(wallet, {
+      return coreVoidPayment(wallet, {
         operatorAddress: config.operatorAddress,
         paymentInfo,
-        amount,
         data,
       })
     },

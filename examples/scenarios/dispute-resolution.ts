@@ -9,7 +9,7 @@ import { StepRunner } from './runner.js'
 // Scenario: Dispute Resolution (3-role full lifecycle)
 //
 // Flow: authorize → payer requests refund → payer + merchant submit evidence →
-//       arbiter reviews evidence → merchant executes refundInEscrow
+//       arbiter reviews evidence → merchant executes voidPayment
 //       (recorder approves automatically) → verify refund amounts →
 //       merchant distributes fees
 // ---------------------------------------------------------------------------
@@ -130,12 +130,12 @@ async function main() {
     // ================================================================
     // Step 5: Merchant executes refund (recorder approves automatically)
     // ================================================================
-    runner.step('Merchant executes refundInEscrow (recorder approves)')
+    runner.step('Merchant executes voidPayment (recorder approves)')
 
-    const refundTx = await ctx.merchant.payment.refundInEscrow(
-      ctx.paymentInfo,
-      PAYMENT_AMOUNT,
-    )
+    // voidPayment empties the entire authorization in one transaction
+    // (escrow.void is full-only — partial in-escrow refunds use
+    // capture-then-refund via ReceiverRefundCollector instead).
+    const refundTx = await ctx.merchant.payment.voidPayment(ctx.paymentInfo)
     await runner.waitForTx(refundTx)
 
     const approvedRequest = await ctx.merchant.refund.get(ctx.paymentInfo)

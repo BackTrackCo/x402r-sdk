@@ -93,12 +93,14 @@ export interface PaymentActions {
     collectorData: Hex,
   ): Promise<Hash>
   capture(paymentInfo: PaymentInfo, amount: bigint, data?: Hex): Promise<Hash>
-  /** Executes an in-escrow refund. Gated by ReceiverCondition — only the receiver (merchant) can call. */
-  refundInEscrow(
-    paymentInfo: PaymentInfo,
-    amount: bigint,
-    data?: Hex,
-  ): Promise<Hash>
+  /**
+   * Voids the entire authorization in one transaction. Full-only — the new
+   * `escrow.void()` empties the auth regardless of any partial intent. For
+   * partial in-escrow refunds, use capture-then-refund via
+   * `ReceiverRefundCollector`. Gated by ReceiverCondition — only the
+   * receiver (merchant) can call.
+   */
+  voidPayment(paymentInfo: PaymentInfo, data?: Hex): Promise<Hash>
   refundPostEscrow(
     paymentInfo: PaymentInfo,
     amount: bigint,
@@ -364,8 +366,9 @@ export interface PayerClient {
 }
 
 /**
- * Merchant role client. In-escrow refunds go through `payment.refundInEscrow()` —
- * the RefundRequest recorder automatically approves during execution.
+ * Merchant role client. In-escrow refunds go through `payment.voidPayment()` —
+ * full-only; the RefundRequest hook automatically approves during execution.
+ * For partial refunds use capture-then-refund via `ReceiverRefundCollector`.
  * Use `createX402r()` for full access.
  */
 export interface MerchantClient {
@@ -375,7 +378,7 @@ export interface MerchantClient {
     | 'authorize'
     | 'charge'
     | 'capture'
-    | 'refundInEscrow'
+    | 'voidPayment'
     | 'refundPostEscrow'
     | 'approvePostEscrowRefund'
     | 'getPostEscrowRefundAllowance'
@@ -422,7 +425,7 @@ export interface ArbiterClient {
   readonly config: ResolvedWriteConfig
   readonly payment: Pick<
     PaymentActions,
-    'getState' | 'getAmounts' | 'refundInEscrow'
+    'getState' | 'getAmounts' | 'voidPayment'
   >
   readonly escrow:
     | Pick<

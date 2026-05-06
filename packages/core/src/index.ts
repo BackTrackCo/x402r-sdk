@@ -131,8 +131,6 @@ export type {
   IsFrozenReturnType,
   OperatorSlots,
   PaymentAmounts,
-  RefundInEscrowParameters,
-  RefundInEscrowReturnType,
   RefundPostEscrowParameters,
   RefundPostEscrowReturnType,
   RefundRequestData,
@@ -144,6 +142,8 @@ export type {
   SubmitEvidenceReturnType,
   UnfreezePaymentParameters,
   UnfreezePaymentReturnType,
+  VoidPaymentParameters,
+  VoidPaymentReturnType,
 } from './actions/index.js'
 export {
   approvePostEscrowRefund,
@@ -192,7 +192,6 @@ export {
   isDuringEscrowPeriod,
   isFrozen,
   RefundRequestStatus,
-  refundInEscrow,
   refundPostEscrow,
   refuseRefundRequest,
   requestRefund,
@@ -200,6 +199,7 @@ export {
   submitEvidence,
   unfreezePayment,
   validateFeeBounds,
+  voidPayment,
 } from './actions/index.js'
 // ---------------------------------------------------------------------------
 // Config

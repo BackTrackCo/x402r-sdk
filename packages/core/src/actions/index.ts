@@ -202,14 +202,14 @@ export type {
   ApprovePostEscrowRefundReturnType,
   GetPostEscrowRefundAllowanceParameters,
   GetPostEscrowRefundAllowanceReturnType,
-  RefundInEscrowParameters,
-  RefundInEscrowReturnType,
   RefundPostEscrowParameters,
   RefundPostEscrowReturnType,
+  VoidPaymentParameters,
+  VoidPaymentReturnType,
 } from './refund-budget/index.js'
 export {
   approvePostEscrowRefund,
   getPostEscrowRefundAllowance,
-  refundInEscrow,
   refundPostEscrow,
+  voidPayment,
 } from './refund-budget/index.js'

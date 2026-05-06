@@ -179,7 +179,7 @@ describe('createX402r', () => {
       chainId: 84532,
     })
     expect(client.refund).toBeUndefined()
-    expect(client.payment.refundInEscrow).toBeTypeOf('function')
+    expect(client.payment.voidPayment).toBeTypeOf('function')
     expect(client.payment.refundPostEscrow).toBeTypeOf('function')
     expect(client.payment.approvePostEscrowRefund).toBeTypeOf('function')
     expect(client.payment.getPostEscrowRefundAllowance).toBeTypeOf('function')

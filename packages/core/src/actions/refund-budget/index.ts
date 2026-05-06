@@ -9,15 +9,13 @@ export type {
   GetPostEscrowRefundAllowanceReturnType,
 } from './getPostEscrowRefundAllowance.js'
 export { getPostEscrowRefundAllowance } from './getPostEscrowRefundAllowance.js'
-
-export type {
-  RefundInEscrowParameters,
-  RefundInEscrowReturnType,
-} from './refundInEscrow.js'
-export { refundInEscrow } from './refundInEscrow.js'
-
 export type {
   RefundPostEscrowParameters,
   RefundPostEscrowReturnType,
 } from './refundPostEscrow.js'
 export { refundPostEscrow } from './refundPostEscrow.js'
+export type {
+  VoidPaymentParameters,
+  VoidPaymentReturnType,
+} from './voidPayment.js'
+export { voidPayment } from './voidPayment.js'

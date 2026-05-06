@@ -21,7 +21,7 @@ describe('createWatchActions', () => {
       expect.objectContaining({
         address: config.operatorAddress,
         abi: paymentOperatorAbi,
-        eventName: 'AuthorizationCreated',
+        eventName: 'AuthorizeExecuted',
       }),
     )
     expect(mockWatchContractEvent).toHaveBeenCalledWith(
@@ -31,7 +31,7 @@ describe('createWatchActions', () => {
     )
     expect(mockWatchContractEvent).toHaveBeenCalledWith(
       expect.objectContaining({
-        eventName: 'ReleaseExecuted',
+        eventName: 'CaptureExecuted',
       }),
     )
   })
@@ -77,14 +77,14 @@ describe('createWatchActions', () => {
     actions.onPayment((log) => received.push(log))
 
     expect(capturedOnLogs).toHaveLength(3)
-    capturedOnLogs[0]([{ event: 'AuthorizationCreated' }])
+    capturedOnLogs[0]([{ event: 'AuthorizeExecuted' }])
     capturedOnLogs[1]([{ event: 'ChargeExecuted' }])
-    capturedOnLogs[2]([{ event: 'ReleaseExecuted' }])
+    capturedOnLogs[2]([{ event: 'CaptureExecuted' }])
 
     expect(received).toEqual([
-      { event: 'AuthorizationCreated' },
+      { event: 'AuthorizeExecuted' },
       { event: 'ChargeExecuted' },
-      { event: 'ReleaseExecuted' },
+      { event: 'CaptureExecuted' },
     ])
   })
 
@@ -149,14 +149,14 @@ describe('createWatchActions', () => {
       expect.objectContaining({
         address: config.operatorAddress,
         abi: paymentOperatorAbi,
-        eventName: 'RefundInEscrowExecuted',
+        eventName: 'VoidExecuted',
       }),
     )
     expect(mockWatchContractEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         address: config.operatorAddress,
         abi: paymentOperatorAbi,
-        eventName: 'RefundPostEscrowExecuted',
+        eventName: 'RefundExecuted',
       }),
     )
   })
@@ -178,12 +178,12 @@ describe('createWatchActions', () => {
     actions.onRefundExecuted((log) => received.push(log))
 
     expect(capturedOnLogs).toHaveLength(2)
-    capturedOnLogs[0]([{ event: 'RefundInEscrowExecuted' }])
-    capturedOnLogs[1]([{ event: 'RefundPostEscrowExecuted' }])
+    capturedOnLogs[0]([{ event: 'VoidExecuted' }])
+    capturedOnLogs[1]([{ event: 'RefundExecuted' }])
 
     expect(received).toEqual([
-      { event: 'RefundInEscrowExecuted' },
-      { event: 'RefundPostEscrowExecuted' },
+      { event: 'VoidExecuted' },
+      { event: 'RefundExecuted' },
     ])
   })
 
