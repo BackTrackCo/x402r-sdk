@@ -91,7 +91,7 @@ describe('previewMarketplaceOperator', () => {
     const result = await previewMarketplaceOperator(publicClient, makeOptions())
 
     expect(result.freezeAddress).toBeNull()
-    expect(result.operatorConfig.releaseCondition).toBe(escrowAddr)
+    expect(result.operatorConfig.capturePreActionCondition).toBe(escrowAddr)
     expect(result.escrowPeriodAddress).toBe(escrowAddr)
     expect(result.refundRequestAddress).toBe(refundReqAddr)
     // refundInEscrowCondition = OrCondition(receiver, arbiterSAC)
@@ -129,8 +129,8 @@ describe('previewMarketplaceOperator', () => {
     )
 
     expect(result.freezeAddress).toBe(freezeAddr)
-    expect(result.operatorConfig.releaseCondition).toBe(andAddr)
-    expect(result.operatorConfig.releaseCondition).not.toBe(
+    expect(result.operatorConfig.capturePreActionCondition).toBe(andAddr)
+    expect(result.operatorConfig.capturePreActionCondition).not.toBe(
       result.escrowPeriodAddress,
     )
     expect(result.refundRequestAddress).toBe(refundReqAddr)
@@ -192,7 +192,7 @@ describe('deployMarketplaceOperator', () => {
     // Without freeze or fee calculator: escrow + refundRequest + evidence + sacArbiter + orCondition + operator = 6
     expect(result.deployments).toHaveLength(6)
     expect(result.freezeAddress).toBeNull()
-    expect(result.operatorConfig.releaseCondition).toBe(escrowAddr)
+    expect(result.operatorConfig.capturePreActionCondition).toBe(escrowAddr)
     expect(result.escrowPeriodAddress).toBe(escrowAddr)
     expect(result.refundRequestAddress).toBe(refundReqAddr)
     expect(result.refundRequestEvidenceAddress).toBe(evidenceAddr)
@@ -266,7 +266,7 @@ describe('deployMarketplaceOperator', () => {
     // With freeze: escrow + refundRequest + evidence + sacArbiter + orCondition + freeze + andCond + operator = 8
     expect(result.deployments).toHaveLength(8)
     expect(result.freezeAddress).not.toBeNull()
-    expect(result.operatorConfig.releaseCondition).not.toBe(
+    expect(result.operatorConfig.capturePreActionCondition).not.toBe(
       result.escrowPeriodAddress,
     )
     expect(result.refundRequestAddress).toBe(refundReqAddr)
@@ -444,8 +444,8 @@ describe('deployMarketplaceOperator', () => {
     )
 
     expect(result.freezeAddress).toBeNull()
-    expect(result.operatorConfig.releaseCondition).toBe(escrowAddr)
-    expect(result.operatorConfig.releaseCondition).toBe(
+    expect(result.operatorConfig.capturePreActionCondition).toBe(escrowAddr)
+    expect(result.operatorConfig.capturePreActionCondition).toBe(
       result.escrowPeriodAddress,
     )
     expect(result.refundRequestAddress).toBe(refundReqAddr)
@@ -767,14 +767,14 @@ describe('previewDeliveryProtectionOperator', () => {
     expect(result.releaseConditionAddress).toBe(orCondAddr)
     expect(result.refundInEscrowConditionAddress).toBe(orCondAddr)
     expect(result.authorizeRecorderAddress).toBe(combinatorAddr)
-    expect(result.operatorConfig.authorizeRecorder).toBe(combinatorAddr)
-    expect(result.operatorConfig.releaseCondition).toBe(orCondAddr)
-    expect(result.operatorConfig.refundInEscrowCondition).toBe(orCondAddr)
+    expect(result.operatorConfig.authorizePostActionHook).toBe(combinatorAddr)
+    expect(result.operatorConfig.capturePreActionCondition).toBe(orCondAddr)
+    expect(result.operatorConfig.voidPreActionCondition).toBe(orCondAddr)
     expect(result.operatorConfig.feeCalculator).toBe(zeroAddress)
-    expect(result.operatorConfig.authorizeCondition).toBe(
+    expect(result.operatorConfig.authorizePreActionCondition).toBe(
       x402rChains[84532].usdcTvlLimit,
     )
-    expect(result.operatorConfig.refundPostEscrowCondition).toBe(
+    expect(result.operatorConfig.refundPreActionCondition).toBe(
       x402rChains[84532].conditions!.receiver,
     )
   })
@@ -810,7 +810,7 @@ describe('previewDeliveryProtectionOperator', () => {
       makeDeliveryProtectionOptions({ feeRecipient }),
     )
 
-    expect(result.operatorConfig.feeRecipient).toBe(feeRecipient)
+    expect(result.operatorConfig.feeReceiver).toBe(feeRecipient)
   })
 
   it('uses recorderCombinatorCodehash as default authorizedCodehash', async () => {
@@ -906,10 +906,10 @@ describe('deployDeliveryProtectionOperator', () => {
     expect(result.summary.newCount).toBe(6)
     expect(result.summary.existingCount).toBe(0)
     expect(result.summary.txHashes).toHaveLength(1)
-    expect(result.operatorConfig.releaseCondition).toBe(orCondAddr)
-    expect(result.operatorConfig.refundInEscrowCondition).toBe(orCondAddr)
+    expect(result.operatorConfig.capturePreActionCondition).toBe(orCondAddr)
+    expect(result.operatorConfig.voidPreActionCondition).toBe(orCondAddr)
     expect(result.operatorConfig.feeCalculator).toBe(zeroAddress)
-    expect(result.operatorConfig.authorizeRecorder).toBe(combinatorAddr)
+    expect(result.operatorConfig.authorizePostActionHook).toBe(combinatorAddr)
   })
 
   it('returns all existing when operator already deployed', async () => {
@@ -1015,7 +1015,7 @@ describe('deployDeliveryProtectionOperator', () => {
 
     expect(result.deployments).toHaveLength(5)
     expect(result.authorizeRecorderAddress).toBe(escrowAddr)
-    expect(result.operatorConfig.authorizeRecorder).toBe(escrowAddr)
+    expect(result.operatorConfig.authorizePostActionHook).toBe(escrowAddr)
     expect(result.summary.newCount).toBe(5)
     expect(result.summary.existingCount).toBe(0)
   })
@@ -1051,9 +1051,9 @@ describe('deployDeliveryProtectionOperator', () => {
     expect(result.deployments).toHaveLength(6)
     expect(result.summary.newCount).toBe(6)
     // Release includes arbiter (arbiter OR payer)
-    expect(result.operatorConfig.releaseCondition).toBe(orCondAddr)
+    expect(result.operatorConfig.capturePreActionCondition).toBe(orCondAddr)
     // RefundInEscrow includes arbiter (escrow period OR receiver OR arbiter)
-    expect(result.operatorConfig.refundInEscrowCondition).toBe(orCondAddr)
+    expect(result.operatorConfig.voidPreActionCondition).toBe(orCondAddr)
   })
 
   it('throws ConfigError when walletClient has no account', async () => {

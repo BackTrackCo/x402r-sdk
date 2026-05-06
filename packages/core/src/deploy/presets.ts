@@ -334,8 +334,8 @@ export async function previewMarketplaceOperator(
   ])
 
   // Batch 2 (parallel): depends on batch 1 results
-  // RefundRequest is an IRecorder — wired as refundInEscrowRecorder.
-  // refundInEscrowCondition = OrCondition(receiver, arbiterSAC) — either can approve.
+  // RefundRequest is an IHook — wired as voidPostActionHook (canonical authCapture wiring).
+  // voidPreActionCondition = OrCondition(receiver, arbiterSAC) — either can approve.
   const [
     freezeAddress,
     refundRequestEvidenceAddress,
@@ -417,10 +417,11 @@ export async function previewMarketplaceOperator(
  * Deploy a marketplace PaymentOperator with all required condition contracts.
  *
  * **In-escrow refund flow:** Either the receiver (merchant) or the arbiter
- * can call `operator.refundInEscrow()`, gated by
+ * can call `operator.refundInEscrow()` (which forwards to `escrow.void()` —
+ * full-only under the new authCapture surface), gated by
  * `OrCondition(ReceiverCondition, StaticAddressCondition(arbiter))`.
- * The RefundRequest IRecorder (wired as `refundInEscrowRecorder`)
- * automatically approves any pending payer request.
+ * The RefundRequest IHook (wired as `voidPostActionHook`) automatically
+ * approves any pending payer request.
  */
 export async function deployMarketplaceOperator(
   walletClient: WalletClient,
