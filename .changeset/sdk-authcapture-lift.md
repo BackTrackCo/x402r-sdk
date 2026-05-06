@@ -41,6 +41,11 @@ Breaking changes — clean break, no shims:
 - `usdcTvlLimit` removed from canonical config + ABI exports + helpers re-export. Source remains in `x402r-contracts` for ad-hoc per-chain integrations; SDK no longer ships the canonical address. Marketplace/delivery-protection presets now wire `authorizePreActionCondition: zeroAddress` (was the TVL gate).
 - `SKALE Base` chain (chainId `1187947933`) dropped from `x402rChains`. SKALE runs Shanghai EVM but the canonical commerce-payments bytecode targets Cancun (TSTORE/TLOAD via Solady's `ReentrancyGuardTransient`). CREATE2 binds bytecode, so Shanghai-recompiled bytecode lands at a different address than the canonical one — single-canonical-address is incompatible without shipping a chain-specific island.
 
+**Canonical CREATE2 addresses**
+- `authCaptureEscrow`, `tokenCollector`, `protocolFeeConfig`, `receiverRefundCollector`, `factories.*`, `conditions.*`, and `hookCombinatorCodehash` now point at the canonical CREATE2 deployment (salt namespaces `commerce-payments::v1::*` and `x402r-canonical-v1::*`). New `commercePayments*` exports surface the three primitive addresses individually (escrow + ERC3009 collector + Permit2 collector).
+- `hooks.paymentIndexHook` is `zeroAddress`: the canonical CREATE2 deploy script does not include a chain-singleton `PaymentIndexHook` (it's per-operator since constructor args fold the operator's hook combinator codehash). Consumers can pass an instance via `paymentIndexHookAddress` on the preset, or instantiate `new PaymentIndexHook(escrow, hookCombinatorCodehash)`.
+- Owner / fee recipient on `ProtocolFeeConfig` is `0x773dBcB5BDb3Df8359ba4e42D7Ce7AE3fC9Ee235`; protocol-fee calculator is unset (`address(0)`), so `getProtocolFeeBps()` returns `0`.
+
 **Workspace dev**
 - `@x402r/sdk` and `@x402r/helpers` deps on `@x402r/core` switched to the `workspace:^` protocol (was `^0.2.0`) so local edits resolve through the workspace. `pnpm publish` substitutes the resolved version at publish time; consumer-facing `package.json` is unchanged.
 
@@ -72,4 +77,3 @@ If the merchant doesn't carry a standing allowance, fall back to full void.
 - Permit2 support (PR 3)
 - `x402rDefaults()` helper + new wire-format type re-exports (PR 4)
 - Bumping `@x402r/evm` peerDep version (PR 2)
-- Final canonical CREATE2 addresses (follow-up patch once `BackTrackCo/x402r-contracts` does the canonical deploy + announces final addresses)

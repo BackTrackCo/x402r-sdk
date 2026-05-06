@@ -84,8 +84,8 @@ describe('signReceiveAuthorization', () => {
       paymentInfo,
     })
 
-    // Known Base Sepolia tokenCollector
-    expect(tokenCollector).toBe('0x9A12A116a44636F55c9e135189A1321Abcfe2f30')
+    // Canonical CREATE2 ERC3009PaymentCollector (commerce-payments v1.0.0)
+    expect(tokenCollector).toBe('0x7561DC178D9aD5bc5fb103C01f448A510d2A36D0')
   })
 
   it('different paymentInfo produces different signature', async () => {

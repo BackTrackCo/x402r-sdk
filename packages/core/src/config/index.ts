@@ -45,55 +45,110 @@ export interface X402rChainConfig {
 }
 
 // ---------------------------------------------------------------------------
-// Unified CREATE3 addresses (same on every chain)
+// Canonical CREATE2 addresses (same on every chain)
 // ---------------------------------------------------------------------------
+//
+// Deployed via CreateX permissionless salts. Same address on every chain that
+// has CreateX. Derived from:
+//   - commerce-payments primitives (MIT, vendored from `base/commerce-payments@v1.0.0`):
+//       salt namespace `commerce-payments::v1::<ContractName>`
+//   - x402r-authored contracts (BUSL):
+//       salt namespace `x402r-canonical-v1::<ContractName>`
+//
+// Source of truth: `x402r-contracts/script/PredictAddresses.s.sol` and
+// `x402r-contracts/script/DeployX402r.s.sol`. Owner / fee recipient
+// (`0x773dBcB5BDb3Df8359ba4e42D7Ce7AE3fC9Ee235`) is baked into the CREATE2
+// address of `ProtocolFeeConfig` and everything downstream — any change there
+// moves the canonical addresses on that chain.
 
+/** AuthCaptureEscrow at canonical CREATE2 address (commerce-payments v1.0.0). */
 export const authCaptureEscrow =
-  '0xBC151792f80C0EB1973d56b0235e6bee2A60e245' as const satisfies Address
-export const tokenCollector =
-  '0x9A12A116a44636F55c9e135189A1321Abcfe2f30' as const satisfies Address
-export const protocolFeeConfig =
-  '0xf62788834C99B2E85a6891C0b46D1EB996f8f596' as const satisfies Address
-export const receiverRefundCollector =
-  '0x2C0eC8B33196071cA6d08299844235fD81e1466A' as const satisfies Address
+  '0xF8211868187974a7Fb9d99b8fFB171AD70665Dc6' as const satisfies Address
 
-/** Chain-invariant CREATE3 factory addresses. Same as `getChainConfig(chainId).factories`. */
+/**
+ * Primary token collector. Currently aliases the canonical
+ * `ERC3009PaymentCollector` — Permit2 lands in a follow-up PR.
+ */
+export const tokenCollector =
+  '0x7561DC178D9aD5bc5fb103C01f448A510d2A36D0' as const satisfies Address
+
+export const protocolFeeConfig =
+  '0xBe2d24614F339a1eB103A399F93AA2a39Ca815Bc' as const satisfies Address
+export const receiverRefundCollector =
+  '0xA452b17f0bA0531C7b1728C40FA30bCaF051cB12' as const satisfies Address
+
+/** Chain-invariant CREATE2 factory addresses. Same as `getChainConfig(chainId).factories`. */
 export const factories = {
-  paymentOperator: '0x3Cd5c76Fefe46CB07788Ee8f80B93B20D81941D4',
-  escrowPeriod: '0x22E42a1bC9Fc64ab77E4Bb9968b105034a978bfb',
-  freeze: '0x67657BefCd872A3AF36F437D53b2D4722392a940',
-  staticFeeCalculator: '0x8a9C93F3401A5C712bEd8A52436Ac09cD9aFe2De',
-  staticAddressCondition: '0xE606cA9568c92115a3Deb76E9f3891BEfac141f3',
-  andCondition: '0x6c3c57071C0Ac144D04e6C66BC809d2951dDF47D',
-  orCondition: '0x3dF6b5B840989Ce466161C31A49b8FadF2DA52E5',
-  notCondition: '0x269Db5f049A7225E4968Ef7Dee885922da0B8D73',
-  hookCombinator: '0xb7571b80C24Ce81C65F6b322a75573B61327cA23',
-  signatureCondition: '0xc34EFa7C20940dc2aB50bE23eF150D8B87aEFAc3',
-  refundRequest: '0x69e9BF2b40Ed472b55E47e9D4205d93Ed673093F',
-  refundRequestEvidence: '0x6514e417f48c1828A2443C6173fa6E04324166E3',
+  paymentOperator: '0x0308703621160b894cF045E555686d99ee8bd94E',
+  escrowPeriod: '0xa076D7604A827ae1fe9B70248C80aB331a05E497',
+  freeze: '0xC03A6E5538850528Fc77f740Ba4910fE8A542121',
+  staticFeeCalculator: '0x97F99AB01F86b480f751B7b81166Dbe1F113e6C3',
+  staticAddressCondition: '0x77B379390750E1d3F802cC220926694D2454903E',
+  andCondition: '0x2B07d750C639b65a26e43F1FDCE404b21DCf16D9',
+  orCondition: '0x0519a37c0A996DD5F1e81e07b4aD3B24C257BC90',
+  notCondition: '0xb9c3223D059C3cAbD482bB54f3d7cD52DE70A9ae',
+  hookCombinator: '0x30B5373FD791D2d7b28C3B8020EB68b032f3f960',
+  signatureCondition: '0x46Fabd81d294d8589D5c7fCf4276bF966d0b0057',
+  refundRequest: '0x15f36140bC1d444f917D306d0f5be223F55709B6',
+  refundRequestEvidence: '0x4089A5A853e9eF35f504B842795fB272dF69c739',
 } as const satisfies FactoryAddresses
 
-/** Chain-invariant CREATE3 condition singleton addresses. Same as `getChainConfig(chainId).conditions`. */
+/** Chain-invariant CREATE2 condition singleton addresses. Same as `getChainConfig(chainId).conditions`. */
 export const conditions = {
-  payer: '0x808bB293AE1473A38Dd4017afa3db941924fD0F3',
-  receiver: '0xB82697792e5Fcd644bDEAB23aa4e4511d9024C17',
-  alwaysTrue: '0xA367323189f20706488A1D83430eda82a2eA5320',
+  payer: '0x586486394C38A2a7d36B16a3FDaF366cd202d823',
+  receiver: '0x321651df4593DA57C413579c5b611D1A90168a3A',
+  alwaysTrue: '0x2ef2A6162aEF9Df1022ff51c011af94D99AB4904',
 } as const satisfies ConditionSingletonAddresses
 
-/** Chain-invariant CREATE3 hook singleton addresses. Same as `getChainConfig(chainId).hooks`. */
+/**
+ * Chain-invariant hook singleton addresses.
+ *
+ * `paymentIndexHook` is currently `zeroAddress` because the canonical CREATE2
+ * deploy script does not include a chain-singleton `PaymentIndexHook` — it's
+ * deployed per-operator (constructor args fold the operator's hook combinator
+ * codehash). Consumers can instantiate one via `new PaymentIndexHook(escrow,
+ * hookCombinatorCodehash)`. A future canonical singleton may fill this slot.
+ */
 export const hooks = {
-  paymentIndexHook:
-    '0xa83A44836e16A35505EFA9c6b6a1BD9C0Ecc40E9' as const satisfies Address,
+  paymentIndexHook: zeroAddress satisfies Address,
 } as const satisfies HookSingletonAddresses
 
 /**
  * Runtime codehash of HookCombinator contract.
  * All HookCombinator instances share identical runtime bytecode —
  * constructor args affect storage, not deployed code.
- * Verified via: cast codehash <factory-deployed-instance> --rpc-url base-sepolia
+ * Computed from `x402r-contracts/out/HookCombinator.sol/HookCombinator.json`
+ * deployedBytecode at the locked toolchain (foundry.toml).
  */
 export const hookCombinatorCodehash: Hex =
-  '0xeb3902c8489414d014e6b67d18755bc0d2cca05d84ee2c6db9de44120def49ea'
+  '0x99360a2e57387c49050f431d3df9700c14699850a53c993c30ac53ac4dd9e063'
+
+// ---------------------------------------------------------------------------
+// commerce-payments v1 primitives — canonical CREATE2 addresses
+// ---------------------------------------------------------------------------
+//
+// Upstream `base/commerce-payments@v1.0.0` contracts (MIT, vendored unchanged
+// in `x402r-contracts/lib/commerce-payments`) deployed at canonical CREATE2
+// addresses via CreateX permissionless salts. Salt namespace:
+// `commerce-payments::v1::<ContractName>`.
+
+/** AuthCaptureEscrow at canonical CREATE2 address (alias of `authCaptureEscrow`). */
+export const commercePaymentsAuthCaptureEscrow = authCaptureEscrow
+
+/** ERC3009PaymentCollector(escrow, multicall3) at canonical CREATE2 address. */
+export const commercePaymentsErc3009PaymentCollector =
+  '0x7561DC178D9aD5bc5fb103C01f448A510d2A36D0' as const satisfies Address
+
+/** Permit2PaymentCollector(escrow, permit2, multicall3) at canonical CREATE2 address. */
+export const commercePaymentsPermit2PaymentCollector =
+  '0xD8490609d2da0ee626b0e676941b225cbc1A8C08' as const satisfies Address
+
+/** Convenience bundle of all three commerce-payments primitive addresses. */
+export const commercePaymentsAddresses = {
+  authCaptureEscrow: commercePaymentsAuthCaptureEscrow,
+  erc3009PaymentCollector: commercePaymentsErc3009PaymentCollector,
+  permit2PaymentCollector: commercePaymentsPermit2PaymentCollector,
+} as const
 
 const PROTOCOL_ADDRESSES = {
   authCaptureEscrow,
