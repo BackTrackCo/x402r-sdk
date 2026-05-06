@@ -216,7 +216,7 @@ async function executeBatchDeploy(
 
 export interface MarketplaceOperatorOptions {
   chainId: number
-  feeRecipient: Address
+  feeReceiver: Address
   arbiter: Address
   escrowPeriodSeconds: bigint
   freezeDurationSeconds?: bigint
@@ -372,7 +372,7 @@ export async function previewMarketplaceOperator(
 
   // Batch 4: operator (depends on everything)
   const operatorConfig: OperatorConfig = {
-    feeReceiver: options.feeRecipient,
+    feeReceiver: options.feeReceiver,
     feeCalculator: feeCalculatorAddress ?? zeroAddress,
     authorizePreActionCondition: zeroAddress,
     authorizePostActionHook: escrowPeriodAddress,
@@ -1010,7 +1010,7 @@ export async function deployArbiterSetup(
 export interface DeliveryProtectionOperatorOptions {
   chainId: number
   arbiter: Address
-  feeRecipient: Address
+  feeReceiver: Address
   escrowPeriodSeconds: bigint
   /** Override default authorizedCodehash (default: hookCombinatorCodehash from config) */
   authorizedCodehash?: Hex
@@ -1110,12 +1110,12 @@ export async function previewDeliveryProtectionOperator(
       : Promise.resolve(escrowPeriodAddress),
   ])
 
-  // feeCalculator is zeroAddress (no fees charged) but feeRecipient is still
+  // feeCalculator is zeroAddress (no fees charged) but feeReceiver is still
   // required by the factory's non-zero validation. This future-proofs the
   // operator: when a fee calculator is added later, the recipient is already
   // set — no redeployment needed.
   const operatorConfig: OperatorConfig = {
-    feeReceiver: options.feeRecipient,
+    feeReceiver: options.feeReceiver,
     feeCalculator: zeroAddress,
     authorizePreActionCondition: zeroAddress,
     authorizePostActionHook: authorizeHookAddress,

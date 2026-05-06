@@ -29,7 +29,7 @@ function makeOptions(
 ): MarketplaceOperatorOptions {
   return {
     chainId: 84532, // Base Sepolia — has factories + conditions
-    feeRecipient: '0x5678901234567890123456789012345678901234',
+    feeReceiver: '0x5678901234567890123456789012345678901234',
     arbiter: '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65',
     escrowPeriodSeconds: 604800n,
     ...overrides,
@@ -724,7 +724,7 @@ function makeDeliveryProtectionOptions(
   return {
     chainId: 84532,
     arbiter: '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65',
-    feeRecipient: '0x5678901234567890123456789012345678901234',
+    feeReceiver: '0x5678901234567890123456789012345678901234',
     escrowPeriodSeconds: 86400n,
     ...overrides,
   }
@@ -797,18 +797,18 @@ describe('previewDeliveryProtectionOperator', () => {
     expect(result.paymentIndexHookAddress).toBe(zeroAddress)
   })
 
-  it('uses provided feeRecipient in operator config', async () => {
-    const feeRecipient = '0x9999999999999999999999999999999999999999' as Address
+  it('uses provided feeReceiver in operator config', async () => {
+    const feeReceiver = '0x9999999999999999999999999999999999999999' as Address
     const publicClient = createMockPublicClient({
       computeAddress: COMPUTED_ADDR,
     })
 
     const result = await previewDeliveryProtectionOperator(
       publicClient,
-      makeDeliveryProtectionOptions({ feeRecipient }),
+      makeDeliveryProtectionOptions({ feeReceiver }),
     )
 
-    expect(result.operatorConfig.feeReceiver).toBe(feeRecipient)
+    expect(result.operatorConfig.feeReceiver).toBe(feeReceiver)
   })
 
   it('uses hookCombinatorCodehash as default authorizedCodehash', async () => {

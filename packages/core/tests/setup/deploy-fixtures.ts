@@ -120,7 +120,7 @@ export async function deployTestFixtures(
 
   // 3. Deploy standard PaymentOperator via factory (no freeze)
   const operatorConfig = {
-    feeRecipient: testRoles.operatorFeeRecipient.address,
+    feeReceiver: testRoles.operatorFeeRecipient.address,
     feeCalculator: feeCalculatorAddress,
     authorizeCondition: zeroAddress,
     authorizeRecorder: escrowPeriodAddress,
@@ -234,7 +234,7 @@ export async function deployTestFixtures(
   // 3e. Deploy PaymentOperator with freeze
   // ---------------------------------------------------------------------------
   const freezeOperatorConfig = {
-    feeRecipient: testRoles.operatorFeeRecipient.address,
+    feeReceiver: testRoles.operatorFeeRecipient.address,
     feeCalculator: feeCalculatorAddress,
     authorizeCondition: zeroAddress,
     authorizeRecorder: escrowPeriodAddress,
@@ -273,7 +273,7 @@ export async function deployTestFixtures(
   //     refundInEscrow() which triggers the RefundRequest recorder.
   // ---------------------------------------------------------------------------
   const arbiterRefundOperatorConfig = {
-    feeRecipient: testRoles.operatorFeeRecipient.address,
+    feeReceiver: testRoles.operatorFeeRecipient.address,
     feeCalculator: feeCalculatorAddress,
     authorizeCondition: zeroAddress,
     authorizeRecorder: escrowPeriodAddress,
@@ -332,7 +332,7 @@ export async function deployTestFixtures(
   )
 
   const deliveryProtectionOperatorConfig = {
-    feeRecipient: testRoles.operatorFeeRecipient.address,
+    feeReceiver: testRoles.operatorFeeRecipient.address,
     feeCalculator: zeroAddress,
     authorizeCondition: zeroAddress,
     authorizeRecorder: deliveryProtectionEscrowPeriodAddress,
