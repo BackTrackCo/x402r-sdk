@@ -175,12 +175,6 @@ export const x402rChains = {
     59144,
     '0x176211869cA2b568f2A7D4EE941E073a821EE1ff',
   ),
-
-  1187947933: chainConfig(
-    'SKALE Base',
-    1187947933,
-    '0x85889c8c714505E0c94b30fcfcF64fE3Ac8FCb20',
-  ),
 } as const satisfies Record<number, X402rChainConfig>
 
 // ---------------------------------------------------------------------------
