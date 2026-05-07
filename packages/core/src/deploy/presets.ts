@@ -230,7 +230,7 @@ export interface MarketplaceOperatorPreview {
   freezeAddress: Address | null
   refundRequestAddress: Address
   refundRequestEvidenceAddress: Address
-  refundInEscrowConditionAddress: Address
+  voidConditionAddress: Address
   feeCalculatorAddress: Address | null
   operatorConfig: OperatorConfig
 }
@@ -241,7 +241,7 @@ export interface MarketplaceOperatorDeployment {
   freezeAddress: Address | null
   refundRequestAddress: Address
   refundRequestEvidenceAddress: Address
-  refundInEscrowConditionAddress: Address
+  voidConditionAddress: Address
   feeCalculatorAddress: Address | null
   operatorConfig: OperatorConfig
   deployments: DeployResult[]
@@ -335,29 +335,26 @@ export async function previewMarketplaceOperator(
   // Batch 2 (parallel): depends on batch 1 results
   // RefundRequest is an IHook — wired as voidPostActionHook (canonical authCapture wiring).
   // voidPreActionCondition = OrCondition(receiver, arbiterSAC) — either can approve.
-  const [
-    freezeAddress,
-    refundRequestEvidenceAddress,
-    refundInEscrowConditionAddress,
-  ] = await Promise.all([
-    freezeDurationSeconds > 0n
-      ? computeFreezeAddress(publicClient, {
-          factoryAddress: factories.freeze,
-          freezeCondition: singletons.payer,
-          unfreezeCondition: staticAddrCondArbiterAddr,
-          freezeDuration: freezeDurationSeconds,
-          escrowPeriodContract: escrowPeriodAddress,
-        })
-      : Promise.resolve(null),
-    computeRefundRequestEvidenceAddress(publicClient, {
-      factoryAddress: factories.refundRequestEvidence,
-      refundRequest: refundRequestAddress,
-    }),
-    computeOrConditionAddress(publicClient, {
-      factoryAddress: factories.orCondition,
-      conditions: [singletons.receiver, staticAddrCondArbiterAddr],
-    }),
-  ])
+  const [freezeAddress, refundRequestEvidenceAddress, voidConditionAddress] =
+    await Promise.all([
+      freezeDurationSeconds > 0n
+        ? computeFreezeAddress(publicClient, {
+            factoryAddress: factories.freeze,
+            freezeCondition: singletons.payer,
+            unfreezeCondition: staticAddrCondArbiterAddr,
+            freezeDuration: freezeDurationSeconds,
+            escrowPeriodContract: escrowPeriodAddress,
+          })
+        : Promise.resolve(null),
+      computeRefundRequestEvidenceAddress(publicClient, {
+        factoryAddress: factories.refundRequestEvidence,
+        refundRequest: refundRequestAddress,
+      }),
+      computeOrConditionAddress(publicClient, {
+        factoryAddress: factories.orCondition,
+        conditions: [singletons.receiver, staticAddrCondArbiterAddr],
+      }),
+    ])
 
   // Batch 3: AND condition for release (depends on batch 2, only when freeze enabled)
   const andConditionAddress =
@@ -380,7 +377,7 @@ export async function previewMarketplaceOperator(
     chargePostActionHook: zeroAddress,
     capturePreActionCondition: releaseConditionAddress,
     capturePostActionHook: zeroAddress,
-    voidPreActionCondition: refundInEscrowConditionAddress,
+    voidPreActionCondition: voidConditionAddress,
     voidPostActionHook: refundRequestAddress,
     refundPreActionCondition: singletons.receiver,
     refundPostActionHook: zeroAddress,
@@ -397,7 +394,7 @@ export async function previewMarketplaceOperator(
     freezeAddress,
     refundRequestAddress,
     refundRequestEvidenceAddress,
-    refundInEscrowConditionAddress,
+    voidConditionAddress,
     feeCalculatorAddress,
     operatorConfig,
   }
@@ -416,8 +413,8 @@ export async function previewMarketplaceOperator(
  * Deploy a marketplace PaymentOperator with all required condition contracts.
  *
  * **In-escrow refund flow:** Either the receiver (merchant) or the arbiter
- * can call `operator.refundInEscrow()` (which forwards to `escrow.void()` —
- * full-only under the new authCapture surface), gated by
+ * can call `operator.voidPayment()` (which calls `escrow.void()` —
+ * full-only under the authCapture surface), gated by
  * `OrCondition(ReceiverCondition, StaticAddressCondition(arbiter))`.
  * The RefundRequest IHook (wired as `voidPostActionHook`) automatically
  * approves any pending payer request.
@@ -443,7 +440,7 @@ export async function deployMarketplaceOperator(
     freezeAddress,
     refundRequestAddress,
     refundRequestEvidenceAddress,
-    refundInEscrowConditionAddress,
+    voidConditionAddress,
     operatorAddress,
     operatorConfig,
   } = preview
@@ -451,7 +448,7 @@ export async function deployMarketplaceOperator(
   const hasFee = operatorFeeBps > 0n
   const hasFreeze = freezeDurationSeconds > 0n
 
-  // SAC(arbiter) is always needed: used for refundInEscrow OrCondition + freeze unfreeze gate.
+  // SAC(arbiter) is always needed: used for void OrCondition + freeze unfreeze gate.
   const staticAddrCondArbiterAddr = await computeStaticAddressConditionAddress(
     publicClient,
     {
@@ -516,7 +513,7 @@ export async function deployMarketplaceOperator(
     },
   ]
 
-  // SAC(arbiter) always needed for OrCondition(receiver, arbiter) refundInEscrow gate
+  // SAC(arbiter) always needed for OrCondition(receiver, arbiter) void gate
   existenceEntries.push({
     name: 'staticAddressConditionArbiter',
     contract: {
@@ -526,7 +523,7 @@ export async function deployMarketplaceOperator(
       args: [options.arbiter],
     },
   })
-  // OrCondition(receiver, arbiterSAC) for refundInEscrow gate
+  // OrCondition(receiver, arbiterSAC) for void gate
   existenceEntries.push({
     name: 'orConditionRefund',
     contract: {
@@ -604,7 +601,7 @@ export async function deployMarketplaceOperator(
       { address: refundRequestAddress, hash: null, isNew: false },
       { address: refundRequestEvidenceAddress, hash: null, isNew: false },
       { address: staticAddrCondArbiterAddr, hash: null, isNew: false },
-      { address: refundInEscrowConditionAddress, hash: null, isNew: false },
+      { address: voidConditionAddress, hash: null, isNew: false },
     ]
     if (hasFreeze && freezeAddress) {
       existingDeployments.push({
@@ -636,7 +633,7 @@ export async function deployMarketplaceOperator(
       freezeAddress,
       refundRequestAddress,
       refundRequestEvidenceAddress,
-      refundInEscrowConditionAddress,
+      voidConditionAddress,
       feeCalculatorAddress,
       operatorConfig,
       deployments: existingDeployments,
@@ -706,7 +703,7 @@ export async function deployMarketplaceOperator(
     [options.arbiter],
   )
   trackDeploy(
-    refundInEscrowConditionAddress,
+    voidConditionAddress,
     exists.orConditionRefund,
     factories.orCondition,
     orConditionFactoryAbi,
@@ -773,7 +770,7 @@ export async function deployMarketplaceOperator(
     freezeAddress,
     refundRequestAddress,
     refundRequestEvidenceAddress,
-    refundInEscrowConditionAddress,
+    voidConditionAddress,
     feeCalculatorAddress,
     operatorConfig,
     deployments,
@@ -1016,7 +1013,7 @@ export interface DeliveryProtectionOperatorOptions {
   authorizedCodehash?: Hex
   /** Override PaymentIndexRecorderHook address (default: from config, zeroAddress = skip) */
   paymentIndexRecorderHookAddress?: Address
-  /** Allow arbiter to refund immediately during escrow (default: false). When true, arbiter is added to the refundInEscrow OrCondition. */
+  /** Allow arbiter to void immediately during escrow (default: false). When true, arbiter is added to the void OrCondition. */
   allowArbiterRefund?: boolean
 }
 
@@ -1025,7 +1022,7 @@ export interface DeliveryProtectionOperatorPreview {
   escrowPeriodAddress: Address
   arbiterConditionAddress: Address
   releaseConditionAddress: Address
-  refundInEscrowConditionAddress: Address
+  voidConditionAddress: Address
   authorizeHookAddress: Address
   paymentIndexRecorderHookAddress: Address
   operatorConfig: OperatorConfig
@@ -1036,7 +1033,7 @@ export interface DeliveryProtectionOperatorDeployment {
   escrowPeriodAddress: Address
   arbiterConditionAddress: Address
   releaseConditionAddress: Address
-  refundInEscrowConditionAddress: Address
+  voidConditionAddress: Address
   authorizeHookAddress: Address
   paymentIndexRecorderHookAddress: Address
   operatorConfig: OperatorConfig
@@ -1083,34 +1080,31 @@ export async function previewDeliveryProtectionOperator(
   ])
 
   // RefundInEscrow legs: always escrow period + receiver, optionally arbiter
-  const refundInEscrowLegs: Address[] = allowArbiterRefund
+  const voidLegs: Address[] = allowArbiterRefund
     ? [escrowPeriodAddress, singletons.receiver, arbiterConditionAddress]
     : [escrowPeriodAddress, singletons.receiver]
 
   // Batch 2 (parallel, depends on batch 1)
-  const [
-    releaseConditionAddress,
-    refundInEscrowConditionAddress,
-    authorizeHookAddress,
-  ] = await Promise.all([
-    // Release: arbiter OR payer
-    computeOrConditionAddress(publicClient, {
-      factoryAddress: factoryAddrs.orCondition,
-      conditions: [arbiterConditionAddress, singletons.payer],
-    }),
-    // RefundInEscrow: escrow period expired OR receiver [OR arbiter]
-    computeOrConditionAddress(publicClient, {
-      factoryAddress: factoryAddrs.orCondition,
-      conditions: refundInEscrowLegs,
-    }),
-    // AuthorizePostActionHook: EscrowPeriod + PaymentIndexRecorderHook (if available)
-    hasPaymentIndexRecorderHook
-      ? computeHookCombinatorAddress(publicClient, {
-          factoryAddress: factoryAddrs.hookCombinator,
-          hooks: [escrowPeriodAddress, paymentIndexRecorderHookAddress],
-        })
-      : Promise.resolve(escrowPeriodAddress),
-  ])
+  const [releaseConditionAddress, voidConditionAddress, authorizeHookAddress] =
+    await Promise.all([
+      // Release: arbiter OR payer
+      computeOrConditionAddress(publicClient, {
+        factoryAddress: factoryAddrs.orCondition,
+        conditions: [arbiterConditionAddress, singletons.payer],
+      }),
+      // RefundInEscrow: escrow period expired OR receiver [OR arbiter]
+      computeOrConditionAddress(publicClient, {
+        factoryAddress: factoryAddrs.orCondition,
+        conditions: voidLegs,
+      }),
+      // AuthorizePostActionHook: EscrowPeriod + PaymentIndexRecorderHook (if available)
+      hasPaymentIndexRecorderHook
+        ? computeHookCombinatorAddress(publicClient, {
+            factoryAddress: factoryAddrs.hookCombinator,
+            hooks: [escrowPeriodAddress, paymentIndexRecorderHookAddress],
+          })
+        : Promise.resolve(escrowPeriodAddress),
+    ])
 
   // feeCalculator is zeroAddress (no fees charged) but feeReceiver is still
   // required by the factory's non-zero validation. This future-proofs the
@@ -1125,7 +1119,7 @@ export async function previewDeliveryProtectionOperator(
     chargePostActionHook: zeroAddress,
     capturePreActionCondition: releaseConditionAddress,
     capturePostActionHook: zeroAddress,
-    voidPreActionCondition: refundInEscrowConditionAddress,
+    voidPreActionCondition: voidConditionAddress,
     voidPostActionHook: zeroAddress,
     refundPreActionCondition: singletons.receiver,
     refundPostActionHook: zeroAddress,
@@ -1141,7 +1135,7 @@ export async function previewDeliveryProtectionOperator(
     escrowPeriodAddress,
     arbiterConditionAddress,
     releaseConditionAddress,
-    refundInEscrowConditionAddress,
+    voidConditionAddress,
     authorizeHookAddress,
     paymentIndexRecorderHookAddress,
     operatorConfig,
@@ -1176,7 +1170,7 @@ export async function deployDeliveryProtectionOperator(
     escrowPeriodAddress,
     arbiterConditionAddress,
     releaseConditionAddress,
-    refundInEscrowConditionAddress,
+    voidConditionAddress,
     authorizeHookAddress,
     paymentIndexRecorderHookAddress,
     operatorAddress,
@@ -1288,7 +1282,7 @@ export async function deployDeliveryProtectionOperator(
       { address: escrowPeriodAddress, hash: null, isNew: false },
       { address: arbiterConditionAddress, hash: null, isNew: false },
       { address: releaseConditionAddress, hash: null, isNew: false },
-      { address: refundInEscrowConditionAddress, hash: null, isNew: false },
+      { address: voidConditionAddress, hash: null, isNew: false },
       ...(hasCombinator
         ? [{ address: authorizeHookAddress, hash: null, isNew: false }]
         : []),
@@ -1299,7 +1293,7 @@ export async function deployDeliveryProtectionOperator(
       escrowPeriodAddress,
       arbiterConditionAddress,
       releaseConditionAddress,
-      refundInEscrowConditionAddress,
+      voidConditionAddress,
       authorizeHookAddress,
       paymentIndexRecorderHookAddress,
       operatorConfig,
@@ -1366,9 +1360,9 @@ export async function deployDeliveryProtectionOperator(
     [[arbiterConditionAddress, singletons.payer]],
   )
 
-  // 4. OrCondition for refundInEscrow: escrow period OR receiver [OR arbiter]
+  // 4. OrCondition for void: escrow period OR receiver [OR arbiter]
   trackDeploy(
-    refundInEscrowConditionAddress,
+    voidConditionAddress,
     exists.refundCondition,
     factoryAddrs.orCondition,
     orConditionFactoryAbi,
@@ -1417,7 +1411,7 @@ export async function deployDeliveryProtectionOperator(
     escrowPeriodAddress,
     arbiterConditionAddress,
     releaseConditionAddress,
-    refundInEscrowConditionAddress,
+    voidConditionAddress,
     authorizeHookAddress,
     paymentIndexRecorderHookAddress,
     operatorConfig,

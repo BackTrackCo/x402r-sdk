@@ -94,8 +94,8 @@ describe('previewMarketplaceOperator', () => {
     expect(result.operatorConfig.capturePreActionCondition).toBe(escrowAddr)
     expect(result.escrowPeriodAddress).toBe(escrowAddr)
     expect(result.refundRequestAddress).toBe(refundReqAddr)
-    // refundInEscrowCondition = OrCondition(receiver, arbiterSAC)
-    expect(result.refundInEscrowConditionAddress).toBe(orConditionAddr)
+    // voidCondition = OrCondition(receiver, arbiterSAC)
+    expect(result.voidConditionAddress).toBe(orConditionAddr)
   })
 
   it('freezeAddress is non-null and releaseCondition is AndCondition when freeze enabled', async () => {
@@ -134,8 +134,8 @@ describe('previewMarketplaceOperator', () => {
       result.escrowPeriodAddress,
     )
     expect(result.refundRequestAddress).toBe(refundReqAddr)
-    // refundInEscrowCondition = OrCondition(receiver, arbiterSAC)
-    expect(result.refundInEscrowConditionAddress).toBe(orConditionAddr)
+    // voidCondition = OrCondition(receiver, arbiterSAC)
+    expect(result.voidConditionAddress).toBe(orConditionAddr)
   })
 
   it('feeCalculatorAddress is non-null when operatorFeeBps > 0', async () => {
@@ -196,8 +196,8 @@ describe('deployMarketplaceOperator', () => {
     expect(result.escrowPeriodAddress).toBe(escrowAddr)
     expect(result.refundRequestAddress).toBe(refundReqAddr)
     expect(result.refundRequestEvidenceAddress).toBe(evidenceAddr)
-    // refundInEscrowCondition = OrCondition(receiver, arbiterSAC)
-    expect(result.refundInEscrowConditionAddress).toBe(orConditionAddr)
+    // voidCondition = OrCondition(receiver, arbiterSAC)
+    expect(result.voidConditionAddress).toBe(orConditionAddr)
     // 5 new (escrow + evidence + sacArbiter + orCondition + operator), 1 existing (refundRequest)
     expect(result.summary.newCount).toBe(5)
     expect(result.summary.existingCount).toBe(1)
@@ -270,8 +270,8 @@ describe('deployMarketplaceOperator', () => {
       result.escrowPeriodAddress,
     )
     expect(result.refundRequestAddress).toBe(refundReqAddr)
-    // refundInEscrowCondition = OrCondition(receiver, arbiterSAC)
-    expect(result.refundInEscrowConditionAddress).toBe(orConditionAddr)
+    // voidCondition = OrCondition(receiver, arbiterSAC)
+    expect(result.voidConditionAddress).toBe(orConditionAddr)
   })
 
   it('returns all existing when operator already deployed (no freeze, no fee)', async () => {
@@ -765,7 +765,7 @@ describe('previewDeliveryProtectionOperator', () => {
     expect(result.escrowPeriodAddress).toBe(escrowAddr)
     expect(result.arbiterConditionAddress).toBe(arbiterCondAddr)
     expect(result.releaseConditionAddress).toBe(orCondAddr)
-    expect(result.refundInEscrowConditionAddress).toBe(orCondAddr)
+    expect(result.voidConditionAddress).toBe(orCondAddr)
     expect(result.authorizeHookAddress).toBe(combinatorAddr)
     expect(result.operatorConfig.authorizePostActionHook).toBe(combinatorAddr)
     expect(result.operatorConfig.capturePreActionCondition).toBe(orCondAddr)
@@ -834,7 +834,7 @@ describe('previewDeliveryProtectionOperator', () => {
     expect(result.escrowPeriodAddress).toBe(COMPUTED_ADDR)
   })
 
-  it('includes arbiter in refundInEscrow OrCondition when allowArbiterRefund is true', async () => {
+  it('includes arbiter in void OrCondition when allowArbiterRefund is true', async () => {
     const escrowAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
     const arbiterCondAddr =
       '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
@@ -858,7 +858,7 @@ describe('previewDeliveryProtectionOperator', () => {
     // Release includes arbiter (arbiter OR payer)
     expect(result.releaseConditionAddress).toBe(orCondAddr)
     // RefundInEscrow includes arbiter (escrow period OR receiver OR arbiter)
-    expect(result.refundInEscrowConditionAddress).toBe(orCondAddr)
+    expect(result.voidConditionAddress).toBe(orCondAddr)
     expect(result.operatorAddress).toBe(operatorAddr)
   })
 })
@@ -898,7 +898,7 @@ describe('deployDeliveryProtectionOperator', () => {
     expect(result.escrowPeriodAddress).toBe(escrowAddr)
     expect(result.arbiterConditionAddress).toBe(arbiterCondAddr)
     expect(result.releaseConditionAddress).toBe(orCondAddr)
-    expect(result.refundInEscrowConditionAddress).toBe(orCondAddr)
+    expect(result.voidConditionAddress).toBe(orCondAddr)
     expect(result.authorizeHookAddress).toBe(combinatorAddr)
     expect(result.operatorAddress).toBe(operatorAddr)
     expect(result.summary.newCount).toBe(6)
