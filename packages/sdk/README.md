@@ -22,7 +22,7 @@ const x402r = createX402r({
 })
 
 const amounts = await x402r.payment.getAmounts(paymentInfo)
-const txHash = await x402r.refund.request(paymentInfo, amount, nonce)
+const txHash = await x402r.refund.request(paymentInfo, amount)
 ```
 
 ### Role preset
@@ -40,13 +40,13 @@ Role presets (`createPayerClient`, `createMerchantClient`, `createArbiterClient`
 
 The client organizes operations into action groups by protocol domain:
 
-- **payment** — `authorize`, `charge`, `release`, `refundInEscrow`, `refundPostEscrow`, `approvePostEscrowRefund`, `getPostEscrowRefundAllowance`, `getState`, `getAmounts`
-- **refund** — dispute lifecycle: `request`, `cancel`, `deny`, `refuse`, `approveWithSignature`, and read helpers (requires `refundRequestAddress`)
+- **payment** — `authorize`, `charge`, `capture`, `voidPayment`, `refund`, `approveRefundAllowance`, `getRefundAllowance`, `getState`, `getAmounts`
+- **refund** — dispute lifecycle: `request`, `cancel`, `deny`, `refuse`, and read helpers (requires `refundRequestAddress`)
 - **evidence** — `submit`, `get`, `getBatch`, `count`
 - **escrow** — `isDuringEscrow`, `getAuthorizationTime`, `getDuration` (requires `escrowPeriodAddress`)
 - **freeze** — `freeze`, `unfreeze`, `isFrozen` (requires `freezeAddress`)
 - **operator** — `getConfig`, `getFeeAddresses`, `calculateFees`, `distributeFees`
-- **watch** — `onPayment`, `onRefundRequest`, `onFeeDistribution`
+- **watch** — `onPayment`, `onRefundRequest`, `onRefundExecuted`, `onFeeDistribution`
 
 ## Extending
 
@@ -70,8 +70,10 @@ const x402r = createX402r({ publicClient, walletClient, operatorAddress: '0x…'
       },
       async resolve(paymentInfo: PaymentInfo, nonce: bigint, ruling: 'refund' | 'deny') {
         if (ruling === 'refund') {
-          const { refundableAmount } = await client.payment.getAmounts(paymentInfo)
-          return client.payment.refundInEscrow(paymentInfo, refundableAmount)
+          // voidPayment is full-only — empties the entire authorization.
+          // The RefundRequest hook (wired as voidPostActionHook) auto-approves
+          // any pending payer request as part of the same transaction.
+          return client.payment.voidPayment(paymentInfo)
         }
         return client.refund.deny(paymentInfo, nonce)
       },
@@ -95,15 +97,15 @@ Non-obvious behaviors integrators should be aware of:
 
 1. **Evidence is 1:1 with RefundRequest** — each RefundRequest gets its own factory-deployed Evidence contract. Different arbiter = different contracts = separate evidence stores. Evidence is required when refund is configured (`refundRequestEvidenceAddress` must be provided alongside `refundRequestAddress`).
 
-2. **`approve()` is cumulative and immediate** — each call adds to `approvedAmount` and atomically executes `refundInEscrow()`. No undo. Amount is `uint120` (max ~1.3e36).
+2. **In-escrow void auto-approves payer requests** — the RefundRequest hook is wired as `voidPostActionHook`, so any successful `payment.voidPayment()` call atomically settles a pending `RefundRequest` in the same transaction. No separate approve step. `voidPayment` is full-only — it empties the entire authorization regardless of any partial amount the payer requested.
 
 3. **Evidence access control** — arbiter identity comes from `REFUND_REQUEST.ARBITER()`, not from the operator's condition tree. If arbiter is a multisig, that address must call `submitEvidence()`.
 
-4. **Post-escrow refunds bypass RefundRequest** — receiver can call `refundPostEscrow()` directly via the Receiver singleton condition. No arbiter involvement.
+4. **Post-escrow refunds use ReceiverRefundCollector** — once the escrow window closes, the receiver calls `payment.refund(paymentInfo, amount, receiverRefundCollector, data)` via the Receiver singleton condition. The merchant must pre-stake an ERC-20 allowance on `ReceiverRefundCollector` (use `payment.approveRefundAllowance(token, amount)`). No arbiter involvement.
 
 5. **Freeze roles** — payer freezes (time extension near deadline), arbiter unfreezes (investigation resolved).
 
-6. **`payment.refundInEscrow` is gated** — on marketplace operators, only the RefundRequest contract can call it (via `StaticAddressCondition`). Use `refund.approve()` on role clients instead.
+6. **`payment.voidPayment` is gated by an OrCondition** — on marketplace operators, the `voidPreActionCondition` is `OrCondition(ReceiverCondition, StaticAddressCondition(refundRequest))`, so either the receiver or the RefundRequest contract can trigger it. Payers cannot void directly; they file a `RefundRequest` first, and either the merchant or the arbiter approves by calling `voidPayment` themselves.
 
 ## Docs
 

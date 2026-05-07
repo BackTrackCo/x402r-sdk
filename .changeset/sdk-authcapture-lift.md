@@ -9,10 +9,10 @@ Lift SDK to the authCapture contract surface (BackTrackCo/x402r-contracts#34, me
 Breaking changes — clean break, no shims:
 
 **Operator method renames**
-- `release()` → on-chain method now `capture` (SDK-side `release` action still exported, internally calls `capture`; cosmetic rename of the SDK function landing in a follow-up commit).
-- `refundInEscrow(paymentInfo, amount, data)` — the `amount` argument is now ignored. The new `escrow.void()` is full-only and empties the entire authorization regardless of any partial value the caller passes. See migration note below.
-- `refundPostEscrow()` — on-chain method now `refund`; SDK-side function unchanged for now.
-- `feeRecipient` → `feeReceiver` on `OperatorConfig` (auto-derived from new ABI). The `OperatorSlots` return shape from `getOperatorConfig()` keeps `feeRecipient` for now (cosmetic rename pending).
+- `release()` → `capture()`. SDK function and on-chain method both renamed; no back-compat alias.
+- `refundInEscrow(paymentInfo, amount, data)` → `voidPayment(paymentInfo, data?)`. The `amount` argument is dropped — the new `escrow.void()` is full-only and empties the entire authorization regardless of any partial value the caller intends. See migration note below.
+- `refundPostEscrow()` → `refund()` on both SDK and contract. Renamed helpers: `approvePostEscrowRefund` → `approveRefundAllowance`, `getPostEscrowRefundAllowance` → `getRefundAllowance`.
+- `feeRecipient` → `feeReceiver` on `OperatorConfig` (auto-derived from new ABI). `OperatorSlots` return shape from `getOperatorConfig()` also renamed to short-form fields (`authorizeHook`, `captureCondition`, `feeReceiver`, etc.).
 
 **Plugin terminology**
 - `recorder`/`Recorder` → `hook`/`Hook` everywhere (ABIs, factories, types, files, exports, addresses).

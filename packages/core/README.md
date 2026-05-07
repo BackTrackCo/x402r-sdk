@@ -17,7 +17,7 @@ pnpm add @x402r/core
 | Path | Contents |
 | --- | --- |
 | `@x402r/core` | Everything (re-exports all subpaths) |
-| `@x402r/core/types` | `PaymentInfo`, `OperatorConfig`, `ConditionConfig`, etc. |
+| `@x402r/core/types` | `PaymentInfo`, `OperatorConfig`, `PluginConfig`, etc. |
 | `@x402r/core/config` | Chain registry, `getChainConfig()`, addresses |
 | `@x402r/core/actions` | 50+ action functions (read/write contract calls) |
 | `@x402r/core/deploy` | Factory deploy functions, condition builder |
