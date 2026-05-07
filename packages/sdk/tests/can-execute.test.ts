@@ -36,7 +36,7 @@ describe('canExecute', () => {
 
     const result = await canExecute(
       config,
-      'RELEASE_CONDITION',
+      'CAPTURE_PRE_ACTION_CONDITION',
       mockPaymentInfo,
       1000000n,
     )
@@ -52,7 +52,12 @@ describe('canExecute', () => {
     // canExecute should propagate errors from getConditionAddress since
     // those are not from the condition.check() call
     await expect(
-      canExecute(config, 'RELEASE_CONDITION', mockPaymentInfo, 1000000n),
+      canExecute(
+        config,
+        'CAPTURE_PRE_ACTION_CONDITION',
+        mockPaymentInfo,
+        1000000n,
+      ),
     ).rejects.toThrow()
   })
 
@@ -63,7 +68,12 @@ describe('canExecute', () => {
 
     const spy = vi.spyOn(publicClient, 'readContract').mockResolvedValue(true)
 
-    await canExecute(config, 'RELEASE_CONDITION', mockPaymentInfo, 1000000n)
+    await canExecute(
+      config,
+      'CAPTURE_PRE_ACTION_CONDITION',
+      mockPaymentInfo,
+      1000000n,
+    )
 
     expect(spy).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -84,7 +94,7 @@ describe('canExecute', () => {
 
     await canExecute(
       configNoWallet,
-      'RELEASE_CONDITION',
+      'CAPTURE_PRE_ACTION_CONDITION',
       mockPaymentInfo,
       1000000n,
     )
@@ -110,7 +120,7 @@ describe('canExecute', () => {
 
     const result = await canExecute(
       config,
-      'RELEASE_CONDITION',
+      'CAPTURE_PRE_ACTION_CONDITION',
       mockPaymentInfo,
       1000000n,
     )

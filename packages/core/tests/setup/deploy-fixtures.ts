@@ -122,16 +122,16 @@ export async function deployTestFixtures(
   const operatorConfig = {
     feeReceiver: testRoles.operatorFeeRecipient.address,
     feeCalculator: feeCalculatorAddress,
-    authorizeCondition: zeroAddress,
-    authorizeRecorder: escrowPeriodAddress,
-    chargeCondition: zeroAddress,
-    chargeRecorder: zeroAddress,
-    releaseCondition: escrowPeriodAddress,
-    releaseRecorder: zeroAddress,
-    refundInEscrowCondition: zeroAddress,
-    refundInEscrowRecorder: zeroAddress,
-    refundPostEscrowCondition: baseSepolia.conditions.receiver,
-    refundPostEscrowRecorder: zeroAddress,
+    authorizePreActionCondition: zeroAddress,
+    authorizePostActionHook: escrowPeriodAddress,
+    chargePreActionCondition: zeroAddress,
+    chargePostActionHook: zeroAddress,
+    capturePreActionCondition: escrowPeriodAddress,
+    capturePostActionHook: zeroAddress,
+    voidPreActionCondition: zeroAddress,
+    voidPostActionHook: zeroAddress,
+    refundPreActionCondition: baseSepolia.conditions.receiver,
+    refundPostActionHook: zeroAddress,
   } as const
 
   const operatorHash = await walletClient.writeContract({
@@ -236,16 +236,16 @@ export async function deployTestFixtures(
   const freezeOperatorConfig = {
     feeReceiver: testRoles.operatorFeeRecipient.address,
     feeCalculator: feeCalculatorAddress,
-    authorizeCondition: zeroAddress,
-    authorizeRecorder: escrowPeriodAddress,
-    chargeCondition: zeroAddress,
-    chargeRecorder: zeroAddress,
-    releaseCondition: andConditionAddress,
-    releaseRecorder: zeroAddress,
-    refundInEscrowCondition: baseSepolia.conditions.receiver,
-    refundInEscrowRecorder: zeroAddress,
-    refundPostEscrowCondition: zeroAddress,
-    refundPostEscrowRecorder: zeroAddress,
+    authorizePreActionCondition: zeroAddress,
+    authorizePostActionHook: escrowPeriodAddress,
+    chargePreActionCondition: zeroAddress,
+    chargePostActionHook: zeroAddress,
+    capturePreActionCondition: andConditionAddress,
+    capturePostActionHook: zeroAddress,
+    voidPreActionCondition: baseSepolia.conditions.receiver,
+    voidPostActionHook: zeroAddress,
+    refundPreActionCondition: zeroAddress,
+    refundPostActionHook: zeroAddress,
   } as const
 
   const freezeOpHash = await walletClient.writeContract({
@@ -266,25 +266,25 @@ export async function deployTestFixtures(
   })
 
   // ---------------------------------------------------------------------------
-  // 3f. Deploy PaymentOperator for arbiter refund (Flow 7)
-  //     refundInEscrowCondition = StaticAddressCondition(refundRequest)
-  //     refundInEscrowRecorder = refundRequest (IRecorder — auto-approves)
-  //     In-escrow refunds require payer request first, then merchant calls
-  //     refundInEscrow() which triggers the RefundRequest recorder.
+  // 3f. Deploy PaymentOperator for arbiter void (Flow 7)
+  //     voidPreActionCondition = StaticAddressCondition(refundRequest)
+  //     voidPostActionHook = refundRequest (IHook — auto-approves)
+  //     In-escrow voids require payer request first, then merchant calls
+  //     voidPayment() which triggers the RefundRequest hook.
   // ---------------------------------------------------------------------------
   const arbiterRefundOperatorConfig = {
     feeReceiver: testRoles.operatorFeeRecipient.address,
     feeCalculator: feeCalculatorAddress,
-    authorizeCondition: zeroAddress,
-    authorizeRecorder: escrowPeriodAddress,
-    chargeCondition: zeroAddress,
-    chargeRecorder: zeroAddress,
-    releaseCondition: escrowPeriodAddress,
-    releaseRecorder: zeroAddress,
-    refundInEscrowCondition: baseSepolia.conditions.receiver,
-    refundInEscrowRecorder: refundRequestAddress,
-    refundPostEscrowCondition: baseSepolia.conditions.receiver,
-    refundPostEscrowRecorder: zeroAddress,
+    authorizePreActionCondition: zeroAddress,
+    authorizePostActionHook: escrowPeriodAddress,
+    chargePreActionCondition: zeroAddress,
+    chargePostActionHook: zeroAddress,
+    capturePreActionCondition: escrowPeriodAddress,
+    capturePostActionHook: zeroAddress,
+    voidPreActionCondition: baseSepolia.conditions.receiver,
+    voidPostActionHook: refundRequestAddress,
+    refundPreActionCondition: baseSepolia.conditions.receiver,
+    refundPostActionHook: zeroAddress,
   } as const
 
   const arbiterRefundOpHash = await walletClient.writeContract({
@@ -306,8 +306,8 @@ export async function deployTestFixtures(
 
   // ---------------------------------------------------------------------------
   // 3g. Deploy delivery protection operator
-  //     releaseCondition = StaticAddressCondition(arbiter) — only arbiter releases
-  //     refundInEscrowCondition = EscrowPeriod — auto-refund after window expires
+  //     capturePreActionCondition = StaticAddressCondition(arbiter) — only arbiter captures
+  //     voidPreActionCondition = EscrowPeriod — auto-void after window expires
   //     Uses a shorter escrow period (3 days) to distinguish from standard (7 days)
   // ---------------------------------------------------------------------------
   const DELIVERY_ESCROW_SECONDS = 259200n // 3 days
@@ -334,16 +334,16 @@ export async function deployTestFixtures(
   const deliveryProtectionOperatorConfig = {
     feeReceiver: testRoles.operatorFeeRecipient.address,
     feeCalculator: zeroAddress,
-    authorizeCondition: zeroAddress,
-    authorizeRecorder: deliveryProtectionEscrowPeriodAddress,
-    chargeCondition: zeroAddress,
-    chargeRecorder: zeroAddress,
-    releaseCondition: arbiterConditionAddress,
-    releaseRecorder: zeroAddress,
-    refundInEscrowCondition: deliveryProtectionEscrowPeriodAddress,
-    refundInEscrowRecorder: zeroAddress,
-    refundPostEscrowCondition: baseSepolia.conditions.receiver,
-    refundPostEscrowRecorder: zeroAddress,
+    authorizePreActionCondition: zeroAddress,
+    authorizePostActionHook: deliveryProtectionEscrowPeriodAddress,
+    chargePreActionCondition: zeroAddress,
+    chargePostActionHook: zeroAddress,
+    capturePreActionCondition: arbiterConditionAddress,
+    capturePostActionHook: zeroAddress,
+    voidPreActionCondition: deliveryProtectionEscrowPeriodAddress,
+    voidPostActionHook: zeroAddress,
+    refundPreActionCondition: baseSepolia.conditions.receiver,
+    refundPostActionHook: zeroAddress,
   } as const
 
   const deliveryProtectionOpHash = await walletClient.writeContract({
