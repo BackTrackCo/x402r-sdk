@@ -27,7 +27,7 @@ import type { PaymentInfo } from '@x402r/core'
 import type { PublicClient } from 'viem'
 import {
   createEventProvider,
-  createRecorderProvider,
+  createHookProvider,
   createStoreProvider,
 } from '../src/resolver/providers.js'
 import type { PaymentStore } from '../src/store/types.js'
@@ -99,16 +99,16 @@ describe('createStoreProvider', () => {
 })
 
 // ---------------------------------------------------------------------------
-// createRecorderProvider
+// createHookProvider
 // ---------------------------------------------------------------------------
 
-describe('createRecorderProvider', () => {
+describe('createHookProvider', () => {
   it('getByPayer delegates to core with correct args', async () => {
     mockGetPayerPaymentsFromHook.mockResolvedValue({
       payments: [mockPaymentInfo],
       total: 1n,
     })
-    const provider = createRecorderProvider(mockPublicClient, RECORDER)
+    const provider = createHookProvider(mockPublicClient, RECORDER)
 
     const result = await provider.getByPayer(84532, PAYER)
 
@@ -128,7 +128,7 @@ describe('createRecorderProvider', () => {
       payments: [mockPaymentInfo],
       total: 1n,
     })
-    const provider = createRecorderProvider(mockPublicClient, RECORDER)
+    const provider = createHookProvider(mockPublicClient, RECORDER)
 
     const result = await provider.getByReceiver(84532, RECEIVER)
 
@@ -145,7 +145,7 @@ describe('createRecorderProvider', () => {
 
   it('getByHash delegates to getHookPaymentInfo', async () => {
     mockGetHookPaymentInfo.mockResolvedValue(mockPaymentInfo)
-    const provider = createRecorderProvider(mockPublicClient, RECORDER)
+    const provider = createHookProvider(mockPublicClient, RECORDER)
 
     const result = await provider.getByHash(84532, HASH)
 
@@ -165,7 +165,7 @@ describe('createRecorderProvider', () => {
       .mockResolvedValueOnce({ payments: [info1, info2], total: 3n })
       .mockResolvedValueOnce({ payments: [info3], total: 3n })
 
-    const provider = createRecorderProvider(mockPublicClient, RECORDER, 2n)
+    const provider = createHookProvider(mockPublicClient, RECORDER, 2n)
     const result = await provider.getByPayer(84532, PAYER)
 
     expect(result).toEqual([info1, info2, info3])
@@ -182,7 +182,7 @@ describe('createRecorderProvider', () => {
       payments: [],
       total: 0n,
     })
-    const provider = createRecorderProvider(mockPublicClient, RECORDER)
+    const provider = createHookProvider(mockPublicClient, RECORDER)
 
     const result = await provider.getByPayer(84532, PAYER)
 
@@ -199,7 +199,7 @@ describe('createRecorderProvider', () => {
       total: 2n,
     })
 
-    const provider = createRecorderProvider(mockPublicClient, RECORDER, 2n)
+    const provider = createHookProvider(mockPublicClient, RECORDER, 2n)
     const result = await provider.getByPayer(84532, PAYER)
 
     expect(result).toEqual([info1, info2])
@@ -214,7 +214,7 @@ describe('createRecorderProvider', () => {
       })
       .mockResolvedValueOnce({ payments: [], total: 5n })
 
-    const provider = createRecorderProvider(mockPublicClient, RECORDER, 1n)
+    const provider = createHookProvider(mockPublicClient, RECORDER, 1n)
     const result = await provider.getByPayer(84532, PAYER)
 
     expect(result).toEqual([mockPaymentInfo])
@@ -230,7 +230,7 @@ describe('createRecorderProvider', () => {
       .mockResolvedValueOnce({ payments: [info1, info2], total: 3n })
       .mockResolvedValueOnce({ payments: [info3], total: 3n })
 
-    const provider = createRecorderProvider(mockPublicClient, RECORDER, 2n)
+    const provider = createHookProvider(mockPublicClient, RECORDER, 2n)
     const result = await provider.getByReceiver(84532, RECEIVER)
 
     expect(result).toEqual([info1, info2, info3])

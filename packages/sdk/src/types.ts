@@ -122,7 +122,7 @@ export interface EscrowActions {
 }
 
 export interface RefundActions {
-  // Dispute flow (RefundRequest recorder)
+  // Dispute flow (RefundRequest hook)
   request(paymentInfo: PaymentInfo, amount: bigint): Promise<Hash>
   cancel(paymentInfo: PaymentInfo): Promise<Hash>
   deny(paymentInfo: PaymentInfo): Promise<Hash>

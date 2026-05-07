@@ -324,7 +324,7 @@ export function deployNotCondition(
 
 export interface ComputeHookCombinatorAddressParameters {
   factoryAddress: Address
-  recorders: readonly Address[]
+  hooks: readonly Address[]
 }
 export type ComputeHookCombinatorAddressReturnType = Address
 
@@ -335,13 +335,13 @@ export function computeHookCombinatorAddress(
   return computeViaFactory(publicClient, {
     factoryAddress: parameters.factoryAddress,
     abi: hookCombinatorFactoryAbi,
-    args: [parameters.recorders],
+    args: [parameters.hooks],
   })
 }
 
 export interface DeployHookCombinatorParameters {
   factoryAddress: Address
-  recorders: readonly Address[]
+  hooks: readonly Address[]
 }
 export type DeployHookCombinatorReturnType = DeployResult
 
@@ -353,7 +353,7 @@ export function deployHookCombinator(
   return deployViaFactory(walletClient, publicClient, {
     factoryAddress: parameters.factoryAddress,
     abi: hookCombinatorFactoryAbi,
-    args: [parameters.recorders],
+    args: [parameters.hooks],
     opName: 'deployHookCombinator',
   })
 }

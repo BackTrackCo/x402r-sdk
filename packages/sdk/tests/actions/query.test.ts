@@ -32,8 +32,8 @@ vi.mock('../../src/resolver/providers.js', () => ({
         store.getByHash(chainId, hash),
     }),
   ),
-  createRecorderProvider: vi.fn(() => ({
-    name: 'recorder',
+  createHookProvider: vi.fn(() => ({
+    name: 'hook',
     getByPayer: mockRecorderGetByPayer,
     getByReceiver: mockRecorderGetByReceiver,
     getByHash: mockRecorderGetByHash,
@@ -165,7 +165,7 @@ describe('createQueryActions', () => {
   })
 
   it('passes config correctly to provider factories', async () => {
-    const { createRecorderProvider, createEventProvider } = await import(
+    const { createHookProvider, createEventProvider } = await import(
       '../../src/resolver/providers.js'
     )
 
@@ -175,7 +175,7 @@ describe('createQueryActions', () => {
     })
     createQueryActions(config, TEST_RECORDER)
 
-    expect(createRecorderProvider).toHaveBeenCalledWith(
+    expect(createHookProvider).toHaveBeenCalledWith(
       config.publicClient,
       TEST_RECORDER,
     )

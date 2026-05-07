@@ -4,7 +4,7 @@ import type { PaymentInfoProvider, PaymentInfoResolver } from './types.js'
 
 /**
  * Creates a tiered PaymentInfo resolver that tries providers in order.
- * Resolution order: store → recorder → events
+ * Resolution order: store → hook → events
  * First provider to return results wins.
  */
 export function createPaymentInfoResolver(

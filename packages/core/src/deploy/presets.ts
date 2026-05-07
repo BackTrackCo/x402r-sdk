@@ -1103,11 +1103,11 @@ export async function previewDeliveryProtectionOperator(
       factoryAddress: factoryAddrs.orCondition,
       conditions: refundInEscrowLegs,
     }),
-    // AuthorizeRecorder: EscrowPeriod + PaymentIndexRecorderHook (if available)
+    // AuthorizePostActionHook: EscrowPeriod + PaymentIndexRecorderHook (if available)
     hasPaymentIndexRecorderHook
       ? computeHookCombinatorAddress(publicClient, {
           factoryAddress: factoryAddrs.hookCombinator,
-          recorders: [escrowPeriodAddress, paymentIndexRecorderHookAddress],
+          hooks: [escrowPeriodAddress, paymentIndexRecorderHookAddress],
         })
       : Promise.resolve(escrowPeriodAddress),
   ])

@@ -20,16 +20,16 @@ export function createStoreProvider(store: PaymentStore): PaymentInfoProvider {
   }
 }
 
-/** Default page size for recorder pagination. */
+/** Default page size for hook pagination. */
 const DEFAULT_PAGE_SIZE = 1000n
 
-export function createRecorderProvider(
+export function createHookProvider(
   publicClient: PublicClient,
   hookAddress: Address,
   pageSize: bigint = DEFAULT_PAGE_SIZE,
 ): PaymentInfoProvider {
   return {
-    name: 'recorder',
+    name: 'hook',
     async getByPayer(_, payer) {
       const all: PaymentInfo[] = []
       let offset = 0n

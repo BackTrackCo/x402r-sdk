@@ -2,7 +2,7 @@ import type { Address } from 'viem'
 import { createPaymentInfoResolver } from '../resolver/createResolver.js'
 import {
   createEventProvider,
-  createRecorderProvider,
+  createHookProvider,
   createStoreProvider,
 } from '../resolver/providers.js'
 import type { PaymentInfoProvider } from '../resolver/types.js'
@@ -18,7 +18,7 @@ export function createQueryActions(
     providers.push(createStoreProvider(config.paymentStore))
   }
 
-  providers.push(createRecorderProvider(config.publicClient, hookAddress))
+  providers.push(createHookProvider(config.publicClient, hookAddress))
 
   if (config.eventFromBlock !== undefined) {
     providers.push(
