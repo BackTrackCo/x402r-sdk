@@ -1,4 +1,5 @@
 import type { Address, PublicClient } from 'viem'
+import { getAddress } from 'viem'
 import { paymentIndexRecorderHookAbi } from '../../abis/generated.js'
 import type { PaymentInfo } from '../../types/index.js'
 import { wrapContractCall } from '../_internal/error-wrapping.js'
@@ -46,8 +47,14 @@ export async function getPayerPaymentsFromHook(
   )
 
   const all = payments as unknown as PaymentInfo[]
-  const filtered = operatorAddress
-    ? all.filter((p) => p.operator === operatorAddress)
+  // Normalize to checksummed form before compare (caller may pass lowercased).
+  // getAddress is called once on operatorAddress; per-payment operators are
+  // already checksummed when returned by the contract.
+  const normalizedOperator = operatorAddress
+    ? getAddress(operatorAddress)
+    : undefined
+  const filtered = normalizedOperator
+    ? all.filter((p) => getAddress(p.operator) === normalizedOperator)
     : all
   return { payments: filtered, total }
 }

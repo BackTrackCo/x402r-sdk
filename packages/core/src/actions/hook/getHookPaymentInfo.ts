@@ -1,5 +1,5 @@
 import type { Address, Hex, PublicClient } from 'viem'
-import { zeroAddress } from 'viem'
+import { getAddress, zeroAddress } from 'viem'
 import { paymentIndexRecorderHookAbi } from '../../abis/generated.js'
 import type { PaymentInfo } from '../../types/index.js'
 import { wrapContractCall } from '../_internal/error-wrapping.js'
@@ -36,7 +36,14 @@ export async function getHookPaymentInfo(
   if (info.operator === zeroAddress) {
     return null
   }
-  if (operatorAddress && info.operator !== operatorAddress) {
+  // Normalize to checksummed form before compare — the chain returns
+  // checksummed addresses but caller-supplied `operatorAddress` may be
+  // lowercased (e.g. from URL params or env vars). Strict `===` against
+  // the raw values would silently miss matches.
+  if (
+    operatorAddress &&
+    getAddress(info.operator) !== getAddress(operatorAddress)
+  ) {
     return null
   }
   return info

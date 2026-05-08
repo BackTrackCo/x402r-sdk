@@ -1,3 +1,4 @@
+import { getAddress } from 'viem'
 import { describe, expect, it } from 'vitest'
 import { getHookPaymentInfo } from '../src/actions/hook/getHookPaymentInfo.js'
 import { getPayerPayment } from '../src/actions/hook/getPayerPayment.js'
@@ -325,6 +326,105 @@ describe('getPayerPayment / getReceiverPayment — operatorAddress filter', () =
       receiver: TEST_ADDRESSES.receiver,
       index: 0n,
       operatorAddress: OPERATOR_A,
+    })
+
+    expect(result).toEqual(opA)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// operatorAddress case-sensitivity (regression guard)
+// ---------------------------------------------------------------------------
+//
+// On-chain reads return checksummed addresses; caller-supplied
+// `operatorAddress` may be lowercased (URL params, env vars). All five hook
+// reads must normalize via getAddress() before strict-equal compare or the
+// filter silently returns empty/null on case mismatch.
+
+describe('operatorAddress case-sensitivity', () => {
+  // OPERATOR_A above is fully lowercased; derive its EIP-55 checksum form
+  // via getAddress() so the mock returns the canonical on-chain casing while
+  // the caller passes the lowercased form. The filter MUST treat them as
+  // equal — strict `===` would silently miss matches.
+  const OPERATOR_A_LOWER = OPERATOR_A
+  const OPERATOR_A_CHECKSUMMED = getAddress(OPERATOR_A)
+
+  it('getPayerPaymentsFromHook matches lowercased caller arg against checksummed on-chain operator', async () => {
+    const opA = makePaymentInfo({ operator: OPERATOR_A_CHECKSUMMED })
+    const client = createMockPublicClient({
+      getPayerPayments: [[opA], 1n],
+    })
+
+    const result = await getPayerPaymentsFromHook(client, {
+      hookAddress: RECORDER_ADDRESS,
+      payer: TEST_ADDRESSES.payer,
+      offset: 0n,
+      count: 100n,
+      operatorAddress: OPERATOR_A_LOWER,
+    })
+
+    expect(result.payments).toHaveLength(1)
+  })
+
+  it('getReceiverPaymentsFromHook matches lowercased caller arg', async () => {
+    const opA = makePaymentInfo({ operator: OPERATOR_A_CHECKSUMMED })
+    const client = createMockPublicClient({
+      getReceiverPayments: [[opA], 1n],
+    })
+
+    const result = await getReceiverPaymentsFromHook(client, {
+      hookAddress: RECORDER_ADDRESS,
+      receiver: TEST_ADDRESSES.receiver,
+      offset: 0n,
+      count: 50n,
+      operatorAddress: OPERATOR_A_LOWER,
+    })
+
+    expect(result.payments).toHaveLength(1)
+  })
+
+  it('getHookPaymentInfo matches lowercased caller arg', async () => {
+    const opA = makePaymentInfo({ operator: OPERATOR_A_CHECKSUMMED })
+    const client = createMockPublicClient({
+      getPaymentInfo: opA,
+    })
+
+    const result = await getHookPaymentInfo(client, {
+      hookAddress: RECORDER_ADDRESS,
+      hash: '0xdeadbeef',
+      operatorAddress: OPERATOR_A_LOWER,
+    })
+
+    expect(result).toEqual(opA)
+  })
+
+  it('getPayerPayment matches lowercased caller arg', async () => {
+    const opA = makePaymentInfo({ operator: OPERATOR_A_CHECKSUMMED })
+    const client = createMockPublicClient({
+      getPayerPayment: opA,
+    })
+
+    const result = await getPayerPayment(client, {
+      hookAddress: RECORDER_ADDRESS,
+      payer: TEST_ADDRESSES.payer,
+      index: 0n,
+      operatorAddress: OPERATOR_A_LOWER,
+    })
+
+    expect(result).toEqual(opA)
+  })
+
+  it('getReceiverPayment matches lowercased caller arg', async () => {
+    const opA = makePaymentInfo({ operator: OPERATOR_A_CHECKSUMMED })
+    const client = createMockPublicClient({
+      getReceiverPayment: opA,
+    })
+
+    const result = await getReceiverPayment(client, {
+      hookAddress: RECORDER_ADDRESS,
+      receiver: TEST_ADDRESSES.receiver,
+      index: 0n,
+      operatorAddress: OPERATOR_A_LOWER,
     })
 
     expect(result).toEqual(opA)
