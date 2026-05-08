@@ -83,19 +83,19 @@ describe('Operator Read Operations', () => {
     expect(config.feeCalculator.toLowerCase()).toBe(
       fixtures.feeCalculatorAddress.toLowerCase(),
     )
-    expect(config.feeRecipient.toLowerCase()).toBe(
+    expect(config.feeReceiver.toLowerCase()).toBe(
       testRoles.operatorFeeRecipient.address.toLowerCase(),
     )
-    expect(config.releaseCondition.toLowerCase()).toBe(
+    expect(config.captureCondition.toLowerCase()).toBe(
       fixtures.escrowPeriodAddress.toLowerCase(),
     )
-    expect(config.authorizeRecorder.toLowerCase()).toBe(
+    expect(config.authorizeHook.toLowerCase()).toBe(
       fixtures.escrowPeriodAddress.toLowerCase(),
     )
     // Unset slots should be zero
     expect(config.chargeCondition).toBe(zeroAddress)
-    expect(config.chargeRecorder).toBe(zeroAddress)
-    expect(config.refundInEscrowCondition).toBe(zeroAddress)
+    expect(config.chargeHook).toBe(zeroAddress)
+    expect(config.voidCondition).toBe(zeroAddress)
   })
 
   it('getEscrowAddress returns escrow', async () => {
@@ -107,10 +107,10 @@ describe('Operator Read Operations', () => {
     )
   })
 
-  it('getConditionAddress reads RELEASE_CONDITION', async () => {
+  it('getConditionAddress reads CAPTURE_PRE_ACTION_CONDITION', async () => {
     const addr = await getConditionAddress(publicClient, {
       operatorAddress: fixtures.operatorAddress,
-      slot: 'RELEASE_CONDITION',
+      slot: 'CAPTURE_PRE_ACTION_CONDITION',
     })
     expect(addr.toLowerCase()).toBe(fixtures.escrowPeriodAddress.toLowerCase())
   })
@@ -174,10 +174,10 @@ describe('Fee Read Operations', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Scenario 1: Authorize -> Release after escrow
+// Scenario 1: Authorize -> Capture after escrow
 // ---------------------------------------------------------------------------
 
-describe('Scenario 1: Authorize -> Release after escrow', () => {
+describe('Scenario 1: Authorize -> Capture after escrow', () => {
   it('authorize creates a capturable payment', async () => {
     const { collectorData, tokenCollector } = await createCollectorData(
       anvilBaseSepolia.getWalletClient(testRoles.payer.address),
@@ -197,17 +197,21 @@ describe('Scenario 1: Authorize -> Release after escrow', () => {
     expect(amounts.capturableAmount).toBeGreaterThan(0n)
   }, 60_000)
 
-  it('release after escrow marks payment as collected', async () => {
+  it('capture after escrow marks payment as fully captured', async () => {
     // Fast-forward past the 7-day escrow period
     await testClient.increaseTime({ seconds: ESCROW_FAST_FORWARD })
     await testClient.mine({ blocks: 1 })
 
-    const hash = await merchant.payment.release(paymentInfo, DEFAULT_AMOUNT)
+    const hash = await merchant.payment.capture(
+      paymentInfo,
+      DEFAULT_AMOUNT,
+      '0x',
+    )
     await publicClient.waitForTransactionReceipt({ hash })
 
     const amounts = await merchant.payment.getAmounts(paymentInfo)
     expect(amounts.hasCollectedPayment).toBe(true)
-    // After release, capturable should be 0 (funds released from escrow)
+    // After capture, capturable should be 0 (funds moved from escrow to receiver)
     expect(amounts.capturableAmount).toBe(0n)
   }, 60_000)
 })

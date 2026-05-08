@@ -85,22 +85,22 @@ beforeAll(async () => {
   })
   paymentIndexRecorderHookAddress = receipt.contractAddress!
 
-  // 2. Deploy PaymentOperator with PaymentIndexRecorderHook as authorizeRecorder
-  //    Note: Using recorder directly (not combinator) — release won't work
+  // 2. Deploy PaymentOperator with PaymentIndexRecorderHook as authorizePostActionHook
+  //    Note: Using hook directly (not combinator) — capture won't work
   //    without EscrowPeriod, but this test only needs authorize + query.
   const operatorConfig = {
-    feeRecipient: testRoles.operatorFeeRecipient.address,
+    feeReceiver: testRoles.operatorFeeRecipient.address,
     feeCalculator: fixtures.feeCalculatorAddress,
-    authorizeCondition: zeroAddress,
-    authorizeRecorder: paymentIndexRecorderHookAddress,
-    chargeCondition: zeroAddress,
-    chargeRecorder: zeroAddress,
-    releaseCondition: zeroAddress,
-    releaseRecorder: zeroAddress,
-    refundInEscrowCondition: zeroAddress,
-    refundInEscrowRecorder: zeroAddress,
-    refundPostEscrowCondition: baseSepolia.conditions.receiver,
-    refundPostEscrowRecorder: zeroAddress,
+    authorizePreActionCondition: zeroAddress,
+    authorizePostActionHook: paymentIndexRecorderHookAddress,
+    chargePreActionCondition: zeroAddress,
+    chargePostActionHook: zeroAddress,
+    capturePreActionCondition: zeroAddress,
+    capturePostActionHook: zeroAddress,
+    voidPreActionCondition: zeroAddress,
+    voidPostActionHook: zeroAddress,
+    refundPreActionCondition: baseSepolia.conditions.receiver,
+    refundPostActionHook: zeroAddress,
   } as const
 
   const opDeployHash = await deployerWallet.writeContract({

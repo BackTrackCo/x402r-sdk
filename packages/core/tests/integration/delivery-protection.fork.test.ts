@@ -59,7 +59,7 @@ beforeAll(async () => {
     {
       chainId: 84532,
       arbiter: testRoles.arbiter.address,
-      feeRecipient: testRoles.operatorFeeRecipient.address,
+      feeReceiver: testRoles.operatorFeeRecipient.address,
       escrowPeriodSeconds: ESCROW_PERIOD_SECONDS,
       allowArbiterRefund: true,
     },
@@ -115,20 +115,20 @@ describe('Delivery Protection: operator config verification', () => {
       operatorAddress: deployment.operatorAddress,
     })
 
-    // releaseCondition: OrCondition([SAC(arbiter), PayerCondition])
-    expect(config.releaseCondition.toLowerCase()).toBe(
+    // captureCondition: OrCondition([SAC(arbiter), PayerCondition])
+    expect(config.captureCondition.toLowerCase()).toBe(
       deployment.releaseConditionAddress.toLowerCase(),
     )
-    expect(config.releaseCondition).not.toBe(zeroAddress)
+    expect(config.captureCondition).not.toBe(zeroAddress)
 
-    // refundInEscrowCondition: OrCondition([EscrowPeriod, ReceiverCondition, SAC(arbiter)])
-    expect(config.refundInEscrowCondition.toLowerCase()).toBe(
-      deployment.refundInEscrowConditionAddress.toLowerCase(),
+    // voidCondition: OrCondition([EscrowPeriod, ReceiverCondition, SAC(arbiter)])
+    expect(config.voidCondition.toLowerCase()).toBe(
+      deployment.voidConditionAddress.toLowerCase(),
     )
-    expect(config.refundInEscrowCondition).not.toBe(zeroAddress)
+    expect(config.voidCondition).not.toBe(zeroAddress)
 
-    // authorizeRecorder: EscrowPeriod (or HookCombinator when PaymentIndexRecorderHook available)
-    expect(config.authorizeRecorder.toLowerCase()).toBe(
+    // authorizeHook: EscrowPeriod (or HookCombinator when PaymentIndexRecorderHook available)
+    expect(config.authorizeHook.toLowerCase()).toBe(
       deployment.authorizeHookAddress.toLowerCase(),
     )
 
@@ -194,7 +194,7 @@ describe('Delivery Protection: arbiter-gated release', () => {
     expect(amounts.capturableAmount).toBeGreaterThan(0n)
   }, 60_000)
 
-  it('payer releases their own payment', async () => {
+  it('payer captures their own payment', async () => {
     const newPaymentInfo = { ...paymentInfo, salt: 201n }
     const { collectorData, tokenCollector } = await createCollectorData(
       anvilBaseSepolia.getWalletClient(testRoles.payer.address),
@@ -209,22 +209,41 @@ describe('Delivery Protection: arbiter-gated release', () => {
     )
     await publicClient.waitForTransactionReceipt({ hash: authHash })
 
-    const releaseHash = await payerClient.payment.release(
+    // PayerClient.payment correctly excludes capture from its public surface,
+    // but on this delivery-protection operator the payer is in the OR-gated
+    // captureCondition. Use a full client to exercise that on-chain capability.
+    const payerFullClient = createX402r({
+      publicClient,
+      walletClient: anvilBaseSepolia.getWalletClient(testRoles.payer.address),
+      operatorAddress: deployment.operatorAddress,
+      escrowPeriodAddress: deployment.escrowPeriodAddress,
+    })
+    const captureHash = await payerFullClient.payment.capture(
       newPaymentInfo,
       DEFAULT_AMOUNT,
+      '0x',
     )
-    await publicClient.waitForTransactionReceipt({ hash: releaseHash })
+    await publicClient.waitForTransactionReceipt({ hash: captureHash })
 
     const amounts = await merchant.payment.getAmounts(newPaymentInfo)
     expect(amounts.capturableAmount).toBe(0n)
   }, 60_000)
 
-  it('arbiter releases funds (no escrow wait required)', async () => {
-    // Arbiter can release immediately — releaseCondition is
+  it('arbiter captures funds (no escrow wait required)', async () => {
+    // Arbiter can capture immediately — captureCondition is
     // OrCondition([SAC(arbiter), PayerCondition]), no time delay needed.
-    const hash = await arbiterClient.payment.release(
+    // ArbiterClient.payment correctly excludes capture; use a full client
+    // to exercise the arbiter's on-chain capture authority.
+    const arbiterFullClient = createX402r({
+      publicClient,
+      walletClient: anvilBaseSepolia.getWalletClient(testRoles.arbiter.address),
+      operatorAddress: deployment.operatorAddress,
+      escrowPeriodAddress: deployment.escrowPeriodAddress,
+    })
+    const hash = await arbiterFullClient.payment.capture(
       paymentInfo,
       DEFAULT_AMOUNT,
+      '0x',
     )
     await publicClient.waitForTransactionReceipt({ hash })
 
@@ -234,11 +253,11 @@ describe('Delivery Protection: arbiter-gated release', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Arbiter immediate refund (FAIL-fast): arbiter calls refundInEscrow()
+// Arbiter immediate void (FAIL-fast): arbiter calls voidPayment()
 // without waiting for escrow period
 // ---------------------------------------------------------------------------
 
-describe('Delivery Protection: arbiter immediate refund', () => {
+describe('Delivery Protection: arbiter immediate void', () => {
   let arbiterRefundPaymentInfo: PaymentInfo
 
   beforeAll(async () => {
@@ -257,11 +276,10 @@ describe('Delivery Protection: arbiter immediate refund', () => {
     await publicClient.waitForTransactionReceipt({ hash })
   }, 60_000)
 
-  it('arbiter refunds immediately without escrow wait', async () => {
-    // No time-forwarding — arbiter is in the OrCondition, can refund immediately
-    const hash = await arbiterClient.payment.refundInEscrow(
+  it('arbiter voids immediately without escrow wait', async () => {
+    // No time-forwarding — arbiter is in the OrCondition, can void immediately
+    const hash = await arbiterClient.payment.voidPayment(
       arbiterRefundPaymentInfo,
-      DEFAULT_AMOUNT,
     )
     await publicClient.waitForTransactionReceipt({ hash })
 
@@ -271,10 +289,10 @@ describe('Delivery Protection: arbiter immediate refund', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Receiver voluntary refund: merchant calls refundInEscrow() during escrow
+// Receiver voluntary void: merchant calls voidPayment() during escrow
 // ---------------------------------------------------------------------------
 
-describe('Delivery Protection: receiver voluntary refund', () => {
+describe('Delivery Protection: receiver voluntary void', () => {
   let receiverRefundPaymentInfo: PaymentInfo
 
   beforeAll(async () => {
@@ -293,12 +311,9 @@ describe('Delivery Protection: receiver voluntary refund', () => {
     await publicClient.waitForTransactionReceipt({ hash })
   }, 60_000)
 
-  it('receiver refunds during escrow without arbiter', async () => {
-    // No time-forwarding — receiver is in the OrCondition, can refund immediately
-    const hash = await merchant.payment.refundInEscrow(
-      receiverRefundPaymentInfo,
-      DEFAULT_AMOUNT,
-    )
+  it('receiver voids during escrow without arbiter', async () => {
+    // No time-forwarding — receiver is in the OrCondition, can void immediately
+    const hash = await merchant.payment.voidPayment(receiverRefundPaymentInfo)
     await publicClient.waitForTransactionReceipt({ hash })
 
     const amounts = await merchant.payment.getAmounts(receiverRefundPaymentInfo)
@@ -307,10 +322,10 @@ describe('Delivery Protection: receiver voluntary refund', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Timeout path: authorize → escrow expires → anyone calls refundInEscrow()
+// Timeout path: authorize → escrow expires → anyone calls voidPayment()
 // ---------------------------------------------------------------------------
 
-describe('Delivery Protection: timeout auto-refund', () => {
+describe('Delivery Protection: timeout auto-void', () => {
   let timeoutPaymentInfo: PaymentInfo
 
   beforeAll(async () => {
@@ -330,14 +345,20 @@ describe('Delivery Protection: timeout auto-refund', () => {
     await publicClient.waitForTransactionReceipt({ hash })
   }, 60_000)
 
-  it('refundInEscrow succeeds after escrow expires', async () => {
+  it('voidPayment succeeds after escrow expires', async () => {
     await testClient.increaseTime({ seconds: ESCROW_FAST_FORWARD })
     await testClient.mine({ blocks: 1 })
 
-    const hash = await payerClient.payment.refundInEscrow(
-      timeoutPaymentInfo,
-      DEFAULT_AMOUNT,
-    )
+    // PayerClient.payment correctly excludes voidPayment; after escrow expires
+    // the EscrowPeriod leg of voidCondition allows any caller, so use a full
+    // client wrapping the payer's wallet for this call.
+    const payerFullClient = createX402r({
+      publicClient,
+      walletClient: anvilBaseSepolia.getWalletClient(testRoles.payer.address),
+      operatorAddress: deployment.operatorAddress,
+      escrowPeriodAddress: deployment.escrowPeriodAddress,
+    })
+    const hash = await payerFullClient.payment.voidPayment(timeoutPaymentInfo)
     await publicClient.waitForTransactionReceipt({ hash })
 
     const amounts = await merchant.payment.getAmounts(timeoutPaymentInfo)

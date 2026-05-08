@@ -61,11 +61,11 @@ beforeAll(async () => {
 }, 60_000)
 
 // ---------------------------------------------------------------------------
-// Scenario 7: Post-release refund (Flow 4)
+// Scenario 7: Post-capture refund (Flow 4)
 // ---------------------------------------------------------------------------
 
-describe('Scenario 7: Post-release refund (Flow 4)', () => {
-  it('authorize and release payment to receiver', async () => {
+describe('Scenario 7: Post-capture refund (Flow 4)', () => {
+  it('authorize and capture payment to receiver', async () => {
     const { collectorData, tokenCollector } = await createCollectorData(
       anvilBaseSepolia.getWalletClient(testRoles.payer.address),
       paymentInfo,
@@ -82,31 +82,32 @@ describe('Scenario 7: Post-release refund (Flow 4)', () => {
     await testClient.increaseTime({ seconds: ESCROW_FAST_FORWARD })
     await testClient.mine({ blocks: 1 })
 
-    const releaseHash = await merchant.payment.release(
+    const captureHash = await merchant.payment.capture(
       paymentInfo,
       DEFAULT_AMOUNT,
+      '0x',
     )
-    await publicClient.waitForTransactionReceipt({ hash: releaseHash })
+    await publicClient.waitForTransactionReceipt({ hash: captureHash })
 
     const amounts = await merchant.payment.getAmounts(paymentInfo)
     expect(amounts.capturableAmount).toBe(0n)
   }, 60_000)
 
-  it('receiver approves post-escrow refund budget', async () => {
-    const approveHash = await merchant.payment.approvePostEscrowRefund(
+  it('receiver approves refund allowance for ReceiverRefundCollector', async () => {
+    const approveHash = await merchant.payment.approveRefundAllowance(
       USDC,
       REFUND_AMOUNT,
     )
     await publicClient.waitForTransactionReceipt({ hash: approveHash })
 
-    const allowance = await merchant.payment.getPostEscrowRefundAllowance(
+    const allowance = await merchant.payment.getRefundAllowance(
       USDC,
       testRoles.receiver.address,
     )
     expect(allowance).toBe(REFUND_AMOUNT)
   }, 60_000)
 
-  it('refundPostEscrow transfers funds back to payer', async () => {
+  it('refund transfers funds back to payer via ReceiverRefundCollector', async () => {
     const receiverRefundCollector = baseSepolia.receiverRefundCollector
 
     const payerBalanceBefore = await publicClient.readContract({
@@ -116,7 +117,7 @@ describe('Scenario 7: Post-release refund (Flow 4)', () => {
       args: [testRoles.payer.address],
     })
 
-    const refundHash = await merchant.payment.refundPostEscrow(
+    const refundHash = await merchant.payment.refund(
       paymentInfo,
       REFUND_AMOUNT,
       receiverRefundCollector,
