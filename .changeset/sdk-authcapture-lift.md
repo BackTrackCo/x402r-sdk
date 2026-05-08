@@ -70,6 +70,20 @@ If the merchant doesn't carry a standing allowance, fall back to full void.
 
 ---
 
+## Cross-operator data scoping
+
+`PaymentIndexRecorderHook` is a chain singleton — one address per chain shared by every operator that routes through `HookCombinator`. The SDK's `query.*` methods (`getPayerPayments`, `getReceiverPayments`, `getPayment`) automatically scope hook reads to the SDK's configured `operatorAddress`, matching how `createEventProvider` already works. Multi-operator deployments no longer get mingled records by default.
+
+Direct callers of `@x402r/core/actions/hook/*` (`getPayerPaymentsFromHook`, `getReceiverPaymentsFromHook`, `getHookPaymentInfo`, `getPayerPayment`, `getReceiverPayment`) must pass `operatorAddress` explicitly to opt into filtering — by default these return unfiltered (mingled) data matching the contract behavior.
+
+Caveat: the on-chain `total` count returned by `getPayerPaymentsFromHook` and `getReceiverPaymentsFromHook` reflects the unfiltered count even when the returned `payments` array is filtered. Callers needing per-operator-accurate totals must paginate fully and count filtered results client-side. Per-operator-accurate totals would require contract changes (out of scope).
+
+Breaking change: `getPayerPayment` and `getReceiverPayment` (single-record-by-index reads) return type narrowed from `Promise<PaymentInfo>` to `Promise<PaymentInfo | null>` to surface mismatches when `operatorAddress` is set.
+
+`createHookProvider` signature changed: third arg is now `options?: { pageSize?, operatorAddress? }` instead of positional `pageSize?`. Internal-only — not exported from `@x402r/sdk`.
+
+---
+
 ## Out of scope (PR 2/3/4 per `x402r-notes/plans/AUTHCAPTURE_SDK_MIGRATION.md`)
 
 - `@x402r/helpers` scheme filter `'commerce' → 'authCapture'` (PR 2)

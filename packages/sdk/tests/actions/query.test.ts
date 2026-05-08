@@ -178,6 +178,7 @@ describe('createQueryActions', () => {
     expect(createHookProvider).toHaveBeenCalledWith(
       config.publicClient,
       TEST_RECORDER,
+      { operatorAddress: config.operatorAddress },
     )
     expect(createEventProvider).toHaveBeenCalledWith(
       config.publicClient,

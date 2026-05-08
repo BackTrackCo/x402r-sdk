@@ -173,6 +173,15 @@ export interface FreezeActions {
   isFrozen(paymentInfo: PaymentInfo): Promise<boolean>
 }
 
+/**
+ * Reads payments from the configured PaymentIndexRecorderHook (and optional
+ * event/store providers as fallback). Results are auto-scoped to the SDK's
+ * configured `operatorAddress` — the hook is a chain singleton aggregating
+ * across every operator routing through HookCombinator, and the SDK filters
+ * caller-side to match the configured operator. Direct callers of
+ * `@x402r/core/actions/hook/*` must pass `operatorAddress` explicitly to
+ * opt into the same scoping.
+ */
 export interface QueryActions {
   getPayerPayments(payer: Address): Promise<PaymentInfo[]>
   getReceiverPayments(receiver: Address): Promise<PaymentInfo[]>

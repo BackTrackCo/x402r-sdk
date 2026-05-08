@@ -23,46 +23,61 @@ export function createStoreProvider(store: PaymentStore): PaymentInfoProvider {
 /** Default page size for hook pagination. */
 const DEFAULT_PAGE_SIZE = 1000n
 
+export interface CreateHookProviderOptions {
+  /** Page size for paginated reads. Default: 1000. */
+  pageSize?: bigint
+  /**
+   * If set, scopes hook reads to this operator. The canonical
+   * `PaymentIndexRecorderHook` is a chain singleton aggregating across every
+   * operator routing through HookCombinator; without this option, multi-operator
+   * deployments receive mingled records. Pagination remains correct because
+   * offset is advanced by the requested page size, not by post-filter length.
+   */
+  operatorAddress?: Address
+}
+
 export function createHookProvider(
   publicClient: PublicClient,
   hookAddress: Address,
-  pageSize: bigint = DEFAULT_PAGE_SIZE,
+  options: CreateHookProviderOptions = {},
 ): PaymentInfoProvider {
+  const pageSize = options.pageSize ?? DEFAULT_PAGE_SIZE
+  const operatorAddress = options.operatorAddress
   return {
     name: 'hook',
     async getByPayer(_, payer) {
       const all: PaymentInfo[] = []
       let offset = 0n
-      let total: bigint
+      let total = 0n
       do {
         const result = await getPayerPaymentsFromHook(publicClient, {
           hookAddress,
           payer,
           offset,
           count: pageSize,
+          operatorAddress,
         })
-        if (result.payments.length === 0) break
         all.push(...result.payments)
         total = result.total
-        offset += BigInt(result.payments.length)
+        offset += pageSize
       } while (offset < total)
       return all
     },
     async getByReceiver(_, receiver) {
       const all: PaymentInfo[] = []
       let offset = 0n
-      let total: bigint
+      let total = 0n
       do {
         const result = await getReceiverPaymentsFromHook(publicClient, {
           hookAddress,
           receiver,
           offset,
           count: pageSize,
+          operatorAddress,
         })
-        if (result.payments.length === 0) break
         all.push(...result.payments)
         total = result.total
-        offset += BigInt(result.payments.length)
+        offset += pageSize
       } while (offset < total)
       return all
     },
@@ -70,6 +85,7 @@ export function createHookProvider(
       return getHookPaymentInfo(publicClient, {
         hookAddress,
         hash,
+        operatorAddress,
       })
     },
   }
