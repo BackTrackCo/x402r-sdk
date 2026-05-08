@@ -32,6 +32,13 @@ const DEFAULT_PAGE_SIZE = 1000n
  *   option, multi-operator deployments receive mingled records. Pagination
  *   remains correct because offset is advanced by the requested page size,
  *   not by post-filter length.
+ *
+ * Perf caveat: `total` from the hook contract is the unfiltered cross-
+ * operator count. When `operatorAddress` is set against a heavily-shared
+ * singleton (many co-tenants), the loop issues one RPC per page across the
+ * full unfiltered range and discards most results client-side. Acceptable
+ * at small scale; cursor-based pagination on the hook contract is the real
+ * fix and is intended follow-up work.
  */
 export function createHookProvider(
   publicClient: PublicClient,

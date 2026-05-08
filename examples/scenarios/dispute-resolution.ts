@@ -133,8 +133,11 @@ async function main() {
     runner.step('Merchant executes voidPayment (hook approves)')
 
     // voidPayment empties the entire authorization in one transaction
-    // (escrow.void is full-only — partial in-escrow refunds use
-    // capture-then-refund via ReceiverRefundCollector instead).
+    // (escrow.void is full-only). For partial in-escrow refunds use the
+    // partial-capture pattern: capture(merchantAmount) leaves the remainder
+    // in escrow, then voidPayment() returns it to the payer (no allowance,
+    // no ReceiverRefundCollector). See the changeset migration note + the
+    // .extend() example in packages/sdk/README.md.
     const refundTx = await ctx.merchant.payment.voidPayment(ctx.paymentInfo)
     await runner.waitForTx(refundTx)
 
