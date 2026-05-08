@@ -68,7 +68,11 @@ const CHAIN_ID = 84532
 const chainConfig = getChainConfig(CHAIN_ID)
 const USDC = chainConfig.usdc
 const USDC_BALANCE_SLOT = 9n
-const FORK_BLOCK = 41_280_000n
+// FORK_BLOCK left undefined — Base Sepolia public RPC has a narrow archive
+// horizon (~last few hundred blocks); pinning a historical block fails with
+// "block not found" once the chain moves past it. Examples fork at upstream's
+// latest by default.
+const FORK_BLOCK: bigint | undefined = undefined
 const ANVIL_PORT = 8846
 
 // ---------------------------------------------------------------------------

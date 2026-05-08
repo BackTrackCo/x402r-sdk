@@ -23,23 +23,20 @@ export function createStoreProvider(store: PaymentStore): PaymentInfoProvider {
 /** Default page size for hook pagination. */
 const DEFAULT_PAGE_SIZE = 1000n
 
-export interface CreateHookProviderOptions {
-  /** Page size for paginated reads. Default: 1000. */
-  pageSize?: bigint
-  /**
-   * If set, scopes hook reads to this operator. The canonical
-   * `PaymentIndexRecorderHook` is a chain singleton aggregating across every
-   * operator routing through HookCombinator; without this option, multi-operator
-   * deployments receive mingled records. Pagination remains correct because
-   * offset is advanced by the requested page size, not by post-filter length.
-   */
-  operatorAddress?: Address
-}
-
+/**
+ * Options for `createHookProvider`.
+ * - `pageSize`: page size for paginated reads (default 1000).
+ * - `operatorAddress`: if set, scopes hook reads to this operator. The
+ *   canonical `PaymentIndexRecorderHook` is a chain singleton aggregating
+ *   across every operator routing through HookCombinator; without this
+ *   option, multi-operator deployments receive mingled records. Pagination
+ *   remains correct because offset is advanced by the requested page size,
+ *   not by post-filter length.
+ */
 export function createHookProvider(
   publicClient: PublicClient,
   hookAddress: Address,
-  options: CreateHookProviderOptions = {},
+  options: { pageSize?: bigint; operatorAddress?: Address } = {},
 ): PaymentInfoProvider {
   const pageSize = options.pageSize ?? DEFAULT_PAGE_SIZE
   const operatorAddress = options.operatorAddress
