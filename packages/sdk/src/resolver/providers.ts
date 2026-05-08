@@ -52,7 +52,7 @@ export function createHookProvider(
     async getByPayer(_, payer) {
       const all: PaymentInfo[] = []
       let offset = 0n
-      let total = 0n
+      let total: bigint
       do {
         const result = await getPayerPaymentsFromHook(publicClient, {
           hookAddress,
@@ -70,7 +70,7 @@ export function createHookProvider(
     async getByReceiver(_, receiver) {
       const all: PaymentInfo[] = []
       let offset = 0n
-      let total = 0n
+      let total: bigint
       do {
         const result = await getReceiverPaymentsFromHook(publicClient, {
           hookAddress,
