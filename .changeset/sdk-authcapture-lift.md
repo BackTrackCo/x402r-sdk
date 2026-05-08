@@ -53,20 +53,36 @@ Breaking changes — clean break, no shims:
 
 ## Migration: partial in-escrow refund (R-25)
 
-The new `escrow.void()` is full-only — calling it empties the entire authorization in one transaction regardless of any amount the caller intends to refund. Under canonical `VOID_POST_ACTION_HOOK` wiring, "payer requests $30 refund on a $100 authorization" now ends with the payer receiving the full $100 and the merchant getting nothing. The replacement is **capture-then-refund**:
+The new `escrow.void()` is full-only — calling it empties the entire authorization in one transaction. Partial refunds while funds are still in escrow no longer have a single-call equivalent. The replacement is **partial capture** — capture only the amount the merchant intends to keep, then void the remainder back to the payer:
 
 ```ts
-// 1. Merchant captures the full authorization first
-await client.payment.capture(paymentInfo, fullAmount, data)
+// Old (single call, no longer supported):
+//   await client.payment.refundInEscrow(paymentInfo, partialAmount)
 
-// 2. Merchant refunds the partial amount via ReceiverRefundCollector
-//    (requires the merchant to have pre-staked an ERC-20 allowance on
-//    ReceiverRefundCollector at SDK setup time)
-await token.approve(receiverRefundCollector, partialAmount) // one-time setup
-await client.payment.refund(paymentInfo, partialAmount, receiverRefundCollector, encodedData)
+// New (two calls, no allowance / collector setup):
+const { capturableAmount } = await client.payment.getAmounts(paymentInfo)
+const merchantAmount = capturableAmount - refundToPayer
+
+// 1. Capture only what the merchant keeps
+//    (decrements escrow.capturableAmount by merchantAmount)
+await client.payment.capture(paymentInfo, merchantAmount, '0x')
+
+// 2. Void what's left — returns the remaining escrowed amount to the payer
+//    (atomically settles any pending RefundRequest via the voidPostActionHook)
+await client.payment.voidPayment(paymentInfo)
 ```
 
-If the merchant doesn't carry a standing allowance, fall back to full void.
+This matches the canonical authCapture semantics: `capture` is incremental (can be called multiple times up to the cumulative authorized amount), and `void` zeros out the remaining `capturableAmount`. No `ReceiverRefundCollector` allowance, no merchant capital movement, no separate refund flow.
+
+For **post-capture refunds** (after the merchant has already captured and wants to refund a customer), use the post-escrow flow:
+
+```ts
+// One-time setup: pre-stake an ERC-20 allowance on ReceiverRefundCollector
+await client.payment.approveRefundAllowance(token, allowanceAmount)
+
+// Refund any amount up to the standing allowance
+await client.payment.refund(paymentInfo, refundAmount, receiverRefundCollector, encodedData)
+```
 
 ---
 

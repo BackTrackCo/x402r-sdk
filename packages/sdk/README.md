@@ -68,11 +68,26 @@ const x402r = createX402r({ publicClient, walletClient, operatorAddress: '0x…'
         const cid = await ipfsUpload(JSON.stringify(evidence))
         return client.evidence.submit(paymentInfo, nonce, cid)
       },
-      async resolve(paymentInfo: PaymentInfo, nonce: bigint, ruling: 'refund' | 'deny') {
+      async resolve(
+        paymentInfo: PaymentInfo,
+        nonce: bigint,
+        ruling: 'refund' | 'partial-refund' | 'deny',
+        refundAmount?: bigint,
+      ) {
         if (ruling === 'refund') {
           // voidPayment is full-only — empties the entire authorization.
           // The RefundRequest hook (wired as voidPostActionHook) auto-approves
           // any pending payer request as part of the same transaction.
+          return client.payment.voidPayment(paymentInfo)
+        }
+        if (ruling === 'partial-refund' && refundAmount !== undefined) {
+          // Partial in-escrow refund via partial capture: capture only what
+          // the merchant keeps, then void the remainder back to the payer.
+          // Two calls, no allowance, no ReceiverRefundCollector — capture is
+          // incremental (decrements escrow.capturableAmount) and void zeros
+          // whatever's left.
+          const { capturableAmount } = await client.payment.getAmounts(paymentInfo)
+          await client.payment.capture(paymentInfo, capturableAmount - refundAmount, '0x')
           return client.payment.voidPayment(paymentInfo)
         }
         return client.refund.deny(paymentInfo, nonce)
@@ -87,6 +102,7 @@ await x402r.disputes.submitEvidence(
   pinataUpload,
 )
 await x402r.disputes.resolve(paymentInfo, 0n, 'refund')
+await x402r.disputes.resolve(paymentInfo, 0n, 'partial-refund', 30_000_000n) // refund $30 of $100
 ```
 
 Shipped plugins (`escrowPeriodActions`, `freezeActions`) fill optional `escrow`/`freeze` slots. Custom extensions can add any namespace. Extensions cannot override defined base keys.
