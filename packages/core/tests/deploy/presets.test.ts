@@ -764,7 +764,7 @@ describe('previewDeliveryProtectionOperator', () => {
 
     expect(result.escrowPeriodAddress).toBe(escrowAddr)
     expect(result.arbiterConditionAddress).toBe(arbiterCondAddr)
-    expect(result.releaseConditionAddress).toBe(orCondAddr)
+    expect(result.captureConditionAddress).toBe(orCondAddr)
     expect(result.voidConditionAddress).toBe(orCondAddr)
     expect(result.authorizeHookAddress).toBe(combinatorAddr)
     expect(result.operatorConfig.authorizePostActionHook).toBe(combinatorAddr)
@@ -856,7 +856,7 @@ describe('previewDeliveryProtectionOperator', () => {
     )
 
     // Release includes arbiter (arbiter OR payer)
-    expect(result.releaseConditionAddress).toBe(orCondAddr)
+    expect(result.captureConditionAddress).toBe(orCondAddr)
     // RefundInEscrow includes arbiter (escrow period OR receiver OR arbiter)
     expect(result.voidConditionAddress).toBe(orCondAddr)
     expect(result.operatorAddress).toBe(operatorAddr)
@@ -897,7 +897,7 @@ describe('deployDeliveryProtectionOperator', () => {
     expect(result.deployments).toHaveLength(6)
     expect(result.escrowPeriodAddress).toBe(escrowAddr)
     expect(result.arbiterConditionAddress).toBe(arbiterCondAddr)
-    expect(result.releaseConditionAddress).toBe(orCondAddr)
+    expect(result.captureConditionAddress).toBe(orCondAddr)
     expect(result.voidConditionAddress).toBe(orCondAddr)
     expect(result.authorizeHookAddress).toBe(combinatorAddr)
     expect(result.operatorAddress).toBe(operatorAddr)

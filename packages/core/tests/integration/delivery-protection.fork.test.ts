@@ -117,7 +117,7 @@ describe('Delivery Protection: operator config verification', () => {
 
     // captureCondition: OrCondition([SAC(arbiter), PayerCondition])
     expect(config.captureCondition.toLowerCase()).toBe(
-      deployment.releaseConditionAddress.toLowerCase(),
+      deployment.captureConditionAddress.toLowerCase(),
     )
     expect(config.captureCondition).not.toBe(zeroAddress)
 

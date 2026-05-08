@@ -239,7 +239,7 @@ describe('Deploy Delivery Protection Operator (Fork)', () => {
 
     // capturePreActionCondition: OrCondition([SAC(arbiter), PayerCondition])
     expect(preview.operatorConfig.capturePreActionCondition).toBe(
-      preview.releaseConditionAddress,
+      preview.captureConditionAddress,
     )
     // voidPreActionCondition: OrCondition([EscrowPeriod, ReceiverCondition, SAC(arbiter)])
     expect(preview.operatorConfig.voidPreActionCondition).toBe(
@@ -274,8 +274,8 @@ describe('Deploy Delivery Protection Operator (Fork)', () => {
     expect(deployment.arbiterConditionAddress).toBe(
       preview.arbiterConditionAddress,
     )
-    expect(deployment.releaseConditionAddress).toBe(
-      preview.releaseConditionAddress,
+    expect(deployment.captureConditionAddress).toBe(
+      preview.captureConditionAddress,
     )
     expect(deployment.voidConditionAddress).toBe(preview.voidConditionAddress)
     expect(deployment.authorizeHookAddress).toBe(preview.authorizeHookAddress)

@@ -364,7 +364,7 @@ export async function previewMarketplaceOperator(
           conditions: [escrowPeriodAddress, freezeAddress],
         })
       : null
-  const releaseConditionAddress: Address =
+  const captureConditionAddress: Address =
     andConditionAddress ?? escrowPeriodAddress
 
   // Batch 4: operator (depends on everything)
@@ -375,7 +375,7 @@ export async function previewMarketplaceOperator(
     authorizePostActionHook: escrowPeriodAddress,
     chargePreActionCondition: zeroAddress,
     chargePostActionHook: zeroAddress,
-    capturePreActionCondition: releaseConditionAddress,
+    capturePreActionCondition: captureConditionAddress,
     capturePostActionHook: zeroAddress,
     voidPreActionCondition: voidConditionAddress,
     voidPostActionHook: refundRequestAddress,
@@ -1021,7 +1021,7 @@ export interface DeliveryProtectionOperatorPreview {
   operatorAddress: Address
   escrowPeriodAddress: Address
   arbiterConditionAddress: Address
-  releaseConditionAddress: Address
+  captureConditionAddress: Address
   voidConditionAddress: Address
   authorizeHookAddress: Address
   paymentIndexRecorderHookAddress: Address
@@ -1032,7 +1032,7 @@ export interface DeliveryProtectionOperatorDeployment {
   operatorAddress: Address
   escrowPeriodAddress: Address
   arbiterConditionAddress: Address
-  releaseConditionAddress: Address
+  captureConditionAddress: Address
   voidConditionAddress: Address
   authorizeHookAddress: Address
   paymentIndexRecorderHookAddress: Address
@@ -1085,7 +1085,7 @@ export async function previewDeliveryProtectionOperator(
     : [escrowPeriodAddress, singletons.receiver]
 
   // Batch 2 (parallel, depends on batch 1)
-  const [releaseConditionAddress, voidConditionAddress, authorizeHookAddress] =
+  const [captureConditionAddress, voidConditionAddress, authorizeHookAddress] =
     await Promise.all([
       // Release: arbiter OR payer
       computeOrConditionAddress(publicClient, {
@@ -1117,7 +1117,7 @@ export async function previewDeliveryProtectionOperator(
     authorizePostActionHook: authorizeHookAddress,
     chargePreActionCondition: zeroAddress,
     chargePostActionHook: zeroAddress,
-    capturePreActionCondition: releaseConditionAddress,
+    capturePreActionCondition: captureConditionAddress,
     capturePostActionHook: zeroAddress,
     voidPreActionCondition: voidConditionAddress,
     voidPostActionHook: zeroAddress,
@@ -1134,7 +1134,7 @@ export async function previewDeliveryProtectionOperator(
     operatorAddress,
     escrowPeriodAddress,
     arbiterConditionAddress,
-    releaseConditionAddress,
+    captureConditionAddress,
     voidConditionAddress,
     authorizeHookAddress,
     paymentIndexRecorderHookAddress,
@@ -1169,7 +1169,7 @@ export async function deployDeliveryProtectionOperator(
   const {
     escrowPeriodAddress,
     arbiterConditionAddress,
-    releaseConditionAddress,
+    captureConditionAddress,
     voidConditionAddress,
     authorizeHookAddress,
     paymentIndexRecorderHookAddress,
@@ -1281,7 +1281,7 @@ export async function deployDeliveryProtectionOperator(
     const existingDeployments: DeployResult[] = [
       { address: escrowPeriodAddress, hash: null, isNew: false },
       { address: arbiterConditionAddress, hash: null, isNew: false },
-      { address: releaseConditionAddress, hash: null, isNew: false },
+      { address: captureConditionAddress, hash: null, isNew: false },
       { address: voidConditionAddress, hash: null, isNew: false },
       ...(hasCombinator
         ? [{ address: authorizeHookAddress, hash: null, isNew: false }]
@@ -1292,7 +1292,7 @@ export async function deployDeliveryProtectionOperator(
       operatorAddress,
       escrowPeriodAddress,
       arbiterConditionAddress,
-      releaseConditionAddress,
+      captureConditionAddress,
       voidConditionAddress,
       authorizeHookAddress,
       paymentIndexRecorderHookAddress,
@@ -1352,7 +1352,7 @@ export async function deployDeliveryProtectionOperator(
 
   // 3. OrCondition for capture: arbiter OR payer
   trackDeploy(
-    releaseConditionAddress,
+    captureConditionAddress,
     exists.releaseCondition,
     factoryAddrs.orCondition,
     orConditionFactoryAbi,
@@ -1410,7 +1410,7 @@ export async function deployDeliveryProtectionOperator(
     operatorAddress,
     escrowPeriodAddress,
     arbiterConditionAddress,
-    releaseConditionAddress,
+    captureConditionAddress,
     voidConditionAddress,
     authorizeHookAddress,
     paymentIndexRecorderHookAddress,
