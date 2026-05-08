@@ -161,7 +161,7 @@ describe('Deploy Module (Fork)', () => {
     const unfreezeCondition = await publicClient.readContract({
       address: deployment.freezeAddress! as Address,
       abi: freezeAbi,
-      functionName: 'UNFREEZE_CONDITION',
+      functionName: 'UNFREEZE_PRE_ACTION_CONDITION',
     })
     const expectedArbiterSAC = await computeStaticAddressConditionAddress(
       publicClient,
@@ -176,7 +176,7 @@ describe('Deploy Module (Fork)', () => {
     const freezeCondition = await publicClient.readContract({
       address: deployment.freezeAddress! as Address,
       abi: freezeAbi,
-      functionName: 'FREEZE_CONDITION',
+      functionName: 'FREEZE_PRE_ACTION_CONDITION',
     })
     expect(freezeCondition).toBe(baseSepolia.conditions.payer)
   })
