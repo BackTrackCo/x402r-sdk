@@ -28,6 +28,7 @@ let payerClient: X402r
 let merchant: MerchantClient
 
 const REFUND_AMOUNT = 300_000n
+const MERCHANT_AMOUNT = DEFAULT_AMOUNT - REFUND_AMOUNT
 
 let paymentInfo: PaymentInfo
 
@@ -52,11 +53,17 @@ beforeAll(async () => {
 }, 60_000)
 
 // ---------------------------------------------------------------------------
-// Scenario 3: Partial refund during escrow
+// Scenario 3: Partial capture (returns remainder to payer via void)
 // ---------------------------------------------------------------------------
 
-describe('Scenario 3: Partial refund during escrow', () => {
-  it('partial refundInEscrow reduces capturable amount', async () => {
+// Replaces the old refundInEscrow-based partial-refund scenario. The new
+// authCapture surface drops partial in-escrow refunds (`void()` is full-only).
+// The recommended replacement (per `.changeset/sdk-authcapture-lift.md`
+// migration note) is partial capture — capture only what the merchant keeps,
+// then void the remainder back to the payer. Two calls, no allowance, no
+// ReceiverRefundCollector.
+describe('Scenario 3: Partial capture + void remainder', () => {
+  it('partial capture reduces capturable amount, leaves remainder in escrow', async () => {
     const { collectorData, tokenCollector } = await createCollectorData(
       anvilBaseSepolia.getWalletClient(testRoles.payer.address),
       paymentInfo,
@@ -69,43 +76,35 @@ describe('Scenario 3: Partial refund during escrow', () => {
     )
     await publicClient.waitForTransactionReceipt({ hash })
 
-    // Verify initial state — capturable > 0
-    const amountsBefore = await merchant.payment.getAmounts(paymentInfo)
-    expect(amountsBefore.capturableAmount).toBeGreaterThan(0n)
-
-    // Receiver issues partial refund during escrow
-    const refundHash = await merchant.payment.refundInEscrow(
-      paymentInfo,
-      REFUND_AMOUNT,
-    )
-    await publicClient.waitForTransactionReceipt({ hash: refundHash })
-
-    // Capturable amount should have decreased
-    const amountsAfter = await merchant.payment.getAmounts(paymentInfo)
-    expect(amountsAfter.capturableAmount).toBeLessThan(
-      amountsBefore.capturableAmount,
-    )
-  }, 60_000)
-
-  it('release remaining amount after escrow completes the payment', async () => {
-    // Fast-forward past escrow
+    // Capture is gated by capturePreActionCondition (EscrowPeriod) on the
+    // marketplace operator — fast-forward past escrow so the merchant can
+    // partially capture.
     await testClient.increaseTime({ seconds: ESCROW_FAST_FORWARD })
     await testClient.mine({ blocks: 1 })
 
-    // Get the remaining capturable amount
-    const amounts = await merchant.payment.getAmounts(paymentInfo)
-    const remainingAmount = amounts.capturableAmount
-    expect(remainingAmount).toBeGreaterThan(0n)
+    const amountsBefore = await merchant.payment.getAmounts(paymentInfo)
+    expect(amountsBefore.capturableAmount).toBe(DEFAULT_AMOUNT)
 
-    // Release the remaining amount
-    const releaseHash = await merchant.payment.release(
+    // Merchant captures only MERCHANT_AMOUNT — the rest stays in escrow
+    // (capture is incremental, callable multiple times up to authorized).
+    const captureHash = await merchant.payment.capture(
       paymentInfo,
-      remainingAmount,
+      MERCHANT_AMOUNT,
+      '0x',
     )
-    await publicClient.waitForTransactionReceipt({ hash: releaseHash })
+    await publicClient.waitForTransactionReceipt({ hash: captureHash })
 
-    // Payment should now be collected
+    const amountsAfter = await merchant.payment.getAmounts(paymentInfo)
+    expect(amountsAfter.capturableAmount).toBe(REFUND_AMOUNT)
+  }, 60_000)
+
+  it('voidPayment returns the remainder to the payer', async () => {
+    // Merchant voids the remaining REFUND_AMOUNT back to the payer.
+    // voidPayment is full-only — empties whatever's left in capturableAmount.
+    const voidHash = await merchant.payment.voidPayment(paymentInfo)
+    await publicClient.waitForTransactionReceipt({ hash: voidHash })
+
     const finalAmounts = await merchant.payment.getAmounts(paymentInfo)
-    expect(finalAmounts.hasCollectedPayment).toBe(true)
+    expect(finalAmounts.capturableAmount).toBe(0n)
   }, 60_000)
 })
