@@ -8,6 +8,19 @@ export interface GetReceiverPaymentsFromHookParameters {
   receiver: Address
   offset: bigint
   count: bigint
+  /**
+   * If set, filters returned `payments` to those from this operator. The
+   * canonical `PaymentIndexRecorderHook` is a chain singleton aggregating
+   * across every operator routing through HookCombinator; without filtering
+   * callers receive mingled records.
+   *
+   * Caveat: the returned `total` is the on-chain pre-filter count and is
+   * NOT operator-scoped. For paginated reads with this option set, advance
+   * `offset` by the requested `count` (not by `payments.length`) and stop
+   * when `offset >= total`. Per-operator-accurate totals would require
+   * paginating fully and counting filtered results client-side.
+   */
+  operatorAddress?: Address
 }
 
 export interface GetReceiverPaymentsFromHookReturnType {
@@ -19,7 +32,7 @@ export async function getReceiverPaymentsFromHook(
   publicClient: PublicClient,
   parameters: GetReceiverPaymentsFromHookParameters,
 ): Promise<GetReceiverPaymentsFromHookReturnType> {
-  const { hookAddress, receiver, offset, count } = parameters
+  const { hookAddress, receiver, offset, count, operatorAddress } = parameters
 
   const [payments, total] = await wrapContractCall(
     'getReceiverPaymentsFromHook',
@@ -32,5 +45,9 @@ export async function getReceiverPaymentsFromHook(
       }),
   )
 
-  return { payments: payments as unknown as PaymentInfo[], total }
+  const all = payments as unknown as PaymentInfo[]
+  const filtered = operatorAddress
+    ? all.filter((p) => p.operator === operatorAddress)
+    : all
+  return { payments: filtered, total }
 }

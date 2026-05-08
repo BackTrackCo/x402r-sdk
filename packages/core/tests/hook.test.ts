@@ -178,3 +178,155 @@ describe('getPayerPayment — large index', () => {
     )
   })
 })
+
+// ---------------------------------------------------------------------------
+// Cross-operator aggregation: operatorAddress filter
+// ---------------------------------------------------------------------------
+
+const OPERATOR_A = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' as const
+const OPERATOR_B = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb' as const
+
+describe('getPayerPaymentsFromHook — operatorAddress filter', () => {
+  it('returns all payments when operatorAddress is undefined', async () => {
+    const opA = makePaymentInfo({ operator: OPERATOR_A })
+    const opB = makePaymentInfo({ operator: OPERATOR_B })
+    const client = createMockPublicClient({
+      getPayerPayments: [[opA, opB, opA], 3n],
+    })
+
+    const result = await getPayerPaymentsFromHook(client, {
+      hookAddress: RECORDER_ADDRESS,
+      payer: TEST_ADDRESSES.payer,
+      offset: 0n,
+      count: 100n,
+    })
+
+    expect(result.payments).toHaveLength(3)
+  })
+
+  it('filters payments by operatorAddress when set', async () => {
+    const opA = makePaymentInfo({ operator: OPERATOR_A })
+    const opB = makePaymentInfo({ operator: OPERATOR_B })
+    const client = createMockPublicClient({
+      getPayerPayments: [[opA, opB, opA], 3n],
+    })
+
+    const result = await getPayerPaymentsFromHook(client, {
+      hookAddress: RECORDER_ADDRESS,
+      payer: TEST_ADDRESSES.payer,
+      offset: 0n,
+      count: 100n,
+      operatorAddress: OPERATOR_A,
+    })
+
+    expect(result.payments).toHaveLength(2)
+    expect(result.payments.every((p) => p.operator === OPERATOR_A)).toBe(true)
+  })
+
+  it('total reflects pre-filter count even when filtered', async () => {
+    const opA = makePaymentInfo({ operator: OPERATOR_A })
+    const opB = makePaymentInfo({ operator: OPERATOR_B })
+    const client = createMockPublicClient({
+      getPayerPayments: [[opA, opB, opA], 5n],
+    })
+
+    const result = await getPayerPaymentsFromHook(client, {
+      hookAddress: RECORDER_ADDRESS,
+      payer: TEST_ADDRESSES.payer,
+      offset: 0n,
+      count: 100n,
+      operatorAddress: OPERATOR_A,
+    })
+
+    expect(result.total).toBe(5n)
+    expect(result.payments).toHaveLength(2)
+  })
+})
+
+describe('getReceiverPaymentsFromHook — operatorAddress filter', () => {
+  it('filters payments by operatorAddress when set', async () => {
+    const opA = makePaymentInfo({ operator: OPERATOR_A })
+    const opB = makePaymentInfo({ operator: OPERATOR_B })
+    const client = createMockPublicClient({
+      getReceiverPayments: [[opA, opB], 2n],
+    })
+
+    const result = await getReceiverPaymentsFromHook(client, {
+      hookAddress: RECORDER_ADDRESS,
+      receiver: TEST_ADDRESSES.receiver,
+      offset: 0n,
+      count: 50n,
+      operatorAddress: OPERATOR_B,
+    })
+
+    expect(result.payments).toHaveLength(1)
+    expect(result.payments[0].operator).toBe(OPERATOR_B)
+    expect(result.total).toBe(2n)
+  })
+})
+
+describe('getHookPaymentInfo — operatorAddress filter', () => {
+  it('returns null when operatorAddress mismatches', async () => {
+    const opA = makePaymentInfo({ operator: OPERATOR_A })
+    const client = createMockPublicClient({
+      getPaymentInfo: opA,
+    })
+
+    const result = await getHookPaymentInfo(client, {
+      hookAddress: RECORDER_ADDRESS,
+      hash: '0xdeadbeef',
+      operatorAddress: OPERATOR_B,
+    })
+
+    expect(result).toBeNull()
+  })
+
+  it('returns the payment when operatorAddress matches', async () => {
+    const opA = makePaymentInfo({ operator: OPERATOR_A })
+    const client = createMockPublicClient({
+      getPaymentInfo: opA,
+    })
+
+    const result = await getHookPaymentInfo(client, {
+      hookAddress: RECORDER_ADDRESS,
+      hash: '0xdeadbeef',
+      operatorAddress: OPERATOR_A,
+    })
+
+    expect(result).toEqual(opA)
+  })
+})
+
+describe('getPayerPayment / getReceiverPayment — operatorAddress filter', () => {
+  it('getPayerPayment returns null when operatorAddress mismatches', async () => {
+    const opA = makePaymentInfo({ operator: OPERATOR_A })
+    const client = createMockPublicClient({
+      getPayerPayment: opA,
+    })
+
+    const result = await getPayerPayment(client, {
+      hookAddress: RECORDER_ADDRESS,
+      payer: TEST_ADDRESSES.payer,
+      index: 0n,
+      operatorAddress: OPERATOR_B,
+    })
+
+    expect(result).toBeNull()
+  })
+
+  it('getReceiverPayment returns the payment when operatorAddress matches', async () => {
+    const opA = makePaymentInfo({ operator: OPERATOR_A })
+    const client = createMockPublicClient({
+      getReceiverPayment: opA,
+    })
+
+    const result = await getReceiverPayment(client, {
+      hookAddress: RECORDER_ADDRESS,
+      receiver: TEST_ADDRESSES.receiver,
+      index: 0n,
+      operatorAddress: OPERATOR_A,
+    })
+
+    expect(result).toEqual(opA)
+  })
+})
