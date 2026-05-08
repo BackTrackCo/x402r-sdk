@@ -98,7 +98,7 @@ export type {
 } from './freeze/index.js'
 export { freezePayment, isFrozen, unfreezePayment } from './freeze/index.js'
 // ---------------------------------------------------------------------------
-// Recorder
+// Hook
 // ---------------------------------------------------------------------------
 export type {
   GetHookPaymentInfoParameters,

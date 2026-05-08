@@ -356,7 +356,7 @@ export async function previewMarketplaceOperator(
       }),
     ])
 
-  // Batch 3: AND condition for release (depends on batch 2, only when freeze enabled)
+  // Batch 3: AND condition for capture (depends on batch 2, only when freeze enabled)
   const andConditionAddress =
     freezeDurationSeconds > 0n && freezeAddress
       ? await computeAndConditionAddress(publicClient, {
@@ -1055,13 +1055,13 @@ export async function previewDeliveryProtectionOperator(
 ): Promise<DeliveryProtectionOperatorPreview> {
   const factoryAddrs = getFactoryAddresses(options.chainId)
   const singletons = getConditionSingletons(options.chainId)
-  const recorderSingletons = getHookSingletons(options.chainId)
+  const hookSingletons = getHookSingletons(options.chainId)
 
   const authorizedCodehash =
     options.authorizedCodehash ?? hookCombinatorCodehash
   const paymentIndexRecorderHookAddress =
     options.paymentIndexRecorderHookAddress ??
-    recorderSingletons.paymentIndexRecorderHook
+    hookSingletons.paymentIndexRecorderHook
   const hasPaymentIndexRecorderHook =
     paymentIndexRecorderHookAddress !== zeroAddress
   const allowArbiterRefund = options.allowArbiterRefund ?? false
@@ -1149,7 +1149,7 @@ export async function previewDeliveryProtectionOperator(
 // - Release: OrCondition([SAC(arbiter), PayerCondition]) — arbiter or payer
 // - RefundInEscrow: OrCondition([EscrowPeriod, ReceiverCondition, SAC(arbiter)])
 //   — after escrow window, or receiver, or arbiter
-// - AuthorizeRecorder: HookCombinator([EscrowPeriod, PaymentIndexRecorderHook])
+// - AuthorizePostActionHook: HookCombinator([EscrowPeriod, PaymentIndexRecorderHook])
 //   — records auth time + indexes payments
 // ---------------------------------------------------------------------------
 
@@ -1350,7 +1350,7 @@ export async function deployDeliveryProtectionOperator(
     [options.arbiter],
   )
 
-  // 3. OrCondition for release: arbiter OR payer
+  // 3. OrCondition for capture: arbiter OR payer
   trackDeploy(
     releaseConditionAddress,
     exists.releaseCondition,

@@ -61,8 +61,8 @@ describe('X402rError.walk()', () => {
 
 describe('ContractCallError', () => {
   it('formats operation name into shortMessage', () => {
-    const err = new ContractCallError('release')
-    expect(err.shortMessage).toBe('release failed')
+    const err = new ContractCallError('capture')
+    expect(err.shortMessage).toBe('capture failed')
   })
 
   it('includes contractAddress in message', () => {
@@ -74,7 +74,7 @@ describe('ContractCallError', () => {
   })
 
   it('revertName renders in metaMessages', () => {
-    const err = new ContractCallError('release', {
+    const err = new ContractCallError('capture', {
       revertName: 'ConditionNotMet',
     })
     expect(err.message).toContain('Revert: ConditionNotMet')
