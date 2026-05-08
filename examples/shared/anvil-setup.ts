@@ -68,7 +68,7 @@ const CHAIN_ID = 84532
 const chainConfig = getChainConfig(CHAIN_ID)
 const USDC = chainConfig.usdc
 const USDC_BALANCE_SLOT = 9n
-const FORK_BLOCK = 39_029_000n
+const FORK_BLOCK = 41_280_000n
 const ANVIL_PORT = 8846
 
 // ---------------------------------------------------------------------------
