@@ -123,6 +123,8 @@ Non-obvious behaviors integrators should be aware of:
 
 6. **`payment.voidPayment` is gated by an OrCondition** — on marketplace operators, the `voidPreActionCondition` is `OrCondition(ReceiverCondition, StaticAddressCondition(refundRequest))`, so either the receiver or the RefundRequest contract can trigger it. Payers cannot void directly; they file a `RefundRequest` first, and either the merchant or the arbiter approves by calling `voidPayment` themselves.
 
+7. **Recovery if partial-capture's second tx never lands** — the partial in-escrow refund pattern is two transactions (`capture(merchantAmount)` then `voidPayment()`). If the second tx never executes (crash, gas exhaustion, key loss), the payer's remainder sits in escrow under the original authorization. Recovery is on-chain via `AuthCaptureEscrow.reclaim(paymentInfo)`, callable by the payer after `paymentInfo.refundExpiry`. The SDK does not currently ship a `payment.reclaim()` wrapper; call the contract directly via `walletClient.writeContract({ address: authCaptureEscrow, abi: authCaptureEscrowAbi, functionName: 'reclaim', args: [paymentInfo] })`. A typed wrapper is on the PR 2/4 backlog.
+
 ## Docs
 
 [docs.x402r.org](https://docs.x402r.org)

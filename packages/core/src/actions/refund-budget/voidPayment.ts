@@ -15,8 +15,12 @@ export type VoidPaymentReturnType = Hash
 
 /**
  * Void the entire authorization. The on-chain `escrow.void()` is full-only —
- * it empties the authorization in one transaction. For partial refunds, use
- * capture-then-refund via ReceiverRefundCollector instead.
+ * it empties the authorization in one transaction.
+ *
+ * For partial in-escrow refunds, use partial capture: `capture(merchantAmount)`
+ * then `voidPayment()` to return the remainder to the payer (no allowance,
+ * no `ReceiverRefundCollector`). For post-capture refunds, use `refund()` with
+ * a pre-staked `ReceiverRefundCollector` allowance via `approveRefundAllowance()`.
  */
 export async function voidPayment(
   walletClient: WalletClient,

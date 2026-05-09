@@ -32,8 +32,10 @@ export async function getHookPaymentInfo(
   )
 
   const info = result as unknown as PaymentInfo
-  // If operator is zero address, the payment was not found
-  if (info.operator === zeroAddress) {
+  // If operator is zero address, the payment was not found.
+  // Normalize via getAddress() for pattern consistency with the operator
+  // filter below (zero is identity-cased, so this is behaviorally a no-op).
+  if (getAddress(info.operator) === zeroAddress) {
     return null
   }
   // Normalize to checksummed form before compare — the chain returns

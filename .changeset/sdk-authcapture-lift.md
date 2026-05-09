@@ -86,6 +86,8 @@ await client.payment.approveRefundAllowance(token, allowanceAmount)
 await client.payment.refund(paymentInfo, refundAmount, receiverRefundCollector, encodedData)
 ```
 
+**Recovery if `voidPayment` doesn't land.** The partial-capture flow is two transactions. If the second tx (`voidPayment`) never executes — crash, gas exhaustion, key loss — the payer's remainder sits in escrow under the original authorization. Recovery is on-chain via `AuthCaptureEscrow.reclaim(paymentInfo)`, callable by the payer after `paymentInfo.refundExpiry`. The SDK does not currently ship a `payment.reclaim()` wrapper; call the contract directly via `walletClient.writeContract({ address: authCaptureEscrow, abi: authCaptureEscrowAbi, functionName: 'reclaim', args: [paymentInfo] })`. A typed wrapper is on the PR 2/4 backlog.
+
 ---
 
 ## Cross-operator data scoping
