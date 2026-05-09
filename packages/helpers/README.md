@@ -24,7 +24,7 @@ const resourceServer = new x402ResourceServer(facilitatorClient)
 
 Creates an `onAfterSettle` hook that forwards the response body to an arbiter service for evaluation. Fire-and-forget — does not block the response to the client.
 
-- Only fires for successful commerce scheme settlements
+- Only fires for successful authCapture scheme settlements
 - POSTs `{ responseBody, transaction, paymentPayload }` to `{arbiterUrl}/verify`
 - Errors silently caught (arbiter being down shouldn't break payment flow)
 

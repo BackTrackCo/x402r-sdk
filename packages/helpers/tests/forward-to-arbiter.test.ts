@@ -4,7 +4,7 @@ import { forwardToArbiter } from '../src/forward-to-arbiter.js'
 
 const MOCK_PAYMENT_PAYLOAD = {
   x402Version: 2,
-  accepted: { scheme: 'commerce', network: 'eip155:84532' },
+  accepted: { scheme: 'authCapture', network: 'eip155:84532' },
   payload: { paymentInfo: { operator: '0x1', payer: '0x2', salt: '123' } },
 }
 
@@ -20,7 +20,7 @@ function makeContext(overrides: {
       network: 'eip155:84532',
     },
     requirements: {
-      scheme: overrides.scheme ?? 'commerce',
+      scheme: overrides.scheme ?? 'authCapture',
       network: 'eip155:84532',
     },
     paymentPayload: MOCK_PAYMENT_PAYLOAD,
@@ -31,7 +31,7 @@ function makeContext(overrides: {
 }
 
 describe('forwardToArbiter', () => {
-  it('POSTs to arbiter on successful commerce settlement', async () => {
+  it('POSTs to arbiter on successful authCapture settlement', async () => {
     let capturedUrl = ''
     let capturedBody = ''
     const original = globalThis.fetch
@@ -74,7 +74,7 @@ describe('forwardToArbiter', () => {
     }
   })
 
-  it('skips on non-commerce scheme', async () => {
+  it('skips on non-authCapture scheme', async () => {
     const original = globalThis.fetch
     const spy = vi.fn()
     globalThis.fetch = spy as any
