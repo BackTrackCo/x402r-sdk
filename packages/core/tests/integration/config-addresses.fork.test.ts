@@ -5,7 +5,6 @@ import {
   authCaptureEscrowAbi,
   protocolFeeConfigAbi,
   receiverRefundCollectorAbi,
-  usdcTvlLimitAbi,
 } from '../../src/abis/generated.js'
 import { x402rChains } from '../../src/config/index.js'
 import {
@@ -13,10 +12,10 @@ import {
   computeEscrowPeriodAddress,
   computeFeeCalculatorAddress,
   computeFreezeAddress,
+  computeHookCombinatorAddress,
   computeNotConditionAddress,
   computeOperatorAddress,
   computeOrConditionAddress,
-  computeRecorderCombinatorAddress,
   computeRefundRequestAddress,
   computeRefundRequestEvidenceAddress,
   computeSignatureConditionAddress,
@@ -28,18 +27,18 @@ import { anvilBaseSepolia } from '../setup/anvil.js'
 const config = x402rChains[84532]
 
 const dummyOperatorConfig: OperatorConfig = {
-  feeRecipient: zeroAddress,
+  feeReceiver: zeroAddress,
   feeCalculator: zeroAddress,
-  authorizeCondition: zeroAddress,
-  authorizeRecorder: zeroAddress,
-  chargeCondition: zeroAddress,
-  chargeRecorder: zeroAddress,
-  releaseCondition: zeroAddress,
-  releaseRecorder: zeroAddress,
-  refundInEscrowCondition: zeroAddress,
-  refundInEscrowRecorder: zeroAddress,
-  refundPostEscrowCondition: zeroAddress,
-  refundPostEscrowRecorder: zeroAddress,
+  authorizePreActionCondition: zeroAddress,
+  authorizePostActionHook: zeroAddress,
+  chargePreActionCondition: zeroAddress,
+  chargePostActionHook: zeroAddress,
+  capturePreActionCondition: zeroAddress,
+  capturePostActionHook: zeroAddress,
+  voidPreActionCondition: zeroAddress,
+  voidPostActionHook: zeroAddress,
+  refundPreActionCondition: zeroAddress,
+  refundPostActionHook: zeroAddress,
 }
 
 describe('Config Address Smoke Tests (Fork)', () => {
@@ -69,15 +68,6 @@ describe('Config Address Smoke Tests (Fork)', () => {
       functionName: 'MAX_PROTOCOL_FEE_BPS',
     })
     expect(result).toBeGreaterThan(0n)
-  })
-
-  it('usdcTvlLimit responds to ESCROW()', async () => {
-    const result = await publicClient.readContract({
-      address: config.usdcTvlLimit,
-      abi: usdcTvlLimitAbi,
-      functionName: 'ESCROW',
-    })
-    expect(result).toBe(config.authCaptureEscrow)
   })
 
   it('receiverRefundCollector responds to authCaptureEscrow()', async () => {
@@ -175,10 +165,10 @@ describe('Config Address Smoke Tests (Fork)', () => {
     expect(addr).not.toBe(zeroAddress)
   })
 
-  it('recorderCombinator factory responds to computeAddress', async () => {
-    const addr = await computeRecorderCombinatorAddress(publicClient, {
-      factoryAddress: config.factories.recorderCombinator,
-      recorders: [zeroAddress],
+  it('hookCombinator factory responds to computeAddress', async () => {
+    const addr = await computeHookCombinatorAddress(publicClient, {
+      factoryAddress: config.factories.hookCombinator,
+      hooks: [zeroAddress],
     })
     expect(addr).toMatch(/^0x[0-9a-fA-F]{40}$/)
     expect(addr).not.toBe(zeroAddress)

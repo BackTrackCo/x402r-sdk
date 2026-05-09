@@ -10,7 +10,7 @@ try {
   //
   // On the marketplace operator preset:
   //   - Payer can freeze (filed refund near deadline, needs time extension)
-  //   - Arbiter can unfreeze (investigation resolved, can release early)
+  //   - Arbiter can unfreeze (investigation resolved, can capture early)
   //   - Freeze auto-expires after freezeDuration
 
   if (!ctx.payer.freeze) {

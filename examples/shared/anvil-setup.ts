@@ -46,7 +46,7 @@ const testAccounts = {
     privateKey:
       '0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a' as const,
   },
-  feeRecipient: {
+  feeReceiver: {
     address: '0x90F79bf6EB2c4f870365E785982E1f101E93b906' as Address,
     privateKey:
       '0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6' as const,
@@ -68,7 +68,11 @@ const CHAIN_ID = 84532
 const chainConfig = getChainConfig(CHAIN_ID)
 const USDC = chainConfig.usdc
 const USDC_BALANCE_SLOT = 9n
-const FORK_BLOCK = 39_029_000n
+// FORK_BLOCK left undefined — Base Sepolia public RPC has a narrow archive
+// horizon (~last few hundred blocks); pinning a historical block fails with
+// "block not found" once the chain moves past it. Examples fork at upstream's
+// latest by default.
+const FORK_BLOCK: bigint | undefined = undefined
 const ANVIL_PORT = 8846
 
 // ---------------------------------------------------------------------------
@@ -140,7 +144,7 @@ export async function setup(options?: SetupOptions): Promise<ExampleContext> {
       publicClient,
       {
         chainId: CHAIN_ID,
-        feeRecipient: testAccounts.feeRecipient.address,
+        feeReceiver: testAccounts.feeReceiver.address,
         arbiter: testAccounts.arbiter.address,
         escrowPeriodSeconds: 604_800n, // 7 days
         freezeDurationSeconds: 604_800n, // 7 days (enables freeze support)

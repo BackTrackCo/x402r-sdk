@@ -24,7 +24,7 @@ function makeOptions(
 ): MarketplaceOperatorOptions {
   return {
     chainId: 84532,
-    feeRecipient: testRoles.operatorFeeRecipient.address,
+    feeReceiver: testRoles.operatorFeeRecipient.address,
     arbiter: testRoles.arbiter.address,
     escrowPeriodSeconds: 259200n, // 3 days — distinct from payment-lifecycle fixtures (7 days)
     operatorFeeBps: 100n, // distinct from payment-lifecycle fixtures (50)
@@ -62,9 +62,7 @@ describe('Deploy Module (Fork)', () => {
     // freezeAddress should be null when freezeDurationSeconds is not set
     expect(preview.freezeAddress).toBeNull()
     expect(preview.refundRequestAddress).toMatch(/^0x[0-9a-fA-F]{40}$/)
-    expect(preview.refundInEscrowConditionAddress).toMatch(
-      /^0x[0-9a-fA-F]{40}$/,
-    )
+    expect(preview.voidConditionAddress).toMatch(/^0x[0-9a-fA-F]{40}$/)
     expect(preview.feeCalculatorAddress).toMatch(/^0x[0-9a-fA-F]{40}$/)
 
     // All addresses should be non-zero
@@ -73,7 +71,7 @@ describe('Deploy Module (Fork)', () => {
     expect(preview.escrowPeriodAddress).not.toBe(zero)
     // freezeAddress is null (no freeze configured), skip zero-check
     expect(preview.refundRequestAddress).not.toBe(zero)
-    expect(preview.refundInEscrowConditionAddress).not.toBe(zero)
+    expect(preview.voidConditionAddress).not.toBe(zero)
   })
 
   it('deployMarketplaceOperator deploys all components matching preview', async () => {
@@ -91,9 +89,7 @@ describe('Deploy Module (Fork)', () => {
     expect(deployment.escrowPeriodAddress).toBe(preview.escrowPeriodAddress)
     expect(deployment.freezeAddress).toBe(preview.freezeAddress)
     expect(deployment.refundRequestAddress).toBe(preview.refundRequestAddress)
-    expect(deployment.refundInEscrowConditionAddress).toBe(
-      preview.refundInEscrowConditionAddress,
-    )
+    expect(deployment.voidConditionAddress).toBe(preview.voidConditionAddress)
     expect(deployment.feeCalculatorAddress).toBe(preview.feeCalculatorAddress)
 
     // Evidence contract deployed and has bytecode
@@ -150,8 +146,8 @@ describe('Deploy Module (Fork)', () => {
     expect(deployment.freezeAddress).toMatch(/^0x[0-9a-fA-F]{40}$/)
     expect(deployment.freezeAddress).toBe(preview.freezeAddress)
 
-    // releaseCondition should NOT be escrowPeriodAddress (it's the AndCondition)
-    expect(deployment.operatorConfig.releaseCondition).not.toBe(
+    // capturePreActionCondition should NOT be escrowPeriodAddress (it's the AndCondition)
+    expect(deployment.operatorConfig.capturePreActionCondition).not.toBe(
       deployment.escrowPeriodAddress,
     )
 
@@ -165,7 +161,7 @@ describe('Deploy Module (Fork)', () => {
     const unfreezeCondition = await publicClient.readContract({
       address: deployment.freezeAddress! as Address,
       abi: freezeAbi,
-      functionName: 'UNFREEZE_CONDITION',
+      functionName: 'UNFREEZE_PRE_ACTION_CONDITION',
     })
     const expectedArbiterSAC = await computeStaticAddressConditionAddress(
       publicClient,
@@ -180,7 +176,7 @@ describe('Deploy Module (Fork)', () => {
     const freezeCondition = await publicClient.readContract({
       address: deployment.freezeAddress! as Address,
       abi: freezeAbi,
-      functionName: 'FREEZE_CONDITION',
+      functionName: 'FREEZE_PRE_ACTION_CONDITION',
     })
     expect(freezeCondition).toBe(baseSepolia.conditions.payer)
   })
@@ -212,7 +208,7 @@ function makeDeliveryProtectionOptions(
   return {
     chainId: 84532,
     arbiter: testRoles.arbiter.address,
-    feeRecipient: testRoles.operatorFeeRecipient.address,
+    feeReceiver: testRoles.operatorFeeRecipient.address,
     escrowPeriodSeconds: 172800n, // 2 days — distinct from other fixtures
     ...overrides,
   }
@@ -241,22 +237,20 @@ describe('Deploy Delivery Protection Operator (Fork)', () => {
     expect(preview.arbiterConditionAddress).toMatch(/^0x[0-9a-fA-F]{40}$/)
     expect(preview.arbiterConditionAddress).not.toBe(zero)
 
-    // releaseCondition: OrCondition([SAC(arbiter), PayerCondition])
-    expect(preview.operatorConfig.releaseCondition).toBe(
-      preview.releaseConditionAddress,
+    // capturePreActionCondition: OrCondition([SAC(arbiter), PayerCondition])
+    expect(preview.operatorConfig.capturePreActionCondition).toBe(
+      preview.captureConditionAddress,
     )
-    // refundInEscrowCondition: OrCondition([EscrowPeriod, ReceiverCondition, SAC(arbiter)])
-    expect(preview.operatorConfig.refundInEscrowCondition).toBe(
-      preview.refundInEscrowConditionAddress,
+    // voidPreActionCondition: OrCondition([EscrowPeriod, ReceiverCondition, SAC(arbiter)])
+    expect(preview.operatorConfig.voidPreActionCondition).toBe(
+      preview.voidConditionAddress,
     )
     // feeCalculator should be zero (no fees)
     expect(preview.operatorConfig.feeCalculator).toBe(zeroAddress)
-    // authorizeCondition should be usdcTvlLimit
-    expect(preview.operatorConfig.authorizeCondition).toBe(
-      baseSepolia.usdcTvlLimit,
-    )
-    // refundPostEscrowCondition should be receiver singleton
-    expect(preview.operatorConfig.refundPostEscrowCondition).toBe(
+    // authorizePreActionCondition is zeroAddress (TVL gate dropped in 0.3.0)
+    expect(preview.operatorConfig.authorizePreActionCondition).toBe(zeroAddress)
+    // refundPreActionCondition should be receiver singleton
+    expect(preview.operatorConfig.refundPreActionCondition).toBe(
       baseSepolia.conditions!.receiver,
     )
   })
@@ -280,17 +274,13 @@ describe('Deploy Delivery Protection Operator (Fork)', () => {
     expect(deployment.arbiterConditionAddress).toBe(
       preview.arbiterConditionAddress,
     )
-    expect(deployment.releaseConditionAddress).toBe(
-      preview.releaseConditionAddress,
+    expect(deployment.captureConditionAddress).toBe(
+      preview.captureConditionAddress,
     )
-    expect(deployment.refundInEscrowConditionAddress).toBe(
-      preview.refundInEscrowConditionAddress,
-    )
-    expect(deployment.authorizeRecorderAddress).toBe(
-      preview.authorizeRecorderAddress,
-    )
+    expect(deployment.voidConditionAddress).toBe(preview.voidConditionAddress)
+    expect(deployment.authorizeHookAddress).toBe(preview.authorizeHookAddress)
 
-    // escrowPeriod + arbiterCondition + 2 OrConditions + recorderCombinator + operator = 6
+    // escrowPeriod + arbiterCondition + 2 OrConditions + hookCombinator + operator = 6
     expect(deployment.deployments).toHaveLength(6)
     expect(deployment.summary.newCount + deployment.summary.existingCount).toBe(
       6,

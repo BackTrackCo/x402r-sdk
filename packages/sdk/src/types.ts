@@ -46,7 +46,7 @@ export interface X402rConfig {
   freezeAddress?: Address
 
   // Payment retrieval
-  paymentIndexRecorderAddress?: Address
+  paymentIndexRecorderHookAddress?: Address
   paymentStore?: PaymentStore
   /** Starting block for event-based payment lookups. Required to enable the event fallback provider. */
   eventFromBlock?: bigint
@@ -66,7 +66,7 @@ export interface ResolvedConfig {
   refundRequestEvidenceAddress: Address | undefined
   escrowPeriodAddress: Address | undefined
   freezeAddress: Address | undefined
-  paymentIndexRecorderAddress: Address | undefined
+  paymentIndexRecorderHookAddress: Address | undefined
   paymentStore: PaymentStore | undefined
   eventFromBlock: bigint | undefined
 }
@@ -92,21 +92,23 @@ export interface PaymentActions {
     tokenCollector: Address,
     collectorData: Hex,
   ): Promise<Hash>
-  release(paymentInfo: PaymentInfo, amount: bigint, data?: Hex): Promise<Hash>
-  /** Executes an in-escrow refund. Gated by ReceiverCondition — only the receiver (merchant) can call. */
-  refundInEscrow(
-    paymentInfo: PaymentInfo,
-    amount: bigint,
-    data?: Hex,
-  ): Promise<Hash>
-  refundPostEscrow(
+  capture(paymentInfo: PaymentInfo, amount: bigint, data?: Hex): Promise<Hash>
+  /**
+   * Voids the entire authorization in one transaction. Full-only — the new
+   * `escrow.void()` empties the auth regardless of any partial intent. For
+   * partial in-escrow refunds, use capture-then-refund via
+   * `ReceiverRefundCollector`. Gated by ReceiverCondition — only the
+   * receiver (merchant) can call.
+   */
+  voidPayment(paymentInfo: PaymentInfo, data?: Hex): Promise<Hash>
+  refund(
     paymentInfo: PaymentInfo,
     amount: bigint,
     tokenCollector: Address,
     collectorData: Hex,
   ): Promise<Hash>
-  approvePostEscrowRefund(token: Address, amount: bigint): Promise<Hash>
-  getPostEscrowRefundAllowance(token: Address, owner: Address): Promise<bigint>
+  approveRefundAllowance(token: Address, amount: bigint): Promise<Hash>
+  getRefundAllowance(token: Address, owner: Address): Promise<bigint>
   getState(
     paymentInfo: PaymentInfo,
   ): Promise<readonly [boolean, bigint, bigint]>
@@ -120,7 +122,7 @@ export interface EscrowActions {
 }
 
 export interface RefundActions {
-  // Dispute flow (RefundRequest recorder)
+  // Dispute flow (RefundRequest hook)
   request(paymentInfo: PaymentInfo, amount: bigint): Promise<Hash>
   cancel(paymentInfo: PaymentInfo): Promise<Hash>
   deny(paymentInfo: PaymentInfo): Promise<Hash>
@@ -171,6 +173,15 @@ export interface FreezeActions {
   isFrozen(paymentInfo: PaymentInfo): Promise<boolean>
 }
 
+/**
+ * Reads payments from the configured PaymentIndexRecorderHook (and optional
+ * event/store providers as fallback). Results are auto-scoped to the SDK's
+ * configured `operatorAddress` — the hook is a chain singleton aggregating
+ * across every operator routing through HookCombinator, and the SDK filters
+ * caller-side to match the configured operator. Direct callers of
+ * `@x402r/core/actions/hook/*` must pass `operatorAddress` explicitly to
+ * opt into the same scoping.
+ */
 export interface QueryActions {
   getPayerPayments(payer: Address): Promise<PaymentInfo[]>
   getReceiverPayments(receiver: Address): Promise<PaymentInfo[]>
@@ -364,8 +375,9 @@ export interface PayerClient {
 }
 
 /**
- * Merchant role client. In-escrow refunds go through `payment.refundInEscrow()` —
- * the RefundRequest recorder automatically approves during execution.
+ * Merchant role client. In-escrow refunds go through `payment.voidPayment()` —
+ * full-only; the RefundRequest hook automatically approves during execution.
+ * For partial refunds use capture-then-refund via `ReceiverRefundCollector`.
  * Use `createX402r()` for full access.
  */
 export interface MerchantClient {
@@ -374,11 +386,11 @@ export interface MerchantClient {
     PaymentActions,
     | 'authorize'
     | 'charge'
-    | 'release'
-    | 'refundInEscrow'
-    | 'refundPostEscrow'
-    | 'approvePostEscrowRefund'
-    | 'getPostEscrowRefundAllowance'
+    | 'capture'
+    | 'voidPayment'
+    | 'refund'
+    | 'approveRefundAllowance'
+    | 'getRefundAllowance'
     | 'getState'
     | 'getAmounts'
   >
@@ -422,7 +434,7 @@ export interface ArbiterClient {
   readonly config: ResolvedWriteConfig
   readonly payment: Pick<
     PaymentActions,
-    'getState' | 'getAmounts' | 'refundInEscrow'
+    'getState' | 'getAmounts' | 'voidPayment'
   >
   readonly escrow:
     | Pick<

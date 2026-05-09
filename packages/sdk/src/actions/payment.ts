@@ -1,12 +1,12 @@
 import type { PaymentInfo } from '@x402r/core'
 import {
-  approvePostEscrowRefund as coreApprovePostEscrowRefund,
+  approveRefundAllowance as coreApproveRefundAllowance,
   authorize as coreAuthorize,
+  capture as coreCapture,
   charge as coreCharge,
-  getPostEscrowRefundAllowance as coreGetPostEscrowRefundAllowance,
-  refundInEscrow as coreRefundInEscrow,
-  refundPostEscrow as coreRefundPostEscrow,
-  release as coreRelease,
+  getRefundAllowance as coreGetRefundAllowance,
+  refund as coreRefund,
+  voidPayment as coreVoidPayment,
   getPaymentAmounts,
   getPaymentState,
 } from '@x402r/core'
@@ -16,7 +16,7 @@ import { requireWallet } from './utils.js'
 
 export function createPaymentActions(config: ResolvedConfig): PaymentActions {
   return {
-    /** Collects tokens into escrow. Use `release()` to claim after escrow period. Mutually exclusive with `charge()`. */
+    /** Collects tokens into escrow. Use `capture()` to claim after escrow period. Mutually exclusive with `charge()`. */
     async authorize(
       paymentInfo: PaymentInfo,
       amount: bigint,
@@ -48,40 +48,35 @@ export function createPaymentActions(config: ResolvedConfig): PaymentActions {
         collectorData,
       })
     },
-    async release(
+    async capture(
       paymentInfo: PaymentInfo,
       amount: bigint,
       data?: Hex,
     ): Promise<Hash> {
       const wallet = requireWallet(config)
-      return coreRelease(wallet, {
+      return coreCapture(wallet, {
         operatorAddress: config.operatorAddress,
         paymentInfo,
         amount,
         data,
       })
     },
-    async refundInEscrow(
-      paymentInfo: PaymentInfo,
-      amount: bigint,
-      data?: Hex,
-    ): Promise<Hash> {
+    async voidPayment(paymentInfo: PaymentInfo, data?: Hex): Promise<Hash> {
       const wallet = requireWallet(config)
-      return coreRefundInEscrow(wallet, {
+      return coreVoidPayment(wallet, {
         operatorAddress: config.operatorAddress,
         paymentInfo,
-        amount,
         data,
       })
     },
-    async refundPostEscrow(
+    async refund(
       paymentInfo: PaymentInfo,
       amount: bigint,
       tokenCollector: Address,
       collectorData: Hex,
     ): Promise<Hash> {
       const wallet = requireWallet(config)
-      return coreRefundPostEscrow(wallet, {
+      return coreRefund(wallet, {
         operatorAddress: config.operatorAddress,
         paymentInfo,
         amount,
@@ -89,22 +84,19 @@ export function createPaymentActions(config: ResolvedConfig): PaymentActions {
         collectorData,
       })
     },
-    async approvePostEscrowRefund(
+    async approveRefundAllowance(
       token: Address,
       amount: bigint,
     ): Promise<Hash> {
       const wallet = requireWallet(config)
-      return coreApprovePostEscrowRefund(wallet, {
+      return coreApproveRefundAllowance(wallet, {
         token,
         collectorAddress: config.chainConfig.receiverRefundCollector,
         amount,
       })
     },
-    async getPostEscrowRefundAllowance(
-      token: Address,
-      owner: Address,
-    ): Promise<bigint> {
-      return coreGetPostEscrowRefundAllowance(config.publicClient, {
+    async getRefundAllowance(token: Address, owner: Address): Promise<bigint> {
+      return coreGetRefundAllowance(config.publicClient, {
         token,
         owner,
         collectorAddress: config.chainConfig.receiverRefundCollector,

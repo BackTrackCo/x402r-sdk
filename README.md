@@ -41,9 +41,9 @@ const config = await x402r.operator.getConfig()
 
 ## Supported chains
 
-Ethereum · Base · Polygon · Arbitrum One · Optimism · Celo · Avalanche C-Chain · Monad · Linea · Base Sepolia · Ethereum Sepolia
+Base · Base Sepolia
 
-All contracts share the same CREATE3 addresses on every chain. See [`packages/core/src/config`](packages/core/src/config/index.ts) for the full registry.
+The SDK points at the canonical `commerce-payments@v1.0.0` AuthCaptureEscrow, which lives on those two chains today; other EVMs return as the canonical primitives extend coverage. See [`packages/core/src/config`](packages/core/src/config/index.ts) for the full registry.
 
 ## Development
 

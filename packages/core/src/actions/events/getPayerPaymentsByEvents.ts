@@ -20,7 +20,7 @@ export async function getPayerPaymentsByEvents(
     address: operatorAddress,
     event: getAbiItem({
       abi: paymentOperatorAbi,
-      name: 'AuthorizationCreated',
+      name: 'AuthorizeExecuted',
     }),
     args: { payer },
     fromBlock,

@@ -34,15 +34,15 @@ describe('PayerClient type narrowing', () => {
     // @ts-expect-error — payer cannot charge
     void payer.payment.charge
     // @ts-expect-error — payer cannot release
-    void payer.payment.release
-    // @ts-expect-error — payer cannot refundInEscrow
-    void payer.payment.refundInEscrow
-    // @ts-expect-error — payer cannot refundPostEscrow
-    void payer.payment.refundPostEscrow
-    // @ts-expect-error — payer cannot approvePostEscrowRefund
-    void payer.payment.approvePostEscrowRefund
-    // @ts-expect-error — payer cannot getPostEscrowRefundAllowance
-    void payer.payment.getPostEscrowRefundAllowance
+    void payer.payment.capture
+    // @ts-expect-error — payer cannot voidPayment
+    void payer.payment.voidPayment
+    // @ts-expect-error — payer cannot refund
+    void payer.payment.refund
+    // @ts-expect-error — payer cannot approveRefundAllowance
+    void payer.payment.approveRefundAllowance
+    // @ts-expect-error — payer cannot getRefundAllowance
+    void payer.payment.getRefundAllowance
   })
 
   it('refund exposes payer methods', () => {
@@ -92,13 +92,13 @@ describe('MerchantClient type narrowing', () => {
   it('payment exposes merchant methods', () => {
     expectTypeOf(merchant.payment.authorize).toBeFunction()
     expectTypeOf(merchant.payment.charge).toBeFunction()
-    expectTypeOf(merchant.payment.release).toBeFunction()
+    expectTypeOf(merchant.payment.capture).toBeFunction()
     expectTypeOf(merchant.payment.getState).toBeFunction()
     expectTypeOf(merchant.payment.getAmounts).toBeFunction()
-    expectTypeOf(merchant.payment.refundInEscrow).toBeFunction()
-    expectTypeOf(merchant.payment.refundPostEscrow).toBeFunction()
-    expectTypeOf(merchant.payment.approvePostEscrowRefund).toBeFunction()
-    expectTypeOf(merchant.payment.getPostEscrowRefundAllowance).toBeFunction()
+    expectTypeOf(merchant.payment.voidPayment).toBeFunction()
+    expectTypeOf(merchant.payment.refund).toBeFunction()
+    expectTypeOf(merchant.payment.approveRefundAllowance).toBeFunction()
+    expectTypeOf(merchant.payment.getRefundAllowance).toBeFunction()
   })
 
   it('refund exposes merchant dispute methods', () => {
@@ -146,13 +146,13 @@ describe('ArbiterClient type narrowing', () => {
     // @ts-expect-error — arbiter cannot charge
     void arbiter.payment.charge
     // @ts-expect-error — arbiter cannot release
-    void arbiter.payment.release
-    // @ts-expect-error — arbiter cannot refundInEscrow
-    void arbiter.payment.refundInEscrow
-    // @ts-expect-error — arbiter cannot refundPostEscrow
-    void arbiter.payment.refundPostEscrow
-    // @ts-expect-error — arbiter cannot approvePostEscrowRefund
-    void arbiter.payment.approvePostEscrowRefund
+    void arbiter.payment.capture
+    // @ts-expect-error — arbiter cannot voidPayment
+    void arbiter.payment.voidPayment
+    // @ts-expect-error — arbiter cannot refund
+    void arbiter.payment.refund
+    // @ts-expect-error — arbiter cannot approveRefundAllowance
+    void arbiter.payment.approveRefundAllowance
   })
 
   it('refund exposes arbiter methods', () => {

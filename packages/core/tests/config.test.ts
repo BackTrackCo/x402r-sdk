@@ -15,7 +15,6 @@ import {
   supportedChainIds,
   tokenCollector,
   toNetworkId,
-  usdcTvlLimit,
 } from '../src/index.js'
 
 describe('getChainConfig', () => {
@@ -93,7 +92,6 @@ describe('named address constants match getChainConfig()', () => {
       expect(config.tokenCollector).toBe(tokenCollector)
       expect(config.protocolFeeConfig).toBe(protocolFeeConfig)
       expect(config.receiverRefundCollector).toBe(receiverRefundCollector)
-      expect(config.usdcTvlLimit).toBe(usdcTvlLimit)
       expect(config.factories).toEqual(factories)
       expect(config.conditions).toEqual(conditions)
     })

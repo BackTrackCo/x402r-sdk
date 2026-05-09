@@ -11,12 +11,16 @@ export default defineConfig({
 
         // Test helpers and mocks
         'Mock*.sol/**',
-        'MaliciousRecorder.sol/**',
+        'MaliciousHook.sol/**',
         '*Invariants*/**',
         '*Handler*/**',
 
         // Internal access control
         '*Access.sol/**',
+
+        // Dropped from canonical authCapture deploys (chain-specific, kept in
+        // contracts source for ad-hoc per-chain integrations only)
+        'UsdcTvlLimit.sol/**',
 
         // Internal Solidity types/errors/events
         'Errors.sol/**',
@@ -24,7 +28,7 @@ export default defineConfig({
         'Types.sol/**',
 
         // Abstract base contracts
-        'BaseRecorder.sol/**',
+        'BaseHook.sol/**',
 
         // External library contracts (commerce-payments, OZ, solady)
         'TokenCollector.sol/**',

@@ -2,7 +2,7 @@ import type { Address } from 'viem'
 import { createPaymentInfoResolver } from '../resolver/createResolver.js'
 import {
   createEventProvider,
-  createRecorderProvider,
+  createHookProvider,
   createStoreProvider,
 } from '../resolver/providers.js'
 import type { PaymentInfoProvider } from '../resolver/types.js'
@@ -10,7 +10,7 @@ import type { QueryActions, ResolvedConfig } from '../types.js'
 
 export function createQueryActions(
   config: ResolvedConfig,
-  recorderAddress: Address,
+  hookAddress: Address,
 ): QueryActions {
   const providers: PaymentInfoProvider[] = []
 
@@ -18,7 +18,16 @@ export function createQueryActions(
     providers.push(createStoreProvider(config.paymentStore))
   }
 
-  providers.push(createRecorderProvider(config.publicClient, recorderAddress))
+  // Auto-scope hook reads to the configured operator. The canonical
+  // PaymentIndexRecorderHook is a chain singleton aggregating across every
+  // operator routing through HookCombinator — without this filter, queries
+  // would return mingled records in multi-operator deployments. Matches
+  // createEventProvider's per-operator scoping below.
+  providers.push(
+    createHookProvider(config.publicClient, hookAddress, {
+      operatorAddress: config.operatorAddress,
+    }),
+  )
 
   if (config.eventFromBlock !== undefined) {
     providers.push(

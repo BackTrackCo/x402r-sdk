@@ -21,7 +21,7 @@ const testAbi = [
   },
   {
     type: 'function',
-    name: 'release',
+    name: 'capture',
     inputs: [],
     outputs: [],
     stateMutability: 'nonpayable',
@@ -40,32 +40,32 @@ function makeRevertError(
   const revert = new ContractFunctionRevertedError({
     abi: testAbi,
     data,
-    functionName: 'release',
+    functionName: 'capture',
   })
   return new ContractFunctionExecutionError(revert, {
     abi: testAbi,
-    functionName: 'release',
+    functionName: 'capture',
     contractAddress: '0x1234567890123456789012345678901234567890',
   })
 }
 
 describe('wrapContractCall', () => {
   it('returns value on success', async () => {
-    const result = await wrapContractCall('release', async () => 42n)
+    const result = await wrapContractCall('capture', async () => 42n)
     expect(result).toBe(42n)
   })
 
   it('decoded revert → ContractCallError with revertName', async () => {
     const viemError = makeRevertError('Unauthorized')
 
-    const thrown = await wrapContractCall('release', async () => {
+    const thrown = await wrapContractCall('capture', async () => {
       throw viemError
     }).catch((e: unknown) => e)
 
     expect(thrown).toBeInstanceOf(ContractCallError)
     const err = thrown as ContractCallError
     expect(err.revertName).toBe('Unauthorized')
-    expect(err.shortMessage).toBe('release failed')
+    expect(err.shortMessage).toBe('capture failed')
   })
 
   it('revert with args → args accessible on error', async () => {
@@ -100,11 +100,11 @@ describe('wrapContractCall', () => {
     const inner = new BaseError('out of gas')
     const viemError = new ContractFunctionExecutionError(inner, {
       abi: testAbi,
-      functionName: 'release',
+      functionName: 'capture',
       contractAddress: '0x1234567890123456789012345678901234567890',
     })
 
-    const thrown = await wrapContractCall('release', async () => {
+    const thrown = await wrapContractCall('capture', async () => {
       throw viemError
     }).catch((e: unknown) => e)
 
@@ -120,7 +120,7 @@ describe('wrapContractCall', () => {
   it('non-viem Error passes through unchanged', async () => {
     const plainError = new TypeError('bad arg')
 
-    const thrown = await wrapContractCall('release', async () => {
+    const thrown = await wrapContractCall('capture', async () => {
       throw plainError
     }).catch((e: unknown) => e)
 
@@ -131,7 +131,7 @@ describe('wrapContractCall', () => {
   it('original viem error preserved as cause', async () => {
     const viemError = makeRevertError('Unauthorized')
 
-    const thrown = await wrapContractCall('release', async () => {
+    const thrown = await wrapContractCall('capture', async () => {
       throw viemError
     }).catch((e: unknown) => e)
 

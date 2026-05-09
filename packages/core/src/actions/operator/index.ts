@@ -1,9 +1,9 @@
 export type { AuthorizeParameters, AuthorizeReturnType } from './authorize.js'
 export { authorize } from './authorize.js'
-
+export type { CaptureParameters, CaptureReturnType } from './capture.js'
+export { capture } from './capture.js'
 export type { ChargeParameters, ChargeReturnType } from './charge.js'
 export { charge } from './charge.js'
-
 export type {
   GetConditionAddressParameters,
   GetConditionAddressReturnType,
@@ -17,8 +17,5 @@ export {
   getEscrowAddress,
   getOperatorConfig,
 } from './getOperatorConfig.js'
-
-export type { ReleaseParameters, ReleaseReturnType } from './release.js'
-export { release } from './release.js'
 
 export type { ConditionSlot, OperatorSlots } from './types.js'

@@ -4,8 +4,9 @@ import { ESCROW_FAST_FORWARD } from '../shared/constants.js'
 const ctx = await setup()
 
 try {
-  // ============ Example: Release Escrow ============
-  // As a merchant, release remaining funds after the escrow period expires.
+  // ============ Example: Capture Payment ============
+  // As a merchant, capture remaining authorized funds after the escrow
+  // period expires.
   // Uses testClient.increaseTime() to fast-forward past escrow.
 
   if (!ctx.merchant.escrow) {
@@ -26,25 +27,25 @@ try {
   const afterEscrow = await ctx.merchant.escrow.isDuringEscrow(ctx.paymentInfo)
   console.log(`During escrow after fast-forward: ${afterEscrow}`)
 
-  // Release remaining authorized funds
-  const tx = await ctx.merchant.payment.release(
+  // Capture authorized funds
+  const tx = await ctx.merchant.payment.capture(
     ctx.paymentInfo,
     ctx.PAYMENT_AMOUNT,
   )
   await ctx.waitForTx(tx)
-  console.log(`Escrow released: ${tx}`)
+  console.log(`Captured: ${tx}`)
 
-  // Verify final amounts — after release, capturable should be 0
+  // Verify final amounts — after full capture, capturable should be 0
   const amounts = await ctx.merchant.payment.getAmounts(ctx.paymentInfo)
   console.log(`Capturable amount: ${amounts.capturableAmount}`)
   console.log(`Refundable amount: ${amounts.refundableAmount}`)
 
   if (amounts.capturableAmount !== 0n) {
     throw new Error(
-      `Capturable should be 0 after full release, got ${amounts.capturableAmount}`,
+      `Capturable should be 0 after full capture, got ${amounts.capturableAmount}`,
     )
   }
-  console.log('Release verified')
+  console.log('Capture verified')
 } finally {
   await ctx.cleanup()
 }

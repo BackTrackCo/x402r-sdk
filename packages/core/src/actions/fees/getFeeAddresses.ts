@@ -33,7 +33,7 @@ export async function getFeeAddresses(
         publicClient.readContract({
           address: operatorAddress,
           abi: paymentOperatorAbi,
-          functionName: 'FEE_RECIPIENT',
+          functionName: 'FEE_RECEIVER',
         }),
       ])
 

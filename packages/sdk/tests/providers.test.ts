@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockPaymentInfo } from './fixtures.js'
 
-const mockGetPayerPaymentsFromRecorder = vi.fn()
-const mockGetReceiverPaymentsFromRecorder = vi.fn()
-const mockGetRecorderPaymentInfo = vi.fn()
+const mockGetPayerPaymentsFromHook = vi.fn()
+const mockGetReceiverPaymentsFromHook = vi.fn()
+const mockGetHookPaymentInfo = vi.fn()
 const mockGetPayerPaymentsByEvents = vi.fn()
 const mockGetReceiverPaymentsByEvents = vi.fn()
 
@@ -11,12 +11,11 @@ vi.mock('@x402r/core', async (importOriginal) => {
   const actual = (await importOriginal()) as Record<string, unknown>
   return {
     ...actual,
-    getPayerPaymentsFromRecorder: (...args: unknown[]) =>
-      mockGetPayerPaymentsFromRecorder(...args),
-    getReceiverPaymentsFromRecorder: (...args: unknown[]) =>
-      mockGetReceiverPaymentsFromRecorder(...args),
-    getRecorderPaymentInfo: (...args: unknown[]) =>
-      mockGetRecorderPaymentInfo(...args),
+    getPayerPaymentsFromHook: (...args: unknown[]) =>
+      mockGetPayerPaymentsFromHook(...args),
+    getReceiverPaymentsFromHook: (...args: unknown[]) =>
+      mockGetReceiverPaymentsFromHook(...args),
+    getHookPaymentInfo: (...args: unknown[]) => mockGetHookPaymentInfo(...args),
     getPayerPaymentsByEvents: (...args: unknown[]) =>
       mockGetPayerPaymentsByEvents(...args),
     getReceiverPaymentsByEvents: (...args: unknown[]) =>
@@ -28,7 +27,7 @@ import type { PaymentInfo } from '@x402r/core'
 import type { PublicClient } from 'viem'
 import {
   createEventProvider,
-  createRecorderProvider,
+  createHookProvider,
   createStoreProvider,
 } from '../src/resolver/providers.js'
 import type { PaymentStore } from '../src/store/types.js'
@@ -100,24 +99,24 @@ describe('createStoreProvider', () => {
 })
 
 // ---------------------------------------------------------------------------
-// createRecorderProvider
+// createHookProvider
 // ---------------------------------------------------------------------------
 
-describe('createRecorderProvider', () => {
+describe('createHookProvider', () => {
   it('getByPayer delegates to core with correct args', async () => {
-    mockGetPayerPaymentsFromRecorder.mockResolvedValue({
+    mockGetPayerPaymentsFromHook.mockResolvedValue({
       payments: [mockPaymentInfo],
       total: 1n,
     })
-    const provider = createRecorderProvider(mockPublicClient, RECORDER)
+    const provider = createHookProvider(mockPublicClient, RECORDER)
 
     const result = await provider.getByPayer(84532, PAYER)
 
     expect(result).toEqual([mockPaymentInfo])
-    expect(mockGetPayerPaymentsFromRecorder).toHaveBeenCalledWith(
+    expect(mockGetPayerPaymentsFromHook).toHaveBeenCalledWith(
       mockPublicClient,
       expect.objectContaining({
-        recorderAddress: RECORDER,
+        hookAddress: RECORDER,
         payer: PAYER,
         offset: 0n,
       }),
@@ -125,36 +124,39 @@ describe('createRecorderProvider', () => {
   })
 
   it('getByReceiver delegates to core with correct args', async () => {
-    mockGetReceiverPaymentsFromRecorder.mockResolvedValue({
+    mockGetReceiverPaymentsFromHook.mockResolvedValue({
       payments: [mockPaymentInfo],
       total: 1n,
     })
-    const provider = createRecorderProvider(mockPublicClient, RECORDER)
+    const provider = createHookProvider(mockPublicClient, RECORDER)
 
     const result = await provider.getByReceiver(84532, RECEIVER)
 
     expect(result).toEqual([mockPaymentInfo])
-    expect(mockGetReceiverPaymentsFromRecorder).toHaveBeenCalledWith(
+    expect(mockGetReceiverPaymentsFromHook).toHaveBeenCalledWith(
       mockPublicClient,
       expect.objectContaining({
-        recorderAddress: RECORDER,
+        hookAddress: RECORDER,
         receiver: RECEIVER,
         offset: 0n,
       }),
     )
   })
 
-  it('getByHash delegates to getRecorderPaymentInfo', async () => {
-    mockGetRecorderPaymentInfo.mockResolvedValue(mockPaymentInfo)
-    const provider = createRecorderProvider(mockPublicClient, RECORDER)
+  it('getByHash delegates to getHookPaymentInfo', async () => {
+    mockGetHookPaymentInfo.mockResolvedValue(mockPaymentInfo)
+    const provider = createHookProvider(mockPublicClient, RECORDER)
 
     const result = await provider.getByHash(84532, HASH)
 
     expect(result).toEqual(mockPaymentInfo)
-    expect(mockGetRecorderPaymentInfo).toHaveBeenCalledWith(mockPublicClient, {
-      recorderAddress: RECORDER,
-      hash: HASH,
-    })
+    expect(mockGetHookPaymentInfo).toHaveBeenCalledWith(
+      mockPublicClient,
+      expect.objectContaining({
+        hookAddress: RECORDER,
+        hash: HASH,
+      }),
+    )
   })
 
   it('auto-paginates when total exceeds page size', async () => {
@@ -162,16 +164,18 @@ describe('createRecorderProvider', () => {
     const info2 = { ...mockPaymentInfo, salt: 2n } as PaymentInfo
     const info3 = { ...mockPaymentInfo, salt: 3n } as PaymentInfo
 
-    mockGetPayerPaymentsFromRecorder
+    mockGetPayerPaymentsFromHook
       .mockResolvedValueOnce({ payments: [info1, info2], total: 3n })
       .mockResolvedValueOnce({ payments: [info3], total: 3n })
 
-    const provider = createRecorderProvider(mockPublicClient, RECORDER, 2n)
+    const provider = createHookProvider(mockPublicClient, RECORDER, {
+      pageSize: 2n,
+    })
     const result = await provider.getByPayer(84532, PAYER)
 
     expect(result).toEqual([info1, info2, info3])
-    expect(mockGetPayerPaymentsFromRecorder).toHaveBeenCalledTimes(2)
-    expect(mockGetPayerPaymentsFromRecorder).toHaveBeenNthCalledWith(
+    expect(mockGetPayerPaymentsFromHook).toHaveBeenCalledTimes(2)
+    expect(mockGetPayerPaymentsFromHook).toHaveBeenNthCalledWith(
       2,
       mockPublicClient,
       expect.objectContaining({ offset: 2n, count: 2n }),
@@ -179,47 +183,57 @@ describe('createRecorderProvider', () => {
   })
 
   it('returns empty array when total is 0', async () => {
-    mockGetPayerPaymentsFromRecorder.mockResolvedValueOnce({
+    mockGetPayerPaymentsFromHook.mockResolvedValueOnce({
       payments: [],
       total: 0n,
     })
-    const provider = createRecorderProvider(mockPublicClient, RECORDER)
+    const provider = createHookProvider(mockPublicClient, RECORDER)
 
     const result = await provider.getByPayer(84532, PAYER)
 
     expect(result).toEqual([])
-    expect(mockGetPayerPaymentsFromRecorder).toHaveBeenCalledTimes(1)
+    expect(mockGetPayerPaymentsFromHook).toHaveBeenCalledTimes(1)
   })
 
   it('exactly page-size results — no extra page fetch', async () => {
     const info1 = { ...mockPaymentInfo, salt: 1n } as PaymentInfo
     const info2 = { ...mockPaymentInfo, salt: 2n } as PaymentInfo
 
-    mockGetPayerPaymentsFromRecorder.mockResolvedValueOnce({
+    mockGetPayerPaymentsFromHook.mockResolvedValueOnce({
       payments: [info1, info2],
       total: 2n,
     })
 
-    const provider = createRecorderProvider(mockPublicClient, RECORDER, 2n)
+    const provider = createHookProvider(mockPublicClient, RECORDER, {
+      pageSize: 2n,
+    })
     const result = await provider.getByPayer(84532, PAYER)
 
     expect(result).toEqual([info1, info2])
-    expect(mockGetPayerPaymentsFromRecorder).toHaveBeenCalledTimes(1)
+    expect(mockGetPayerPaymentsFromHook).toHaveBeenCalledTimes(1)
   })
 
-  it('pagination stall guard — stops when page returns empty', async () => {
-    mockGetPayerPaymentsFromRecorder
-      .mockResolvedValueOnce({
-        payments: [mockPaymentInfo],
-        total: 5n,
-      })
-      .mockResolvedValueOnce({ payments: [], total: 5n })
+  it('paginates by requested count, not by post-filter length (operator-filter safety)', async () => {
+    // Simulates an operator filter that drops every record on the first page.
+    // Old logic broke on empty payments — with operator scoping that would
+    // drop later pages prematurely. New logic advances by the requested
+    // count and stops only when offset >= total.
+    mockGetPayerPaymentsFromHook
+      .mockResolvedValueOnce({ payments: [], total: 3n })
+      .mockResolvedValueOnce({ payments: [mockPaymentInfo], total: 3n })
 
-    const provider = createRecorderProvider(mockPublicClient, RECORDER, 1n)
+    const provider = createHookProvider(mockPublicClient, RECORDER, {
+      pageSize: 2n,
+    })
     const result = await provider.getByPayer(84532, PAYER)
 
     expect(result).toEqual([mockPaymentInfo])
-    expect(mockGetPayerPaymentsFromRecorder).toHaveBeenCalledTimes(2)
+    expect(mockGetPayerPaymentsFromHook).toHaveBeenCalledTimes(2)
+    expect(mockGetPayerPaymentsFromHook).toHaveBeenNthCalledWith(
+      2,
+      mockPublicClient,
+      expect.objectContaining({ offset: 2n, count: 2n }),
+    )
   })
 
   it('multi-page receiver pagination', async () => {
@@ -227,20 +241,87 @@ describe('createRecorderProvider', () => {
     const info2 = { ...mockPaymentInfo, salt: 20n } as PaymentInfo
     const info3 = { ...mockPaymentInfo, salt: 30n } as PaymentInfo
 
-    mockGetReceiverPaymentsFromRecorder
+    mockGetReceiverPaymentsFromHook
       .mockResolvedValueOnce({ payments: [info1, info2], total: 3n })
       .mockResolvedValueOnce({ payments: [info3], total: 3n })
 
-    const provider = createRecorderProvider(mockPublicClient, RECORDER, 2n)
+    const provider = createHookProvider(mockPublicClient, RECORDER, {
+      pageSize: 2n,
+    })
     const result = await provider.getByReceiver(84532, RECEIVER)
 
     expect(result).toEqual([info1, info2, info3])
-    expect(mockGetReceiverPaymentsFromRecorder).toHaveBeenCalledTimes(2)
-    expect(mockGetReceiverPaymentsFromRecorder).toHaveBeenNthCalledWith(
+    expect(mockGetReceiverPaymentsFromHook).toHaveBeenCalledTimes(2)
+    expect(mockGetReceiverPaymentsFromHook).toHaveBeenNthCalledWith(
       2,
       mockPublicClient,
       expect.objectContaining({ offset: 2n, count: 2n }),
     )
+  })
+
+  // -------------------------------------------------------------------------
+  // operatorAddress passthrough (cross-operator data scoping)
+  // -------------------------------------------------------------------------
+
+  it('passes operatorAddress through on getByPayer when set', async () => {
+    mockGetPayerPaymentsFromHook.mockResolvedValueOnce({
+      payments: [mockPaymentInfo],
+      total: 1n,
+    })
+
+    const provider = createHookProvider(mockPublicClient, RECORDER, {
+      operatorAddress: OPERATOR,
+    })
+    await provider.getByPayer(84532, PAYER)
+
+    expect(mockGetPayerPaymentsFromHook).toHaveBeenCalledWith(
+      mockPublicClient,
+      expect.objectContaining({ operatorAddress: OPERATOR }),
+    )
+  })
+
+  it('passes operatorAddress through on getByReceiver when set', async () => {
+    mockGetReceiverPaymentsFromHook.mockResolvedValueOnce({
+      payments: [mockPaymentInfo],
+      total: 1n,
+    })
+
+    const provider = createHookProvider(mockPublicClient, RECORDER, {
+      operatorAddress: OPERATOR,
+    })
+    await provider.getByReceiver(84532, RECEIVER)
+
+    expect(mockGetReceiverPaymentsFromHook).toHaveBeenCalledWith(
+      mockPublicClient,
+      expect.objectContaining({ operatorAddress: OPERATOR }),
+    )
+  })
+
+  it('passes operatorAddress through on getByHash when set', async () => {
+    mockGetHookPaymentInfo.mockResolvedValueOnce(mockPaymentInfo)
+
+    const provider = createHookProvider(mockPublicClient, RECORDER, {
+      operatorAddress: OPERATOR,
+    })
+    await provider.getByHash(84532, HASH)
+
+    expect(mockGetHookPaymentInfo).toHaveBeenCalledWith(
+      mockPublicClient,
+      expect.objectContaining({ operatorAddress: OPERATOR }),
+    )
+  })
+
+  it('omits operatorAddress when not set (undefined passes through)', async () => {
+    mockGetPayerPaymentsFromHook.mockResolvedValueOnce({
+      payments: [mockPaymentInfo],
+      total: 1n,
+    })
+
+    const provider = createHookProvider(mockPublicClient, RECORDER)
+    await provider.getByPayer(84532, PAYER)
+
+    const callArg = mockGetPayerPaymentsFromHook.mock.calls[0][1]
+    expect(callArg.operatorAddress).toBeUndefined()
   })
 })
 

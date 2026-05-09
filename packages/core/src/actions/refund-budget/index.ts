@@ -1,23 +1,20 @@
 export type {
-  ApprovePostEscrowRefundParameters,
-  ApprovePostEscrowRefundReturnType,
-} from './approvePostEscrowRefund.js'
-export { approvePostEscrowRefund } from './approvePostEscrowRefund.js'
+  ApproveRefundAllowanceParameters,
+  ApproveRefundAllowanceReturnType,
+} from './approveRefundAllowance.js'
+export { approveRefundAllowance } from './approveRefundAllowance.js'
 
 export type {
-  GetPostEscrowRefundAllowanceParameters,
-  GetPostEscrowRefundAllowanceReturnType,
-} from './getPostEscrowRefundAllowance.js'
-export { getPostEscrowRefundAllowance } from './getPostEscrowRefundAllowance.js'
+  GetRefundAllowanceParameters,
+  GetRefundAllowanceReturnType,
+} from './getRefundAllowance.js'
+export { getRefundAllowance } from './getRefundAllowance.js'
+
+export type { RefundParameters, RefundReturnType } from './refund.js'
+export { refund } from './refund.js'
 
 export type {
-  RefundInEscrowParameters,
-  RefundInEscrowReturnType,
-} from './refundInEscrow.js'
-export { refundInEscrow } from './refundInEscrow.js'
-
-export type {
-  RefundPostEscrowParameters,
-  RefundPostEscrowReturnType,
-} from './refundPostEscrow.js'
-export { refundPostEscrow } from './refundPostEscrow.js'
+  VoidPaymentParameters,
+  VoidPaymentReturnType,
+} from './voidPayment.js'
+export { voidPayment } from './voidPayment.js'

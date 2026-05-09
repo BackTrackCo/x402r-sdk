@@ -43,7 +43,7 @@ describe('getFeeAddresses', () => {
     const client = createMockPublicClient({
       [`${MOCK_OPERATOR}:FEE_CALCULATOR`]: MOCK_FEE_CALCULATOR,
       [`${MOCK_OPERATOR}:PROTOCOL_FEE_CONFIG`]: MOCK_PROTOCOL_FEE_CONFIG,
-      [`${MOCK_OPERATOR}:FEE_RECIPIENT`]: MOCK_FEE_RECIPIENT,
+      [`${MOCK_OPERATOR}:FEE_RECEIVER`]: MOCK_FEE_RECIPIENT,
       [`${MOCK_PROTOCOL_FEE_CONFIG}:calculator`]: MOCK_PROTOCOL_CALCULATOR,
       [`${MOCK_PROTOCOL_FEE_CONFIG}:getProtocolFeeRecipient`]:
         MOCK_PROTOCOL_RECIPIENT,
@@ -66,7 +66,7 @@ describe('getFeeAddresses', () => {
     const client = createMockPublicClient({
       [`${MOCK_OPERATOR}:FEE_CALCULATOR`]: MOCK_FEE_CALCULATOR,
       [`${MOCK_OPERATOR}:PROTOCOL_FEE_CONFIG`]: zeroAddress,
-      [`${MOCK_OPERATOR}:FEE_RECIPIENT`]: MOCK_FEE_RECIPIENT,
+      [`${MOCK_OPERATOR}:FEE_RECEIVER`]: MOCK_FEE_RECIPIENT,
     })
 
     const result = await getFeeAddresses(client, {

@@ -10,11 +10,11 @@ Multi-role integration scenarios that exercise the full x402r payment lifecycle 
 
 ## Available Scenarios
 
-### happy-path-release
+### happy-path-capture
 
-2-role flow: authorize → release.
+2-role flow: authorize → capture.
 
-Demonstrates the simplest payment lifecycle — merchant authorizes a payment, waits for escrow expiry, and releases.
+Demonstrates the simplest payment lifecycle — merchant authorizes a payment, waits for escrow expiry, and captures.
 
 ### dispute-resolution
 
@@ -33,7 +33,7 @@ Exercises the complete dispute flow:
 
 ```bash
 # From x402r-sdk root
-pnpm scenario:release
+pnpm scenario:capture
 pnpm scenario:dispute
 ```
 

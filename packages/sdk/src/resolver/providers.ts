@@ -1,9 +1,9 @@
 import {
+  getHookPaymentInfo,
   getPayerPaymentsByEvents,
-  getPayerPaymentsFromRecorder,
+  getPayerPaymentsFromHook,
   getReceiverPaymentsByEvents,
-  getReceiverPaymentsFromRecorder,
-  getRecorderPaymentInfo,
+  getReceiverPaymentsFromHook,
   type PaymentInfo,
 } from '@x402r/core'
 import type { Address, PublicClient } from 'viem'
@@ -20,31 +20,50 @@ export function createStoreProvider(store: PaymentStore): PaymentInfoProvider {
   }
 }
 
-/** Default page size for recorder pagination. */
+/** Default page size for hook pagination. */
 const DEFAULT_PAGE_SIZE = 1000n
 
-export function createRecorderProvider(
+/**
+ * Options for `createHookProvider`.
+ * - `pageSize`: page size for paginated reads (default 1000).
+ * - `operatorAddress`: if set, scopes hook reads to this operator. The
+ *   canonical `PaymentIndexRecorderHook` is a chain singleton aggregating
+ *   across every operator routing through HookCombinator; without this
+ *   option, multi-operator deployments receive mingled records. Pagination
+ *   remains correct because offset is advanced by the requested page size,
+ *   not by post-filter length.
+ *
+ * Perf caveat: `total` from the hook contract is the unfiltered cross-
+ * operator count. When `operatorAddress` is set against a heavily-shared
+ * singleton (many co-tenants), the loop issues one RPC per page across the
+ * full unfiltered range and discards most results client-side. Acceptable
+ * at small scale; cursor-based pagination on the hook contract is the real
+ * fix and is intended follow-up work.
+ */
+export function createHookProvider(
   publicClient: PublicClient,
-  recorderAddress: Address,
-  pageSize: bigint = DEFAULT_PAGE_SIZE,
+  hookAddress: Address,
+  options: { pageSize?: bigint; operatorAddress?: Address } = {},
 ): PaymentInfoProvider {
+  const pageSize = options.pageSize ?? DEFAULT_PAGE_SIZE
+  const operatorAddress = options.operatorAddress
   return {
-    name: 'recorder',
+    name: 'hook',
     async getByPayer(_, payer) {
       const all: PaymentInfo[] = []
       let offset = 0n
       let total: bigint
       do {
-        const result = await getPayerPaymentsFromRecorder(publicClient, {
-          recorderAddress,
+        const result = await getPayerPaymentsFromHook(publicClient, {
+          hookAddress,
           payer,
           offset,
           count: pageSize,
+          operatorAddress,
         })
-        if (result.payments.length === 0) break
         all.push(...result.payments)
         total = result.total
-        offset += BigInt(result.payments.length)
+        offset += pageSize
       } while (offset < total)
       return all
     },
@@ -53,23 +72,24 @@ export function createRecorderProvider(
       let offset = 0n
       let total: bigint
       do {
-        const result = await getReceiverPaymentsFromRecorder(publicClient, {
-          recorderAddress,
+        const result = await getReceiverPaymentsFromHook(publicClient, {
+          hookAddress,
           receiver,
           offset,
           count: pageSize,
+          operatorAddress,
         })
-        if (result.payments.length === 0) break
         all.push(...result.payments)
         total = result.total
-        offset += BigInt(result.payments.length)
+        offset += pageSize
       } while (offset < total)
       return all
     },
     async getByHash(_, hash) {
-      return getRecorderPaymentInfo(publicClient, {
-        recorderAddress,
+      return getHookPaymentInfo(publicClient, {
+        hookAddress,
         hash,
+        operatorAddress,
       })
     },
   }

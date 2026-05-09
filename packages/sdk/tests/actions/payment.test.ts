@@ -17,11 +17,11 @@ vi.mock('@x402r/core', async (importOriginal) => {
     ...actual,
     authorize: vi.fn().mockResolvedValue('0xauthorize_hash'),
     charge: vi.fn().mockResolvedValue('0xcharge_hash'),
-    release: vi.fn().mockResolvedValue('0xrelease_hash'),
-    refundInEscrow: vi.fn().mockResolvedValue('0xrefund_escrow_hash'),
-    refundPostEscrow: vi.fn().mockResolvedValue('0xrefund_post_hash'),
-    approvePostEscrowRefund: vi.fn().mockResolvedValue('0xapprove_hash'),
-    getPostEscrowRefundAllowance: vi.fn().mockResolvedValue(500000n),
+    capture: vi.fn().mockResolvedValue('0xcapture_hash'),
+    voidPayment: vi.fn().mockResolvedValue('0xrefund_escrow_hash'),
+    refund: vi.fn().mockResolvedValue('0xrefund_post_hash'),
+    approveRefundAllowance: vi.fn().mockResolvedValue('0xapprove_hash'),
+    getRefundAllowance: vi.fn().mockResolvedValue(500000n),
     getPaymentState: vi.fn().mockResolvedValue([false, 1000000n, 0n]),
     getPaymentAmounts: vi.fn().mockResolvedValue({
       hasCollectedPayment: false,
@@ -32,12 +32,12 @@ vi.mock('@x402r/core', async (importOriginal) => {
 })
 
 import {
-  approvePostEscrowRefund as coreApprovePostEscrowRefund,
+  approveRefundAllowance as coreApproveRefundAllowance,
   authorize as coreAuthorize,
-  getPostEscrowRefundAllowance as coreGetPostEscrowRefundAllowance,
-  refundInEscrow as coreRefundInEscrow,
-  refundPostEscrow as coreRefundPostEscrow,
-  release as coreRelease,
+  capture as coreCapture,
+  getRefundAllowance as coreGetRefundAllowance,
+  refund as coreRefund,
+  voidPayment as coreVoidPayment,
   getPaymentAmounts,
   getPaymentState,
 } from '@x402r/core'
@@ -95,18 +95,18 @@ describe('createPaymentActions', () => {
     ).rejects.toThrow(ValidationError)
   })
 
-  it('release delegates correctly', async () => {
+  it('capture delegates correctly', async () => {
     const config = createTestConfig()
     const payment = createPaymentActions(config)
 
-    const hash = await payment.release(mockPaymentInfo, 500000n)
+    const hash = await payment.capture(mockPaymentInfo, 500000n)
 
-    expect(coreRelease).toHaveBeenCalledWith(config.walletClient, {
+    expect(coreCapture).toHaveBeenCalledWith(config.walletClient, {
       operatorAddress: TEST_OPERATOR,
       paymentInfo: mockPaymentInfo,
       amount: 500000n,
     })
-    expect(hash).toBe('0xrelease_hash')
+    expect(hash).toBe('0xcapture_hash')
   })
 
   it('charge throws ValidationError without walletClient', async () => {
@@ -143,40 +143,39 @@ describe('createPaymentActions', () => {
 
   // ---- Refund execution ops (moved from refund action group) ---------------
 
-  it('refundInEscrow injects operatorAddress', async () => {
+  it('voidPayment injects operatorAddress', async () => {
     const config = createTestConfig()
     const payment = createPaymentActions(config)
-    const hash = await payment.refundInEscrow(mockPaymentInfo, 50n)
-    expect(coreRefundInEscrow).toHaveBeenCalledWith(config.walletClient, {
+    const hash = await payment.voidPayment(mockPaymentInfo)
+    expect(coreVoidPayment).toHaveBeenCalledWith(config.walletClient, {
       operatorAddress: TEST_OPERATOR,
       paymentInfo: mockPaymentInfo,
-      amount: 50n,
     })
     expect(hash).toBe('0xrefund_escrow_hash')
   })
 
-  it('refundInEscrow throws ValidationError without walletClient', async () => {
+  it('voidPayment throws ValidationError without walletClient', async () => {
     const config = createTestConfig({ walletClient: undefined })
     const payment = createPaymentActions(config)
-    await expect(payment.refundInEscrow(mockPaymentInfo, 50n)).rejects.toThrow(
+    await expect(payment.voidPayment(mockPaymentInfo)).rejects.toThrow(
       ValidationError,
     )
   })
 
-  it('refundPostEscrow passes tokenCollector and collectorData', async () => {
+  it('refund passes tokenCollector and collectorData', async () => {
     const config = createTestConfig()
     const payment = createPaymentActions(config)
     const tokenCollector = '0xaaaa000000000000000000000000000000000000' as const
     const collectorData = '0xdeadbeef' as `0x${string}`
 
-    const hash = await payment.refundPostEscrow(
+    const hash = await payment.refund(
       mockPaymentInfo,
       300n,
       tokenCollector,
       collectorData,
     )
 
-    expect(coreRefundPostEscrow).toHaveBeenCalledWith(config.walletClient, {
+    expect(coreRefund).toHaveBeenCalledWith(config.walletClient, {
       operatorAddress: TEST_OPERATOR,
       paymentInfo: mockPaymentInfo,
       amount: 300n,
@@ -186,14 +185,14 @@ describe('createPaymentActions', () => {
     expect(hash).toBe('0xrefund_post_hash')
   })
 
-  it('approvePostEscrowRefund uses receiverRefundCollector from chainConfig', async () => {
+  it('approveRefundAllowance uses receiverRefundCollector from chainConfig', async () => {
     const config = createTestConfig()
     const payment = createPaymentActions(config)
     const token = '0x036CbD53842c5426634e7929541eC2318f3dCF7e' as const
 
-    const hash = await payment.approvePostEscrowRefund(token, 500n)
+    const hash = await payment.approveRefundAllowance(token, 500n)
 
-    expect(coreApprovePostEscrowRefund).toHaveBeenCalledWith(
+    expect(coreApproveRefundAllowance).toHaveBeenCalledWith(
       config.walletClient,
       {
         token,
@@ -204,22 +203,19 @@ describe('createPaymentActions', () => {
     expect(hash).toBe('0xapprove_hash')
   })
 
-  it('getPostEscrowRefundAllowance uses receiverRefundCollector from chainConfig', async () => {
+  it('getRefundAllowance uses receiverRefundCollector from chainConfig', async () => {
     const config = createTestConfig({ walletClient: undefined })
     const payment = createPaymentActions(config)
     const token = '0x036CbD53842c5426634e7929541eC2318f3dCF7e' as const
     const owner = '0x2234567890abcdef1234567890abcdef12345678' as const
 
-    const result = await payment.getPostEscrowRefundAllowance(token, owner)
+    const result = await payment.getRefundAllowance(token, owner)
 
-    expect(coreGetPostEscrowRefundAllowance).toHaveBeenCalledWith(
-      config.publicClient,
-      {
-        token,
-        owner,
-        collectorAddress: config.chainConfig.receiverRefundCollector,
-      },
-    )
+    expect(coreGetRefundAllowance).toHaveBeenCalledWith(config.publicClient, {
+      token,
+      owner,
+      collectorAddress: config.chainConfig.receiverRefundCollector,
+    })
     expect(result).toBe(500000n)
   })
 

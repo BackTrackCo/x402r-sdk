@@ -108,5 +108,11 @@ export const anvilBaseSepolia = defineAnvil({
   forkUrl:
     process.env.VITE_ANVIL_FORK_URL_BASE_SEPOLIA ?? 'https://sepolia.base.org',
   port: 8745,
-  forkBlockNumber: 39_633_600n,
+  // FORK_BLOCK intentionally unpinned — Base Sepolia public RPC has a narrow
+  // archive horizon (~last few hundred blocks). Pinning a fixed historical
+  // block fails with "block not found" / 400 Bad Request once the chain
+  // moves past that horizon. Anvil forks at upstream's latest by default,
+  // which always works against the public RPC. Trade-off: tests run against
+  // moving on-chain state. Acceptable for fork tests since they validate
+  // canonical contracts at addresses that are stable across blocks.
 })

@@ -4,8 +4,8 @@ const ctx = await setup()
 
 try {
   // ============ Example: Approve Refund ============
-  // Whoever is authorized by the operator's refundInEscrowCondition can call
-  // refundInEscrow(). The RefundRequest recorder auto-approves the pending request.
+  // Whoever is authorized by the operator's voidCondition can call
+  // voidPayment(). The RefundRequest hook auto-approves the pending request.
   // The condition could be ReceiverCondition, StaticAddressCondition(arbiter), etc.
 
   if (!ctx.payer.refund) {
@@ -27,12 +27,11 @@ try {
   await ctx.waitForTx(reqTx)
   console.log('Payer requested refund')
 
-  // Step 2: Authorized party calls refundInEscrow (recorder approves automatically)
-  // Here the arbiter is the authorized caller — depends on operator condition setup.
-  const tx = await ctx.arbiter.payment.refundInEscrow(
-    ctx.paymentInfo,
-    ctx.PAYMENT_AMOUNT,
-  )
+  // Step 2: Authorized party calls voidPayment (the RefundRequest hook approves
+  // the request automatically). voidPayment empties the entire authorization
+  // in one shot — escrow.void is full-only. Here the arbiter is the authorized
+  // caller; depends on operator condition setup.
+  const tx = await ctx.arbiter.payment.voidPayment(ctx.paymentInfo)
   await ctx.waitForTx(tx)
   console.log(`Refund approved: ${tx}`)
 

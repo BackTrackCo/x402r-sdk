@@ -3,23 +3,23 @@ import type { Address } from 'viem'
 export interface OperatorSlots {
   escrow: Address
   authorizeCondition: Address
-  authorizeRecorder: Address
+  authorizeHook: Address
   chargeCondition: Address
-  chargeRecorder: Address
-  releaseCondition: Address
-  releaseRecorder: Address
-  refundInEscrowCondition: Address
-  refundInEscrowRecorder: Address
-  refundPostEscrowCondition: Address
-  refundPostEscrowRecorder: Address
+  chargeHook: Address
+  captureCondition: Address
+  captureHook: Address
+  voidCondition: Address
+  voidHook: Address
+  refundCondition: Address
+  refundHook: Address
   feeCalculator: Address
-  feeRecipient: Address
+  feeReceiver: Address
   protocolFeeConfig: Address
 }
 
 export type ConditionSlot =
-  | 'AUTHORIZE_CONDITION'
-  | 'CHARGE_CONDITION'
-  | 'RELEASE_CONDITION'
-  | 'REFUND_IN_ESCROW_CONDITION'
-  | 'REFUND_POST_ESCROW_CONDITION'
+  | 'AUTHORIZE_PRE_ACTION_CONDITION'
+  | 'CHARGE_PRE_ACTION_CONDITION'
+  | 'CAPTURE_PRE_ACTION_CONDITION'
+  | 'VOID_PRE_ACTION_CONDITION'
+  | 'REFUND_PRE_ACTION_CONDITION'

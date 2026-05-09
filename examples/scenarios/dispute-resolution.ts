@@ -9,8 +9,8 @@ import { StepRunner } from './runner.js'
 // Scenario: Dispute Resolution (3-role full lifecycle)
 //
 // Flow: authorize → payer requests refund → payer + merchant submit evidence →
-//       arbiter reviews evidence → merchant executes refundInEscrow
-//       (recorder approves automatically) → verify refund amounts →
+//       arbiter reviews evidence → merchant executes voidPayment
+//       (hook approves automatically) → verify refund amounts →
 //       merchant distributes fees
 // ---------------------------------------------------------------------------
 
@@ -128,14 +128,17 @@ async function main() {
     }
 
     // ================================================================
-    // Step 5: Merchant executes refund (recorder approves automatically)
+    // Step 5: Merchant executes refund (hook approves automatically)
     // ================================================================
-    runner.step('Merchant executes refundInEscrow (recorder approves)')
+    runner.step('Merchant executes voidPayment (hook approves)')
 
-    const refundTx = await ctx.merchant.payment.refundInEscrow(
-      ctx.paymentInfo,
-      PAYMENT_AMOUNT,
-    )
+    // voidPayment empties the entire authorization in one transaction
+    // (escrow.void is full-only). For partial in-escrow refunds use the
+    // partial-capture pattern: capture(merchantAmount) leaves the remainder
+    // in escrow, then voidPayment() returns it to the payer (no allowance,
+    // no ReceiverRefundCollector). See the changeset migration note + the
+    // .extend() example in packages/sdk/README.md.
+    const refundTx = await ctx.merchant.payment.voidPayment(ctx.paymentInfo)
     await runner.waitForTx(refundTx)
 
     const approvedRequest = await ctx.merchant.refund.get(ctx.paymentInfo)

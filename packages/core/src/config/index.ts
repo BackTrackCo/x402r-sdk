@@ -14,7 +14,7 @@ export interface FactoryAddresses {
   andCondition: Address
   orCondition: Address
   notCondition: Address
-  recorderCombinator: Address
+  hookCombinator: Address
   signatureCondition: Address
   refundRequest: Address
   refundRequestEvidence: Address
@@ -26,9 +26,9 @@ export interface ConditionSingletonAddresses {
   alwaysTrue: Address
 }
 
-export interface RecorderSingletonAddresses {
-  /** PaymentIndexRecorder(escrow, recorderCombinatorCodehash) — deploy once, share across operators */
-  paymentIndexRecorder: Address
+export interface HookSingletonAddresses {
+  /** PaymentIndexRecorderHook(escrow, hookCombinatorCodehash) — deploy once, share across operators */
+  paymentIndexRecorderHook: Address
 }
 
 export interface X402rChainConfig {
@@ -37,76 +37,137 @@ export interface X402rChainConfig {
   authCaptureEscrow: Address
   tokenCollector: Address
   protocolFeeConfig: Address
-  usdcTvlLimit: Address
   receiverRefundCollector: Address
   usdc: Address
   factories: FactoryAddresses
   conditions: ConditionSingletonAddresses
-  recorders: RecorderSingletonAddresses
+  hooks: HookSingletonAddresses
 }
 
 // ---------------------------------------------------------------------------
-// Unified CREATE3 addresses (same on every chain)
+// Canonical CREATE2 addresses
 // ---------------------------------------------------------------------------
+//
+// Two salt namespaces (see `x402r-contracts/script/DeployX402r.s.sol`):
+//   - `x402r-canonical-v1::<ContractName>` — escrow-independent contracts
+//       (ProtocolFeeConfig, condition singletons, ctor-arg-free factories,
+//       RefundRequestEvidenceFactory). Live on the chains in
+//       `x402r-contracts/deployments/canonical.json`.
+//   - `x402r-canonical-v1.0.1::<ContractName>` — escrow-dependent contracts
+//       (PaymentOperatorFactory, EscrowPeriodFactory, FreezeFactory,
+//       RefundRequestFactory, ReceiverRefundCollector, PaymentIndexRecorderHook).
+//       Same source as v1, rebound to the canonical AuthCaptureEscrow from
+//       `commerce-payments at v1.0.0`. Deployable today only on Base mainnet
+//       (8453) and Base Sepolia (84532); see
+//       `x402r-contracts/deployments/canonical-v1.0.1.json`.
+//
+// Source of truth: `x402r-contracts/script/PredictAddresses.s.sol` and
+// `x402r-contracts/script/DeployX402r.s.sol`. Owner / fee recipient
+// (`0x773dBcB5BDb3Df8359ba4e42D7Ce7AE3fC9Ee235`) is baked into the CREATE2
+// address of `ProtocolFeeConfig`; the canonical AuthCaptureEscrow is baked
+// into every v1.0.1 address.
 
+/** AuthCaptureEscrow at the canonical `commerce-payments at v1.0.0` deployment. */
 export const authCaptureEscrow =
-  '0xBC151792f80C0EB1973d56b0235e6bee2A60e245' as const satisfies Address
-export const tokenCollector =
-  '0x9A12A116a44636F55c9e135189A1321Abcfe2f30' as const satisfies Address
-export const protocolFeeConfig =
-  '0xf62788834C99B2E85a6891C0b46D1EB996f8f596' as const satisfies Address
-export const receiverRefundCollector =
-  '0x2C0eC8B33196071cA6d08299844235fD81e1466A' as const satisfies Address
-export const usdcTvlLimit =
-  '0x96a585F0e23eE9FD8722C7a61d3b8B3FAd2419df' as const satisfies Address
-
-/** Chain-invariant CREATE3 factory addresses. Same as `getChainConfig(chainId).factories`. */
-export const factories = {
-  paymentOperator: '0x3Cd5c76Fefe46CB07788Ee8f80B93B20D81941D4',
-  escrowPeriod: '0x22E42a1bC9Fc64ab77E4Bb9968b105034a978bfb',
-  freeze: '0x67657BefCd872A3AF36F437D53b2D4722392a940',
-  staticFeeCalculator: '0x8a9C93F3401A5C712bEd8A52436Ac09cD9aFe2De',
-  staticAddressCondition: '0xE606cA9568c92115a3Deb76E9f3891BEfac141f3',
-  andCondition: '0x6c3c57071C0Ac144D04e6C66BC809d2951dDF47D',
-  orCondition: '0x3dF6b5B840989Ce466161C31A49b8FadF2DA52E5',
-  notCondition: '0x269Db5f049A7225E4968Ef7Dee885922da0B8D73',
-  recorderCombinator: '0xb7571b80C24Ce81C65F6b322a75573B61327cA23',
-  signatureCondition: '0xc34EFa7C20940dc2aB50bE23eF150D8B87aEFAc3',
-  refundRequest: '0x69e9BF2b40Ed472b55E47e9D4205d93Ed673093F',
-  refundRequestEvidence: '0x6514e417f48c1828A2443C6173fa6E04324166E3',
-} as const satisfies FactoryAddresses
-
-/** Chain-invariant CREATE3 condition singleton addresses. Same as `getChainConfig(chainId).conditions`. */
-export const conditions = {
-  payer: '0x808bB293AE1473A38Dd4017afa3db941924fD0F3',
-  receiver: '0xB82697792e5Fcd644bDEAB23aa4e4511d9024C17',
-  alwaysTrue: '0xA367323189f20706488A1D83430eda82a2eA5320',
-} as const satisfies ConditionSingletonAddresses
-
-/** Chain-invariant CREATE3 recorder singleton addresses. Same as `getChainConfig(chainId).recorders`. */
-export const recorders = {
-  paymentIndexRecorder:
-    '0xa83A44836e16A35505EFA9c6b6a1BD9C0Ecc40E9' as const satisfies Address,
-} as const satisfies RecorderSingletonAddresses
+  '0xBdEA0D1bcC5966192B070Fdf62aB4EF5b4420cff' as const satisfies Address
 
 /**
- * Runtime codehash of RecorderCombinator contract.
- * All RecorderCombinator instances share identical runtime bytecode —
- * constructor args affect storage, not deployed code.
- * Verified via: cast codehash <factory-deployed-instance> --rpc-url base-sepolia
+ * Primary token collector. Currently aliases the canonical
+ * `ERC3009PaymentCollector` — Permit2 lands in a follow-up PR.
  */
-export const recorderCombinatorCodehash: Hex =
-  '0xeb3902c8489414d014e6b67d18755bc0d2cca05d84ee2c6db9de44120def49ea'
+export const tokenCollector =
+  '0x0E3dF9510de65469C4518D7843919c0b8C7A7757' as const satisfies Address
+
+export const protocolFeeConfig =
+  '0xBe2d24614F339a1eB103A399F93AA2a39Ca815Bc' as const satisfies Address
+export const receiverRefundCollector =
+  '0x88C9826dFA17Ad9d3a726015C667dD995394D341' as const satisfies Address
+
+/** Chain-invariant CREATE2 factory addresses. Same as `getChainConfig(chainId).factories`. */
+export const factories = {
+  // v1.0.1 (escrow-bound)
+  paymentOperator: '0xa0d4734842df1690a5B33Cb21828c946e39D55a2',
+  escrowPeriod: '0xe72D2014ebC48F1d92521e8629574918E8030548',
+  freeze: '0xeC092cf1215DB44af0Abe87c1157E304FEa5d0Eb',
+  refundRequest: '0xe971C674fD5c3462023f3F891dF6289DFbC9CEFC',
+  // v1 (escrow-free)
+  staticFeeCalculator: '0x97F99AB01F86b480f751B7b81166Dbe1F113e6C3',
+  staticAddressCondition: '0x77B379390750E1d3F802cC220926694D2454903E',
+  andCondition: '0x2B07d750C639b65a26e43F1FDCE404b21DCf16D9',
+  orCondition: '0x0519a37c0A996DD5F1e81e07b4aD3B24C257BC90',
+  notCondition: '0xb9c3223D059C3cAbD482bB54f3d7cD52DE70A9ae',
+  hookCombinator: '0x30B5373FD791D2d7b28C3B8020EB68b032f3f960',
+  signatureCondition: '0x46Fabd81d294d8589D5c7fCf4276bF966d0b0057',
+  refundRequestEvidence: '0x4089A5A853e9eF35f504B842795fB272dF69c739',
+} as const satisfies FactoryAddresses
+
+/** Chain-invariant CREATE2 condition singleton addresses. Same as `getChainConfig(chainId).conditions`. */
+export const conditions = {
+  payer: '0x586486394C38A2a7d36B16a3FDaF366cd202d823',
+  receiver: '0x321651df4593DA57C413579c5b611D1A90168a3A',
+  alwaysTrue: '0x2ef2A6162aEF9Df1022ff51c011af94D99AB4904',
+} as const satisfies ConditionSingletonAddresses
+
+/**
+ * Chain-invariant hook singleton addresses.
+ *
+ * `paymentIndexRecorderHook` is a chain singleton because both ctor args are
+ * chain-invariants — `escrow` is the canonical AuthCaptureEscrow and
+ * `authorizedCodehash` is `keccak256(type(HookCombinator).runtimeCode)` (every
+ * `HookCombinator` instance shares the same runtime code regardless of stored
+ * hooks; per-instance config lives in storage, not bytecode). Routing your
+ * operator's post-action through `HookCombinator` lets it reuse this single
+ * deployment instead of per-operator instances.
+ */
+export const hooks = {
+  paymentIndexRecorderHook:
+    '0x358ECA14fFD51e63D2Bb8DDE3aBAA14f8D5274C3' as const satisfies Address,
+} as const satisfies HookSingletonAddresses
+
+/**
+ * Runtime codehash of HookCombinator contract.
+ * All HookCombinator instances share identical runtime bytecode —
+ * constructor args affect storage, not deployed code.
+ * Computed from `x402r-contracts/out/HookCombinator.sol/HookCombinator.json`
+ * deployedBytecode at the locked toolchain (foundry.toml).
+ */
+export const hookCombinatorCodehash: Hex =
+  '0x99360a2e57387c49050f431d3df9700c14699850a53c993c30ac53ac4dd9e063'
+
+// ---------------------------------------------------------------------------
+// commerce-payments v1.0.0 primitives — canonical addresses
+// ---------------------------------------------------------------------------
+//
+// The audited `commerce-payments at v1.0.0` deployment of `AuthCaptureEscrow`
+// and the two payment collectors. Live today on Base mainnet (8453) and
+// Base Sepolia (84532); other chains follow as canonical coverage extends.
+
+/** AuthCaptureEscrow at canonical address (alias of `authCaptureEscrow`). */
+export const commercePaymentsAuthCaptureEscrow = authCaptureEscrow
+
+/** ERC3009PaymentCollector(escrow, multicall3) at canonical address. */
+export const commercePaymentsErc3009PaymentCollector =
+  '0x0E3dF9510de65469C4518D7843919c0b8C7A7757' as const satisfies Address
+
+/** Permit2PaymentCollector(escrow, permit2, multicall3) at canonical address. */
+export const commercePaymentsPermit2PaymentCollector =
+  '0x992476B9Ee81d52a5BdA0622C333938D0Af0aB26' as const satisfies Address
+
+/** Convenience bundle of all three commerce-payments primitive addresses. */
+export const commercePaymentsAddresses = {
+  authCaptureEscrow: commercePaymentsAuthCaptureEscrow,
+  erc3009PaymentCollector: commercePaymentsErc3009PaymentCollector,
+  permit2PaymentCollector: commercePaymentsPermit2PaymentCollector,
+} as const
 
 const PROTOCOL_ADDRESSES = {
   authCaptureEscrow,
   tokenCollector,
   protocolFeeConfig,
   receiverRefundCollector,
-  usdcTvlLimit,
   factories,
   conditions,
-  recorders,
+  hooks,
 } as const
 
 /** Build a chain config by spreading unified protocol addresses + chain-specific USDC */
@@ -127,60 +188,16 @@ function chainConfig(
 // Chain registry
 // ---------------------------------------------------------------------------
 
+// Supported chains are the chains where the canonical AuthCaptureEscrow lives.
+// Today: Base mainnet + Base Sepolia. Other EVMs will be added as canonical
+// `commerce-payments at v1.0.0` coverage extends.
 export const x402rChains = {
-  // Testnets
   84532: chainConfig(
     'Base Sepolia',
     84532,
     '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
   ),
-  11155111: chainConfig(
-    'Ethereum Sepolia',
-    11155111,
-    '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238',
-  ),
-  421614: chainConfig(
-    'Arbitrum Sepolia',
-    421614,
-    '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
-  ),
-
-  // Mainnets
-  1: chainConfig('Ethereum', 1, '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
   8453: chainConfig('Base', 8453, '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'),
-  137: chainConfig(
-    'Polygon',
-    137,
-    '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',
-  ),
-  42161: chainConfig(
-    'Arbitrum One',
-    42161,
-    '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
-  ),
-  10: chainConfig('Optimism', 10, '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85'),
-  42220: chainConfig(
-    'Celo',
-    42220,
-    '0xcebA9300f2b948710d2653dD7B07f33A8B32118C',
-  ),
-  43114: chainConfig(
-    'Avalanche C-Chain',
-    43114,
-    '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E',
-  ),
-  143: chainConfig('Monad', 143, '0x754704Bc059F8C67012fEd69BC8A327a5aafb603'),
-  59144: chainConfig(
-    'Linea',
-    59144,
-    '0x176211869cA2b568f2A7D4EE941E073a821EE1ff',
-  ),
-
-  1187947933: chainConfig(
-    'SKALE Base',
-    1187947933,
-    '0x85889c8c714505E0c94b30fcfcF64fE3Ac8FCb20',
-  ),
 } as const satisfies Record<number, X402rChainConfig>
 
 // ---------------------------------------------------------------------------
@@ -265,11 +282,9 @@ export function getConditionSingletons(
   return config.conditions
 }
 
-export function getRecorderSingletons(
-  chainId: number,
-): RecorderSingletonAddresses {
+export function getHookSingletons(chainId: number): HookSingletonAddresses {
   const config = getChainConfig(chainId)
-  return config.recorders
+  return config.hooks
 }
 
 export function hasFactories(chainId: number): boolean {

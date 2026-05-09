@@ -179,10 +179,10 @@ describe('createX402r', () => {
       chainId: 84532,
     })
     expect(client.refund).toBeUndefined()
-    expect(client.payment.refundInEscrow).toBeTypeOf('function')
-    expect(client.payment.refundPostEscrow).toBeTypeOf('function')
-    expect(client.payment.approvePostEscrowRefund).toBeTypeOf('function')
-    expect(client.payment.getPostEscrowRefundAllowance).toBeTypeOf('function')
+    expect(client.payment.voidPayment).toBeTypeOf('function')
+    expect(client.payment.refund).toBeTypeOf('function')
+    expect(client.payment.approveRefundAllowance).toBeTypeOf('function')
+    expect(client.payment.getRefundAllowance).toBeTypeOf('function')
   })
 
   it('freeze is undefined when no freezeAddress', () => {
@@ -198,15 +198,15 @@ describe('createX402r', () => {
     expect(client.freeze!.isFrozen).toBeTypeOf('function')
   })
 
-  it('query is undefined when no paymentIndexRecorderAddress', () => {
+  it('query is undefined when no paymentIndexRecorderHookAddress', () => {
     const client = createX402r(baseConfig)
     expect(client.query).toBeUndefined()
   })
 
-  it('query is defined when paymentIndexRecorderAddress provided', () => {
+  it('query is defined when paymentIndexRecorderHookAddress provided', () => {
     const client = createX402r({
       ...baseConfig,
-      paymentIndexRecorderAddress: TEST_RECORDER,
+      paymentIndexRecorderHookAddress: TEST_RECORDER,
     })
     expect(client.query).toBeDefined()
     expect(client.query!.getPayerPayments).toBeTypeOf('function')

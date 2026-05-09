@@ -16,7 +16,7 @@ export interface AuthorizeParameters {
 export type AuthorizeReturnType = Hash
 
 /**
- * Collects tokens into escrow. Use `release()` to claim after the escrow period.
+ * Collects tokens into escrow. Use `capture()` to claim after the escrow period.
  * Mutually exclusive with `charge()` on the same paymentInfo — calling both reverts
  * with `PaymentAlreadyCollected`.
  */

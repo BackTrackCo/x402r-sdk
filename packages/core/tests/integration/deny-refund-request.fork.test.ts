@@ -120,7 +120,11 @@ describe('Scenario 5: Deny refund request', () => {
     await testClient.increaseTime({ seconds: ESCROW_FAST_FORWARD })
     await testClient.mine({ blocks: 1 })
 
-    const hash = await merchant.payment.release(paymentInfo, DEFAULT_AMOUNT)
+    const hash = await merchant.payment.capture(
+      paymentInfo,
+      DEFAULT_AMOUNT,
+      '0x',
+    )
     await publicClient.waitForTransactionReceipt({ hash })
 
     const amounts = await merchant.payment.getAmounts(paymentInfo)
@@ -130,10 +134,10 @@ describe('Scenario 5: Deny refund request', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Scenario 5a-neg: refundInEscrow reverts after deny on gated operator
+// Scenario 5a-neg: voidPayment reverts after deny on gated operator
 // ---------------------------------------------------------------------------
 
-describe('Scenario 5a-neg: refundInEscrow reverts after deny', () => {
+describe('Scenario 5a-neg: voidPayment reverts after deny', () => {
   let gatedPaymentInfo: PaymentInfo
   let gatedFacilitator: X402r
   let gatedPayer: PayerClient
@@ -211,13 +215,10 @@ describe('Scenario 5a-neg: refundInEscrow reverts after deny', () => {
     expect(status).toBe(2) // Denied
   }, 60_000)
 
-  it('refundInEscrow reverts after deny (RequestNotApprovable)', async () => {
-    // refundInEscrow should revert because the RefundRequest recorder
-    // will fail — the request is already Denied
-    const hash = await gatedMerchant.payment.refundInEscrow(
-      gatedPaymentInfo,
-      DEFAULT_AMOUNT,
-    )
+  it('voidPayment reverts after deny (RequestNotApprovable)', async () => {
+    // voidPayment should revert because the RefundRequest hook (wired as
+    // voidPostActionHook) will fail — the request is already Denied
+    const hash = await gatedMerchant.payment.voidPayment(gatedPaymentInfo)
     const receipt = await publicClient.waitForTransactionReceipt({ hash })
     expect(receipt.status).toBe('reverted')
   }, 60_000)

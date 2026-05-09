@@ -98,11 +98,32 @@ export type {
 } from './freeze/index.js'
 export { freezePayment, isFrozen, unfreezePayment } from './freeze/index.js'
 // ---------------------------------------------------------------------------
+// Hook
+// ---------------------------------------------------------------------------
+export type {
+  GetHookPaymentInfoParameters,
+  GetPayerPaymentParameters,
+  GetPayerPaymentsFromHookParameters,
+  GetPayerPaymentsFromHookReturnType,
+  GetReceiverPaymentParameters,
+  GetReceiverPaymentsFromHookParameters,
+  GetReceiverPaymentsFromHookReturnType,
+} from './hook/index.js'
+export {
+  getHookPaymentInfo,
+  getPayerPayment,
+  getPayerPaymentsFromHook,
+  getReceiverPayment,
+  getReceiverPaymentsFromHook,
+} from './hook/index.js'
+// ---------------------------------------------------------------------------
 // Operator
 // ---------------------------------------------------------------------------
 export type {
   AuthorizeParameters,
   AuthorizeReturnType,
+  CaptureParameters,
+  CaptureReturnType,
   ChargeParameters,
   ChargeReturnType,
   ConditionSlot,
@@ -113,36 +134,15 @@ export type {
   GetOperatorConfigParameters,
   GetOperatorConfigReturnType,
   OperatorSlots,
-  ReleaseParameters,
-  ReleaseReturnType,
 } from './operator/index.js'
 export {
   authorize,
+  capture,
   charge,
   getConditionAddress,
   getEscrowAddress,
   getOperatorConfig,
-  release,
 } from './operator/index.js'
-// ---------------------------------------------------------------------------
-// Recorder
-// ---------------------------------------------------------------------------
-export type {
-  GetPayerPaymentParameters,
-  GetPayerPaymentsFromRecorderParameters,
-  GetPayerPaymentsFromRecorderReturnType,
-  GetReceiverPaymentParameters,
-  GetReceiverPaymentsFromRecorderParameters,
-  GetReceiverPaymentsFromRecorderReturnType,
-  GetRecorderPaymentInfoParameters,
-} from './recorder/index.js'
-export {
-  getPayerPayment,
-  getPayerPaymentsFromRecorder,
-  getReceiverPayment,
-  getReceiverPaymentsFromRecorder,
-  getRecorderPaymentInfo,
-} from './recorder/index.js'
 // ---------------------------------------------------------------------------
 // Refund
 // ---------------------------------------------------------------------------
@@ -198,18 +198,18 @@ export {
 // Refund Budget
 // ---------------------------------------------------------------------------
 export type {
-  ApprovePostEscrowRefundParameters,
-  ApprovePostEscrowRefundReturnType,
-  GetPostEscrowRefundAllowanceParameters,
-  GetPostEscrowRefundAllowanceReturnType,
-  RefundInEscrowParameters,
-  RefundInEscrowReturnType,
-  RefundPostEscrowParameters,
-  RefundPostEscrowReturnType,
+  ApproveRefundAllowanceParameters,
+  ApproveRefundAllowanceReturnType,
+  GetRefundAllowanceParameters,
+  GetRefundAllowanceReturnType,
+  RefundParameters,
+  RefundReturnType,
+  VoidPaymentParameters,
+  VoidPaymentReturnType,
 } from './refund-budget/index.js'
 export {
-  approvePostEscrowRefund,
-  getPostEscrowRefundAllowance,
-  refundInEscrow,
-  refundPostEscrow,
+  approveRefundAllowance,
+  getRefundAllowance,
+  refund,
+  voidPayment,
 } from './refund-budget/index.js'
