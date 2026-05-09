@@ -1204,7 +1204,7 @@ export async function deployDeliveryProtectionOperator(
       },
     },
     {
-      name: 'releaseCondition',
+      name: 'captureCondition',
       contract: {
         address: factoryAddrs.orCondition,
         abi: orConditionFactoryAbi,
@@ -1268,7 +1268,7 @@ export async function deployDeliveryProtectionOperator(
   const exists = {
     escrowPeriod: existsMap.get('escrowPeriod') ?? false,
     arbiterCondition: existsMap.get('arbiterCondition') ?? false,
-    releaseCondition: existsMap.get('releaseCondition') ?? false,
+    captureCondition: existsMap.get('captureCondition') ?? false,
     refundCondition: existsMap.get('refundCondition') ?? false,
     combinator: existsMap.get('combinator') ?? !hasCombinator,
     operator: existsMap.get('operator') ?? false,
@@ -1353,7 +1353,7 @@ export async function deployDeliveryProtectionOperator(
   // 3. OrCondition for capture: arbiter OR payer
   trackDeploy(
     captureConditionAddress,
-    exists.releaseCondition,
+    exists.captureCondition,
     factoryAddrs.orCondition,
     orConditionFactoryAbi,
     'deploy',

@@ -67,7 +67,7 @@ describe('previewMarketplaceOperator', () => {
     expect(result2.feeCalculatorAddress).toBeNull()
   })
 
-  it('freezeAddress is null and releaseCondition equals escrowPeriodAddress when freeze disabled', async () => {
+  it('freezeAddress is null and capturePreActionCondition equals escrowPeriodAddress when freeze disabled', async () => {
     const escrowAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
     const refundReqAddr =
       '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
@@ -98,7 +98,7 @@ describe('previewMarketplaceOperator', () => {
     expect(result.voidConditionAddress).toBe(orConditionAddr)
   })
 
-  it('freezeAddress is non-null and releaseCondition is AndCondition when freeze enabled', async () => {
+  it('freezeAddress is non-null and capturePreActionCondition is AndCondition when freeze enabled', async () => {
     const escrowAddr = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa' as Address
     const freezeAddr = '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB' as Address
     const andAddr = '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC' as Address
