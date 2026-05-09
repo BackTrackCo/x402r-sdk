@@ -84,8 +84,8 @@ describe('signReceiveAuthorization', () => {
       paymentInfo,
     })
 
-    // Canonical CREATE2 ERC3009PaymentCollector (commerce-payments v1.0.0)
-    expect(tokenCollector).toBe('0x7561DC178D9aD5bc5fb103C01f448A510d2A36D0')
+    // Canonical ERC3009PaymentCollector (commerce-payments at v1.0.0, base deployment)
+    expect(tokenCollector).toBe('0x0E3dF9510de65469C4518D7843919c0b8C7A7757')
   })
 
   it('different paymentInfo produces different signature', async () => {

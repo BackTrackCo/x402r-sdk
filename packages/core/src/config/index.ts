@@ -45,43 +45,52 @@ export interface X402rChainConfig {
 }
 
 // ---------------------------------------------------------------------------
-// Canonical CREATE2 addresses (same on every chain)
+// Canonical CREATE2 addresses
 // ---------------------------------------------------------------------------
 //
-// Deployed via CreateX permissionless salts. Same address on every chain that
-// has CreateX. Derived from:
-//   - commerce-payments primitives (MIT, vendored from `base/commerce-payments@v1.0.0`):
-//       salt namespace `commerce-payments::v1::<ContractName>`
-//   - x402r-authored contracts (BUSL):
-//       salt namespace `x402r-canonical-v1::<ContractName>`
+// Two salt namespaces (see `x402r-contracts/script/DeployX402r.s.sol`):
+//   - `x402r-canonical-v1::<ContractName>` — escrow-independent contracts
+//       (ProtocolFeeConfig, condition singletons, ctor-arg-free factories,
+//       RefundRequestEvidenceFactory). Live on the chains in
+//       `x402r-contracts/deployments/canonical.json`.
+//   - `x402r-canonical-v1.0.1::<ContractName>` — escrow-dependent contracts
+//       (PaymentOperatorFactory, EscrowPeriodFactory, FreezeFactory,
+//       RefundRequestFactory, ReceiverRefundCollector, PaymentIndexRecorderHook).
+//       Same source as v1, rebound to the canonical AuthCaptureEscrow from
+//       `commerce-payments at v1.0.0`. Deployable today only on Base mainnet
+//       (8453) and Base Sepolia (84532); see
+//       `x402r-contracts/deployments/canonical-v1.0.1.json`.
 //
 // Source of truth: `x402r-contracts/script/PredictAddresses.s.sol` and
 // `x402r-contracts/script/DeployX402r.s.sol`. Owner / fee recipient
 // (`0x773dBcB5BDb3Df8359ba4e42D7Ce7AE3fC9Ee235`) is baked into the CREATE2
-// address of `ProtocolFeeConfig` and everything downstream — any change there
-// moves the canonical addresses on that chain.
+// address of `ProtocolFeeConfig`; the canonical AuthCaptureEscrow is baked
+// into every v1.0.1 address.
 
-/** AuthCaptureEscrow at canonical CREATE2 address (commerce-payments v1.0.0). */
+/** AuthCaptureEscrow at the canonical `commerce-payments at v1.0.0` deployment. */
 export const authCaptureEscrow =
-  '0xF8211868187974a7Fb9d99b8fFB171AD70665Dc6' as const satisfies Address
+  '0xBdEA0D1bcC5966192B070Fdf62aB4EF5b4420cff' as const satisfies Address
 
 /**
  * Primary token collector. Currently aliases the canonical
  * `ERC3009PaymentCollector` — Permit2 lands in a follow-up PR.
  */
 export const tokenCollector =
-  '0x7561DC178D9aD5bc5fb103C01f448A510d2A36D0' as const satisfies Address
+  '0x0E3dF9510de65469C4518D7843919c0b8C7A7757' as const satisfies Address
 
 export const protocolFeeConfig =
   '0xBe2d24614F339a1eB103A399F93AA2a39Ca815Bc' as const satisfies Address
 export const receiverRefundCollector =
-  '0xA452b17f0bA0531C7b1728C40FA30bCaF051cB12' as const satisfies Address
+  '0x88C9826dFA17Ad9d3a726015C667dD995394D341' as const satisfies Address
 
 /** Chain-invariant CREATE2 factory addresses. Same as `getChainConfig(chainId).factories`. */
 export const factories = {
-  paymentOperator: '0x0308703621160b894cF045E555686d99ee8bd94E',
-  escrowPeriod: '0xa076D7604A827ae1fe9B70248C80aB331a05E497',
-  freeze: '0xC03A6E5538850528Fc77f740Ba4910fE8A542121',
+  // v1.0.1 (escrow-bound)
+  paymentOperator: '0xa0d4734842df1690a5B33Cb21828c946e39D55a2',
+  escrowPeriod: '0xe72D2014ebC48F1d92521e8629574918E8030548',
+  freeze: '0xeC092cf1215DB44af0Abe87c1157E304FEa5d0Eb',
+  refundRequest: '0xe971C674fD5c3462023f3F891dF6289DFbC9CEFC',
+  // v1 (escrow-free)
   staticFeeCalculator: '0x97F99AB01F86b480f751B7b81166Dbe1F113e6C3',
   staticAddressCondition: '0x77B379390750E1d3F802cC220926694D2454903E',
   andCondition: '0x2B07d750C639b65a26e43F1FDCE404b21DCf16D9',
@@ -89,7 +98,6 @@ export const factories = {
   notCondition: '0xb9c3223D059C3cAbD482bB54f3d7cD52DE70A9ae',
   hookCombinator: '0x30B5373FD791D2d7b28C3B8020EB68b032f3f960',
   signatureCondition: '0x46Fabd81d294d8589D5c7fCf4276bF966d0b0057',
-  refundRequest: '0x15f36140bC1d444f917D306d0f5be223F55709B6',
   refundRequestEvidence: '0x4089A5A853e9eF35f504B842795fB272dF69c739',
 } as const satisfies FactoryAddresses
 
@@ -104,7 +112,7 @@ export const conditions = {
  * Chain-invariant hook singleton addresses.
  *
  * `paymentIndexRecorderHook` is a chain singleton because both ctor args are
- * chain-invariants — `escrow` is the canonical AuthCaptureEscrow CREATE2 and
+ * chain-invariants — `escrow` is the canonical AuthCaptureEscrow and
  * `authorizedCodehash` is `keccak256(type(HookCombinator).runtimeCode)` (every
  * `HookCombinator` instance shares the same runtime code regardless of stored
  * hooks; per-instance config lives in storage, not bytecode). Routing your
@@ -113,7 +121,7 @@ export const conditions = {
  */
 export const hooks = {
   paymentIndexRecorderHook:
-    '0x16CF99e10f05E4CB9E3E6d805045378f87Ef084E' as const satisfies Address,
+    '0x358ECA14fFD51e63D2Bb8DDE3aBAA14f8D5274C3' as const satisfies Address,
 } as const satisfies HookSingletonAddresses
 
 /**
@@ -127,24 +135,23 @@ export const hookCombinatorCodehash: Hex =
   '0x99360a2e57387c49050f431d3df9700c14699850a53c993c30ac53ac4dd9e063'
 
 // ---------------------------------------------------------------------------
-// commerce-payments v1 primitives — canonical CREATE2 addresses
+// commerce-payments v1.0.0 primitives — canonical addresses
 // ---------------------------------------------------------------------------
 //
-// Upstream `base/commerce-payments@v1.0.0` contracts (MIT, vendored unchanged
-// in `x402r-contracts/lib/commerce-payments`) deployed at canonical CREATE2
-// addresses via CreateX permissionless salts. Salt namespace:
-// `commerce-payments::v1::<ContractName>`.
+// The audited `commerce-payments at v1.0.0` deployment of `AuthCaptureEscrow`
+// and the two payment collectors. Live today on Base mainnet (8453) and
+// Base Sepolia (84532); other chains follow as canonical coverage extends.
 
-/** AuthCaptureEscrow at canonical CREATE2 address (alias of `authCaptureEscrow`). */
+/** AuthCaptureEscrow at canonical address (alias of `authCaptureEscrow`). */
 export const commercePaymentsAuthCaptureEscrow = authCaptureEscrow
 
-/** ERC3009PaymentCollector(escrow, multicall3) at canonical CREATE2 address. */
+/** ERC3009PaymentCollector(escrow, multicall3) at canonical address. */
 export const commercePaymentsErc3009PaymentCollector =
-  '0x7561DC178D9aD5bc5fb103C01f448A510d2A36D0' as const satisfies Address
+  '0x0E3dF9510de65469C4518D7843919c0b8C7A7757' as const satisfies Address
 
-/** Permit2PaymentCollector(escrow, permit2, multicall3) at canonical CREATE2 address. */
+/** Permit2PaymentCollector(escrow, permit2, multicall3) at canonical address. */
 export const commercePaymentsPermit2PaymentCollector =
-  '0xD8490609d2da0ee626b0e676941b225cbc1A8C08' as const satisfies Address
+  '0x992476B9Ee81d52a5BdA0622C333938D0Af0aB26' as const satisfies Address
 
 /** Convenience bundle of all three commerce-payments primitive addresses. */
 export const commercePaymentsAddresses = {
@@ -181,54 +188,16 @@ function chainConfig(
 // Chain registry
 // ---------------------------------------------------------------------------
 
+// Supported chains are the chains where the canonical AuthCaptureEscrow lives.
+// Today: Base mainnet + Base Sepolia. Other EVMs will be added as canonical
+// `commerce-payments at v1.0.0` coverage extends.
 export const x402rChains = {
-  // Testnets
   84532: chainConfig(
     'Base Sepolia',
     84532,
     '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
   ),
-  11155111: chainConfig(
-    'Ethereum Sepolia',
-    11155111,
-    '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238',
-  ),
-  421614: chainConfig(
-    'Arbitrum Sepolia',
-    421614,
-    '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
-  ),
-
-  // Mainnets
-  1: chainConfig('Ethereum', 1, '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
   8453: chainConfig('Base', 8453, '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'),
-  137: chainConfig(
-    'Polygon',
-    137,
-    '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',
-  ),
-  42161: chainConfig(
-    'Arbitrum One',
-    42161,
-    '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
-  ),
-  10: chainConfig('Optimism', 10, '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85'),
-  42220: chainConfig(
-    'Celo',
-    42220,
-    '0xcebA9300f2b948710d2653dD7B07f33A8B32118C',
-  ),
-  43114: chainConfig(
-    'Avalanche C-Chain',
-    43114,
-    '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E',
-  ),
-  143: chainConfig('Monad', 143, '0x754704Bc059F8C67012fEd69BC8A327a5aafb603'),
-  59144: chainConfig(
-    'Linea',
-    59144,
-    '0x176211869cA2b568f2A7D4EE941E073a821EE1ff',
-  ),
 } as const satisfies Record<number, X402rChainConfig>
 
 // ---------------------------------------------------------------------------

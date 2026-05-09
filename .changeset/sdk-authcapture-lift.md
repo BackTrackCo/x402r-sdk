@@ -40,10 +40,12 @@ Breaking changes — clean break, no shims:
 **Drops**
 - `usdcTvlLimit` removed from canonical config + ABI exports + helpers re-export. Source remains in `x402r-contracts` for ad-hoc per-chain integrations; SDK no longer ships the canonical address. Marketplace/delivery-protection presets now wire `authorizePreActionCondition: zeroAddress` (was the TVL gate).
 - `SKALE Base` chain (chainId `1187947933`) dropped from `x402rChains`. SKALE runs Shanghai EVM but the canonical commerce-payments bytecode targets Cancun (TSTORE/TLOAD via Solady's `ReentrancyGuardTransient`). CREATE2 binds bytecode, so Shanghai-recompiled bytecode lands at a different address than the canonical one — single-canonical-address is incompatible without shipping a chain-specific island.
+- All chains except Base mainnet (8453) and Base Sepolia (84532) dropped from `x402rChains`. The SDK now points at the canonical `commerce-payments at v1.0.0` AuthCaptureEscrow, which lives on those two chains today; other EVMs return as the canonical primitives extend coverage.
 
-**Canonical CREATE2 addresses**
-- `authCaptureEscrow`, `tokenCollector`, `protocolFeeConfig`, `receiverRefundCollector`, `factories.*`, `conditions.*`, and `hookCombinatorCodehash` now point at the canonical CREATE2 deployment (salt namespaces `commerce-payments::v1::*` and `x402r-canonical-v1::*`). New `commercePayments*` exports surface the three primitive addresses individually (escrow + ERC3009 collector + Permit2 collector).
-- `hooks.paymentIndexRecorderHook` is the canonical chain singleton at `0x16CF99e10f05E4CB9E3E6d805045378f87Ef084E`. Both ctor args are chain-invariants (canonical escrow + `keccak256(type(HookCombinator).runtimeCode)`), so a single deploy per chain serves every operator that routes its post-action slot through `HookCombinator`. Live on every chain in `x402rChains`.
+**Canonical addresses**
+- `authCaptureEscrow`, `tokenCollector`, and the `commercePayments*` exports point at the canonical `commerce-payments at v1.0.0` deployment (`0xBdEA0D…420cff` / `0x0E3dF951…7A7757` / `0x992476B9…0aB26`).
+- `protocolFeeConfig`, `conditions.*`, and the escrow-free entries of `factories.*` (`staticFeeCalculator`, `staticAddressCondition`, `andCondition`, `orCondition`, `notCondition`, `hookCombinator`, `signatureCondition`, `refundRequestEvidence`) live at salt namespace `x402r-canonical-v1::*` — unchanged from prior canonical deployments.
+- `receiverRefundCollector` and the escrow-bound entries of `factories.*` (`paymentOperator`, `escrowPeriod`, `freeze`, `refundRequest`) plus `hooks.paymentIndexRecorderHook` are at the new `x402r-canonical-v1.0.1::*` salt namespace, rebound to the canonical escrow. `hooks.paymentIndexRecorderHook` lands at `0x358ECA14fFD51e63D2Bb8DDE3aBAA14f8D5274C3`. See `x402r-contracts/deployments/canonical-v1.0.1.json` for the full set + tx hashes.
 - Owner / fee recipient on `ProtocolFeeConfig` is `0x773dBcB5BDb3Df8359ba4e42D7Ce7AE3fC9Ee235`; protocol-fee calculator is unset (`address(0)`), so `getProtocolFeeBps()` returns `0`.
 
 **Workspace dev**
