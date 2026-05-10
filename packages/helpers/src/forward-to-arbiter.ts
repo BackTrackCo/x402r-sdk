@@ -18,7 +18,7 @@ export interface ForwardToArbiterOptions {
  * import { forwardToArbiter } from '@x402r/helpers'
  *
  * const resourceServer = new x402ResourceServer(facilitatorClient)
- *   .register(networkId, new EscrowServerScheme())
+ *   .register(networkId, new AuthCaptureServerScheme())
  *   .onAfterSettle(
  *     forwardToArbiter('http://arbiter:3001', {
  *       onError: (err) => sentry.captureException(err),

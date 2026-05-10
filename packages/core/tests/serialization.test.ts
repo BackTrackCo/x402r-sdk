@@ -28,6 +28,7 @@ describe('toPaymentInfo', () => {
   it('passes through address and number fields unchanged', () => {
     const result = toPaymentInfo(baseStruct)
     expect(result.operator).toBe(TEST_ADDRESSES.operator)
+    expect(result.payer).toBe(TEST_ADDRESSES.payer)
     expect(result.receiver).toBe(TEST_ADDRESSES.receiver)
     expect(result.token).toBe(TEST_ADDRESSES.token)
     expect(result.feeReceiver).toBe(TEST_ADDRESSES.feeReceiver)
