@@ -1,15 +1,14 @@
 import type { AuthCaptureExtra } from '@x402r/evm'
-import type { Address } from 'viem'
 
 export interface X402rDefaultsInput {
   /** Address allowed to call authorize/capture/void/refund/charge on AuthCaptureEscrow. */
-  captureAuthorizer: Address
+  captureAuthorizer: `0x${string}`
   /** Absolute Unix seconds; capture must occur before this. */
   captureDeadline: number
   /** Absolute Unix seconds; refunds allowed until this. */
   refundDeadline: number
   /** Address that receives the fee portion of every settlement. */
-  feeRecipient: Address
+  feeRecipient: `0x${string}`
   /** Floor on the captureAuthorizer's fee in basis points. `0` = no minimum. */
   minFeeBps: number
   /** Cap on the captureAuthorizer's fee in basis points. */

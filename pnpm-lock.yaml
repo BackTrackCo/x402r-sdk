@@ -121,9 +121,6 @@ importers:
       '@x402r/core':
         specifier: workspace:^
         version: link:../core
-      viem:
-        specifier: ^2.46.3
-        version: 2.47.1(typescript@5.9.3)(zod@4.3.6)
     devDependencies:
       '@x402/core':
         specifier: 2.5.0
