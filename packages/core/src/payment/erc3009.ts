@@ -52,7 +52,7 @@ const RECEIVE_AUTHORIZATION_TYPES = {
  * Signs an ERC-3009 `ReceiveWithAuthorization` for the given paymentInfo.
  *
  * Requires a local account (private key). For browser/hardware wallet signing,
- * use `@x402r/evm`'s `EscrowEvmScheme` via the x402 client flow instead.
+ * use `@x402r/evm`'s `AuthCaptureEvmScheme` via the x402 client flow instead.
  *
  * Encapsulates nonce derivation, EIP-712 domain construction, and signing so
  * callers don't need to hand-roll ~30 lines of protocol-specific code.

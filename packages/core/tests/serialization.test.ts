@@ -25,11 +25,6 @@ describe('toPaymentInfo', () => {
     expect(result.salt).toBe(BigInt('0x3039'))
   })
 
-  it('passes payer through unchanged', () => {
-    const result = toPaymentInfo(baseStruct)
-    expect(result.payer).toBe(TEST_ADDRESSES.payer)
-  })
-
   it('passes through address and number fields unchanged', () => {
     const result = toPaymentInfo(baseStruct)
     expect(result.operator).toBe(TEST_ADDRESSES.operator)
