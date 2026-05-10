@@ -23,7 +23,8 @@
     "prepublishOnly": "publint --strict && attw --pack --ignore-rules no-resolution cjs-resolves-to-esm"
   },
   "dependencies": {
-    "@x402r/core": "workspace:^"
+    "@x402r/core": "workspace:^",
+    "viem": "^2.46.3"
   },
   "peerDependencies": {
     "@x402/core": ">=2.5.0",

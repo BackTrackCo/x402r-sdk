@@ -39,11 +39,6 @@
   "peerDependencies": {
     "@x402r/evm": "^0.2.0-alpha.0"
   },
-  "peerDependenciesMeta": {
-    "@x402r/evm": {
-      "optional": true
-    }
-  },
   "devDependencies": {
     "@x402r/evm": "0.2.0-alpha.0"
   },
