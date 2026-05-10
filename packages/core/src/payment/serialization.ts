@@ -1,4 +1,4 @@
-import type { EscrowPayload } from '@x402r/evm'
+import type { PaymentInfoStruct } from '@x402r/evm'
 import type { PaymentInfo } from '../types/index.js'
 
 // ---------------------------------------------------------------------------
@@ -7,23 +7,22 @@ import type { PaymentInfo } from '../types/index.js'
 
 export type ToPaymentInfoReturnType = PaymentInfo
 
-/** Convert an EscrowPayload (from verified x402 payment) to a PaymentInfo struct. */
+/** Convert an on-chain PaymentInfoStruct (string-encoded uints) to a PaymentInfo (bigint). */
 export function toPaymentInfo(
-  escrowPayload: EscrowPayload,
+  struct: PaymentInfoStruct,
 ): ToPaymentInfoReturnType {
-  const pi = escrowPayload.paymentInfo
   return {
-    operator: pi.operator,
-    payer: escrowPayload.authorization.from,
-    receiver: pi.receiver,
-    token: pi.token,
-    maxAmount: BigInt(pi.maxAmount),
-    preApprovalExpiry: pi.preApprovalExpiry,
-    authorizationExpiry: pi.authorizationExpiry,
-    refundExpiry: pi.refundExpiry,
-    minFeeBps: pi.minFeeBps,
-    maxFeeBps: pi.maxFeeBps,
-    feeReceiver: pi.feeReceiver,
-    salt: BigInt(pi.salt),
+    operator: struct.operator,
+    payer: struct.payer,
+    receiver: struct.receiver,
+    token: struct.token,
+    maxAmount: BigInt(struct.maxAmount),
+    preApprovalExpiry: struct.preApprovalExpiry,
+    authorizationExpiry: struct.authorizationExpiry,
+    refundExpiry: struct.refundExpiry,
+    minFeeBps: struct.minFeeBps,
+    maxFeeBps: struct.maxFeeBps,
+    feeReceiver: struct.feeReceiver,
+    salt: BigInt(struct.salt),
   }
 }
