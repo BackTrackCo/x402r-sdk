@@ -44,23 +44,6 @@ export {
 export type { ResolvedAgent } from '@x402r/erc8004/identity'
 export type { ResolvedServiceEndpoint } from '@x402r/erc8004/registration'
 export type { ReputationSummary } from '@x402r/erc8004/reputation'
-// ---------------------------------------------------------------------------
-// Wire-format re-exports from @x402r/evm — so SDK consumers can construct and
-// narrow PaymentRequirements/PaymentPayload without taking a direct dep.
-// ---------------------------------------------------------------------------
-export type {
-  AuthCaptureExtra,
-  AuthCapturePayload,
-  Eip3009Payload,
-  PaymentInfoStruct,
-  Permit2Payload,
-} from '@x402r/evm'
-export {
-  isAuthCaptureExtra,
-  isAuthCapturePayload,
-  isEip3009Payload,
-  isPermit2Payload,
-} from '@x402r/evm'
 export {
   DEFAULT_FEEDBACK_TAG1,
   DEFAULT_FEEDBACK_TAG2,

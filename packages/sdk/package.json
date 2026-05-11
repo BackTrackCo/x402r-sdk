@@ -36,12 +36,6 @@
     "@x402r/erc8004": "^0.1.0-alpha.1",
     "viem": "^2.46.3"
   },
-  "peerDependencies": {
-    "@x402r/evm": "^0.2.0-alpha.0"
-  },
-  "devDependencies": {
-    "@x402r/evm": "0.2.0-alpha.0"
-  },
   "size-limit": [
     {
       "path": "dist/index.js",
