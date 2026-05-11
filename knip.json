@@ -10,7 +10,6 @@
     },
     "packages/core": {
       "entry": ["tests/**/*.test.ts", "tests/**/*.ts", "vitest.config.ts"],
-      "ignoreDependencies": ["@x402r/evm"],
       "ignore": ["src/abis/generated.ts"]
     },
     "packages/helpers": {
