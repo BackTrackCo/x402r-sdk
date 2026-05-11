@@ -33,7 +33,13 @@ Exercises the complete dispute flow:
 
 2-role flow: payer signs once, merchant calls `payment.charge()` (single tx, no escrow).
 
-Demonstrates the `autoCapture` wire-format flag from `@x402r/evm@0.2.0-alpha.0`. Builds an `extra` via `x402rDefaults({ autoCapture: true })` to document what a merchant would put in their 402 challenge, then atomically charges — funds go straight from payer to receiver, no escrow hold, no separate capture call.
+Demonstrates the atomic settlement path. In production the merchant advertises this intent via `PaymentRequirements.extra.autoCapture`; the facilitator reads the flag and dispatches to `escrow.charge()` vs `escrow.authorize()`. Asserts real ERC-20 balance deltas (payer ↓ amount, receiver + fee ↑ to total).
+
+### partial-refund-flow
+
+2-role flow: authorize → capture(partial) → voidPayment().
+
+The new authCapture partial-refund pattern. Replaces the old single-tx `refundInEscrow(amount)` with a two-tx flow: merchant captures the amount they keep, then `voidPayment()` returns the remainder to the payer. No allowance setup, no ReceiverRefundCollector — the escrow handles it. Asserts payer net loss equals merchant-keep, receiver delta + fee delta equals merchant-keep.
 
 ## Running
 
@@ -42,6 +48,7 @@ Demonstrates the `autoCapture` wire-format flag from `@x402r/evm@0.2.0-alpha.0`.
 pnpm scenario:capture
 pnpm scenario:dispute
 pnpm scenario:atomic-charge
+pnpm scenario:partial-refund-flow
 ```
 
 All scenarios run against a local Anvil fork — no real testnet funds needed.

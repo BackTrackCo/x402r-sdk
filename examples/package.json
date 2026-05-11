@@ -14,11 +14,11 @@
     "arbiter:review-evidence": "tsx arbiter/review-evidence.ts",
     "scenario:capture": "tsx scenarios/happy-path-capture.ts",
     "scenario:dispute": "tsx scenarios/dispute-resolution.ts",
-    "scenario:atomic-charge": "tsx scenarios/atomic-charge.ts"
+    "scenario:atomic-charge": "tsx scenarios/atomic-charge.ts",
+    "scenario:partial-refund-flow": "tsx scenarios/partial-refund-flow.ts"
   },
   "dependencies": {
     "@x402r/core": "workspace:*",
-    "@x402r/helpers": "workspace:*",
     "@x402r/sdk": "workspace:*",
     "prool": "^0.2.3",
     "tsx": "^4.19.4",
