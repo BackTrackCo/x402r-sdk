@@ -1,46 +1,40 @@
 import { signReceiveAuthorization } from '@x402r/core'
-import { x402rDefaults } from '@x402r/helpers'
+import { erc20Abi } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { setup } from '../shared/anvil-setup.js'
 import { PAYER_PRIVATE_KEY, PAYMENT_AMOUNT } from '../shared/constants.js'
 import { StepRunner } from './runner.js'
 
 // ---------------------------------------------------------------------------
-// Scenario: Atomic Charge (autoCapture)
+// Scenario: Atomic Charge
 //
-// Demonstrates the autoCapture wire-format flag. When a merchant signals
-// `extra.autoCapture: true` in the 402 challenge, the facilitator calls
-// AuthCaptureEscrow.charge() instead of authorize() — funds go straight
-// from payer to receiver in one tx, no escrow hold, no separate capture.
-//
-// In this scenario the merchant acts as their own facilitator (no separate
-// facilitator process), so the dispatch happens inline: build an `extra`
-// with autoCapture: true via x402rDefaults() to document merchant intent,
-// then call payment.charge() directly. The `extra` is decorative here — a
-// real x402-resource-server would put it in the PaymentRequirements body
-// and the facilitator would read it to choose charge vs authorize.
+// Calls payment.charge() directly — single tx, no escrow hold, no separate
+// capture. In production the merchant advertises this intent in
+// PaymentRequirements.extra.autoCapture; the facilitator reads that flag and
+// dispatches to escrow.charge() vs escrow.authorize() on the merchant's behalf.
+// This scenario calls charge() directly to demonstrate the atomic path —
+// asserts real token-balance deltas, not just SDK-level invariants that hold
+// by construction.
 // ---------------------------------------------------------------------------
 
 async function main() {
   const ctx = await setup({ authorize: false })
-  const runner = new StepRunner('Atomic Charge (autoCapture)', ctx.publicClient)
+  const runner = new StepRunner('Atomic Charge', ctx.publicClient)
 
   try {
-    // Demonstrative: wire-format `extra` a merchant would put in their 402
-    // challenge to opt into atomic charge. Sourced from the underlying
-    // PaymentInfo so the demo stays consistent with the rest of the setup.
-    const extra = x402rDefaults({
-      captureAuthorizer: ctx.paymentInfo.operator,
-      captureDeadline: ctx.paymentInfo.authorizationExpiry,
-      refundDeadline: ctx.paymentInfo.refundExpiry,
-      feeRecipient: ctx.paymentInfo.feeReceiver,
-      minFeeBps: ctx.paymentInfo.minFeeBps,
-      maxFeeBps: ctx.paymentInfo.maxFeeBps,
-      name: 'USDC',
-      version: '2',
-      autoCapture: true,
-    })
-    runner.step(`Wire-format extra signals autoCapture=${extra.autoCapture}`)
+    runner.step('Snapshot pre-charge USDC balances')
+
+    const readBalance = (owner: `0x${string}`) =>
+      ctx.publicClient.readContract({
+        address: ctx.paymentInfo.token,
+        abi: erc20Abi,
+        functionName: 'balanceOf',
+        args: [owner],
+      })
+
+    const payerBefore = await readBalance(ctx.paymentInfo.payer)
+    const receiverBefore = await readBalance(ctx.paymentInfo.receiver)
+    const feeReceiverBefore = await readBalance(ctx.paymentInfo.feeReceiver)
 
     runner.step('Atomic charge via payment.charge() — single tx, no escrow')
 
@@ -59,14 +53,25 @@ async function main() {
     )
     await runner.waitForTx(chargeTx)
 
-    const amounts = await ctx.merchant.payment.getAmounts(ctx.paymentInfo)
+    const payerAfter = await readBalance(ctx.paymentInfo.payer)
+    const receiverAfter = await readBalance(ctx.paymentInfo.receiver)
+    const feeReceiverAfter = await readBalance(ctx.paymentInfo.feeReceiver)
+
+    const payerDelta = payerBefore - payerAfter
+    const receiverDelta = receiverAfter - receiverBefore
+    const feeDelta = feeReceiverAfter - feeReceiverBefore
+
     runner.assert(
-      amounts.capturableAmount === 0n,
-      'capturableAmount === 0 immediately (no escrow hold)',
+      payerDelta === PAYMENT_AMOUNT,
+      `payer balance ↓ by PAYMENT_AMOUNT (${PAYMENT_AMOUNT}); actual ↓ ${payerDelta}`,
     )
     runner.assert(
-      amounts.hasCollectedPayment,
-      'hasCollectedPayment === true after single-tx charge',
+      receiverDelta + feeDelta === PAYMENT_AMOUNT,
+      `receiver Δ + fee Δ === PAYMENT_AMOUNT; receiver ↑ ${receiverDelta}, fee ↑ ${feeDelta}`,
+    )
+    runner.assert(
+      feeDelta >= 0n,
+      `fee receiver delta non-negative (${feeDelta})`,
     )
 
     runner.done()
