@@ -42,4 +42,16 @@ describe('toPaymentInfo', () => {
     expect(typeof result.authorizationExpiry).toBe('number')
     expect(typeof result.refundExpiry).toBe('number')
   })
+
+  it('throws on non-numeric maxAmount', () => {
+    expect(() =>
+      toPaymentInfo({ ...baseStruct, maxAmount: 'not-a-number' }),
+    ).toThrow(/maxAmount/)
+  })
+
+  it('throws on malformed salt hex', () => {
+    expect(() =>
+      toPaymentInfo({ ...baseStruct, salt: '0xZZZ' as `0x${string}` }),
+    ).toThrow()
+  })
 })
