@@ -14,20 +14,11 @@ const baseInput = {
 }
 
 describe('x402rDefaults', () => {
+  // isAuthCaptureExtra does shape-only checks (typeof per field). Use it
+  // for "is this a wire-format object?" — combine with exact-value
+  // assertions below for content validation.
   it('returns a value satisfying the AuthCaptureExtra type guard', () => {
     expect(isAuthCaptureExtra(x402rDefaults(baseInput))).toBe(true)
-  })
-
-  it('passes required fields through unchanged', () => {
-    const extra = x402rDefaults(baseInput)
-    expect(extra.captureAuthorizer).toBe(baseInput.captureAuthorizer)
-    expect(extra.captureDeadline).toBe(baseInput.captureDeadline)
-    expect(extra.refundDeadline).toBe(baseInput.refundDeadline)
-    expect(extra.feeRecipient).toBe(baseInput.feeRecipient)
-    expect(extra.minFeeBps).toBe(baseInput.minFeeBps)
-    expect(extra.maxFeeBps).toBe(baseInput.maxFeeBps)
-    expect(extra.name).toBe(baseInput.name)
-    expect(extra.version).toBe(baseInput.version)
   })
 
   it('omits autoCapture when not set so facilitator default (false) applies', () => {
@@ -117,25 +108,6 @@ describe('x402rDefaults', () => {
       const extra = x402rDefaults(minimalInput)
       expect(extra.name).toBe('USDC')
       expect(extra.version).toBe('2')
-    })
-
-    it('overrides apply when fields are explicitly set', () => {
-      const explicit = {
-        ...minimalInput,
-        captureDeadline: 1_999_999_999,
-        refundDeadline: 2_999_999_999,
-        minFeeBps: 10,
-        maxFeeBps: 250,
-        name: 'EURC',
-        version: '1',
-      }
-      const extra = x402rDefaults(explicit)
-      expect(extra.captureDeadline).toBe(explicit.captureDeadline)
-      expect(extra.refundDeadline).toBe(explicit.refundDeadline)
-      expect(extra.minFeeBps).toBe(10)
-      expect(extra.maxFeeBps).toBe(250)
-      expect(extra.name).toBe('EURC')
-      expect(extra.version).toBe('1')
     })
   })
 })

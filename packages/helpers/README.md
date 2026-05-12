@@ -18,6 +18,21 @@ const resourceServer = new x402ResourceServer(facilitatorClient)
   .onAfterSettle(forwardToArbiter('http://arbiter:3001'))
 ```
 
+## Building PaymentRequirements.extra
+
+`x402rDefaults` is a quick-start builder for the wire-format `extra`. Only the facilitator's captureAuthorizer is required:
+
+```ts
+import { x402rDefaults } from '@x402r/helpers'
+
+const extra = x402rDefaults({
+  captureAuthorizer: '0xCaptureAuthorizer...',
+})
+// → fully-populated AuthCaptureExtra with sensible defaults
+```
+
+See JSDoc on `X402rDefaultsInput` for per-field overrides and production-footgun warnings.
+
 ## API
 
 ### `forwardToArbiter(arbiterUrl, options?)`

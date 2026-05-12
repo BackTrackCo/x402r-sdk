@@ -7,6 +7,10 @@ const DEFAULT_MAX_FEE_BPS = 100 // 1%
 const DEFAULT_TOKEN_NAME = 'USDC'
 const DEFAULT_TOKEN_VERSION = '2'
 
+// Address fields below use the template-literal type `0x${string}` (the
+// exact shape used by AuthCaptureExtra in @x402r/evm@0.2.0-alpha.0).
+// Mirrors upstream rather than importing viem's branded Address, which
+// would pull viem into @x402r/helpers' dep surface for marginal value.
 export interface X402rDefaultsInput {
   /** Address allowed to call authorize/capture/void/refund/charge on AuthCaptureEscrow. Facilitator-specific. */
   captureAuthorizer: `0x${string}`
@@ -102,6 +106,9 @@ export function x402rDefaults(input: X402rDefaultsInput): AuthCaptureExtra {
     maxFeeBps: input.maxFeeBps ?? DEFAULT_MAX_FEE_BPS,
     name: input.name ?? DEFAULT_TOKEN_NAME,
     version: input.version ?? DEFAULT_TOKEN_VERSION,
+    // Conditional spread preserves the omit-from-wire signal — explicit
+    // undefined ≠ field-not-set on the wire, which is what lets the
+    // facilitator's documented default win.
     ...(input.autoCapture !== undefined && { autoCapture: input.autoCapture }),
     ...(input.assetTransferMethod !== undefined && {
       assetTransferMethod: input.assetTransferMethod,
