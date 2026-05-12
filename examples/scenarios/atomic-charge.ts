@@ -70,8 +70,8 @@ async function main() {
       `receiver Δ + fee Δ === PAYMENT_AMOUNT; receiver ↑ ${receiverDelta}, fee ↑ ${feeDelta}`,
     )
     runner.assert(
-      feeDelta >= 0n,
-      `fee receiver delta non-negative (${feeDelta})`,
+      feeDelta > 0n,
+      `fee receiver delta strictly positive (${feeDelta})`,
     )
 
     runner.done()
