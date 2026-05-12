@@ -14,9 +14,24 @@ pnpm add @x402r/helpers
 import { forwardToArbiter } from '@x402r/helpers'
 
 const resourceServer = new x402ResourceServer(facilitatorClient)
-  .register(networkId, new EscrowServerScheme())
+  .register(networkId, new AuthCaptureServerScheme())
   .onAfterSettle(forwardToArbiter('http://arbiter:3001'))
 ```
+
+## Building PaymentRequirements.extra
+
+`x402rDefaults` is a quick-start builder for the wire-format `extra`. Only the facilitator's captureAuthorizer is required:
+
+```ts
+import { x402rDefaults } from '@x402r/helpers'
+
+const extra = x402rDefaults({
+  captureAuthorizer: '0xCaptureAuthorizer...',
+})
+// → fully-populated AuthCaptureExtra with sensible defaults
+```
+
+See JSDoc on `X402rDefaultsInput` for per-field overrides and production-footgun warnings.
 
 ## API
 
@@ -24,7 +39,7 @@ const resourceServer = new x402ResourceServer(facilitatorClient)
 
 Creates an `onAfterSettle` hook that forwards the response body to an arbiter service for evaluation. Fire-and-forget — does not block the response to the client.
 
-- Only fires for successful commerce scheme settlements
+- Only fires for successful authCapture scheme settlements
 - POSTs `{ responseBody, transaction, paymentPayload }` to `{arbiterUrl}/verify`
 - Errors silently caught (arbiter being down shouldn't break payment flow)
 

@@ -1,4 +1,6 @@
-import type { EscrowPayload } from '@x402r/evm'
+import type { PaymentInfoStruct } from '@x402r/evm'
+import { hexToBigInt } from 'viem'
+import { ValidationError } from '../errors/index.js'
 import type { PaymentInfo } from '../types/index.js'
 
 // ---------------------------------------------------------------------------
@@ -7,23 +9,48 @@ import type { PaymentInfo } from '../types/index.js'
 
 export type ToPaymentInfoReturnType = PaymentInfo
 
-/** Convert an EscrowPayload (from verified x402 payment) to a PaymentInfo struct. */
+/** Convert an on-chain PaymentInfoStruct (string-encoded uints) to a PaymentInfo (bigint). */
 export function toPaymentInfo(
-  escrowPayload: EscrowPayload,
+  struct: PaymentInfoStruct,
 ): ToPaymentInfoReturnType {
-  const pi = escrowPayload.paymentInfo
+  let maxAmount: bigint
+  try {
+    maxAmount = BigInt(struct.maxAmount)
+  } catch (err) {
+    if (err instanceof SyntaxError) {
+      throw new ValidationError(
+        `toPaymentInfo: invalid maxAmount '${struct.maxAmount}' — expected decimal-string uint256`,
+        { cause: err },
+      )
+    }
+    throw err
+  }
+
+  let salt: bigint
+  try {
+    salt = hexToBigInt(struct.salt)
+  } catch (err) {
+    if (err instanceof SyntaxError) {
+      throw new ValidationError(
+        `toPaymentInfo: invalid salt '${struct.salt}' (expected 0x-prefixed bytes32 hex)`,
+        { cause: err },
+      )
+    }
+    throw err
+  }
+
   return {
-    operator: pi.operator,
-    payer: escrowPayload.authorization.from,
-    receiver: pi.receiver,
-    token: pi.token,
-    maxAmount: BigInt(pi.maxAmount),
-    preApprovalExpiry: pi.preApprovalExpiry,
-    authorizationExpiry: pi.authorizationExpiry,
-    refundExpiry: pi.refundExpiry,
-    minFeeBps: pi.minFeeBps,
-    maxFeeBps: pi.maxFeeBps,
-    feeReceiver: pi.feeReceiver,
-    salt: BigInt(pi.salt),
+    operator: struct.operator,
+    payer: struct.payer,
+    receiver: struct.receiver,
+    token: struct.token,
+    maxAmount,
+    preApprovalExpiry: struct.preApprovalExpiry,
+    authorizationExpiry: struct.authorizationExpiry,
+    refundExpiry: struct.refundExpiry,
+    minFeeBps: struct.minFeeBps,
+    maxFeeBps: struct.maxFeeBps,
+    feeReceiver: struct.feeReceiver,
+    salt,
   }
 }

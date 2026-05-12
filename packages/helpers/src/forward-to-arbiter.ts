@@ -11,14 +11,14 @@ export interface ForwardToArbiterOptions {
  * arbiter service for evaluation. Fire-and-forget — does not block the
  * response to the client.
  *
- * Only fires for commerce scheme settlements. Non-commerce schemes are skipped.
+ * Only fires for authCapture scheme settlements. Non-authCapture schemes are skipped.
  *
  * @example
  * ```ts
  * import { forwardToArbiter } from '@x402r/helpers'
  *
  * const resourceServer = new x402ResourceServer(facilitatorClient)
- *   .register(networkId, new EscrowServerScheme())
+ *   .register(networkId, new AuthCaptureServerScheme())
  *   .onAfterSettle(
  *     forwardToArbiter('http://arbiter:3001', {
  *       onError: (err) => sentry.captureException(err),
@@ -36,7 +36,7 @@ export function forwardToArbiter(
 
   return async (context: SettleResultContext): Promise<void> => {
     if (!context.result.success) return
-    if (context.requirements.scheme !== 'commerce') return
+    if (context.requirements.scheme !== 'authCapture') return
 
     const transportCtx = context.transportContext as
       | { responseBody?: { toString(encoding: string): string } }

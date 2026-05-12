@@ -1,7 +1,7 @@
 import { x402Client, x402HTTPClient } from '@x402/core/client'
 import type { PaymentPayload, PaymentRequired } from '@x402/core/types'
 import { toClientEvmSigner } from '@x402/evm'
-import { registerCommerceEvmScheme } from '@x402r/evm/commerce/client'
+import { registerAuthCaptureEvmScheme } from '@x402r/evm/authCapture/client'
 import type { Account } from 'viem'
 import { createPublicClient, http } from 'viem'
 import { parseChainId, resolveChain } from '../chain.js'
@@ -60,7 +60,7 @@ export async function pay(flags: PayFlags): Promise<PayResult> {
   const signer = toClientEvmSigner(adaptAccount(resolved.account), publicClient)
 
   const client = new x402Client()
-  registerCommerceEvmScheme(client, {
+  registerAuthCaptureEvmScheme(client, {
     signer,
     networks: accept.network,
   })

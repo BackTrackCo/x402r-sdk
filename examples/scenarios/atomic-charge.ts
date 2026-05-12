@@ -2,26 +2,28 @@ import { signReceiveAuthorization } from '@x402r/core'
 import { erc20Abi } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { setup } from '../shared/anvil-setup.js'
-import {
-  ESCROW_FAST_FORWARD,
-  PAYER_PRIVATE_KEY,
-  PAYMENT_AMOUNT,
-} from '../shared/constants.js'
+import { PAYER_PRIVATE_KEY, PAYMENT_AMOUNT } from '../shared/constants.js'
 import { StepRunner } from './runner.js'
 
 // ---------------------------------------------------------------------------
-// Scenario: Happy Path Capture
-// authorize → fast-forward past escrow → capture (2 roles: payer + merchant)
-// Asserts real ERC-20 balance deltas: payer ↓ PAYMENT_AMOUNT,
-// receiver Δ + fee Δ === PAYMENT_AMOUNT.
+// Scenario: Atomic Charge
+//
+// Calls payment.charge() directly — single tx, no escrow hold, no separate
+// capture. In production the merchant advertises this intent in
+// PaymentRequirements.extra.autoCapture; the facilitator reads that flag and
+// dispatches to escrow.charge() vs escrow.authorize() on the merchant's behalf.
+// This scenario calls charge() directly to demonstrate the atomic path —
+// asserts real token-balance deltas, not just SDK-level invariants that hold
+// by construction.
 // ---------------------------------------------------------------------------
 
 async function main() {
   const ctx = await setup({ authorize: false })
-
-  const runner = new StepRunner('Happy Path Capture', ctx.publicClient)
+  const runner = new StepRunner('Atomic Charge', ctx.publicClient)
 
   try {
+    runner.step('Snapshot pre-charge USDC balances')
+
     const readBalance = (owner: `0x${string}`) =>
       ctx.publicClient.readContract({
         address: ctx.paymentInfo.token,
@@ -34,8 +36,7 @@ async function main() {
     const receiverBefore = await readBalance(ctx.paymentInfo.receiver)
     const feeReceiverBefore = await readBalance(ctx.paymentInfo.feeReceiver)
 
-    // --- Step 1: Authorize payment (HTTP 402 flow) ---
-    runner.step('Authorize payment via HTTP 402 flow')
+    runner.step('Atomic charge via payment.charge() — single tx, no escrow')
 
     const payerAccount = privateKeyToAccount(PAYER_PRIVATE_KEY)
     const { collectorData, tokenCollector } = await signReceiveAuthorization({
@@ -43,24 +44,14 @@ async function main() {
       chainId: 84532,
       paymentInfo: ctx.paymentInfo,
     })
-    const authTx = await ctx.merchant.payment.authorize(
+
+    const chargeTx = await ctx.merchant.payment.charge(
       ctx.paymentInfo,
       PAYMENT_AMOUNT,
       tokenCollector,
       collectorData,
     )
-    await runner.waitForTx(authTx)
-
-    // --- Step 2: Capture after escrow ---
-    runner.step('Capture remaining after escrow expires')
-    await ctx.testClient.increaseTime({ seconds: ESCROW_FAST_FORWARD })
-    await ctx.testClient.mine({ blocks: 1 })
-
-    const captureTx = await ctx.merchant.payment.capture(
-      ctx.paymentInfo,
-      PAYMENT_AMOUNT,
-    )
-    await runner.waitForTx(captureTx)
+    await runner.waitForTx(chargeTx)
 
     const payerAfter = await readBalance(ctx.paymentInfo.payer)
     const receiverAfter = await readBalance(ctx.paymentInfo.receiver)

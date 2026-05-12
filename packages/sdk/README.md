@@ -109,21 +109,20 @@ Shipped plugins (`escrowPeriodActions`, `freezeActions`) fill optional `escrow`/
 
 ## Refund & Dispute Flow
 
-Non-obvious behaviors integrators should be aware of:
-
 1. **Evidence is 1:1 with RefundRequest** — each RefundRequest gets its own factory-deployed Evidence contract. Different arbiter = different contracts = separate evidence stores. Evidence is required when refund is configured (`refundRequestEvidenceAddress` must be provided alongside `refundRequestAddress`).
+2. **Freeze roles** — payer freezes (time extension near deadline), arbiter unfreezes (investigation resolved).
+3. **Recovery if partial-capture's second tx never lands** — the partial-refund pattern is two transactions (`capture(merchantAmount)` then `voidPayment()`; see `examples/scenarios/partial-refund-flow.ts`). If the second tx never executes (crash, gas exhaustion, key loss), the payer's remainder sits in escrow under the original authorization. Recovery is on-chain via `AuthCaptureEscrow.reclaim(paymentInfo)`, callable by the payer after `paymentInfo.refundExpiry`. The SDK does not currently ship a `payment.reclaim()` wrapper; call the contract directly:
 
-2. **In-escrow void auto-approves payer requests** — the RefundRequest hook is wired as `voidPostActionHook`, so any successful `payment.voidPayment()` call atomically settles a pending `RefundRequest` in the same transaction. No separate approve step. `voidPayment` is full-only — it empties the entire authorization regardless of any partial amount the payer requested.
+   ```ts
+   walletClient.writeContract({
+     address: authCaptureEscrow,
+     abi: authCaptureEscrowAbi,
+     functionName: 'reclaim',
+     args: [paymentInfo],
+   })
+   ```
 
-3. **Evidence access control** — arbiter identity comes from `REFUND_REQUEST.ARBITER()`, not from the operator's condition tree. If arbiter is a multisig, that address must call `submitEvidence()`.
-
-4. **Post-escrow refunds use ReceiverRefundCollector** — once the escrow window closes, the receiver calls `payment.refund(paymentInfo, amount, receiverRefundCollector, data)` via the Receiver singleton condition. The merchant must pre-stake an ERC-20 allowance on `ReceiverRefundCollector` (use `payment.approveRefundAllowance(token, amount)`). No arbiter involvement.
-
-5. **Freeze roles** — payer freezes (time extension near deadline), arbiter unfreezes (investigation resolved).
-
-6. **`payment.voidPayment` is gated by an OrCondition** — on marketplace operators, the `voidPreActionCondition` is `OrCondition(ReceiverCondition, StaticAddressCondition(refundRequest))`, so either the receiver or the RefundRequest contract can trigger it. Payers cannot void directly; they file a `RefundRequest` first, and either the merchant or the arbiter approves by calling `voidPayment` themselves.
-
-7. **Recovery if partial-capture's second tx never lands** — the partial in-escrow refund pattern is two transactions (`capture(merchantAmount)` then `voidPayment()`). If the second tx never executes (crash, gas exhaustion, key loss), the payer's remainder sits in escrow under the original authorization. Recovery is on-chain via `AuthCaptureEscrow.reclaim(paymentInfo)`, callable by the payer after `paymentInfo.refundExpiry`. The SDK does not currently ship a `payment.reclaim()` wrapper; call the contract directly via `walletClient.writeContract({ address: authCaptureEscrow, abi: authCaptureEscrowAbi, functionName: 'reclaim', args: [paymentInfo] })`. A typed wrapper is on the PR 2/4 backlog.
+Deeper protocol semantics live in [docs.x402r.org](https://docs.x402r.org).
 
 ## Docs
 

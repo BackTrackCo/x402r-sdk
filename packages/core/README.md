@@ -35,6 +35,32 @@ const [isAuthorized, authorizedAmount, chargedAmount] = await getPaymentState(
 )
 ```
 
+## Hook query scoping (opt-in for direct `@x402r/core` consumers)
+
+The 5 hook read functions under `@x402r/core/actions/hook/*` each accept an optional `operatorAddress` filter:
+
+- `getPayerPaymentsFromHook`
+- `getReceiverPaymentsFromHook`
+- `getPayerPaymentFromHook`
+- `getReceiverPaymentFromHook`
+- `getHookPaymentInfo`
+
+Without the filter, you see every payment recorded on the canonical chain-singleton `PaymentIndexRecorderHook` — including those owned by operators you don't control. Pass `operatorAddress` to scope reads to a single operator:
+
+```ts
+import { getPayerPaymentsFromHook } from '@x402r/core/actions'
+
+const records = await getPayerPaymentsFromHook(publicClient, {
+  hookAddress,
+  payer: '0x...',
+  offset: 0n,
+  count: 50n,
+  operatorAddress: '0x...', // opt-in: scope to a single operator
+})
+```
+
+`@x402r/sdk`'s `client.query.*` actions auto-scope by default using the configured `operatorAddress`. If you bypass the SDK and call `@x402r/core` directly, you must opt in per call.
+
 ## Docs
 
 [docs.x402r.org](https://docs.x402r.org)
