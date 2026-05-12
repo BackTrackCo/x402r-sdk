@@ -1,36 +1,77 @@
 import type { PaymentRequirements } from '@x402/core/types'
 import { Malformed402Error, MaxAmountExceededError } from '../errors.js'
 
+export type AssetTransferMethod = 'eip3009' | 'permit2'
+
+export interface PickAcceptOptions {
+  chain?: string
+  assetTransferMethod?: string
+}
+
 /**
  * Pick a single `accepts[]` entry from a 402 response. Enforces the rule that
  * when a merchant offers multiple options the caller must disambiguate with
- * `--chain`.
+ * `--chain` and/or `--asset-transfer-method`.
  */
 export function pickAccept(
   accepts: PaymentRequirements[],
-  chainFilter: string | undefined,
+  options: PickAcceptOptions,
 ): PaymentRequirements {
   if (accepts.length === 0) {
     throw new Malformed402Error('402 response has no accepts[] entries')
   }
-  if (!chainFilter) {
-    if (accepts.length > 1) {
+
+  let pool = accepts
+
+  if (options.chain) {
+    pool = pool.filter((a) => a.network === options.chain)
+    if (pool.length === 0) {
       throw new Malformed402Error(
-        `402 offers ${accepts.length} payment options; pass --chain <eip155:id> to pick one`,
+        `no accepts[] entry matches --chain ${options.chain}; offered: ${accepts
+          .map((a) => a.network)
+          .join(', ')}`,
       )
     }
-    return accepts[0]!
   }
 
-  const match = accepts.find((a) => a.network === chainFilter)
-  if (!match) {
-    throw new Malformed402Error(
-      `no accepts[] entry matches --chain ${chainFilter}; offered: ${accepts
-        .map((a) => a.network)
-        .join(', ')}`,
-    )
+  if (options.assetTransferMethod !== undefined) {
+    if (
+      options.assetTransferMethod !== 'eip3009' &&
+      options.assetTransferMethod !== 'permit2'
+    ) {
+      throw new Malformed402Error(
+        `--asset-transfer-method must be 'eip3009' or 'permit2' (got '${options.assetTransferMethod}')`,
+      )
+    }
+    const want = options.assetTransferMethod
+    pool = pool.filter((a) => {
+      const advertised =
+        (a.extra as { assetTransferMethod?: string } | undefined)
+          ?.assetTransferMethod ?? 'eip3009'
+      return advertised === want
+    })
+    if (pool.length === 0) {
+      throw new Malformed402Error(
+        `no accepts[] entry matches --asset-transfer-method=${options.assetTransferMethod}; offered: ${accepts
+          .map(
+            (a) =>
+              (a.extra as { assetTransferMethod?: string } | undefined)
+                ?.assetTransferMethod ?? 'eip3009',
+          )
+          .join(', ')}`,
+      )
+    }
   }
-  return match
+
+  if (pool.length === 1) {
+    return pool[0]!
+  }
+
+  // Multiple remain after filtering — caller didn't disambiguate enough.
+  const networks = pool.map((a) => a.network).join(', ')
+  throw new Malformed402Error(
+    `402 offers ${pool.length} payment options; pass --chain <eip155:id> to pick one (remaining networks: ${networks})`,
+  )
 }
 
 /**

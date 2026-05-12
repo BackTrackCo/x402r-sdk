@@ -20,6 +20,11 @@ export interface PayFlags extends SignerFlags {
   chain?: string
   rpc?: string
   maxAmount?: string
+  /**
+   * Filter accepts[] to entries with `extra.assetTransferMethod === <value>`.
+   * Validated as `'eip3009' | 'permit2'` inside `pickAccept`.
+   */
+  assetTransferMethod?: string
   json?: boolean
 }
 
@@ -49,7 +54,10 @@ export async function pay(flags: PayFlags): Promise<PayResult> {
   const peekBody = await readBodyForV1Fallback(peek)
   const paymentRequired = parsePaymentRequired(peek, httpClient, peekBody)
 
-  const accept = pickAccept(paymentRequired.accepts, flags.chain)
+  const accept = pickAccept(paymentRequired.accepts, {
+    chain: flags.chain,
+    assetTransferMethod: flags.assetTransferMethod,
+  })
   enforceMaxAmount(accept, flags.maxAmount)
 
   const chainId = parseChainId(accept.network)

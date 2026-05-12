@@ -122,4 +122,30 @@ describe('pay()', () => {
 
     expect(fetchSpy).toHaveBeenCalledTimes(1)
   })
+
+  it('rejects when --asset-transfer-method does not match any accept', async () => {
+    const eip3009Only: PaymentRequirements = {
+      ...accept('eip155:84532'),
+      extra: { assetTransferMethod: 'eip3009' },
+    }
+    fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(respond402(pr([eip3009Only])))
+
+    await expect(
+      pay({ url: URL, key: KEY, assetTransferMethod: 'permit2' }),
+    ).rejects.toThrow(
+      /no accepts\[\] entry matches --asset-transfer-method=permit2/,
+    )
+  })
+
+  it('rejects invalid --asset-transfer-method values', async () => {
+    fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(respond402(pr([accept('eip155:84532')])))
+
+    await expect(
+      pay({ url: URL, key: KEY, assetTransferMethod: 'gibberish' }),
+    ).rejects.toThrow(/--asset-transfer-method must be 'eip3009' or 'permit2'/)
+  })
 })
