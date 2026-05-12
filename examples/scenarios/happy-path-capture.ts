@@ -1,4 +1,5 @@
 import { signReceiveAuthorization } from '@x402r/core'
+import { erc20Abi } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { setup } from '../shared/anvil-setup.js'
 import {
@@ -11,6 +12,8 @@ import { StepRunner } from './runner.js'
 // ---------------------------------------------------------------------------
 // Scenario: Happy Path Capture
 // authorize → fast-forward past escrow → capture (2 roles: payer + merchant)
+// Asserts real ERC-20 balance deltas: payer ↓ PAYMENT_AMOUNT,
+// receiver Δ + fee Δ === PAYMENT_AMOUNT.
 // ---------------------------------------------------------------------------
 
 async function main() {
@@ -19,6 +22,18 @@ async function main() {
   const runner = new StepRunner('Happy Path Capture', ctx.publicClient)
 
   try {
+    const readBalance = (owner: `0x${string}`) =>
+      ctx.publicClient.readContract({
+        address: ctx.paymentInfo.token,
+        abi: erc20Abi,
+        functionName: 'balanceOf',
+        args: [owner],
+      })
+
+    const payerBefore = await readBalance(ctx.paymentInfo.payer)
+    const receiverBefore = await readBalance(ctx.paymentInfo.receiver)
+    const feeReceiverBefore = await readBalance(ctx.paymentInfo.feeReceiver)
+
     // --- Step 1: Authorize payment (HTTP 402 flow) ---
     runner.step('Authorize payment via HTTP 402 flow')
 
@@ -36,12 +51,6 @@ async function main() {
     )
     await runner.waitForTx(authTx)
 
-    const amounts1 = await ctx.merchant.payment.getAmounts(ctx.paymentInfo)
-    runner.assert(
-      amounts1.hasCollectedPayment,
-      'Payment collected after authorize',
-    )
-
     // --- Step 2: Capture after escrow ---
     runner.step('Capture remaining after escrow expires')
     await ctx.testClient.increaseTime({ seconds: ESCROW_FAST_FORWARD })
@@ -53,10 +62,25 @@ async function main() {
     )
     await runner.waitForTx(captureTx)
 
-    const amounts2 = await ctx.merchant.payment.getAmounts(ctx.paymentInfo)
+    const payerAfter = await readBalance(ctx.paymentInfo.payer)
+    const receiverAfter = await readBalance(ctx.paymentInfo.receiver)
+    const feeReceiverAfter = await readBalance(ctx.paymentInfo.feeReceiver)
+
+    const payerDelta = payerBefore - payerAfter
+    const receiverDelta = receiverAfter - receiverBefore
+    const feeDelta = feeReceiverAfter - feeReceiverBefore
+
     runner.assert(
-      amounts2.capturableAmount === 0n,
-      'Capturable amount === 0 after capture',
+      payerDelta === PAYMENT_AMOUNT,
+      `payer balance ↓ by PAYMENT_AMOUNT (${PAYMENT_AMOUNT}); actual ↓ ${payerDelta}`,
+    )
+    runner.assert(
+      receiverDelta + feeDelta === PAYMENT_AMOUNT,
+      `receiver Δ + fee Δ === PAYMENT_AMOUNT; receiver ↑ ${receiverDelta}, fee ↑ ${feeDelta}`,
+    )
+    runner.assert(
+      feeDelta >= 0n,
+      `fee receiver delta non-negative (${feeDelta})`,
     )
 
     runner.done()

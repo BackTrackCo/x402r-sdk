@@ -60,6 +60,9 @@ async function main() {
     const receiverBefore = await readBalance(ctx.paymentInfo.receiver)
     const feeReceiverBefore = await readBalance(ctx.paymentInfo.feeReceiver)
 
+    // If the second tx fails (crash, gas exhaustion, key loss), payer
+    // recovers the remainder via AuthCaptureEscrow.reclaim() once
+    // paymentInfo.refundExpiry has passed. See MIGRATION.md.
     runner.step(`Capture merchant keep (${MERCHANT_KEEP} of ${PAYMENT_AMOUNT})`)
     const captureTx = await ctx.merchant.payment.capture(
       ctx.paymentInfo,
