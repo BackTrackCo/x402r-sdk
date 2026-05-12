@@ -26,6 +26,19 @@ export function toPaymentInfo(
     throw err
   }
 
+  let salt: bigint
+  try {
+    salt = hexToBigInt(struct.salt)
+  } catch (err) {
+    if (err instanceof SyntaxError) {
+      throw new ValidationError(
+        `toPaymentInfo: invalid salt '${struct.salt}' (expected 0x-prefixed bytes32 hex)`,
+        { cause: err },
+      )
+    }
+    throw err
+  }
+
   return {
     operator: struct.operator,
     payer: struct.payer,
@@ -38,6 +51,6 @@ export function toPaymentInfo(
     minFeeBps: struct.minFeeBps,
     maxFeeBps: struct.maxFeeBps,
     feeReceiver: struct.feeReceiver,
-    salt: hexToBigInt(struct.salt),
+    salt,
   }
 }

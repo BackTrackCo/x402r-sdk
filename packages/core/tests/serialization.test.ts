@@ -52,6 +52,6 @@ describe('toPaymentInfo', () => {
   it('throws on malformed salt hex', () => {
     expect(() =>
       toPaymentInfo({ ...baseStruct, salt: '0xZZZ' as `0x${string}` }),
-    ).toThrow(/Cannot convert/i)
+    ).toThrow(/salt/)
   })
 })
