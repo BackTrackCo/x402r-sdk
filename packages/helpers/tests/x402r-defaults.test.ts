@@ -62,4 +62,64 @@ describe('x402rDefaults', () => {
         .assetTransferMethod,
     ).toBe('eip3009')
   })
+
+  describe('defaults', () => {
+    const minimalInput = {
+      captureAuthorizer: '0x000000000000000000000000000000000000dEaD' as const,
+      feeRecipient: '0x000000000000000000000000000000000000bEEF' as const,
+    }
+
+    it('produces a valid AuthCaptureExtra with just the two required fields', () => {
+      expect(isAuthCaptureExtra(x402rDefaults(minimalInput))).toBe(true)
+    })
+
+    it('defaults captureDeadline to ~now + 1 hour', () => {
+      const before = Math.floor(Date.now() / 1000)
+      const extra = x402rDefaults(minimalInput)
+      const after = Math.floor(Date.now() / 1000)
+      expect(extra.captureDeadline).toBeGreaterThanOrEqual(before + 60 * 60)
+      expect(extra.captureDeadline).toBeLessThanOrEqual(after + 60 * 60)
+    })
+
+    it('defaults refundDeadline to ~now + 7 days', () => {
+      const before = Math.floor(Date.now() / 1000)
+      const extra = x402rDefaults(minimalInput)
+      const after = Math.floor(Date.now() / 1000)
+      expect(extra.refundDeadline).toBeGreaterThanOrEqual(
+        before + 60 * 60 * 24 * 7,
+      )
+      expect(extra.refundDeadline).toBeLessThanOrEqual(after + 60 * 60 * 24 * 7)
+    })
+
+    it('defaults minFeeBps to 0 and maxFeeBps to 100', () => {
+      const extra = x402rDefaults(minimalInput)
+      expect(extra.minFeeBps).toBe(0)
+      expect(extra.maxFeeBps).toBe(100)
+    })
+
+    it('defaults token domain to USDC / 2', () => {
+      const extra = x402rDefaults(minimalInput)
+      expect(extra.name).toBe('USDC')
+      expect(extra.version).toBe('2')
+    })
+
+    it('overrides apply when fields are explicitly set', () => {
+      const explicit = {
+        ...minimalInput,
+        captureDeadline: 1_999_999_999,
+        refundDeadline: 2_999_999_999,
+        minFeeBps: 10,
+        maxFeeBps: 250,
+        name: 'EURC',
+        version: '1',
+      }
+      const extra = x402rDefaults(explicit)
+      expect(extra.captureDeadline).toBe(explicit.captureDeadline)
+      expect(extra.refundDeadline).toBe(explicit.refundDeadline)
+      expect(extra.minFeeBps).toBe(10)
+      expect(extra.maxFeeBps).toBe(250)
+      expect(extra.name).toBe('EURC')
+      expect(extra.version).toBe('1')
+    })
+  })
 })
