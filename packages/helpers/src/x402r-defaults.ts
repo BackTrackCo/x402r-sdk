@@ -15,11 +15,15 @@ export interface X402rDefaultsInput {
   /** Address allowed to call authorize/capture/void/refund/charge on AuthCaptureEscrow. Facilitator-specific. */
   captureAuthorizer: `0x${string}`
   /**
-   * Address that receives the fee portion of every settlement.
+   * Address that receives the fee portion of every settlement. Defaults to
+   * `captureAuthorizer` (the x402r deployment convention: operator and fee
+   * recipient are the same EOA).
    *
-   * Defaults to `captureAuthorizer` — the x402r deployment convention is that
-   * operator-and-fee-recipient are the same EOA. Override only if your
-   * facilitator routes fees to a separate treasury.
+   * WARNING: misrouting fees is silent — there's no on-chain revert if this
+   * address is wrong; fees flow to whatever you set and the divergence is
+   * discovered at accounting time. Override only when your facilitator routes
+   * fees to a separate treasury, and verify the address matches your
+   * facilitator's published `feeReceiver` before going to production.
    */
   feeRecipient?: `0x${string}`
   /**
