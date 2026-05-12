@@ -66,19 +66,35 @@ describe('x402rDefaults', () => {
   describe('defaults', () => {
     const minimalInput = {
       captureAuthorizer: '0x000000000000000000000000000000000000dEaD' as const,
-      feeRecipient: '0x000000000000000000000000000000000000bEEF' as const,
     }
 
-    it('produces a valid AuthCaptureExtra with just the two required fields', () => {
+    it('produces a valid AuthCaptureExtra with only captureAuthorizer', () => {
       expect(isAuthCaptureExtra(x402rDefaults(minimalInput))).toBe(true)
     })
 
-    it('defaults captureDeadline to ~now + 1 hour', () => {
+    it('defaults feeRecipient to captureAuthorizer', () => {
+      const extra = x402rDefaults(minimalInput)
+      expect(extra.feeRecipient).toBe(minimalInput.captureAuthorizer)
+    })
+
+    it('passes explicit feeRecipient through unchanged when set', () => {
+      const extra = x402rDefaults({
+        ...minimalInput,
+        feeRecipient: '0x000000000000000000000000000000000000bEEF',
+      })
+      expect(extra.feeRecipient).toBe(
+        '0x000000000000000000000000000000000000bEEF',
+      )
+    })
+
+    it('defaults captureDeadline to ~now + 24 hours', () => {
       const before = Math.floor(Date.now() / 1000)
       const extra = x402rDefaults(minimalInput)
       const after = Math.floor(Date.now() / 1000)
-      expect(extra.captureDeadline).toBeGreaterThanOrEqual(before + 60 * 60)
-      expect(extra.captureDeadline).toBeLessThanOrEqual(after + 60 * 60)
+      expect(extra.captureDeadline).toBeGreaterThanOrEqual(
+        before + 60 * 60 * 24,
+      )
+      expect(extra.captureDeadline).toBeLessThanOrEqual(after + 60 * 60 * 24)
     })
 
     it('defaults refundDeadline to ~now + 7 days', () => {
