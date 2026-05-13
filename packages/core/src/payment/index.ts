@@ -11,6 +11,17 @@ export {
   PAYMENT_INFO_TYPEHASH,
 } from './hashing.js'
 export {
+  type CreatePermit2ApprovalTxReturnType,
+  createPermit2ApprovalTx,
+  type GetPermit2AllowanceReadParamsInput,
+  type GetPermit2AllowanceReadParamsReturnType,
+  getPermit2AllowanceReadParams,
+  PERMIT2_ADDRESS,
+  type SignPermit2AuthorizationParameters,
+  type SignPermit2AuthorizationReturnType,
+  signPermit2Authorization,
+} from './permit2.js'
+export {
   type ToPaymentInfoReturnType,
   toPaymentInfo,
 } from './serialization.js'

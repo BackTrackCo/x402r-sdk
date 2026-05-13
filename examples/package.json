@@ -15,7 +15,8 @@
     "scenario:capture": "tsx scenarios/happy-path-capture.ts",
     "scenario:dispute": "tsx scenarios/dispute-resolution.ts",
     "scenario:atomic-charge": "tsx scenarios/atomic-charge.ts",
-    "scenario:partial-refund-flow": "tsx scenarios/partial-refund-flow.ts"
+    "scenario:partial-refund-flow": "tsx scenarios/partial-refund-flow.ts",
+    "scenario:permit2-charge": "tsx scenarios/permit2-charge.ts"
   },
   "dependencies": {
     "@x402r/core": "workspace:*",

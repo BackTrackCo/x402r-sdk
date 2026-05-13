@@ -15,9 +15,11 @@ Signer (exactly one):
   --signer-module <pkg|path>  dynamic-imported factory (env: SIGNER_MODULE)
 
 Request:
-  --chain <eip155:id>   pick an accepts[] entry when the 402 offers multiple
-  --rpc <url>           override the RPC URL for on-chain reads
-  --max-amount <atomic> refuse to pay more than this (atomic token units)
+  --chain <eip155:id>                 pick an accepts[] entry when the 402 offers multiple
+  --asset-transfer-method <eip3009|permit2>
+                                      filter accepts[] by extra.assetTransferMethod
+  --rpc <url>                         override the RPC URL for on-chain reads
+  --max-amount <atomic>               refuse to pay more than this (atomic token units)
 
 Output:
   --json                emit a single JSON envelope to stdout
@@ -51,6 +53,7 @@ async function main(argv: string[]): Promise<number> {
         'signer-address': { type: 'string' },
         'signer-module': { type: 'string' },
         chain: { type: 'string' },
+        'asset-transfer-method': { type: 'string' },
         rpc: { type: 'string' },
         'max-amount': { type: 'string' },
         json: { type: 'boolean' },
@@ -80,6 +83,9 @@ async function main(argv: string[]): Promise<number> {
     signerAddress: parsed.values['signer-address'] as string | undefined,
     signerModule: parsed.values['signer-module'] as string | undefined,
     chain: parsed.values.chain as string | undefined,
+    assetTransferMethod: parsed.values['asset-transfer-method'] as
+      | string
+      | undefined,
     rpc: parsed.values.rpc as string | undefined,
     maxAmount: parsed.values['max-amount'] as string | undefined,
     json: Boolean(parsed.values.json),
