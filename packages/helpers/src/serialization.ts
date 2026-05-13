@@ -1,7 +1,6 @@
 import { ValidationError } from '@x402r/core/errors'
 import type { PaymentInfo } from '@x402r/core/types'
 import type { PaymentInfoStruct } from '@x402r/evm'
-import { hexToBigInt } from 'viem'
 
 // ---------------------------------------------------------------------------
 // Companion types
@@ -28,7 +27,7 @@ export function toPaymentInfo(
 
   let salt: bigint
   try {
-    salt = hexToBigInt(struct.salt)
+    salt = BigInt(struct.salt)
   } catch (err) {
     if (err instanceof SyntaxError) {
       throw new ValidationError(
