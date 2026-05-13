@@ -33,6 +33,23 @@ const extra = x402rDefaults({
 
 See JSDoc on `X402rDefaultsInput` for per-field overrides and production-footgun warnings.
 
+## Converting wire-format payment info
+
+`toPaymentInfo` converts the wire-format `PaymentInfoStruct` (string-encoded uints from `/verify`) to the runtime `PaymentInfo` (bigint) that `client.payment.*` actions accept.
+
+```ts
+import { toPaymentInfo } from '@x402r/helpers'
+
+// merchant server, after calling facilitator /verify
+const verifyResponse = await facilitator.verify(paymentHeader, requirements)
+const paymentInfo = toPaymentInfo(verifyResponse.paymentInfo)
+
+// now usable with SDK actions
+await merchantClient.payment.capture(paymentInfo, amount)
+```
+
+Throws `ValidationError` on malformed `maxAmount` (non-decimal) or `salt` (non-hex).
+
 ## API
 
 ### `forwardToArbiter(arbiterUrl, options?)`

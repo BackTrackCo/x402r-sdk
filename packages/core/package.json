@@ -51,11 +51,7 @@
   "dependencies": {
     "viem": "^2.46.3"
   },
-  "peerDependencies": {
-    "@x402r/evm": ">=0.2.0-alpha.0 <0.3.0"
-  },
   "devDependencies": {
-    "@x402r/evm": "0.2.0-alpha.0",
     "prool": "^0.2.3"
   },
   "size-limit": [

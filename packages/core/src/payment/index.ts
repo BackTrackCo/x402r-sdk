@@ -21,8 +21,4 @@ export {
   type SignPermit2AuthorizationReturnType,
   signPermit2Authorization,
 } from './permit2.js'
-export {
-  type ToPaymentInfoReturnType,
-  toPaymentInfo,
-} from './serialization.js'
 export { validatePaymentInfo } from './validation.js'

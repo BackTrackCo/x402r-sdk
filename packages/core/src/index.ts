@@ -368,10 +368,6 @@ export {
   signPermit2Authorization,
   signReceiveAuthorization,
 } from './payment/index.js'
-export {
-  type ToPaymentInfoReturnType,
-  toPaymentInfo,
-} from './payment/serialization.js'
 export { validatePaymentInfo } from './payment/validation.js'
 // ---------------------------------------------------------------------------
 // Types
