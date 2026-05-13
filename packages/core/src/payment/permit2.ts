@@ -1,10 +1,5 @@
 import type { Address, Hex } from 'viem'
-import {
-  encodeAbiParameters,
-  encodeFunctionData,
-  erc20Abi,
-  getAddress,
-} from 'viem'
+import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
 import type { LocalAccount } from 'viem/accounts'
 import {
   commercePaymentsPermit2PaymentCollector,
@@ -138,14 +133,11 @@ export async function signPermit2Authorization(
     },
   })
 
-  // Permit2 token collector expects abi.encode(bytes signature); it reconstructs
-  // the PermitTransferFrom struct from PaymentInfo on-chain.
-  const collectorData = encodeAbiParameters(
-    [{ name: 'signature', type: 'bytes' }],
-    [signature],
-  )
-
-  return { collectorData, tokenCollector }
+  // commerce-payments' Permit2PaymentCollector passes collectorData directly
+  // to `_handleERC6492Signature` and then to `permit2.permitTransferFrom` —
+  // so collectorData must be the raw 65-byte EOA signature, NOT an ABI-encoded
+  // wrapper. Permit2 reverts with `InvalidSignatureLength()` otherwise.
+  return { collectorData: signature, tokenCollector }
 }
 
 /**

@@ -1,5 +1,4 @@
 import {
-  decodeAbiParameters,
   encodeFunctionData,
   erc20Abi,
   getAddress,
@@ -61,9 +60,6 @@ describe('signPermit2Authorization', () => {
       paymentInfo,
     })
 
-    // collectorData is abi.encode(bytes signature) — unwrap before recovering
-    const [signature] = decodeAbiParameters([{ type: 'bytes' }], collectorData)
-
     const nonce = BigInt(
       computeEscrowNonce(chainId, chainConfig.authCaptureEscrow, paymentInfo),
     )
@@ -85,7 +81,7 @@ describe('signPermit2Authorization', () => {
         nonce,
         deadline: BigInt(paymentInfo.preApprovalExpiry),
       },
-      signature: signature as `0x${string}`,
+      signature: collectorData,
     })
 
     expect(recovered.toLowerCase()).toBe(account.address.toLowerCase())
@@ -102,21 +98,17 @@ describe('signPermit2Authorization', () => {
     expect(tokenCollector).toBe('0x992476B9Ee81d52a5BdA0622C333938D0Af0aB26')
   })
 
-  it('collectorData is abi-encoded bytes, not the raw signature', async () => {
+  it('collectorData is the raw 65-byte EOA signature, not abi-encoded', async () => {
     const { collectorData } = await signPermit2Authorization({
       account,
       chainId: 84532,
       paymentInfo,
     })
 
-    // Raw EIP-712 signatures are 65 bytes = 132 chars after 0x. abi.encode wraps
-    // them in a 32-byte offset + 32-byte length + padded bytes payload, so the
-    // hex string is meaningfully longer than a raw signature.
-    expect(collectorData.length).toBeGreaterThan(132 + 2)
-
-    // Must round-trip through decodeAbiParameters cleanly.
-    const [unwrapped] = decodeAbiParameters([{ type: 'bytes' }], collectorData)
-    expect((unwrapped as `0x${string}`).length).toBe(132) // 0x + 65 bytes
+    // commerce-payments' Permit2PaymentCollector forwards collectorData
+    // directly to Permit2.permitTransferFrom; Permit2 reverts with
+    // InvalidSignatureLength() if length != 65 (EOA) or 64 (EIP-2098).
+    expect(collectorData.length).toBe(2 + 65 * 2) // "0x" + 65 bytes hex
   })
 
   it('different salt produces a different signature', async () => {
@@ -159,7 +151,6 @@ describe('signPermit2Authorization', () => {
 
     expect(tokenCollector).toBe(getAddress(customCollector))
 
-    const [signature] = decodeAbiParameters([{ type: 'bytes' }], collectorData)
     const nonce = BigInt(
       computeEscrowNonce(chainId, chainConfig.authCaptureEscrow, paymentInfo),
     )
@@ -182,7 +173,7 @@ describe('signPermit2Authorization', () => {
         nonce,
         deadline: BigInt(paymentInfo.preApprovalExpiry),
       },
-      signature: signature as `0x${string}`,
+      signature: collectorData,
     })
     expect(recovered.toLowerCase()).toBe(account.address.toLowerCase())
   })

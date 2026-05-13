@@ -1,12 +1,17 @@
 import type { PaymentRequirements } from '@x402/core/types'
 import { Malformed402Error, MaxAmountExceededError } from '../errors.js'
 
-export type AssetTransferMethod = 'eip3009' | 'permit2'
+type AssetTransferMethod = 'eip3009' | 'permit2'
 
-export interface PickAcceptOptions {
+interface PickAcceptOptions {
   chain?: string
   assetTransferMethod?: string
 }
+
+const VALID_ASSET_TRANSFER_METHODS: ReadonlySet<AssetTransferMethod> = new Set([
+  'eip3009',
+  'permit2',
+])
 
 /**
  * Pick a single `accepts[]` entry from a 402 response. Enforces the rule that
@@ -36,8 +41,9 @@ export function pickAccept(
 
   if (options.assetTransferMethod !== undefined) {
     if (
-      options.assetTransferMethod !== 'eip3009' &&
-      options.assetTransferMethod !== 'permit2'
+      !VALID_ASSET_TRANSFER_METHODS.has(
+        options.assetTransferMethod as AssetTransferMethod,
+      )
     ) {
       throw new Malformed402Error(
         `--asset-transfer-method must be 'eip3009' or 'permit2' (got '${options.assetTransferMethod}')`,
