@@ -22,7 +22,7 @@ pnpm add @x402r/core
 | `@x402r/core/actions` | 50+ action functions (read/write contract calls) |
 | `@x402r/core/deploy` | Factory deploy functions, condition builder |
 | `@x402r/core/errors` | `X402rError`, `ConfigError`, `ContractCallError`, `ValidationError` |
-| `@x402r/core/payment` | `computePaymentInfoHash()`, `validatePaymentInfo()` |
+| `@x402r/core/payment` | `computePaymentInfoHash()`, `validatePaymentInfo()`, `signReceiveAuthorization()` (ERC-3009), `signPermit2Authorization()` + `createPermit2ApprovalTx()` + `getPermit2AllowanceReadParams()` (Permit2) |
 
 ## Usage
 
@@ -60,6 +60,48 @@ const records = await getPayerPaymentsFromHook(publicClient, {
 ```
 
 `@x402r/sdk`'s `client.query.*` actions auto-scope by default using the configured `operatorAddress`. If you bypass the SDK and call `@x402r/core` directly, you must opt in per call.
+
+## Permit2 helpers (payer-side)
+
+To pay via the Permit2 token collector, the payer must first approve the canonical Uniswap Permit2 contract to spend the token. This is a one-time setup per `(token, chain)` — after it lands, every Permit2-based payment uses signature-only authorization.
+
+```ts
+import {
+  createPermit2ApprovalTx,
+  getPermit2AllowanceReadParams,
+  PERMIT2_ADDRESS,
+  signPermit2Authorization,
+} from '@x402r/core'
+
+// 1. Check whether the payer has already approved Permit2 for this token.
+const allowance = await publicClient.readContract(
+  getPermit2AllowanceReadParams({ tokenAddress, ownerAddress }),
+)
+
+// 2. If not, send the one-time approval (payer pays gas).
+if (allowance < requiredAmount) {
+  const tx = createPermit2ApprovalTx(tokenAddress)
+  await walletClient.sendTransaction(tx)
+}
+
+// 3. Per-payment: sign the Permit2 authorization.
+const { collectorData, tokenCollector } = await signPermit2Authorization({
+  account,
+  chainId: 84532,
+  paymentInfo,
+})
+
+// 4. Settle atomically. `tokenCollector` resolves to the canonical
+// Permit2PaymentCollector from commerce-payments.
+await merchantClient.payment.charge(
+  paymentInfo,
+  amount,
+  tokenCollector,
+  collectorData,
+)
+```
+
+Mirrors the ergonomics of `signReceiveAuthorization` (ERC-3009 path). The deterministic nonce derived from PaymentInfo binds all payment parameters; freshness comes from `paymentInfo.salt`.
 
 ## Docs
 
