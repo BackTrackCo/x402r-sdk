@@ -109,9 +109,6 @@ importers:
         specifier: ^2.46.3
         version: 2.47.1(typescript@5.9.3)(zod@4.3.6)
     devDependencies:
-      '@x402r/evm':
-        specifier: 0.2.0-alpha.0
-        version: 0.2.0-alpha.0(@x402/core@2.10.0)(@x402/evm@2.5.0(ethers@6.16.0)(typescript@5.9.3))(viem@2.47.1(typescript@5.9.3)(zod@4.3.6))
       prool:
         specifier: ^0.2.3
         version: 0.2.3
@@ -121,6 +118,9 @@ importers:
       '@x402r/core':
         specifier: workspace:^
         version: link:../core
+      viem:
+        specifier: ^2.46.3
+        version: 2.47.1(typescript@5.9.3)(zod@4.3.6)
     devDependencies:
       '@x402/core':
         specifier: 2.5.0
@@ -1150,9 +1150,6 @@ packages:
     peerDependenciesMeta:
       typescript:
         optional: true
-
-  '@x402/core@2.10.0':
-    resolution: {integrity: sha512-n9Exnt1HN4LFaINaPYhk6Cy3ICBt0e46XN1Uo5i6efIZfIoqP6pY8ONSX/M9bU4F1fpvMj0JZ3xdcBZCiGInfw==}
 
   '@x402/core@2.5.0':
     resolution: {integrity: sha512-nUr8HW8WhkU1DvrpUfsRvALy5NF8UWKoFezZOtX61mohxp2lWZpJ2GnvscxDM8nmBAbtIollmksd5z5pj8InXw==}
@@ -3312,10 +3309,6 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@x402/core@2.10.0':
-    dependencies:
-      zod: 3.25.76
-
   '@x402/core@2.5.0':
     dependencies:
       zod: 3.25.76
@@ -3349,12 +3342,6 @@ snapshots:
 
   '@x402r/erc8004@0.1.0-alpha.1(viem@2.47.1(typescript@5.9.3)(zod@4.3.6))':
     dependencies:
-      viem: 2.47.1(typescript@5.9.3)(zod@4.3.6)
-
-  '@x402r/evm@0.2.0-alpha.0(@x402/core@2.10.0)(@x402/evm@2.5.0(ethers@6.16.0)(typescript@5.9.3))(viem@2.47.1(typescript@5.9.3)(zod@4.3.6))':
-    dependencies:
-      '@x402/core': 2.10.0
-      '@x402/evm': 2.5.0(ethers@6.16.0)(typescript@5.9.3)
       viem: 2.47.1(typescript@5.9.3)(zod@4.3.6)
 
   '@x402r/evm@0.2.0-alpha.0(@x402/core@2.5.0)(@x402/evm@2.5.0(ethers@6.16.0)(typescript@5.9.3))(viem@2.47.1(typescript@5.9.3)(zod@4.3.6))':

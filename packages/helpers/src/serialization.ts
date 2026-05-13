@@ -1,7 +1,7 @@
+import { ValidationError } from '@x402r/core/errors'
+import type { PaymentInfo } from '@x402r/core/types'
 import type { PaymentInfoStruct } from '@x402r/evm'
 import { hexToBigInt } from 'viem'
-import { ValidationError } from '../errors/index.js'
-import type { PaymentInfo } from '../types/index.js'
 
 // ---------------------------------------------------------------------------
 // Companion types

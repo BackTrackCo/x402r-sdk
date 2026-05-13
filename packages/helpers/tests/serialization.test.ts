@@ -1,7 +1,14 @@
 import type { PaymentInfoStruct } from '@x402r/evm'
 import { describe, expect, it } from 'vitest'
-import { toPaymentInfo } from '../src/payment/serialization.js'
-import { TEST_ADDRESSES } from './fixtures.js'
+import { toPaymentInfo } from '../src/serialization.js'
+
+const TEST_ADDRESSES = {
+  operator: '0x1234567890123456789012345678901234567890',
+  payer: '0x2345678901234567890123456789012345678901',
+  receiver: '0x3456789012345678901234567890123456789012',
+  token: '0x4567890123456789012345678901234567890123',
+  feeReceiver: '0x5678901234567890123456789012345678901234',
+} as const
 
 const baseStruct: PaymentInfoStruct = {
   operator: TEST_ADDRESSES.operator,

@@ -22,7 +22,7 @@ pnpm add @x402r/core
 | `@x402r/core/actions` | 50+ action functions (read/write contract calls) |
 | `@x402r/core/deploy` | Factory deploy functions, condition builder |
 | `@x402r/core/errors` | `X402rError`, `ConfigError`, `ContractCallError`, `ValidationError` |
-| `@x402r/core/payment` | `computePaymentInfoHash()`, `toPaymentInfo()`, `validatePaymentInfo()` |
+| `@x402r/core/payment` | `computePaymentInfoHash()`, `validatePaymentInfo()` |
 
 ## Usage
 
