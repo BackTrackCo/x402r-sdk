@@ -57,9 +57,15 @@ export type SignPermit2AuthorizationParameters = {
 
 export type SignPermit2AuthorizationReturnType = {
   /**
-   * ABI-encoded `bytes signature` payload expected by the Permit2 token
-   * collector — pass directly to `payment.charge` / `payment.authorize` as
-   * `collectorData`.
+   * Raw 65-byte EOA EIP-712 signature — pass directly to `payment.charge` /
+   * `payment.authorize` as `collectorData`.
+   *
+   * WARNING: do not wrap with `encodeAbiParameters` / `abi.encode(bytes)`.
+   * commerce-payments' Permit2PaymentCollector forwards `collectorData`
+   * straight through `_handleERC6492Signature` to
+   * `permit2.permitTransferFrom`, and Permit2 reverts with
+   * `InvalidSignatureLength()` for anything that isn't 65 (EOA) or 64
+   * (EIP-2098) bytes.
    */
   collectorData: Hex
   tokenCollector: Address
