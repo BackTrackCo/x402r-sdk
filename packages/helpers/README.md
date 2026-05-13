@@ -45,7 +45,7 @@ const verifyResponse = await facilitator.verify(paymentHeader, requirements)
 const paymentInfo = toPaymentInfo(verifyResponse.paymentInfo)
 
 // now usable with SDK actions
-await merchantClient.payment.capture({ paymentInfo, amount })
+await merchantClient.payment.capture(paymentInfo, amount)
 ```
 
 Throws `ValidationError` on malformed `maxAmount` (non-decimal) or `salt` (non-hex).
