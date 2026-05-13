@@ -25,6 +25,8 @@ export type {
   RefundRequestData,
   SignPermit2AuthorizationParameters,
   SignPermit2AuthorizationReturnType,
+  SignReceiveAuthorizationParameters,
+  SignReceiveAuthorizationReturnType,
   SupportedChainId,
   X402rChainConfig,
 } from '@x402r/core'
@@ -44,6 +46,7 @@ export {
   RefundRequestStatus,
   SubmitterRole,
   signPermit2Authorization,
+  signReceiveAuthorization,
   supportedChainIds,
   ValidationError,
   validateFeeBounds,
