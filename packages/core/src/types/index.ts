@@ -50,7 +50,7 @@ export const PaymentInfo = {
    * bigint-form `PaymentInfo` that escrow actions accept.
    *
    * Throws `ValidationError` on malformed `maxAmount` (non-decimal) or
-   * `salt` (non-hex).
+   * `salt` (not a valid uint256 — decimal or 0x-prefixed hex).
    */
   fromWire(wire: PaymentInfoWire): PaymentInfo {
     let maxAmount: bigint
@@ -72,7 +72,7 @@ export const PaymentInfo = {
     } catch (err) {
       if (err instanceof SyntaxError) {
         throw new ValidationError(
-          `PaymentInfo.fromWire: invalid salt '${wire.salt}' (expected 0x-prefixed bytes32 hex)`,
+          `PaymentInfo.fromWire: invalid salt '${wire.salt}' — expected uint256 (decimal or 0x-prefixed hex)`,
           { cause: err },
         )
       }
