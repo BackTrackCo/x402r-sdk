@@ -17,7 +17,7 @@ pnpm add @x402r/core
 | Path | Contents |
 | --- | --- |
 | `@x402r/core` | Everything (re-exports all subpaths) |
-| `@x402r/core/types` | `PaymentInfo`, `OperatorConfig`, `PluginConfig`, etc. |
+| `@x402r/core/types` | `PaymentInfo` (type + namespace with `fromWire`/`toWire`), `PaymentInfoWire`, `OperatorConfig`, `PluginConfig`, etc. |
 | `@x402r/core/config` | Chain registry, `getChainConfig()`, addresses |
 | `@x402r/core/actions` | 50+ action functions (read/write contract calls) |
 | `@x402r/core/deploy` | Factory deploy functions, condition builder |
@@ -34,6 +34,26 @@ const [isAuthorized, authorizedAmount, chargedAmount] = await getPaymentState(
   { operatorAddress, chainId: 84532, paymentInfo },
 )
 ```
+
+## `PaymentInfo` — type and converter namespace
+
+`PaymentInfo` is both a type (the bigint-form 12-field payment record) and a const namespace with static `fromWire`/`toWire` converters for crossing the JSON boundary. JSON can't carry bigints, so any time a `PaymentInfo` travels through HTTP, a database column, or a queue payload, it's in the string-form `PaymentInfoWire` shape and has to be hydrated back to bigints before being passed to SDK actions.
+
+```ts
+import { PaymentInfo, type PaymentInfoWire } from '@x402r/core'
+
+// JSON shape → bigint shape (for SDK actions)
+const info = PaymentInfo.fromWire(req.body.paymentInfoWire)
+await client.payment.capture(info, info.maxAmount)
+
+// bigint shape → JSON shape (for persistence / HTTP bodies)
+const wire = PaymentInfo.toWire(info)
+await db.records.insert({ paymentInfoWire: wire })
+```
+
+The `PaymentInfoWire` type is derived from the same contract ABI as `PaymentInfo`, so contract changes update both forms together at compile time. No `@x402r/evm` dependency is required — the wire shape is generated locally from core's own ABI artifacts.
+
+`PaymentInfo.fromWire` throws `ValidationError` on malformed `maxAmount` (non-decimal) or `salt` (non-hex).
 
 ## Hook query scoping (opt-in for direct `@x402r/core` consumers)
 

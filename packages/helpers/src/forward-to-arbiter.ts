@@ -1,5 +1,6 @@
 import type { SettleResultContext } from '@x402/core/server'
 import { X402rError } from '@x402r/core'
+import { reconstructPaymentInfoWire } from './reconstruct-payment-info.js'
 
 export interface ForwardToArbiterOptions {
   /** Custom error handler. Defaults to `console.warn`. */
@@ -11,7 +12,21 @@ export interface ForwardToArbiterOptions {
  * arbiter service for evaluation. Fire-and-forget — does not block the
  * response to the client.
  *
- * Only fires for authCapture scheme settlements. Non-authCapture schemes are skipped.
+ * Only fires for authCapture scheme settlements. Non-authCapture schemes
+ * are skipped. The hook reconstructs the JSON-form `PaymentInfoWire`
+ * from the verified context and ships it as `paymentInfoWire` in the
+ * POST body — arbiters consume `req.body.paymentInfoWire`, run it
+ * through `PaymentInfo.fromWire` (from `@x402r/sdk` or `@x402r/core`)
+ * to get bigints, and pass to SDK actions.
+ *
+ * POST body shape:
+ * ```json
+ * {
+ *   "responseBody": "...",
+ *   "transaction": "0x...",
+ *   "paymentInfoWire": { ...PaymentInfoWire }
+ * }
+ * ```
  *
  * @example
  * ```ts
@@ -44,6 +59,19 @@ export function forwardToArbiter(
     const responseBody = transportCtx?.responseBody
     if (!responseBody) return
 
+    let paymentInfoWire: ReturnType<typeof reconstructPaymentInfoWire>
+    try {
+      paymentInfoWire = reconstructPaymentInfoWire(context)
+    } catch (err) {
+      errorHandler(
+        new X402rError(`Arbiter request to ${arbiterUrl} skipped`, {
+          cause: err instanceof Error ? err : undefined,
+          details: 'reconstructPaymentInfoWire failed',
+        }),
+      )
+      return
+    }
+
     const url = new URL('/verify', arbiterUrl).toString()
     globalThis
       .fetch(url, {
@@ -52,7 +80,7 @@ export function forwardToArbiter(
         body: JSON.stringify({
           responseBody: responseBody.toString('utf-8'),
           transaction: context.result.transaction,
-          paymentPayload: context.paymentPayload,
+          paymentInfoWire,
         }),
       })
       .catch((err: unknown) =>

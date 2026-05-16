@@ -373,7 +373,12 @@ export { validatePaymentInfo } from './payment/validation.js'
 // Types
 // ---------------------------------------------------------------------------
 export type {
+  AbiPrimitiveToWire,
   OperatorConfig,
-  PaymentInfo,
+  PaymentInfoWire,
   PluginConfig,
 } from './types/index.js'
+// `PaymentInfo` is both a type and a namespace const (TypeScript allows the
+// same identifier in type and value position). This single export re-exports
+// both meanings.
+export { PaymentInfo } from './types/index.js'
