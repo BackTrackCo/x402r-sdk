@@ -46,11 +46,11 @@ export type PaymentInfoWire = AbiPrimitiveToWire<PaymentInfo>
 
 export const PaymentInfo = {
   /**
-   * Convert a JSON-form `PaymentInfoStruct` (or `PaymentInfoWire`) to the
-   * bigint-form `PaymentInfo` that escrow actions accept.
+   * Convert a JSON-form `PaymentInfoWire` to the bigint-form `PaymentInfo`
+   * that escrow actions accept.
    *
-   * Throws `ValidationError` on malformed `maxAmount` (non-decimal) or
-   * `salt` (not a valid uint256 — decimal or 0x-prefixed hex).
+   * Throws `ValidationError` when `maxAmount` or `salt` isn't a valid
+   * uint256 (decimal or 0x-prefixed hex).
    */
   fromWire(wire: PaymentInfoWire): PaymentInfo {
     let maxAmount: bigint
@@ -59,7 +59,7 @@ export const PaymentInfo = {
     } catch (err) {
       if (err instanceof SyntaxError) {
         throw new ValidationError(
-          `PaymentInfo.fromWire: invalid maxAmount '${wire.maxAmount}' — expected decimal-string uint256`,
+          `PaymentInfo.fromWire: invalid maxAmount '${wire.maxAmount}' — expected uint256 (decimal or 0x-prefixed hex)`,
           { cause: err },
         )
       }

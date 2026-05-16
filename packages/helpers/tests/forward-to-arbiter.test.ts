@@ -93,7 +93,7 @@ describe('forwardToArbiter', () => {
       expect(parsed.responseBody).toBe('{"temp": 72}')
       expect(parsed.transaction).toBe('0xabc')
 
-      // body now carries the reconstructed PaymentInfoStruct under `paymentInfoWire`
+      // body now carries the reconstructed PaymentInfoWire under `paymentInfoWire`
       // (was `paymentPayload` in the old commerce-era shape)
       expect(parsed.paymentPayload).toBeUndefined()
       expect(parsed.paymentInfo).toBeUndefined()
