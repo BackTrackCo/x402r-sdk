@@ -34,6 +34,21 @@ async function main() {
       throw new Error('Evidence module not available')
     }
 
+    const readBalance = (owner: `0x${string}`) =>
+      ctx.publicClient.readContract({
+        address: ctx.paymentInfo.token,
+        abi: erc20Abi,
+        functionName: 'balanceOf',
+        args: [owner],
+      })
+
+    // Snapshot the payer's funded post-setup balance so Step 6 can assert the
+    // refund actually moved tokens. Under a full refund, the payer pays
+    // PAYMENT_AMOUNT on authorize and receives PAYMENT_AMOUNT on refund, so
+    // the net delta must be exactly 0. A non-zero delta means tokens never
+    // moved back (silent refund failure).
+    const payerBalanceBefore = await readBalance(ctx.accounts.payer)
+
     // ================================================================
     // Step 1: Authorize payment (direct SDK call)
     // ================================================================
@@ -162,13 +177,18 @@ async function main() {
       'Refundable amount === 0 after refund executed',
     )
 
-    const payerUsdcBalance = await ctx.publicClient.readContract({
-      address: ctx.paymentInfo.token,
-      abi: erc20Abi,
-      functionName: 'balanceOf',
-      args: [ctx.accounts.payer],
-    })
+    const payerUsdcBalance = await readBalance(ctx.accounts.payer)
     runner.log(`Payer USDC balance: ${payerUsdcBalance}`)
+
+    // Net-zero invariant: payer paid PAYMENT_AMOUNT on authorize and got
+    // PAYMENT_AMOUNT back on full refund. A delta of -PAYMENT_AMOUNT would
+    // indicate the refund silently failed to move tokens.
+    const payerBalanceAfter = await readBalance(ctx.accounts.payer)
+    const payerDelta = payerBalanceAfter - payerBalanceBefore
+    runner.assert(
+      payerDelta === 0n,
+      `payer balance net-zero after full refund (authorized → refunded back); actual delta ${payerDelta}`,
+    )
 
     // ================================================================
     // Step 7: Distribute fees
@@ -181,20 +201,13 @@ async function main() {
       )
     runner.log(`Accumulated protocol fees: ${accumulatedFees}`)
 
-    if (accumulatedFees > 0n) {
-      const feeTx = await ctx.merchant.operator.distributeFees(
-        ctx.paymentInfo.token,
-      )
-      await runner.waitForTx(feeTx)
-
-      const remainingFees =
-        await ctx.merchant.operator.getAccumulatedProtocolFees(
-          ctx.paymentInfo.token,
-        )
-      runner.assert(remainingFees === 0n, 'All protocol fees distributed')
-    } else {
-      runner.log('No fees to distribute (refund returned all funds)')
-    }
+    // A full refund returns 100% of escrow to the payer and collects zero
+    // protocol fees. Assert this explicitly — the previous
+    // `if (accumulatedFees > 0n)` branch was dead under this scenario.
+    runner.assert(
+      accumulatedFees === 0n,
+      `full refund collected zero protocol fees; actual ${accumulatedFees}`,
+    )
 
     runner.done()
   } finally {
