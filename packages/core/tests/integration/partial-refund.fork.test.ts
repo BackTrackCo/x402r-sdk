@@ -204,18 +204,28 @@ describe('Edge case: voidPayment after full capture', () => {
     const amounts = await merchant.payment.getAmounts(edgePaymentInfo)
     expect(amounts.capturableAmount).toBe(0n)
 
-    // Observed behavior (pinned 2026-05-18 against the deployed
-    // PaymentOperator + EscrowPeriod fixtures): the SDK's `voidPayment()`
-    // submits the tx and the wallet client returns a tx hash without throwing
-    // (`writeContract` on anvil doesn't simulate before sending). On-chain,
-    // the `void()` call REVERTS — see the receipt status below. The
-    // capturableAmount stays at 0n (no state change), confirming nothing was
-    // double-voided.
+    // Observed behavior against the deployed PaymentOperator + EscrowPeriod
+    // fixtures: the SDK's `voidPayment()` submits the tx and the wallet client
+    // returns a tx hash without throwing (`writeContract` on anvil doesn't
+    // simulate before sending). On-chain, the `void()` call REVERTS — see the
+    // receipt status below. The capturableAmount stays at 0n (no state
+    // change), confirming nothing was double-voided.
     //
     // This pins down the contract-side guarantee: if a future contract
     // version turns the revert into a no-op success, or starts simulating
     // pre-send (so the SDK throws), this test will fail and force a
-    // deliberate decision.
+    // deliberate decision. JSDoc reference: voidPayment.ts:17-18.
+    //
+    // Snapshot payer balance to prove the reverting void didn't move ERC-20
+    // funds. State assertion (capturableAmount === 0n) proves escrow state;
+    // this balance assertion proves the token layer is untouched.
+    const payerBalanceBefore = await publicClient.readContract({
+      address: USDC,
+      abi: erc20Abi,
+      functionName: 'balanceOf',
+      args: [testRoles.payer.address],
+    })
+
     const voidHash = await merchant.payment.voidPayment(edgePaymentInfo)
     const voidReceipt = await publicClient.waitForTransactionReceipt({
       hash: voidHash,
@@ -224,6 +234,14 @@ describe('Edge case: voidPayment after full capture', () => {
 
     const amountsAfter = await merchant.payment.getAmounts(edgePaymentInfo)
     expect(amountsAfter.capturableAmount).toBe(0n)
+
+    const payerBalanceAfter = await publicClient.readContract({
+      address: USDC,
+      abi: erc20Abi,
+      functionName: 'balanceOf',
+      args: [testRoles.payer.address],
+    })
+    expect(payerBalanceAfter).toBe(payerBalanceBefore)
   }, 60_000)
 })
 
@@ -248,17 +266,28 @@ describe('Edge case: double capture+void on same paymentInfo', () => {
       paymentInfo,
     )
 
-    // Observed behavior (pinned 2026-05-18): the SDK's `authorize()` submits
-    // the tx and returns a hash without throwing (no pre-send simulation).
-    // The on-chain `authorize()` REVERTS in the receipt — the escrow nonce
-    // (see `computeEscrowNonce` at packages/core/src/payment/hashing.ts:87-97)
-    // is already consumed by Scenario 3's capture+void, and ERC-3009 nonces
-    // are single-use, so the second authorize cannot pull tokens. The
+    // Observed behavior: the SDK's `authorize()` submits the tx and returns a
+    // hash without throwing (no pre-send simulation). The on-chain
+    // `authorize()` REVERTS in the receipt — the escrow nonce (see
+    // `computeEscrowNonce` at packages/core/src/payment/hashing.ts:87-97) is
+    // already consumed by Scenario 3's capture+void, and ERC-3009 nonces are
+    // single-use, so the second authorize cannot pull tokens. The
     // capturableAmount stays at 0n.
     //
     // This is the replay-protection boundary: if a future contract version
     // ever lets this succeed, a malicious or buggy caller could re-collect
     // tokens against a paymentInfo the payer thought was fully consumed.
+    //
+    // Snapshot payer balance to prove the reverting authorize didn't pull
+    // any tokens at the ERC-20 layer. State assertion (capturableAmount === 0n)
+    // proves escrow state; this balance assertion proves no funds moved.
+    const payerBalanceBefore = await publicClient.readContract({
+      address: USDC,
+      abi: erc20Abi,
+      functionName: 'balanceOf',
+      args: [testRoles.payer.address],
+    })
+
     const replayHash = await payerClient.payment.authorize(
       paymentInfo,
       DEFAULT_AMOUNT,
@@ -272,5 +301,13 @@ describe('Edge case: double capture+void on same paymentInfo', () => {
 
     const amountsAfter = await merchant.payment.getAmounts(paymentInfo)
     expect(amountsAfter.capturableAmount).toBe(0n)
+
+    const payerBalanceAfter = await publicClient.readContract({
+      address: USDC,
+      abi: erc20Abi,
+      functionName: 'balanceOf',
+      args: [testRoles.payer.address],
+    })
+    expect(payerBalanceAfter).toBe(payerBalanceBefore)
   }, 60_000)
 })
