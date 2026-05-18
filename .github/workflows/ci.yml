@@ -84,7 +84,7 @@ jobs:
     # Fork tests do not contribute to code coverage (no --coverage flag).
     # They validate on-chain integration via Anvil forks.
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - name: Install Foundry
@@ -111,6 +111,10 @@ jobs:
         with:
           timeout_minutes: 5
           max_attempts: 2
+          # Wait between attempts to avoid anvil port-reuse collisions.
+          # TODO: derive ANVIL_PORT from VITEST_POOL_ID / process.pid in
+          # examples/shared/anvil-setup.ts so retries get a fresh port.
+          retry_wait_seconds: 10
           command: pnpm scenarios:ci
 
   build:
