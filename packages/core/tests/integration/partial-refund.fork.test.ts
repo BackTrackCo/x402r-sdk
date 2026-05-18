@@ -319,3 +319,72 @@ describe('Edge case: double capture+void on same paymentInfo', () => {
     expect(payerBalanceAfter).toBe(payerBalanceBefore)
   }, 60_000)
 })
+
+// ---------------------------------------------------------------------------
+// Edge case (d): capture overspend — capture(amount > capturableAmount)
+// ---------------------------------------------------------------------------
+
+// Pins down on-chain behavior when a merchant tries to capture MORE than the
+// authorized capturableAmount (e.g., off-by-one in their amount math, or a
+// stale read of capturableAmount before another capture drained it). The SDK
+// path (`packages/core/src/actions/payment/capture.ts:17-34`) wraps
+// `writeContract` with no client-side amount validation, so the behavior is
+// purely contract-defined.
+describe('Edge case: capture overspend (amount > capturableAmount)', () => {
+  it('reverts and leaves capturableAmount unchanged', async () => {
+    // Fresh paymentInfo with salt: 5n to avoid colliding with Scenarios above.
+    const overspendInfo: PaymentInfo = { ...paymentInfo, salt: 5n }
+    const { collectorData, tokenCollector } = await createCollectorData(
+      anvilBaseSepolia.getWalletClient(testRoles.payer.address),
+      overspendInfo,
+    )
+    const authHash = await payerClient.payment.authorize(
+      overspendInfo,
+      DEFAULT_AMOUNT,
+      tokenCollector,
+      collectorData,
+    )
+    await publicClient.waitForTransactionReceipt({ hash: authHash })
+
+    await testClient.increaseTime({ seconds: ESCROW_FAST_FORWARD })
+    await testClient.mine({ blocks: 1 })
+
+    const amountsBefore = await merchant.payment.getAmounts(overspendInfo)
+    expect(amountsBefore.capturableAmount).toBe(DEFAULT_AMOUNT)
+
+    // Snapshot receiver USDC balance — if the overspend silently let an
+    // out-of-range amount through, receiver tokens would move.
+    const receiverBalanceBefore = await publicClient.readContract({
+      address: USDC,
+      abi: erc20Abi,
+      functionName: 'balanceOf',
+      args: [testRoles.receiver.address],
+    })
+
+    // Attempt to capture MORE than authorized. SDK returns a tx hash (no
+    // pre-simulation), on-chain reverts at receipt level (same pattern as
+    // edge cases (b) and (c)).
+    const overspendHash = await merchant.payment.capture(
+      overspendInfo,
+      DEFAULT_AMOUNT + 1n,
+      '0x',
+    )
+    const overspendReceipt = await publicClient.waitForTransactionReceipt({
+      hash: overspendHash,
+    })
+    expect(overspendReceipt.status).toBe('reverted')
+
+    // State invariants: capturableAmount unchanged, receiver tokens didn't
+    // move. Together these prove the contract gate held.
+    const amountsAfter = await merchant.payment.getAmounts(overspendInfo)
+    expect(amountsAfter.capturableAmount).toBe(DEFAULT_AMOUNT)
+
+    const receiverBalanceAfter = await publicClient.readContract({
+      address: USDC,
+      abi: erc20Abi,
+      functionName: 'balanceOf',
+      args: [testRoles.receiver.address],
+    })
+    expect(receiverBalanceAfter).toBe(receiverBalanceBefore)
+  }, 60_000)
+})
