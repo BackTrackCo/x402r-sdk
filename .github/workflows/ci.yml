@@ -84,7 +84,7 @@ jobs:
     # Fork tests do not contribute to code coverage (no --coverage flag).
     # They validate on-chain integration via Anvil forks.
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - name: Install Foundry
@@ -106,6 +106,12 @@ jobs:
           timeout_minutes: 10
           max_attempts: 2
           command: pnpm test:fork
+      - name: Run CI scenarios (dispute + permit2)
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 5
+          max_attempts: 2
+          command: pnpm scenarios:ci
 
   build:
     name: Build
