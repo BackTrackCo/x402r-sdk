@@ -26,7 +26,7 @@ async function main() {
   const runner = new StepRunner('Partial Refund Flow', ctx.publicClient)
 
   try {
-    runner.step('Authorize payment via HTTP 402 flow')
+    runner.step('Authorize payment via SDK viem flow')
 
     const payerAccount = privateKeyToAccount(PAYER_PRIVATE_KEY)
     const { collectorData, tokenCollector } = await signReceiveAuthorization({

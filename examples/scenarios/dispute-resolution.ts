@@ -35,9 +35,9 @@ async function main() {
     }
 
     // ================================================================
-    // Step 1: Authorize payment (HTTP 402 flow)
+    // Step 1: Authorize payment (direct SDK call)
     // ================================================================
-    runner.step('Authorize payment via HTTP 402 flow')
+    runner.step('Authorize payment via SDK viem flow')
 
     const payerAccount = privateKeyToAccount(PAYER_PRIVATE_KEY)
     const { collectorData, tokenCollector } = await signReceiveAuthorization({
