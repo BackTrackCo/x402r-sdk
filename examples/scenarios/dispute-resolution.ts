@@ -11,7 +11,7 @@ import { StepRunner } from './runner.js'
 // Flow: authorize → payer requests refund → payer + merchant submit evidence →
 //       arbiter reviews evidence → merchant executes voidPayment
 //       (hook approves automatically) → verify refund amounts →
-//       merchant distributes fees
+//       verify zero protocol fees accrue
 // ---------------------------------------------------------------------------
 
 async function main() {
@@ -191,9 +191,9 @@ async function main() {
     )
 
     // ================================================================
-    // Step 7: Distribute fees
+    // Step 7: Verify zero protocol fees accrued
     // ================================================================
-    runner.step('Merchant distributes protocol fees')
+    runner.step('Verify zero protocol fees accrued')
 
     const accumulatedFees =
       await ctx.merchant.operator.getAccumulatedProtocolFees(
