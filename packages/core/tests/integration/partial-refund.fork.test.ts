@@ -261,6 +261,14 @@ describe('Edge case: voidPayment after full capture', () => {
 // nonce and revert.
 describe('Edge case: double capture+void on same paymentInfo', () => {
   it('rejects second authorize on the same salt (nonce collision)', async () => {
+    // Precondition (in-test guard): Scenario 3 above must have fully consumed
+    // paymentInfo (capture + void → capturableAmount === 0n). If this test is
+    // run with `--shuffle` or `.only`, the precondition fails fast here rather
+    // than confusing the diagnoser with an "expected reverted got success"
+    // receipt-status failure downstream.
+    const preAmounts = await merchant.payment.getAmounts(paymentInfo)
+    expect(preAmounts.capturableAmount).toBe(0n)
+
     const { collectorData, tokenCollector } = await createCollectorData(
       anvilBaseSepolia.getWalletClient(testRoles.payer.address),
       paymentInfo,
