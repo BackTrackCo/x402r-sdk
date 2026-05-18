@@ -327,7 +327,7 @@ describe('Edge case: double capture+void on same paymentInfo', () => {
 // Pins down on-chain behavior when a merchant tries to capture MORE than the
 // authorized capturableAmount (e.g., off-by-one in their amount math, or a
 // stale read of capturableAmount before another capture drained it). The SDK
-// path (`packages/core/src/actions/payment/capture.ts:17-34`) wraps
+// path (`packages/core/src/actions/operator/capture.ts:17-34`) wraps
 // `writeContract` with no client-side amount validation, so the behavior is
 // purely contract-defined.
 describe('Edge case: capture overspend (amount > capturableAmount)', () => {
