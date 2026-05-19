@@ -109,6 +109,15 @@ export async function setup(options?: SetupOptions): Promise<ExampleContext> {
   let cleanup: () => Promise<void>
 
   if (sharedRpcUrl) {
+    // Eagerly validate so a malformed env var fails here with a clear message
+    // rather than mid-test through viem's transport with a less actionable error.
+    try {
+      new URL(sharedRpcUrl)
+    } catch {
+      throw new Error(
+        `anvil-setup: SCENARIO_RPC_URL is not a valid URL: ${sharedRpcUrl}`,
+      )
+    }
     rpcUrl = sharedRpcUrl
     cleanup = async () => {}
   } else {

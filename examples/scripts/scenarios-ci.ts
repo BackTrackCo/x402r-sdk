@@ -51,6 +51,15 @@ async function runScenario(file: string, key: number): Promise<number> {
 }
 
 async function main(): Promise<void> {
+  // Guard against a future edit deleting all scenario entries while leaving
+  // this script wired into CI — exiting 0 from an empty loop would silently
+  // turn the scenarios:ci step into a no-op.
+  if (SCENARIO_FILES.length === 0) {
+    throw new Error(
+      'scenarios-ci.ts: SCENARIO_FILES is empty — refusing to run a no-op CI step',
+    )
+  }
+
   const { Instance, Server } = await import('prool')
   const server = Server.create({
     instance: Instance.anvil({
