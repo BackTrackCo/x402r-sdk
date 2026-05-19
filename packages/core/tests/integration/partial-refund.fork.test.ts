@@ -206,8 +206,14 @@ describe('Edge case: voidPayment after full capture', () => {
 
     // Observed behavior against the deployed PaymentOperator + EscrowPeriod
     // fixtures: the SDK's `voidPayment()` submits the tx and the wallet client
-    // returns a tx hash without throwing (`writeContract` on anvil doesn't
-    // simulate before sending). On-chain, the `void()` call REVERTS — see the
+    // returns a tx hash without throwing. viem's `walletClient.writeContract`
+    // does not pre-simulate before sending (same behavior on Base mainnet —
+    // verified zero `simulateContract` calls across
+    // `packages/core/src/actions/{operator,refund-budget}/`). So the SDK
+    // returns a tx hash without throwing; the on-chain revert surfaces only at
+    // receipt-level. A merchant integration that trusts
+    // `await payment.voidPayment(...)` to throw on failure will silently miss
+    // reverts in production. On-chain, the `void()` call REVERTS — see the
     // receipt status below. The capturableAmount stays at 0n (no state
     // change), confirming nothing was double-voided.
     //
@@ -241,6 +247,10 @@ describe('Edge case: voidPayment after full capture', () => {
       functionName: 'balanceOf',
       args: [testRoles.payer.address],
     })
+    // Tautological in current context — between the full capture
+    // (escrow→receiver) and this reverting void, nothing can touch payer
+    // balance. Kept as a future-regression guard if the test ordering ever
+    // changes.
     expect(payerBalanceAfter).toBe(payerBalanceBefore)
   }, 60_000)
 })
@@ -275,12 +285,21 @@ describe('Edge case: double capture+void on same paymentInfo', () => {
     )
 
     // Observed behavior: the SDK's `authorize()` submits the tx and returns a
-    // hash without throwing (no pre-send simulation). The on-chain
-    // `authorize()` REVERTS in the receipt — the escrow nonce (see
-    // `computeEscrowNonce` at packages/core/src/payment/hashing.ts:87-97) is
-    // already consumed by Scenario 3's capture+void, and ERC-3009 nonces are
-    // single-use, so the second authorize cannot pull tokens. The
-    // capturableAmount stays at 0n.
+    // hash without throwing. viem's `walletClient.writeContract` does not
+    // pre-simulate before sending (same behavior on Base mainnet — verified
+    // zero `simulateContract` calls across
+    // `packages/core/src/actions/{operator,refund-budget}/`). So the SDK
+    // returns a tx hash without throwing; the on-chain revert surfaces only at
+    // receipt-level. A merchant integration that trusts
+    // `await payment.voidPayment(...)` to throw on failure will silently miss
+    // reverts in production. The on-chain `authorize()` REVERTS in the
+    // receipt — the replay-protection gate is USDC's ERC-3009
+    // `authorizationState(payer, nonce)` mapping — the nonce was consumed
+    // when the first authorize landed (Scenario 3 above). `computeEscrowNonce`
+    // at `packages/core/src/payment/hashing.ts:87-97` is just the
+    // deterministic nonce *derivation*; the escrow contract doesn't maintain
+    // its own consumption map. So the second authorize cannot pull tokens.
+    // The capturableAmount stays at 0n.
     //
     // This is the replay-protection boundary: if a future contract version
     // ever lets this succeed, a malicious or buggy caller could re-collect
@@ -361,9 +380,14 @@ describe('Edge case: capture overspend (amount > capturableAmount)', () => {
       args: [testRoles.receiver.address],
     })
 
-    // Attempt to capture MORE than authorized. SDK returns a tx hash (no
-    // pre-simulation), on-chain reverts at receipt level (same pattern as
-    // edge cases (b) and (c)).
+    // Attempt to capture MORE than authorized. viem's
+    // `walletClient.writeContract` does not pre-simulate before sending (same
+    // behavior on Base mainnet — verified zero `simulateContract` calls across
+    // `packages/core/src/actions/{operator,refund-budget}/`). So the SDK
+    // returns a tx hash without throwing; the on-chain revert surfaces only at
+    // receipt-level (same pattern as edge cases (b) and (c)). A merchant
+    // integration that trusts `await payment.capture(...)` to throw on failure
+    // will silently miss reverts in production.
     const overspendHash = await merchant.payment.capture(
       overspendInfo,
       DEFAULT_AMOUNT + 1n,
