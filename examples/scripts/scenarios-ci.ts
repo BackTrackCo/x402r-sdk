@@ -26,6 +26,7 @@ import { fileURLToPath } from 'node:url'
 const SCENARIO_FILES: readonly string[] = [
   'dispute-resolution',
   'permit2-charge',
+  'http-wire-capture',
 ]
 const PORT = 8846
 const CHAIN_ID = 84532
