@@ -7,7 +7,8 @@ import {
   type MerchantClient,
   type X402r,
 } from '../../../sdk/src/index.js'
-import { x402rChains } from '../../src/config/index.js'
+import { authCaptureEscrow, x402rChains } from '../../src/config/index.js'
+import { computeEscrowNonce } from '../../src/payment/hashing.js'
 import type { PaymentInfo } from '../../src/types/index.js'
 import { anvilBaseSepolia } from '../setup/anvil.js'
 import {
@@ -346,6 +347,100 @@ describe('Edge case: double capture+void on same paymentInfo', () => {
       args: [testRoles.payer.address],
     })
     expect(payerBalanceAfter).toBe(payerBalanceBefore)
+  }, 60_000)
+
+  // -------------------------------------------------------------------------
+  // Edge case (f): replay-with-different-amount in case (c)
+  // -------------------------------------------------------------------------
+
+  // Pins down that ERC-3009 nonce rejection is amount-agnostic — replaying
+  // with a different amount still fails at the same layer. The case (c) test
+  // above replays with the same DEFAULT_AMOUNT; this one varies the amount to
+  // prove the nonce gate is the binding check, not an amount-comparison.
+  it('rejects replay even with a different amount (nonce-gate is amount-agnostic)', async () => {
+    // Precondition (in-test guard): the file-level paymentInfo (salt: 3n) has
+    // already been fully consumed by Scenario 3 and the case (c) test above.
+    const preAmounts = await merchant.payment.getAmounts(paymentInfo)
+    expect(preAmounts.capturableAmount).toBe(0n)
+
+    const { collectorData, tokenCollector } = await createCollectorData(
+      anvilBaseSepolia.getWalletClient(testRoles.payer.address),
+      paymentInfo,
+    )
+
+    const payerBalanceBefore = await publicClient.readContract({
+      address: USDC,
+      abi: erc20Abi,
+      functionName: 'balanceOf',
+      args: [testRoles.payer.address],
+    })
+
+    // DIFFERENT amount than the original authorize (DEFAULT_AMOUNT / 2n vs
+    // DEFAULT_AMOUNT). If the contract gate were amount-based rather than
+    // nonce-based, this could slip through. It does not — the ERC-3009
+    // nonce mapping is checked first.
+    const replayHash = await payerClient.payment.authorize(
+      paymentInfo,
+      DEFAULT_AMOUNT / 2n,
+      tokenCollector,
+      collectorData,
+    )
+    const replayReceipt = await publicClient.waitForTransactionReceipt({
+      hash: replayHash,
+    })
+    expect(replayReceipt.status).toBe('reverted')
+    expect(replayReceipt.logs).toHaveLength(0)
+
+    const amountsAfter = await merchant.payment.getAmounts(paymentInfo)
+    expect(amountsAfter.capturableAmount).toBe(0n)
+
+    const payerBalanceAfter = await publicClient.readContract({
+      address: USDC,
+      abi: erc20Abi,
+      functionName: 'balanceOf',
+      args: [testRoles.payer.address],
+    })
+    expect(payerBalanceAfter).toBe(payerBalanceBefore)
+  }, 60_000)
+
+  // -------------------------------------------------------------------------
+  // Edge case (i): USDC `authorizationState` direct check
+  // -------------------------------------------------------------------------
+
+  // ADDITIONAL assertion ON case (c) — reads USDC's ERC-3009 nonce mapping
+  // directly via `authorizationState(authorizer, nonce)`. This is the
+  // strongest possible replay-protection check: strictly stronger than the
+  // balance-unchanged proxy in case (c), because it goes to the source of
+  // truth (the token contract's own state) rather than inferring from
+  // observed effects. If a future contract version ever stops marking the
+  // nonce consumed but still happens to revert for an unrelated reason, the
+  // balance assertions stay green and the replay door silently opens — this
+  // assertion would catch that.
+  it('USDC authorizationState(payer, escrowNonce) === true after consumption', async () => {
+    const escrowNonce = computeEscrowNonce(
+      baseSepolia.chainId,
+      authCaptureEscrow,
+      paymentInfo,
+    )
+
+    const consumed = await publicClient.readContract({
+      address: USDC,
+      abi: [
+        {
+          name: 'authorizationState',
+          type: 'function',
+          stateMutability: 'view',
+          inputs: [
+            { name: 'authorizer', type: 'address' },
+            { name: 'nonce', type: 'bytes32' },
+          ],
+          outputs: [{ type: 'bool' }],
+        },
+      ] as const,
+      functionName: 'authorizationState',
+      args: [testRoles.payer.address, escrowNonce],
+    })
+    expect(consumed).toBe(true)
   }, 60_000)
 })
 
