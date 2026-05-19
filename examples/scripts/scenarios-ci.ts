@@ -60,6 +60,26 @@ async function main(): Promise<void> {
   })
   await server.start()
 
+  // Cancellation/crash paths bypass the for-loop's finally block, so register
+  // explicit handlers that stop prool before exit. Without these, a SIGINT (Ctrl+C)
+  // or SIGTERM (CI cancellation) would leave the anvil child + listener bound
+  // to PORT, causing EADDRINUSE on the next run.
+  const shutdown = async (signal: string, exitCode: number) => {
+    console.error(`[scenarios-ci] received ${signal}, stopping prool…`)
+    try {
+      await server.stop()
+    } catch (err) {
+      console.error('[scenarios-ci] server.stop() failed during shutdown:', err)
+    }
+    process.exit(exitCode)
+  }
+  process.on('SIGINT', () => shutdown('SIGINT', 130))
+  process.on('SIGTERM', () => shutdown('SIGTERM', 143))
+  process.on('unhandledRejection', (err) => {
+    console.error('[scenarios-ci] unhandledRejection:', err)
+    shutdown('unhandledRejection', 1)
+  })
+
   let exitCode = 0
   try {
     for (const [index, file] of SCENARIO_FILES.entries()) {
