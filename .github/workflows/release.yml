@@ -46,9 +46,12 @@ jobs:
           registry-url: https://registry.npmjs.org
 
       # npm >= 11.5.1 is required for Trusted Publishing OIDC support.
-      # Node 22 ships with npm 10.x; upgrade explicitly.
-      - name: Upgrade npm
-        run: npm install --global npm@latest
+      # Pin to a specific version (not @latest) — pulling latest on a
+      # privileged runner re-introduces the upstream-trust hole we close
+      # everywhere else. Dependabot or quarterly review bumps this.
+      # --ignore-scripts: don't run npm's own lifecycle scripts on install.
+      - name: Upgrade npm (Trusted Publishing requires >= 11.5.1)
+        run: npm install --global npm@11.14.1 --ignore-scripts
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
@@ -56,11 +59,23 @@ jobs:
       - name: Build packages
         run: pnpm build
 
+      # Upfront gate: publint + attw across all publishable packages.
+      # Without this, a per-package prepublishOnly failure can occur
+      # *after* earlier packages have already published, leaving a
+      # partial release.
+      - name: Validate package tarballs (publint + attw)
+        run: pnpm test:pkg
+
       # When there are unconsumed changesets in .changeset/, opens/updates
       # the "Version Packages" PR. When that PR is merged (consuming the
       # changesets), the next run takes the `publish` branch and publishes
-      # each changed package via OIDC with automatic provenance, then
-      # creates per-package GitHub releases (@x402r/core@1.2.3 style tags).
+      # each changed package via OIDC, then creates per-package GitHub
+      # releases (@x402r/core@1.2.3 style tags).
+      #
+      # Provenance: NPM_CONFIG_PROVENANCE=true plus the per-package
+      # publishConfig.provenance flag together guarantee Sigstore-backed
+      # attestations regardless of changesets/cli inference. Verify with
+      # `npm audit signatures @x402r/<pkg>` after a publish.
       - name: Create Release PR or publish to npm
         uses: changesets/action@63a615b9cd06ba9a3e6d13796c7fbcb080a60a0b  # v1.8.0
         with:
@@ -70,3 +85,4 @@ jobs:
           commit: "chore: version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"

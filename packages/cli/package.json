@@ -4,6 +4,10 @@
   "description": "One-shot CLI for paying x402 / x402r endpoints. Wallet-agnostic: raw key, JSON-RPC signer, or custom module.",
   "type": "module",
   "license": "Apache-2.0",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "bin": {
     "x402r": "./dist/bin.js"
   },
