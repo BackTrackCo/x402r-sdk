@@ -577,6 +577,11 @@ describe('Edge case: void during escrow window (asymmetry vs capture)', () => {
     })
     // SUCCESS, not reverted — the void path is unconditional on time.
     expect(voidReceipt.status).toBe('success')
+    // On success, the void should have emitted the PaymentVoided event (and
+    // possibly transfer events for the refund). Catches a regression where
+    // the void succeeds at state level but doesn't emit — e.g., if the hook
+    // silently swallowed the post-action event.
+    expect(voidReceipt.logs.length).toBeGreaterThan(0)
 
     const amountsAfter = await merchant.payment.getAmounts(escrowVoidInfo)
     expect(amountsAfter.capturableAmount).toBe(0n)
