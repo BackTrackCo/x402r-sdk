@@ -20,7 +20,13 @@ import { fileURLToPath } from 'node:url'
 // produced silent state crossover. prool's Server.create routes each unique
 // numeric subpath (`/1`, `/2`, ...) to its own forked Anvil child instance
 // (string subpaths are not supported by prool — see node_modules/prool README).
-const SCENARIO_FILES = ['dispute-resolution', 'permit2-charge'] as const
+// Typed as `readonly string[]` (not `as const`) so the empty-list guard in
+// main() stays type-meaningful — under `as const`, .length narrows to the
+// literal `2` and TS2367 flags `=== 0` as dead-code under strict.
+const SCENARIO_FILES: readonly string[] = [
+  'dispute-resolution',
+  'permit2-charge',
+]
 const PORT = 8846
 const CHAIN_ID = 84532
 
