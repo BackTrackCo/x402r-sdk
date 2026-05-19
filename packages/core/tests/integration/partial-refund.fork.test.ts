@@ -316,7 +316,7 @@ describe('Edge case: double capture+void on same paymentInfo', () => {
     // `packages/core/src/actions/{operator,refund-budget}/`). So the SDK
     // returns a tx hash without throwing; the on-chain revert surfaces only at
     // receipt-level. A merchant integration that trusts
-    // `await payment.voidPayment(...)` to throw on failure will silently miss
+    // `await payment.authorize(...)` to throw on failure will silently miss
     // reverts in production. The on-chain `authorize()` REVERTS in the
     // receipt — the replay-protection gate is USDC's ERC-3009
     // `authorizationState(payer, nonce)` mapping — the nonce was consumed
