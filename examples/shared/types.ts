@@ -17,6 +17,10 @@ export interface ExampleContext {
   accounts: { payer: Address; merchant: Address; arbiter: Address }
   operatorAddress: Address
   PAYMENT_AMOUNT: bigint
+  /** RPC URL the setup is bound to — scenarios that create extra wallets
+   *  (e.g. permit2-charge) must use this URL so all txs land on the same
+   *  Anvil instance under shared-prool mode. */
+  rpcUrl: string
   cleanup: () => Promise<void>
   /** Wait for a transaction to be confirmed before reading state */
   waitForTx: (hash: Hash) => Promise<void>

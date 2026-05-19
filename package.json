@@ -32,7 +32,8 @@
     "example:payer:freeze": "pnpm --filter examples run payer:freeze",
     "example:arbiter:review-evidence": "pnpm --filter examples run arbiter:review-evidence",
     "scenario:release": "pnpm --filter examples run scenario:release",
-    "scenario:dispute": "pnpm --filter examples run scenario:dispute"
+    "scenario:dispute": "pnpm --filter examples run scenario:dispute",
+    "scenarios:ci": "pnpm --filter examples exec tsx scripts/scenarios-ci.ts"
   },
   "engines": {
     "node": ">=22"

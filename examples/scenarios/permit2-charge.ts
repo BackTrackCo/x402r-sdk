@@ -20,7 +20,9 @@ import { StepRunner } from './runner.js'
 //   2. Per-payment signature — `signPermit2Authorization(...)` produces the
 //      collectorData and tokenCollector that `payment.charge` consumes.
 //
-// Anvil fork starts with zero Permit2 allowance, so step 1 is mandatory.
+// Step 1 ensures Permit2 has sufficient allowance to pull PAYMENT_AMOUNT
+// regardless of the fork's starting state — the approval is idempotent and
+// the post-condition check below pins the invariant the upstream charge needs.
 // Asserts real ERC-20 balance deltas — not contract-guaranteed invariants.
 // ---------------------------------------------------------------------------
 
@@ -35,7 +37,9 @@ async function main() {
     const payerWallet = createWalletClient({
       account: payerAccount,
       chain: baseSepolia,
-      transport: http('http://127.0.0.1:8846/1'),
+      // Use the setup's RPC URL — under shared-prool mode each scenario gets a
+      // unique key, so hardcoding /1 would route this tx to the wrong Anvil child.
+      transport: http(ctx.rpcUrl),
     })
 
     const approvalParams = getPermit2AllowanceReadParams({
@@ -50,9 +54,17 @@ async function main() {
     await runner.waitForTx(approvalHash)
 
     const after = await ctx.publicClient.readContract(approvalParams)
+    // Pin the post-condition the scenario actually needs: Permit2 has sufficient
+    // allowance to pull PAYMENT_AMOUNT. This asserts the contract invariant the
+    // upstream `charge` consumes (allowance >= amount) — robust against future
+    // changes to the approval helper, which today sets MAX_UINT256
+    // (packages/core/src/payment/permit2.ts:165) but doesn't have to. The
+    // strictly-correct invariant is "covers PAYMENT_AMOUNT", not "strictly
+    // increased" — `after > before` would falsely fail if the helper ever
+    // became idempotent (e.g., skip-if-already-MAX).
     runner.assert(
-      after > before,
-      `Permit2 allowance increased after approval (was ${before}, now ${after})`,
+      after >= PAYMENT_AMOUNT,
+      `Permit2 allowance covers PAYMENT_AMOUNT after approval (was ${before}, now ${after})`,
     )
 
     runner.step('Snapshot pre-charge USDC balances')
