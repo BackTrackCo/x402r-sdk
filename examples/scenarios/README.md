@@ -22,12 +22,12 @@ Demonstrates the simplest payment lifecycle — merchant authorizes a payment, w
 
 Exercises the complete dispute flow:
 1. Deploy marketplace operator
-2. Authorize payment (HTTP 402 flow)
+2. Authorize payment via SDK viem flow
 3. Payer requests refund
 4. Both parties submit evidence
 5. Arbiter reviews evidence and approves refund
 6. Verify refund amounts
-7. Distribute protocol fees
+7. Verify zero protocol fees accrued
 
 ### atomic-charge
 

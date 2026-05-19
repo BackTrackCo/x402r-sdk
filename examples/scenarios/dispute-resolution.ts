@@ -11,7 +11,7 @@ import { StepRunner } from './runner.js'
 // Flow: authorize → payer requests refund → payer + merchant submit evidence →
 //       arbiter reviews evidence → merchant executes voidPayment
 //       (hook approves automatically) → verify refund amounts →
-//       merchant distributes fees
+//       verify zero protocol fees accrue
 // ---------------------------------------------------------------------------
 
 async function main() {
@@ -34,10 +34,38 @@ async function main() {
       throw new Error('Evidence module not available')
     }
 
+    const readBalance = (owner: `0x${string}`) =>
+      ctx.publicClient.readContract({
+        address: ctx.paymentInfo.token,
+        abi: erc20Abi,
+        functionName: 'balanceOf',
+        args: [owner],
+      })
+
+    // Snapshot the payer's funded post-setup balance so Step 6 can assert the
+    // refund actually moved tokens. Under a full refund, the payer pays
+    // PAYMENT_AMOUNT on authorize and receives PAYMENT_AMOUNT on refund, so
+    // the net delta must be exactly 0. A non-zero delta means tokens never
+    // moved back (silent refund failure). The `hasCollectedPayment` assertion
+    // at Step 1 (after authorize) is the load-bearing gate that prevents this
+    // delta check from vacuously passing on a silent authorize failure — if
+    // authorize collected zero tokens, before === after and delta === 0
+    // either way.
+    const payerBalanceBefore = await readBalance(ctx.accounts.payer)
+    // Snapshot receiver + feeReceiver too — under a full refund neither party
+    // should see a balance change. A non-zero delta on either would indicate
+    // tokens were misdirected (e.g. a future refactor accidentally routes a
+    // partial-fee path through a full-void). Catches regressions the
+    // payer-only snapshot would miss.
+    const receiverBalanceBefore = await readBalance(ctx.accounts.merchant)
+    const feeReceiverBalanceBefore = await readBalance(
+      ctx.paymentInfo.feeReceiver,
+    )
+
     // ================================================================
-    // Step 1: Authorize payment (HTTP 402 flow)
+    // Step 1: Authorize payment (direct SDK call)
     // ================================================================
-    runner.step('Authorize payment via HTTP 402 flow')
+    runner.step('Authorize payment via SDK viem flow')
 
     const payerAccount = privateKeyToAccount(PAYER_PRIVATE_KEY)
     const { collectorData, tokenCollector } = await signReceiveAuthorization({
@@ -162,18 +190,40 @@ async function main() {
       'Refundable amount === 0 after refund executed',
     )
 
-    const payerUsdcBalance = await ctx.publicClient.readContract({
-      address: ctx.paymentInfo.token,
-      abi: erc20Abi,
-      functionName: 'balanceOf',
-      args: [ctx.accounts.payer],
-    })
+    const payerUsdcBalance = await readBalance(ctx.accounts.payer)
     runner.log(`Payer USDC balance: ${payerUsdcBalance}`)
 
+    // Net-zero invariant: payer paid PAYMENT_AMOUNT on authorize and got
+    // PAYMENT_AMOUNT back on full refund. A delta of -PAYMENT_AMOUNT would
+    // indicate the refund silently failed to move tokens.
+    const payerBalanceAfter = await readBalance(ctx.accounts.payer)
+    const payerDelta = payerBalanceAfter - payerBalanceBefore
+    runner.assert(
+      payerDelta === 0n,
+      `payer balance net-zero after full refund (authorized → refunded back); actual delta ${payerDelta}`,
+    )
+
+    // Receiver + feeReceiver must not have moved at all under a full refund.
+    // Distinct from the payer net-zero check above: payer can net-zero even if
+    // tokens were misrouted (e.g. paid out and then refunded back). These
+    // deltas pin the destinations explicitly.
+    const receiverBalanceAfter = await readBalance(ctx.accounts.merchant)
+    const feeReceiverBalanceAfter = await readBalance(
+      ctx.paymentInfo.feeReceiver,
+    )
+    runner.assert(
+      receiverBalanceAfter === receiverBalanceBefore,
+      `receiver balance unchanged under full refund; actual delta ${receiverBalanceAfter - receiverBalanceBefore}`,
+    )
+    runner.assert(
+      feeReceiverBalanceAfter === feeReceiverBalanceBefore,
+      `feeReceiver balance unchanged under full refund; actual delta ${feeReceiverBalanceAfter - feeReceiverBalanceBefore}`,
+    )
+
     // ================================================================
-    // Step 7: Distribute fees
+    // Step 7: Verify zero protocol fees accrued
     // ================================================================
-    runner.step('Merchant distributes protocol fees')
+    runner.step('Verify zero protocol fees accrued')
 
     const accumulatedFees =
       await ctx.merchant.operator.getAccumulatedProtocolFees(
@@ -181,20 +231,13 @@ async function main() {
       )
     runner.log(`Accumulated protocol fees: ${accumulatedFees}`)
 
-    if (accumulatedFees > 0n) {
-      const feeTx = await ctx.merchant.operator.distributeFees(
-        ctx.paymentInfo.token,
-      )
-      await runner.waitForTx(feeTx)
-
-      const remainingFees =
-        await ctx.merchant.operator.getAccumulatedProtocolFees(
-          ctx.paymentInfo.token,
-        )
-      runner.assert(remainingFees === 0n, 'All protocol fees distributed')
-    } else {
-      runner.log('No fees to distribute (refund returned all funds)')
-    }
+    // A full refund returns 100% of escrow to the payer and collects zero
+    // protocol fees. Assert this explicitly — the previous
+    // `if (accumulatedFees > 0n)` branch was dead under this scenario.
+    runner.assert(
+      accumulatedFees === 0n,
+      `full refund collected zero protocol fees; actual ${accumulatedFees}`,
+    )
 
     runner.done()
   } finally {
