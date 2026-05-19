@@ -46,7 +46,11 @@ async function main() {
     // refund actually moved tokens. Under a full refund, the payer pays
     // PAYMENT_AMOUNT on authorize and receives PAYMENT_AMOUNT on refund, so
     // the net delta must be exactly 0. A non-zero delta means tokens never
-    // moved back (silent refund failure).
+    // moved back (silent refund failure). The `hasCollectedPayment` assertion
+    // at Step 1 (after authorize) is the load-bearing gate that prevents this
+    // delta check from vacuously passing on a silent authorize failure — if
+    // authorize collected zero tokens, before === after and delta === 0
+    // either way.
     const payerBalanceBefore = await readBalance(ctx.accounts.payer)
 
     // ================================================================
