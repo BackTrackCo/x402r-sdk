@@ -53,13 +53,11 @@ async function main() {
 
     const after = await ctx.publicClient.readContract(approvalParams)
     // Pin the post-condition the scenario actually needs: Permit2 has sufficient
-    // allowance to pull PAYMENT_AMOUNT. This asserts the contract invariant the
-    // upstream `charge` consumes (allowance >= amount) — robust against future
-    // changes to the approval helper, which today sets MAX_UINT256
-    // (packages/core/src/payment/permit2.ts:165) but doesn't have to. The
-    // strictly-correct invariant is "covers PAYMENT_AMOUNT", not "strictly
-    // increased" — `after > before` would falsely fail if the helper ever
-    // became idempotent (e.g., skip-if-already-MAX).
+    // allowance to pull PAYMENT_AMOUNT from the payer. Don't assert `after > before`
+    // because the SDK's approval helper sets MAX_UINT256
+    // (packages/core/src/payment/permit2.ts:165); if the unpinned fork inherits
+    // MAX upstream state for the anvil payer key, after === before === MAX and
+    // a strict-increase assertion would falsely fail.
     runner.assert(
       after >= PAYMENT_AMOUNT,
       `Permit2 allowance covers PAYMENT_AMOUNT after approval (was ${before}, now ${after})`,
