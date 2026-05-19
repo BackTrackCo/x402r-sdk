@@ -42,6 +42,25 @@ const MERCHANT_NET = (MERCHANT_AMOUNT * (10_000n - FEE_BPS)) / 10_000n
 const baseSepolia = x402rChains[84532]
 const USDC = baseSepolia.usdc
 
+// Minimal ERC-3009 ABI snippet for the read-only `authorizationState` getter.
+// viem does not expose an ERC-3009 ABI export, and the SDK does not define one
+// either (no callers in `packages/core/src/`), so we keep this local. Hoisted
+// to module scope so any future test that wants to assert nonce-consumption
+// at the token-contract layer can reuse it instead of inlining.
+// Spec: https://eips.ethereum.org/EIPS/eip-3009#authorizationstate
+const erc3009Abi = [
+  {
+    name: 'authorizationState',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'authorizer', type: 'address' },
+      { name: 'nonce', type: 'bytes32' },
+    ],
+    outputs: [{ type: 'bool' }],
+  },
+] as const
+
 let paymentInfo: PaymentInfo
 let receiverBalanceBefore: bigint
 let payerBalanceBeforeVoid: bigint
@@ -433,18 +452,7 @@ describe('Edge case: double capture+void on same paymentInfo', () => {
 
     const consumed = await publicClient.readContract({
       address: USDC,
-      abi: [
-        {
-          name: 'authorizationState',
-          type: 'function',
-          stateMutability: 'view',
-          inputs: [
-            { name: 'authorizer', type: 'address' },
-            { name: 'nonce', type: 'bytes32' },
-          ],
-          outputs: [{ type: 'bool' }],
-        },
-      ] as const,
+      abi: erc3009Abi,
       functionName: 'authorizationState',
       args: [testRoles.payer.address, escrowNonce],
     })
