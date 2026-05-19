@@ -37,7 +37,9 @@ async function main() {
     const payerWallet = createWalletClient({
       account: payerAccount,
       chain: baseSepolia,
-      transport: http('http://127.0.0.1:8846/1'),
+      // Use the setup's RPC URL — under shared-prool mode each scenario gets a
+      // unique key, so hardcoding /1 would route this tx to the wrong Anvil child.
+      transport: http(ctx.rpcUrl),
     })
 
     const approvalParams = getPermit2AllowanceReadParams({

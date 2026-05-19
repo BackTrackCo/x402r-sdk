@@ -109,12 +109,12 @@ jobs:
       - name: Run CI scenarios (dispute + permit2)
         uses: nick-fields/retry@v3
         with:
+          # Retry guards against public Base Sepolia RPC flake on the upstream
+          # fork. Port-collision band-aid is no longer needed: the orchestrator
+          # at examples/scripts/scenarios-ci.ts runs ONE prool with per-scenario
+          # URL subpaths, so retries don't race a TIME_WAIT port.
           timeout_minutes: 5
           max_attempts: 2
-          # Wait between attempts to avoid anvil port-reuse collisions.
-          # TODO: derive ANVIL_PORT from VITEST_POOL_ID / process.pid in
-          # examples/shared/anvil-setup.ts so retries get a fresh port.
-          retry_wait_seconds: 10
           command: pnpm scenarios:ci
 
   build:

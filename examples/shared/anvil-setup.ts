@@ -94,21 +94,42 @@ function getBalanceSlot(account: Address, baseSlot: bigint): `0x${string}` {
 
 export async function setup(options?: SetupOptions): Promise<ExampleContext> {
   const skipAuthorize = options?.authorize === false
-  // 1. Start Anvil fork
-  const { Instance, Server } = await import('prool')
-  const server = Server.create({
-    instance: Instance.anvil({
-      chainId: CHAIN_ID,
-      forkUrl:
-        process.env.VITE_ANVIL_FORK_URL_BASE_SEPOLIA ??
-        'https://sepolia.base.org',
-      forkBlockNumber: FORK_BLOCK,
-    }),
-    port: ANVIL_PORT,
-  })
-  await server.start()
+  // 1. Start Anvil fork (two modes)
+  //   a) Shared mode (CI orchestrator path): when SCENARIO_RPC_URL is set by
+  //      examples/scripts/scenarios-ci.ts, reuse that prool subpath URL and
+  //      skip spawning our own server. The orchestrator owns prool lifecycle,
+  //      so cleanup is a no-op here. Each scenario gets a unique subpath, so
+  //      prool routes each to its own forked Anvil child (no port collision).
+  //   b) Standalone mode (e.g. `pnpm scenario:capture` direct invocation):
+  //      spawn an isolated prool server on ANVIL_PORT and tear it down on
+  //      cleanup. Preserves backward-compat for developers running one
+  //      scenario locally.
+  const sharedRpcUrl = process.env.SCENARIO_RPC_URL
+  let rpcUrl: string
+  let cleanup: () => Promise<void>
 
-  const rpcUrl = `http://127.0.0.1:${ANVIL_PORT}/1`
+  if (sharedRpcUrl) {
+    rpcUrl = sharedRpcUrl
+    cleanup = async () => {}
+  } else {
+    const { Instance, Server } = await import('prool')
+    const server = Server.create({
+      instance: Instance.anvil({
+        chainId: CHAIN_ID,
+        forkUrl:
+          process.env.VITE_ANVIL_FORK_URL_BASE_SEPOLIA ??
+          'https://sepolia.base.org',
+        forkBlockNumber: FORK_BLOCK,
+      }),
+      port: ANVIL_PORT,
+    })
+    await server.start()
+    rpcUrl = `http://127.0.0.1:${ANVIL_PORT}/1`
+    cleanup = async () => {
+      await server.stop()
+    }
+  }
+
   const transport = http(rpcUrl)
 
   const publicClient = createPublicClient({
@@ -121,10 +142,6 @@ export async function setup(options?: SetupOptions): Promise<ExampleContext> {
     transport,
     mode: 'anvil',
   }) as unknown as TestClient
-
-  const cleanup = async () => {
-    await server.stop()
-  }
 
   try {
     // 2. Clear contract code at test addresses (fixes ERC-3009 signer checks)
@@ -275,6 +292,7 @@ export async function setup(options?: SetupOptions): Promise<ExampleContext> {
       },
       operatorAddress,
       PAYMENT_AMOUNT,
+      rpcUrl,
       cleanup,
       waitForTx,
     }
