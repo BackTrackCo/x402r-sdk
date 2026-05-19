@@ -1,5 +1,5 @@
 import type { PublicClient, TestClient } from 'viem'
-import { erc20Abi } from 'viem'
+import { erc20Abi, parseEventLogs } from 'viem'
 import { beforeAll, describe, expect, it } from 'vitest'
 import {
   createMerchantClient,
@@ -7,6 +7,7 @@ import {
   type MerchantClient,
   type X402r,
 } from '../../../sdk/src/index.js'
+import { authCaptureEscrowAbi } from '../../src/abis/generated.js'
 import { authCaptureEscrow, x402rChains } from '../../src/config/index.js'
 import { computeEscrowNonce } from '../../src/payment/hashing.js'
 import type { PaymentInfo } from '../../src/types/index.js'
@@ -585,11 +586,23 @@ describe('Edge case: void during escrow window (asymmetry vs capture)', () => {
     })
     // SUCCESS, not reverted — the void path is unconditional on time.
     expect(voidReceipt.status).toBe('success')
-    // On success, the void should have emitted the PaymentVoided event (and
-    // possibly transfer events for the refund). Catches a regression where
-    // the void succeeds at state level but doesn't emit — e.g., if the hook
-    // silently swallowed the post-action event.
-    expect(voidReceipt.logs.length).toBeGreaterThan(0)
+    // Catches the silent-drop case where the void succeeds at state level but
+    // `PaymentVoided` doesn't emit — `parseEventLogs` filters by event topic
+    // against the escrow ABI (the actual emitter; the operator emits
+    // `VoidExecuted` instead, while `PaymentVoided` lives on
+    // `authCaptureEscrowAbi` at `packages/core/src/abis/generated.ts:686`).
+    // A Transfer-only success (e.g., refund tokens move but the escrow's
+    // post-action event is silently swallowed) would fail the assertion.
+    // Strictly stronger than `logs.length > 0`, which would pass on the bug
+    // class this test is meant to catch since a successful void emits at
+    // least one USDC `Transfer(escrow → payer)` log independently of the
+    // escrow event.
+    const voidEvents = parseEventLogs({
+      abi: authCaptureEscrowAbi,
+      eventName: 'PaymentVoided',
+      logs: voidReceipt.logs,
+    })
+    expect(voidEvents.length).toBeGreaterThan(0)
 
     const amountsAfter = await merchant.payment.getAmounts(escrowVoidInfo)
     expect(amountsAfter.capturableAmount).toBe(0n)
