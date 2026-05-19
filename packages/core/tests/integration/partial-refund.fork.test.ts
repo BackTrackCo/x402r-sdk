@@ -237,6 +237,11 @@ describe('Edge case: voidPayment after full capture', () => {
       hash: voidHash,
     })
     expect(voidReceipt.status).toBe('reverted')
+    // Stronger guarantee than receipt-status + balance-unchanged alone:
+    // catches the "partial state mutation where some events fired before the
+    // EVM reverted" bug class. Reference: PaymentVoided/PaymentAuthorized/
+    // PaymentCaptured events at packages/core/src/abis/generated.ts:686+.
+    expect(voidReceipt.logs).toHaveLength(0)
 
     const amountsAfter = await merchant.payment.getAmounts(edgePaymentInfo)
     expect(amountsAfter.capturableAmount).toBe(0n)
@@ -325,6 +330,11 @@ describe('Edge case: double capture+void on same paymentInfo', () => {
       hash: replayHash,
     })
     expect(replayReceipt.status).toBe('reverted')
+    // Stronger guarantee than receipt-status + balance-unchanged alone:
+    // catches the "partial state mutation where some events fired before the
+    // EVM reverted" bug class. Reference: PaymentVoided/PaymentAuthorized/
+    // PaymentCaptured events at packages/core/src/abis/generated.ts:686+.
+    expect(replayReceipt.logs).toHaveLength(0)
 
     const amountsAfter = await merchant.payment.getAmounts(paymentInfo)
     expect(amountsAfter.capturableAmount).toBe(0n)
@@ -397,6 +407,11 @@ describe('Edge case: capture overspend (amount > capturableAmount)', () => {
       hash: overspendHash,
     })
     expect(overspendReceipt.status).toBe('reverted')
+    // Stronger guarantee than receipt-status + balance-unchanged alone:
+    // catches the "partial state mutation where some events fired before the
+    // EVM reverted" bug class. Reference: PaymentVoided/PaymentAuthorized/
+    // PaymentCaptured events at packages/core/src/abis/generated.ts:686+.
+    expect(overspendReceipt.logs).toHaveLength(0)
 
     // State invariants: capturableAmount unchanged, receiver tokens didn't
     // move. Together these prove the contract gate held.
