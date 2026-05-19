@@ -34,16 +34,19 @@ function scenarioRpcUrl(key: number): string {
 }
 
 async function runScenario(file: string, key: number): Promise<number> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const child = spawn('tsx', [scenarioFile(file)], {
       stdio: 'inherit',
       env: { ...process.env, SCENARIO_RPC_URL: scenarioRpcUrl(key) },
     })
-    child.on('exit', (code) => resolve(code ?? 1))
-    child.on('error', (err) => {
-      console.error(`Failed to spawn scenario ${file}:`, err)
-      resolve(1)
-    })
+    // Spawn errors (e.g. ENOENT for tsx) reject, so the caller can distinguish
+    // "scenario crashed with exit code N" from "we never got the scenario
+    // running in the first place." Resolving 1 in both cases conflated the
+    // two and made CI failure modes harder to diagnose.
+    child.once('error', (err) =>
+      reject(new Error(`failed to spawn '${file}' scenario: ${err.message}`)),
+    )
+    child.once('exit', (code) => resolve(code ?? 1))
   })
 }
 
@@ -84,9 +87,18 @@ async function main(): Promise<void> {
   try {
     for (const [index, file] of SCENARIO_FILES.entries()) {
       const key = index + 1
-      const code = await runScenario(file, key)
-      if (code !== 0) {
-        exitCode = code
+      try {
+        const code = await runScenario(file, key)
+        if (code !== 0) {
+          exitCode = code
+          break
+        }
+      } catch (err) {
+        // Spawn-time failures (ENOENT-class) reject from runScenario; surface
+        // the message and break so prool still gets stopped in the outer
+        // finally block.
+        console.error(err)
+        exitCode = 1
         break
       }
     }
