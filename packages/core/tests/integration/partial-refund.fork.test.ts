@@ -661,3 +661,50 @@ describe('Edge case: sequential overspend after partial capture', () => {
     expect(receiverBalanceAfter).toBe(receiverBalanceBefore)
   }, 60_000)
 })
+
+// ---------------------------------------------------------------------------
+// Edge case (h): void on never-authorized paymentInfo
+// ---------------------------------------------------------------------------
+
+// Pins behavior when the merchant calls `voidPayment` against a paymentInfo
+// that was never authorized. Different SDK path than (b) — no prior state on
+// this paymentInfo at all. The escrow has nothing in `paymentState(hash)`
+// (capturableAmount === 0n from zero-init), so the underlying `escrow.void`
+// call has nothing to release. Production failure mode: an arbiter or
+// merchant integration that doesn't pre-check `getAmounts()` calls
+// `voidPayment` on a stale or never-seen paymentInfo and assumes the
+// promise rejection signals an authorization existed — it doesn't, the
+// receipt-level revert is the same shape as case (b).
+describe('Edge case: voidPayment on never-authorized paymentInfo', () => {
+  it('reverts and leaves payer balance untouched', async () => {
+    // Fresh paymentInfo with salt: 8n — SKIP authorize entirely.
+    const neverAuthInfo: PaymentInfo = { ...paymentInfo, salt: 8n }
+
+    // Sanity: capturableAmount is 0n because escrow has no state on this
+    // paymentInfo.
+    const preAmounts = await merchant.payment.getAmounts(neverAuthInfo)
+    expect(preAmounts.capturableAmount).toBe(0n)
+
+    const payerBalanceBefore = await publicClient.readContract({
+      address: USDC,
+      abi: erc20Abi,
+      functionName: 'balanceOf',
+      args: [testRoles.payer.address],
+    })
+
+    const voidHash = await merchant.payment.voidPayment(neverAuthInfo)
+    const voidReceipt = await publicClient.waitForTransactionReceipt({
+      hash: voidHash,
+    })
+    expect(voidReceipt.status).toBe('reverted')
+    expect(voidReceipt.logs).toHaveLength(0)
+
+    const payerBalanceAfter = await publicClient.readContract({
+      address: USDC,
+      abi: erc20Abi,
+      functionName: 'balanceOf',
+      args: [testRoles.payer.address],
+    })
+    expect(payerBalanceAfter).toBe(payerBalanceBefore)
+  }, 60_000)
+})
