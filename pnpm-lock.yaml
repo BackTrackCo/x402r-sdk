@@ -39,10 +39,10 @@ importers:
         version: 4.0.18(vitest@4.0.18(@types/node@22.19.15)(esbuild@0.27.3)(jiti@2.6.1)(tsx@4.21.0))
       '@wagmi/cli':
         specifier: ^2.10.0
-        version: 2.10.0(typescript@5.9.3)
+        version: 2.10.0(typescript@6.0.3)
       knip:
         specifier: ^5.85.0
-        version: 5.85.0(@types/node@22.19.15)(typescript@5.9.3)
+        version: 5.85.0(@types/node@22.19.15)(typescript@6.0.3)
       publint:
         specifier: ^0.3.18
         version: 0.3.18
@@ -51,13 +51,13 @@ importers:
         version: 12.0.0(jiti@2.6.1)
       tsup:
         specifier: ^8.5.1
-        version: 8.5.1(jiti@2.6.1)(postcss@8.5.9)(tsx@4.21.0)(typescript@5.9.3)
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.9)(tsx@4.21.0)(typescript@6.0.3)
       turbo:
         specifier: ^2.8.12
         version: 2.8.12
       typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
+        specifier: ^6.0.3
+        version: 6.0.3
       vitest:
         specifier: ^4.0.18
         version: 4.0.18(@types/node@22.19.15)(esbuild@0.27.3)(jiti@2.6.1)(tsx@4.21.0)
@@ -78,7 +78,7 @@ importers:
         version: 4.21.0
       viem:
         specifier: ^2.46.3
-        version: 2.47.1(typescript@5.9.3)(zod@4.3.6)
+        version: 2.47.1(typescript@6.0.3)(zod@4.3.6)
     devDependencies:
       '@types/node':
         specifier: ^22.12.0
@@ -91,13 +91,13 @@ importers:
         version: 2.5.0
       '@x402/evm':
         specifier: ^2.5.0
-        version: 2.5.0(ethers@6.16.0)(typescript@5.9.3)
+        version: 2.5.0(ethers@6.16.0)(typescript@6.0.3)
       '@x402r/evm':
         specifier: '>=0.2.0-alpha.0 <0.3.0'
-        version: 0.2.0-alpha.0(@x402/core@2.5.0)(@x402/evm@2.5.0(ethers@6.16.0)(typescript@5.9.3))(viem@2.47.1(typescript@5.9.3)(zod@4.3.6))
+        version: 0.2.0-alpha.0(@x402/core@2.5.0)(@x402/evm@2.5.0(ethers@6.16.0)(typescript@6.0.3))(viem@2.47.1(typescript@6.0.3)(zod@4.3.6))
       viem:
         specifier: ^2.46.3
-        version: 2.47.1(typescript@5.9.3)(zod@4.3.6)
+        version: 2.47.1(typescript@6.0.3)(zod@4.3.6)
     devDependencies:
       '@types/node':
         specifier: ^20.0.0
@@ -107,7 +107,7 @@ importers:
     dependencies:
       viem:
         specifier: ^2.46.3
-        version: 2.47.1(typescript@5.9.3)(zod@4.3.6)
+        version: 2.47.1(typescript@6.0.3)(zod@4.3.6)
     devDependencies:
       prool:
         specifier: ^0.2.3
@@ -124,7 +124,7 @@ importers:
         version: 2.5.0
       '@x402r/evm':
         specifier: 0.2.0-alpha.0
-        version: 0.2.0-alpha.0(@x402/core@2.5.0)(@x402/evm@2.5.0(ethers@6.16.0)(typescript@5.9.3))(viem@2.47.1(typescript@5.9.3)(zod@4.3.6))
+        version: 0.2.0-alpha.0(@x402/core@2.5.0)(@x402/evm@2.5.0(ethers@6.16.0)(typescript@6.0.3))(viem@2.47.1(typescript@6.0.3)(zod@4.3.6))
 
   packages/sdk:
     dependencies:
@@ -133,10 +133,10 @@ importers:
         version: link:../core
       '@x402r/erc8004':
         specifier: ^0.1.0-alpha.1
-        version: 0.1.0-alpha.1(viem@2.47.1(typescript@5.9.3)(zod@4.3.6))
+        version: 0.1.0-alpha.1(viem@2.47.1(typescript@6.0.3)(zod@4.3.6))
       viem:
         specifier: ^2.46.3
-        version: 2.47.1(typescript@5.9.3)(zod@4.3.6)
+        version: 2.47.1(typescript@6.0.3)(zod@4.3.6)
 
 packages:
 
@@ -2249,8 +2249,8 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
-  typescript@5.9.3:
-    resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
+  typescript@6.0.3:
+    resolution: {integrity: sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw==}
     engines: {node: '>=14.17'}
     hasBin: true
 
@@ -3280,9 +3280,9 @@ snapshots:
       '@vitest/pretty-format': 4.0.18
       tinyrainbow: 3.0.3
 
-  '@wagmi/cli@2.10.0(typescript@5.9.3)':
+  '@wagmi/cli@2.10.0(typescript@6.0.3)':
     dependencies:
-      abitype: 1.2.3(typescript@5.9.3)(zod@4.3.6)
+      abitype: 1.2.3(typescript@6.0.3)(zod@4.3.6)
       bundle-require: 5.1.0(esbuild@0.25.12)
       cac: 6.7.14
       change-case: 5.4.4
@@ -3298,10 +3298,10 @@ snapshots:
       picocolors: 1.1.1
       picomatch: 4.0.4
       prettier: 3.8.1
-      viem: 2.47.1(typescript@5.9.3)(zod@4.3.6)
+      viem: 2.47.1(typescript@6.0.3)(zod@4.3.6)
       zod: 4.3.6
     optionalDependencies:
-      typescript: 5.9.3
+      typescript: 6.0.3
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -3310,11 +3310,11 @@ snapshots:
     dependencies:
       zod: 3.25.76
 
-  '@x402/evm@2.5.0(ethers@6.16.0)(typescript@5.9.3)':
+  '@x402/evm@2.5.0(ethers@6.16.0)(typescript@6.0.3)':
     dependencies:
       '@x402/core': 2.5.0
-      '@x402/extensions': 2.5.0(ethers@6.16.0)(typescript@5.9.3)
-      viem: 2.47.1(typescript@5.9.3)(zod@3.25.76)
+      '@x402/extensions': 2.5.0(ethers@6.16.0)(typescript@6.0.3)
+      viem: 2.47.1(typescript@6.0.3)(zod@3.25.76)
       zod: 3.25.76
     transitivePeerDependencies:
       - bufferutil
@@ -3322,14 +3322,14 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@x402/extensions@2.5.0(ethers@6.16.0)(typescript@5.9.3)':
+  '@x402/extensions@2.5.0(ethers@6.16.0)(typescript@6.0.3)':
     dependencies:
       '@scure/base': 1.2.6
       '@x402/core': 2.5.0
       ajv: 8.18.0
       siwe: 2.3.2(ethers@6.16.0)
       tweetnacl: 1.0.3
-      viem: 2.47.1(typescript@5.9.3)(zod@3.25.76)
+      viem: 2.47.1(typescript@6.0.3)(zod@3.25.76)
       zod: 3.25.76
     transitivePeerDependencies:
       - bufferutil
@@ -3337,24 +3337,24 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@x402r/erc8004@0.1.0-alpha.1(viem@2.47.1(typescript@5.9.3)(zod@4.3.6))':
+  '@x402r/erc8004@0.1.0-alpha.1(viem@2.47.1(typescript@6.0.3)(zod@4.3.6))':
     dependencies:
-      viem: 2.47.1(typescript@5.9.3)(zod@4.3.6)
+      viem: 2.47.1(typescript@6.0.3)(zod@4.3.6)
 
-  '@x402r/evm@0.2.0-alpha.0(@x402/core@2.5.0)(@x402/evm@2.5.0(ethers@6.16.0)(typescript@5.9.3))(viem@2.47.1(typescript@5.9.3)(zod@4.3.6))':
+  '@x402r/evm@0.2.0-alpha.0(@x402/core@2.5.0)(@x402/evm@2.5.0(ethers@6.16.0)(typescript@6.0.3))(viem@2.47.1(typescript@6.0.3)(zod@4.3.6))':
     dependencies:
       '@x402/core': 2.5.0
-      '@x402/evm': 2.5.0(ethers@6.16.0)(typescript@5.9.3)
-      viem: 2.47.1(typescript@5.9.3)(zod@4.3.6)
+      '@x402/evm': 2.5.0(ethers@6.16.0)(typescript@6.0.3)
+      viem: 2.47.1(typescript@6.0.3)(zod@4.3.6)
 
-  abitype@1.2.3(typescript@5.9.3)(zod@3.25.76):
+  abitype@1.2.3(typescript@6.0.3)(zod@3.25.76):
     optionalDependencies:
-      typescript: 5.9.3
+      typescript: 6.0.3
       zod: 3.25.76
 
-  abitype@1.2.3(typescript@5.9.3)(zod@4.3.6):
+  abitype@1.2.3(typescript@6.0.3)(zod@4.3.6):
     optionalDependencies:
-      typescript: 5.9.3
+      typescript: 6.0.3
       zod: 4.3.6
 
   acorn@8.16.0: {}
@@ -3811,7 +3811,7 @@ snapshots:
     optionalDependencies:
       graceful-fs: 4.2.11
 
-  knip@5.85.0(@types/node@22.19.15)(typescript@5.9.3):
+  knip@5.85.0(@types/node@22.19.15)(typescript@6.0.3):
     dependencies:
       '@nodelib/fs.walk': 1.2.8
       '@types/node': 22.19.15
@@ -3825,7 +3825,7 @@ snapshots:
       picomatch: 4.0.4
       smol-toml: 1.6.0
       strip-json-comments: 5.0.3
-      typescript: 5.9.3
+      typescript: 6.0.3
       zod: 4.3.6
 
   lightningcss-android-arm64@1.32.0:
@@ -3978,7 +3978,7 @@ snapshots:
 
   outdent@0.5.0: {}
 
-  ox@0.14.0(typescript@5.9.3)(zod@3.25.76):
+  ox@0.14.0(typescript@6.0.3)(zod@3.25.76):
     dependencies:
       '@adraffy/ens-normalize': 1.11.1
       '@noble/ciphers': 1.3.0
@@ -3986,14 +3986,14 @@ snapshots:
       '@noble/hashes': 1.8.0
       '@scure/bip32': 1.7.0
       '@scure/bip39': 1.6.0
-      abitype: 1.2.3(typescript@5.9.3)(zod@3.25.76)
+      abitype: 1.2.3(typescript@6.0.3)(zod@3.25.76)
       eventemitter3: 5.0.1
     optionalDependencies:
-      typescript: 5.9.3
+      typescript: 6.0.3
     transitivePeerDependencies:
       - zod
 
-  ox@0.14.0(typescript@5.9.3)(zod@4.3.6):
+  ox@0.14.0(typescript@6.0.3)(zod@4.3.6):
     dependencies:
       '@adraffy/ens-normalize': 1.11.1
       '@noble/ciphers': 1.3.0
@@ -4001,10 +4001,10 @@ snapshots:
       '@noble/hashes': 1.8.0
       '@scure/bip32': 1.7.0
       '@scure/bip39': 1.6.0
-      abitype: 1.2.3(typescript@5.9.3)(zod@4.3.6)
+      abitype: 1.2.3(typescript@6.0.3)(zod@4.3.6)
       eventemitter3: 5.0.1
     optionalDependencies:
-      typescript: 5.9.3
+      typescript: 6.0.3
     transitivePeerDependencies:
       - zod
 
@@ -4349,7 +4349,7 @@ snapshots:
 
   tslib@2.7.0: {}
 
-  tsup@8.5.1(jiti@2.6.1)(postcss@8.5.9)(tsx@4.21.0)(typescript@5.9.3):
+  tsup@8.5.1(jiti@2.6.1)(postcss@8.5.9)(tsx@4.21.0)(typescript@6.0.3):
     dependencies:
       bundle-require: 5.1.0(esbuild@0.27.3)
       cac: 6.7.14
@@ -4370,7 +4370,7 @@ snapshots:
       tree-kill: 1.2.2
     optionalDependencies:
       postcss: 8.5.9
-      typescript: 5.9.3
+      typescript: 6.0.3
     transitivePeerDependencies:
       - jiti
       - supports-color
@@ -4415,7 +4415,7 @@ snapshots:
 
   typescript@5.6.1-rc: {}
 
-  typescript@5.9.3: {}
+  typescript@6.0.3: {}
 
   ufo@1.6.3: {}
 
@@ -4437,35 +4437,35 @@ snapshots:
 
   validate-npm-package-name@5.0.1: {}
 
-  viem@2.47.1(typescript@5.9.3)(zod@3.25.76):
+  viem@2.47.1(typescript@6.0.3)(zod@3.25.76):
     dependencies:
       '@noble/curves': 1.9.1
       '@noble/hashes': 1.8.0
       '@scure/bip32': 1.7.0
       '@scure/bip39': 1.6.0
-      abitype: 1.2.3(typescript@5.9.3)(zod@3.25.76)
+      abitype: 1.2.3(typescript@6.0.3)(zod@3.25.76)
       isows: 1.0.7(ws@8.18.3)
-      ox: 0.14.0(typescript@5.9.3)(zod@3.25.76)
+      ox: 0.14.0(typescript@6.0.3)(zod@3.25.76)
       ws: 8.18.3
     optionalDependencies:
-      typescript: 5.9.3
+      typescript: 6.0.3
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
       - zod
 
-  viem@2.47.1(typescript@5.9.3)(zod@4.3.6):
+  viem@2.47.1(typescript@6.0.3)(zod@4.3.6):
     dependencies:
       '@noble/curves': 1.9.1
       '@noble/hashes': 1.8.0
       '@scure/bip32': 1.7.0
       '@scure/bip39': 1.6.0
-      abitype: 1.2.3(typescript@5.9.3)(zod@4.3.6)
+      abitype: 1.2.3(typescript@6.0.3)(zod@4.3.6)
       isows: 1.0.7(ws@8.18.3)
-      ox: 0.14.0(typescript@5.9.3)(zod@4.3.6)
+      ox: 0.14.0(typescript@6.0.3)(zod@4.3.6)
       ws: 8.18.3
     optionalDependencies:
-      typescript: 5.9.3
+      typescript: 6.0.3
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
