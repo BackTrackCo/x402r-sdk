@@ -57,13 +57,12 @@ const PORT_FACILITATOR = 4322
 const PORT_RESOURCE_SERVER = 4321
 const USDC_BALANCE_SLOT = 9n
 
-// Auth-capture canonical escrow address (universal CREATE2 deploy). Imported
-// from @x402r/core's getChainConfig — keeps the wire-side assertion target in
-// sync with the source-of-truth address table for Base + Base Sepolia.
+// Auth-capture canonical escrow address + USDC sourced from @x402r/core's
+// chain-config so the wire-side assertion target stays in sync with the
+// source-of-truth address table for Base + Base Sepolia.
 const chainConfig = getChainConfig(CHAIN_ID)
 const USDC: Address = chainConfig.usdc
-const AUTH_CAPTURE_ESCROW: Address =
-  '0xBdEA0D1bcC5966192B070Fdf62aB4EF5b4420cff'
+const AUTH_CAPTURE_ESCROW: Address = chainConfig.authCaptureEscrow
 
 // Anvil test accounts — first two of the deterministic mnemonic.
 // deployer (account #0) doubles as the facilitator EOA + captureAuthorizer
