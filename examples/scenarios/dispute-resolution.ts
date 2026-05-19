@@ -52,6 +52,15 @@ async function main() {
     // authorize collected zero tokens, before === after and delta === 0
     // either way.
     const payerBalanceBefore = await readBalance(ctx.accounts.payer)
+    // Snapshot receiver + feeReceiver too — under a full refund neither party
+    // should see a balance change. A non-zero delta on either would indicate
+    // tokens were misdirected (e.g. a future refactor accidentally routes a
+    // partial-fee path through a full-void). Catches regressions the
+    // payer-only snapshot would miss.
+    const receiverBalanceBefore = await readBalance(ctx.accounts.merchant)
+    const feeReceiverBalanceBefore = await readBalance(
+      ctx.paymentInfo.feeReceiver,
+    )
 
     // ================================================================
     // Step 1: Authorize payment (direct SDK call)
@@ -192,6 +201,23 @@ async function main() {
     runner.assert(
       payerDelta === 0n,
       `payer balance net-zero after full refund (authorized → refunded back); actual delta ${payerDelta}`,
+    )
+
+    // Receiver + feeReceiver must not have moved at all under a full refund.
+    // Distinct from the payer net-zero check above: payer can net-zero even if
+    // tokens were misrouted (e.g. paid out and then refunded back). These
+    // deltas pin the destinations explicitly.
+    const receiverBalanceAfter = await readBalance(ctx.accounts.merchant)
+    const feeReceiverBalanceAfter = await readBalance(
+      ctx.paymentInfo.feeReceiver,
+    )
+    runner.assert(
+      receiverBalanceAfter === receiverBalanceBefore,
+      `receiver balance unchanged under full refund; actual delta ${receiverBalanceAfter - receiverBalanceBefore}`,
+    )
+    runner.assert(
+      feeReceiverBalanceAfter === feeReceiverBalanceBefore,
+      `feeReceiver balance unchanged under full refund; actual delta ${feeReceiverBalanceAfter - feeReceiverBalanceBefore}`,
     )
 
     // ================================================================
