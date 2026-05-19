@@ -584,3 +584,80 @@ describe('Edge case: void during escrow window (asymmetry vs capture)', () => {
     expect(payerBalanceAfter - payerBalanceBefore).toBe(DEFAULT_AMOUNT)
   }, 60_000)
 })
+
+// ---------------------------------------------------------------------------
+// Edge case (g): sequential overspend after partial capture
+// ---------------------------------------------------------------------------
+
+// Pins the overspend boundary at `capturableAmount + 1` exactly — distinct
+// from case (d) which tests overspend on fresh state. After a partial capture
+// mutates state, the boundary moves: the contract gate must be reading
+// live escrow state, not the original authorized amount. A regression
+// where the gate accidentally compares against `paymentInfo.maxAmount`
+// (or any other stale snapshot) would let this overspend slip through
+// while case (d) still passes.
+describe('Edge case: sequential overspend after partial capture', () => {
+  it('reverts when capturing capturableAmount + 1 after a partial capture', async () => {
+    // Fresh paymentInfo with salt: 7n to avoid colliding with prior scenarios.
+    const seqInfo: PaymentInfo = { ...paymentInfo, salt: 7n }
+    const { collectorData, tokenCollector } = await createCollectorData(
+      anvilBaseSepolia.getWalletClient(testRoles.payer.address),
+      seqInfo,
+    )
+    const authHash = await payerClient.payment.authorize(
+      seqInfo,
+      DEFAULT_AMOUNT,
+      tokenCollector,
+      collectorData,
+    )
+    await publicClient.waitForTransactionReceipt({ hash: authHash })
+
+    await testClient.increaseTime({ seconds: ESCROW_FAST_FORWARD })
+    await testClient.mine({ blocks: 1 })
+
+    // Partial capture: half of DEFAULT_AMOUNT. After this, capturableAmount
+    // should drop to DEFAULT_AMOUNT / 2n.
+    const partialCaptureHash = await merchant.payment.capture(
+      seqInfo,
+      DEFAULT_AMOUNT / 2n,
+      '0x',
+    )
+    await publicClient.waitForTransactionReceipt({ hash: partialCaptureHash })
+
+    const amountsBefore = await merchant.payment.getAmounts(seqInfo)
+    expect(amountsBefore.capturableAmount).toBe(DEFAULT_AMOUNT / 2n)
+
+    // Snapshot receiver USDC balance — overspend must not move tokens.
+    const receiverBalanceBefore = await publicClient.readContract({
+      address: USDC,
+      abi: erc20Abi,
+      functionName: 'balanceOf',
+      args: [testRoles.receiver.address],
+    })
+
+    // Attempt to capture exactly `capturableAmount + 1` — the boundary.
+    const overspendHash = await merchant.payment.capture(
+      seqInfo,
+      amountsBefore.capturableAmount + 1n,
+      '0x',
+    )
+    const overspendReceipt = await publicClient.waitForTransactionReceipt({
+      hash: overspendHash,
+    })
+    expect(overspendReceipt.status).toBe('reverted')
+    expect(overspendReceipt.logs).toHaveLength(0)
+
+    // State invariants: capturableAmount unchanged, receiver tokens didn't
+    // move.
+    const amountsAfter = await merchant.payment.getAmounts(seqInfo)
+    expect(amountsAfter.capturableAmount).toBe(DEFAULT_AMOUNT / 2n)
+
+    const receiverBalanceAfter = await publicClient.readContract({
+      address: USDC,
+      abi: erc20Abi,
+      functionName: 'balanceOf',
+      args: [testRoles.receiver.address],
+    })
+    expect(receiverBalanceAfter).toBe(receiverBalanceBefore)
+  }, 60_000)
+})
