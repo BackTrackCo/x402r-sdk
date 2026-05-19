@@ -427,3 +427,65 @@ describe('Edge case: capture overspend (amount > capturableAmount)', () => {
     expect(receiverBalanceAfter).toBe(receiverBalanceBefore)
   }, 60_000)
 })
+
+// ---------------------------------------------------------------------------
+// Edge case (e): void during escrow window — asymmetry vs capture's time gate
+// ---------------------------------------------------------------------------
+
+// Capture is time-gated via `EscrowPeriod.CAPTURE_PRE_ACTION_CONDITION`. Void
+// is NOT (`PaymentOperator.sol:323-327` shows `VOID_PRE_ACTION_CONDITION`
+// defaults to `address(0)`). This asymmetry isn't otherwise documented in
+// test form — pinning it here so the merchant DX assumption (void is always
+// available post-authorize) doesn't silently regress.
+describe('Edge case: void during escrow window (asymmetry vs capture)', () => {
+  it('void succeeds inside escrow window even though capture would not', async () => {
+    // Fresh paymentInfo with salt: 6n to avoid colliding with prior scenarios.
+    const escrowVoidInfo: PaymentInfo = { ...paymentInfo, salt: 6n }
+    const { collectorData, tokenCollector } = await createCollectorData(
+      anvilBaseSepolia.getWalletClient(testRoles.payer.address),
+      escrowVoidInfo,
+    )
+    const authHash = await payerClient.payment.authorize(
+      escrowVoidInfo,
+      DEFAULT_AMOUNT,
+      tokenCollector,
+      collectorData,
+    )
+    await publicClient.waitForTransactionReceipt({ hash: authHash })
+
+    // Deliberately DO NOT fast-forward past escrow — stay inside the window.
+    // Capture would revert here; void should not.
+    const amountsBefore = await merchant.payment.getAmounts(escrowVoidInfo)
+    expect(amountsBefore.capturableAmount).toBe(DEFAULT_AMOUNT)
+
+    // Snapshot payer balance — void inside the escrow window is a full
+    // refund (no capture happened, no fees taken). Payer should net
+    // DEFAULT_AMOUNT back, exact.
+    const payerBalanceBefore = await publicClient.readContract({
+      address: USDC,
+      abi: erc20Abi,
+      functionName: 'balanceOf',
+      args: [testRoles.payer.address],
+    })
+
+    const voidHash = await merchant.payment.voidPayment(escrowVoidInfo)
+    const voidReceipt = await publicClient.waitForTransactionReceipt({
+      hash: voidHash,
+    })
+    // SUCCESS, not reverted — the void path is unconditional on time.
+    expect(voidReceipt.status).toBe('success')
+
+    const amountsAfter = await merchant.payment.getAmounts(escrowVoidInfo)
+    expect(amountsAfter.capturableAmount).toBe(0n)
+
+    const payerBalanceAfter = await publicClient.readContract({
+      address: USDC,
+      abi: erc20Abi,
+      functionName: 'balanceOf',
+      args: [testRoles.payer.address],
+    })
+    // Full refund, no fees — nothing was captured, so receiver fee path
+    // never ran.
+    expect(payerBalanceAfter - payerBalanceBefore).toBe(DEFAULT_AMOUNT)
+  }, 60_000)
+})
