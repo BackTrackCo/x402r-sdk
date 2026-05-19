@@ -70,6 +70,9 @@ async function main(): Promise<void> {
     }),
     port: PORT,
   })
+  // prool's Server.start() resolves only after the listener is bound + the
+  // underlying anvil child is ready to accept JSON-RPC. Subsequent
+  // runScenario(...) calls can safely use the shared subpath URLs.
   await server.start()
 
   // Cancellation/crash paths bypass the for-loop's finally block, so register
