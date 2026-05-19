@@ -417,6 +417,14 @@ describe('Edge case: double capture+void on same paymentInfo', () => {
   // balance assertions stay green and the replay door silently opens — this
   // assertion would catch that.
   it('USDC authorizationState(payer, escrowNonce) === true after consumption', async () => {
+    // Precondition (in-test guard): Scenario 3 + case (c)/case (f) above must
+    // have consumed the ERC-3009 nonce. Under `--shuffle` or `.only`, this
+    // precondition fails fast with an actionable diagnostic instead of the
+    // downstream "expected true received false" from the authorizationState
+    // check.
+    const preAmounts = await merchant.payment.getAmounts(paymentInfo)
+    expect(preAmounts.capturableAmount).toBe(0n)
+
     const escrowNonce = computeEscrowNonce(
       baseSepolia.chainId,
       authCaptureEscrow,
