@@ -3,16 +3,16 @@
 # by branch protection for all other PRs; CODEOWNERS just adds an
 # extra gate for the files listed below.
 
-/.github/                  @vraspar
-/.changeset/config.json    @vraspar
-/.npmrc                    @vraspar
-/.nvmrc                    @vraspar
-/RELEASING.md              @vraspar
-/scripts/                  @vraspar
-/turbo.json                @vraspar
-/pnpm-workspace.yaml       @vraspar
+/.github/                  @vraspar @A1igator
+/.changeset/config.json    @vraspar @A1igator
+/.npmrc                    @vraspar @A1igator
+/.nvmrc                    @vraspar @A1igator
+/RELEASING.md              @vraspar @A1igator
+/scripts/                  @vraspar @A1igator
+/turbo.json                @vraspar @A1igator
+/pnpm-workspace.yaml       @vraspar @A1igator
 
 # Manifests and lockfile (root + all workspace packages)
-/package.json              @vraspar
-/pnpm-lock.yaml            @vraspar
-**/package.json            @vraspar
+/package.json              @vraspar @A1igator
+/pnpm-lock.yaml            @vraspar @A1igator
+**/package.json            @vraspar @A1igator
