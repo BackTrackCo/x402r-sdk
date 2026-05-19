@@ -13,14 +13,14 @@ import { spawn } from 'node:child_process'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-// File-stem (under examples/scenarios/) paired with the numeric prool key
-// used for the per-scenario route. prool's Server.create routes each unique
+// File-stems (under examples/scenarios/). The numeric prool key is derived
+// from array index (+1, since prool requires positive integers), so a
+// duplicate is impossible by construction — a copy-paste bug that gave two
+// scenarios the same key would have routed them to the same Anvil child and
+// produced silent state crossover. prool's Server.create routes each unique
 // numeric subpath (`/1`, `/2`, ...) to its own forked Anvil child instance
 // (string subpaths are not supported by prool — see node_modules/prool README).
-const SCENARIOS = [
-  { file: 'dispute-resolution', key: 1 },
-  { file: 'permit2-charge', key: 2 },
-] as const
+const SCENARIO_FILES = ['dispute-resolution', 'permit2-charge'] as const
 const PORT = 8846
 const CHAIN_ID = 84532
 
@@ -62,7 +62,8 @@ async function main(): Promise<void> {
 
   let exitCode = 0
   try {
-    for (const { file, key } of SCENARIOS) {
+    for (const [index, file] of SCENARIO_FILES.entries()) {
+      const key = index + 1
       const code = await runScenario(file, key)
       if (code !== 0) {
         exitCode = code
