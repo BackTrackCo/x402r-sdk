@@ -5,7 +5,7 @@ import type { PaymentPayload, PaymentRequirements } from '@x402/core/types'
 import { toFacilitatorEvmSigner } from '@x402/evm'
 import { paymentMiddleware, x402ResourceServer } from '@x402/express'
 import { wrapFetchWithPayment } from '@x402/fetch'
-import { getChainConfig } from '@x402r/core'
+import { authCaptureEscrowAbi, getChainConfig } from '@x402r/core'
 import { AuthCaptureEvmScheme as AuthCaptureEvmClient } from '@x402r/evm/authCapture/client'
 import { AuthCaptureFacilitatorScheme } from '@x402r/evm/authCapture/facilitator'
 import { AuthCaptureServerScheme } from '@x402r/evm/authCapture/server'
@@ -18,6 +18,7 @@ import {
   erc20Abi,
   http,
   numberToHex,
+  parseEventLogs,
   publicActions,
   type TestClient,
   zeroAddress,
@@ -439,6 +440,45 @@ async function main(): Promise<void> {
     runner.assert(
       receiverAfter === receiverBefore,
       `receiver USDC unchanged (autoCapture left unset); actual delta ${receiverAfter - receiverBefore}`,
+    )
+
+    runner.step('Verify escrow internal state via paymentState(hash)')
+    // Token balance checks above prove value moved. They do NOT prove the
+    // escrow's internal `_paymentState` mapping was updated — a contract bug
+    // or migration that moves tokens via ERC-3009 but leaves capturableAmount
+    // / hasCollectedPayment unset would pass everything above and only
+    // surface when a downstream capture tried to operate on the missing
+    // state. (Note: an off-by-one paymentInfoHash failure mode isn't
+    // reachable in practice — the same hash is the ERC-3009 nonce, so a
+    // bad hash either reverts the tx or debits the wrong payer.)
+    const authorizedEvents = parseEventLogs({
+      abi: authCaptureEscrowAbi,
+      eventName: 'PaymentAuthorized',
+      logs: receipt.logs,
+    })
+    runner.assert(
+      authorizedEvents.length === 1,
+      `exactly one PaymentAuthorized event emitted (got ${authorizedEvents.length})`,
+    )
+    const paymentInfoHash = authorizedEvents[0].args.paymentInfoHash
+    const [hasCollectedPayment, capturableAmount, refundableAmount] =
+      await ctx.publicClient.readContract({
+        address: AUTH_CAPTURE_ESCROW,
+        abi: authCaptureEscrowAbi,
+        functionName: 'paymentState',
+        args: [paymentInfoHash],
+      })
+    runner.assert(
+      hasCollectedPayment === true,
+      `paymentState.hasCollectedPayment === true; actual ${hasCollectedPayment}`,
+    )
+    runner.assert(
+      capturableAmount === PAYMENT_AMOUNT,
+      `paymentState.capturableAmount === PAYMENT_AMOUNT (${PAYMENT_AMOUNT}); actual ${capturableAmount}`,
+    )
+    runner.assert(
+      refundableAmount === 0n,
+      `paymentState.refundableAmount === 0 (no capture occurred); actual ${refundableAmount}`,
     )
 
     runner.done()
