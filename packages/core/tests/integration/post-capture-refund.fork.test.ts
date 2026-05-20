@@ -41,8 +41,14 @@ const REFUND_AMOUNT = 500_000n
 let paymentInfo: PaymentInfo
 
 beforeAll(async () => {
+  // salt 11n: distinct from every other fork test's salts. Fork tests share a
+  // single Anvil instance via globalSetup, so colliding salts across files
+  // share the same paymentInfoHash and bleed state. The "edge case: sequential
+  // overspend after partial capture" in partial-refund.fork.test.ts:636 also
+  // uses salt 7n and leaves capturableAmount = 500_000n, which then makes this
+  // file's first authorize+capture see 500_000n still capturable instead of 0n.
   ;({ publicClient, testClient, fixtures, paymentInfo } = await setupScenario({
-    salt: 7n,
+    salt: 11n,
   }))
 
   payerClient = createX402r({
