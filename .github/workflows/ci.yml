@@ -15,9 +15,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
@@ -30,9 +30,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
@@ -53,9 +53,9 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
@@ -63,7 +63,7 @@ jobs:
       - run: pnpm build
       - run: pnpm --filter=@x402r/core test:cov
       - name: Upload core coverage
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           use_oidc: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork) }}
           files: packages/core/coverage/lcov.info
@@ -71,7 +71,7 @@ jobs:
           fail_ci_if_error: true
       - run: pnpm --filter=@x402r/helpers test:cov
       - name: Upload helpers coverage
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           use_oidc: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork) }}
           files: packages/helpers/coverage/lcov.info
@@ -79,7 +79,7 @@ jobs:
           fail_ci_if_error: true
       - run: pnpm --filter=@x402r/sdk test:cov
       - name: Upload SDK coverage
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           use_oidc: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork) }}
           files: packages/sdk/coverage/lcov.info
@@ -93,28 +93,28 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
       - name: Clone x402r-contracts (with submodules)
         run: git clone --depth 1 --recurse-submodules https://github.com/BackTrackCo/x402r-contracts.git ../x402r-contracts
       - name: Build contracts
         run: cd ../x402r-contracts && forge build
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - name: Run fork tests
-        uses: nick-fields/retry@v3
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 10
           max_attempts: 2
           command: pnpm test:fork
       - name: Run CI scenarios (dispute + permit2)
-        uses: nick-fields/retry@v3
+        uses: nick-fields/retry@v4
         with:
           # Retry guards against public Base Sepolia RPC flake on the upstream
           # fork. Port-collision band-aid is no longer needed: the orchestrator
@@ -129,9 +129,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
@@ -144,9 +144,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
@@ -172,15 +172,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Clone x402r-contracts (with submodules)
         run: git clone --depth 1 --recurse-submodules https://github.com/BackTrackCo/x402r-contracts.git ../x402r-contracts
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
       - name: Build contracts
         run: cd ../x402r-contracts && forge build
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
