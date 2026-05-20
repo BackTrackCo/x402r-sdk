@@ -1,10 +1,12 @@
 version: 2
 updates:
-  # npm dependencies across root and all workspace packages.
+  # npm dependencies across the workspace. pnpm uses a single root lockfile
+  # for all workspace packages, so we run Dependabot from root only.
+  # Bumping per-directory (root + /packages/*) produces duplicate PRs and
+  # breaks --frozen-lockfile because the root lockfile isn't re-synced when
+  # an individual package.json is edited.
   - package-ecosystem: npm
-    directories:
-      - "/"
-      - "/packages/*"
+    directory: "/"
     schedule:
       interval: weekly
       day: monday
