@@ -211,7 +211,16 @@ async function startFacilitator(rpcUrl: string): Promise<{
     res.json(facilitator.getSupported())
   })
 
+  // Express's app.listen returns the http.Server synchronously; the
+  // 'listening' event fires asynchronously. Await it before returning the URL
+  // so a fast paidFetch on a cold runner doesn't race the bind.
   const server = app.listen(PORT_FACILITATOR)
+  await new Promise<void>((resolve, reject) => {
+    server.once('listening', () => resolve())
+    server.once('error', (err) =>
+      reject(new Error(`failed to bind ${PORT_FACILITATOR}: ${err.message}`)),
+    )
+  })
   return {
     url: `http://127.0.0.1:${PORT_FACILITATOR}`,
     stop: () => new Promise<void>((resolve) => server.close(() => resolve())),
@@ -288,7 +297,16 @@ async function startResourceServer(
     res.send({ ok: true })
   })
 
+  // See startFacilitator for the rationale on awaiting 'listening'.
   const server = app.listen(PORT_RESOURCE_SERVER)
+  await new Promise<void>((resolve, reject) => {
+    server.once('listening', () => resolve())
+    server.once('error', (err) =>
+      reject(
+        new Error(`failed to bind ${PORT_RESOURCE_SERVER}: ${err.message}`),
+      ),
+    )
+  })
   return {
     url: `http://127.0.0.1:${PORT_RESOURCE_SERVER}`,
     stop: () => new Promise<void>((resolve) => server.close(() => resolve())),
