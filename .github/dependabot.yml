@@ -1,19 +1,11 @@
 version: 2
 updates:
-  # npm dependencies across the workspace. pnpm uses a single root lockfile
-  # for all workspace packages, so we run Dependabot from root only.
-  # Bumping per-directory (root + /packages/*) produces duplicate PRs and
-  # breaks --frozen-lockfile because the root lockfile isn't re-synced when
-  # an individual package.json is edited.
   - package-ecosystem: npm
     directory: "/"
     schedule:
       interval: weekly
       day: monday
     open-pull-requests-limit: 10
-    # Defer version bumps for N days after publish to close the supply-chain
-    # attack window (most malicious publishes are caught within 24-72h).
-    # Security updates (GHSA-driven) bypass cooldown and still PR immediately.
     cooldown:
       default-days: 7
       semver-minor-days: 14
@@ -26,22 +18,12 @@ updates:
         dependency-type: development
         update-types: [minor, patch]
 
-  # GitHub Actions used in workflows. Actions are SHA-pinned; Dependabot
-  # updates the SHA and the trailing `# vX.Y.Z` comment together.
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
       interval: weekly
       day: monday
     open-pull-requests-limit: 5
-    # github-actions ecosystem only supports `default-days` (the semver-*-days
-    # sub-fields are SemVer-only and Dependabot rejects them on github-actions
-    # with "property is not supported for the package ecosystem"). 30 days is
-    # the longest defensible value short of the documented 90-day cap: it's
-    # far wider than every observed action supply-chain incident in 2025
-    # (tj-actions/changed-files and reviewdog/action-setup were both detected
-    # and revoked within hours-to-days), while still landing genuine
-    # bug/security fixes within a month.
     cooldown:
       default-days: 30
     groups:
