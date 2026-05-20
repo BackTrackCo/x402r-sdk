@@ -17,7 +17,7 @@ import {
   createWalletClient,
   erc20Abi,
   http,
-  pad,
+  numberToHex,
   publicActions,
   type TestClient,
   zeroAddress,
@@ -143,7 +143,7 @@ async function bootstrapAnvil(): Promise<{
   await testClient.setStorageAt({
     address: USDC,
     index: payerSlot,
-    value: pad(`0x${payerUsdcAmount.toString(16)}` as `0x${string}`),
+    value: numberToHex(payerUsdcAmount, { size: 32 }),
   })
 
   return { publicClient, rpcUrl, cleanup }
