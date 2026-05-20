@@ -45,6 +45,13 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # id-token: write lets codecov-action mint a per-run OIDC JWT instead of
+    # using a long-lived CODECOV_TOKEN secret. The ternary on use_oidc falls
+    # back to Codecov's public-repo tokenless path for fork PRs, which can't
+    # mint OIDC tokens. Pattern matches microsoft/TypeScript's ci.yml.
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -58,7 +65,7 @@ jobs:
       - name: Upload core coverage
         uses: codecov/codecov-action@v5
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          use_oidc: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork) }}
           files: packages/core/coverage/lcov.info
           flags: core
           fail_ci_if_error: true
@@ -66,7 +73,7 @@ jobs:
       - name: Upload helpers coverage
         uses: codecov/codecov-action@v5
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          use_oidc: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork) }}
           files: packages/helpers/coverage/lcov.info
           flags: helpers
           fail_ci_if_error: true
@@ -74,7 +81,7 @@ jobs:
       - name: Upload SDK coverage
         uses: codecov/codecov-action@v5
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          use_oidc: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork) }}
           files: packages/sdk/coverage/lcov.info
           flags: sdk
           fail_ci_if_error: true

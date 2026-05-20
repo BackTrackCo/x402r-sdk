@@ -1,0 +1,18 @@
+# Release infrastructure and supply-chain-relevant paths require
+# maintainer review. A non-owner approving review is still required
+# by branch protection for all other PRs; CODEOWNERS just adds an
+# extra gate for the files listed below.
+
+/.github/                  @vraspar @A1igator
+/.changeset/config.json    @vraspar @A1igator
+/.npmrc                    @vraspar @A1igator
+/.nvmrc                    @vraspar @A1igator
+/RELEASING.md              @vraspar @A1igator
+/scripts/                  @vraspar @A1igator
+/turbo.json                @vraspar @A1igator
+/pnpm-workspace.yaml       @vraspar @A1igator
+
+# Manifests and lockfile (root + all workspace packages)
+/package.json              @vraspar @A1igator
+/pnpm-lock.yaml            @vraspar @A1igator
+**/package.json            @vraspar @A1igator

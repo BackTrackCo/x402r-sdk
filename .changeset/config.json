@@ -1,6 +1,9 @@
 {
   "$schema": "https://unpkg.com/@changesets/config@3.1.1/schema.json",
-  "changelog": ["@changesets/changelog-github", { "repo": "x402r/x402r-sdk" }],
+  "changelog": [
+    "@changesets/changelog-github",
+    { "repo": "BackTrackCo/x402r-sdk" }
+  ],
   "commit": false,
   "fixed": [],
   "linked": [["@x402r/core", "@x402r/helpers", "@x402r/sdk"]],
