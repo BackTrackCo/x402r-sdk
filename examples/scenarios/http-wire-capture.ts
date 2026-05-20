@@ -213,13 +213,18 @@ async function startFacilitator(rpcUrl: string): Promise<{
 
   // Express's app.listen returns the http.Server synchronously; the
   // 'listening' event fires asynchronously. Await it before returning the URL
-  // so a fast paidFetch on a cold runner doesn't race the bind.
+  // so a fast paidFetch on a cold runner doesn't race the bind. On bind error
+  // the parent's finally block can't reach this server (startFacilitator
+  // never returned), so close defensively before rejecting — server.close()
+  // is idempotent on an unbound socket.
   const server = app.listen(PORT_FACILITATOR)
   await new Promise<void>((resolve, reject) => {
     server.once('listening', () => resolve())
-    server.once('error', (err) =>
-      reject(new Error(`failed to bind ${PORT_FACILITATOR}: ${err.message}`)),
-    )
+    server.once('error', (err) => {
+      server.close(() => {
+        reject(new Error(`failed to bind ${PORT_FACILITATOR}: ${err.message}`))
+      })
+    })
   })
   return {
     url: `http://127.0.0.1:${PORT_FACILITATOR}`,
@@ -297,15 +302,18 @@ async function startResourceServer(
     res.send({ ok: true })
   })
 
-  // See startFacilitator for the rationale on awaiting 'listening'.
+  // See startFacilitator for the rationale on awaiting 'listening' + the
+  // defensive close-on-error.
   const server = app.listen(PORT_RESOURCE_SERVER)
   await new Promise<void>((resolve, reject) => {
     server.once('listening', () => resolve())
-    server.once('error', (err) =>
-      reject(
-        new Error(`failed to bind ${PORT_RESOURCE_SERVER}: ${err.message}`),
-      ),
-    )
+    server.once('error', (err) => {
+      server.close(() => {
+        reject(
+          new Error(`failed to bind ${PORT_RESOURCE_SERVER}: ${err.message}`),
+        )
+      })
+    })
   })
   return {
     url: `http://127.0.0.1:${PORT_RESOURCE_SERVER}`,
