@@ -239,6 +239,7 @@ async function startFacilitator(rpcUrl: string): Promise<{
 async function startResourceServer(
   facilitatorUrl: string,
   captureAuthorizer: Address,
+  publicClient: ReturnType<typeof createPublicClient>,
 ): Promise<{
   url: string
   stop: () => Promise<void>
@@ -249,7 +250,15 @@ async function startResourceServer(
     new AuthCaptureServerScheme(),
   )
 
-  const now = Math.floor(Date.now() / 1000)
+  // Derive `now` from the latest Anvil block instead of wall-clock so the
+  // deadlines we publish in `extra` use the same reference frame the escrow
+  // contract checks against (`block.timestamp`). On a freshly-forked Anvil
+  // block.timestamp == wall-clock so the values match in practice today; the
+  // 3600s buffer would absorb any sub-second drift either way. Switching the
+  // source removes the wrong-reference-frame footgun if a future scenario
+  // ever fast-forwards the chain (`testClient.increaseTime`).
+  const latestBlock = await publicClient.getBlock({ blockTag: 'latest' })
+  const now = Number(latestBlock.timestamp)
   const app = express()
   app.use(
     paymentMiddleware(
@@ -344,6 +353,7 @@ async function main(): Promise<void> {
       // paymentInfo.operator == facilitator submitter, so the escrow's
       // `onlySender(operator)` gate passes on the direct-EOA call path.
       deployer.address,
+      ctx.publicClient,
     )
     runner.log(`Resource server: ${resourceServer.url}/widget`)
 
