@@ -9,6 +9,13 @@ updates:
       interval: weekly
       day: monday
     open-pull-requests-limit: 10
+    # Defer version bumps for N days after publish to close the supply-chain
+    # attack window (most malicious publishes are caught within 24-72h).
+    # Security updates (GHSA-driven) bypass cooldown and still PR immediately.
+    cooldown:
+      default-days: 7
+      semver-minor-days: 14
+      semver-major-days: 30
     groups:
       production-dependencies:
         dependency-type: production
@@ -25,6 +32,9 @@ updates:
       interval: weekly
       day: monday
     open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+      semver-major-days: 30
     groups:
       actions:
         patterns:
