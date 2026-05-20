@@ -15,10 +15,8 @@ import {
   createPublicClient,
   createTestClient,
   createWalletClient,
-  encodeAbiParameters,
   erc20Abi,
   http,
-  keccak256,
   pad,
   publicActions,
   type TestClient,
@@ -26,6 +24,11 @@ import {
 } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { baseSepolia } from 'viem/chains'
+import {
+  getBalanceSlot,
+  testAccounts,
+  USDC_BALANCE_SLOT,
+} from '../shared/anvil-setup.js'
 import { PAYMENT_AMOUNT } from '../shared/constants.js'
 import { StepRunner } from './runner.js'
 
@@ -55,7 +58,6 @@ const NETWORK = 'eip155:84532' as const
 const ANVIL_PORT = 8846
 const PORT_FACILITATOR = 4322
 const PORT_RESOURCE_SERVER = 4321
-const USDC_BALANCE_SLOT = 9n
 
 // Auth-capture canonical escrow address + USDC sourced from @x402r/core's
 // chain-config so the wire-side assertion target stays in sync with the
@@ -64,32 +66,12 @@ const chainConfig = getChainConfig(CHAIN_ID)
 const USDC: Address = chainConfig.usdc
 const AUTH_CAPTURE_ESCROW: Address = chainConfig.authCaptureEscrow
 
-// Anvil test accounts — first two of the deterministic mnemonic.
-// deployer (account #0) doubles as the facilitator EOA + captureAuthorizer
-// so on-chain `onlySender(operator)` resolves to msg.sender == captureAuthorizer
-// for the EOA path (no contract bytecode at this address after setCode clears it).
-const deployer = {
-  address: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266' as Address,
-  privateKey:
-    '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80' as const,
-} as const
-const payer = {
-  address: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8' as Address,
-  privateKey:
-    '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d' as const,
-} as const
-const receiver = {
-  address: '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC' as Address,
-} as const
-
-function getBalanceSlot(account: Address, baseSlot: bigint): `0x${string}` {
-  return keccak256(
-    encodeAbiParameters(
-      [{ type: 'address' }, { type: 'uint256' }],
-      [account, baseSlot],
-    ),
-  )
-}
+// Reuse the deterministic Anvil accounts from shared/anvil-setup.ts.
+// deployer (#0) doubles as the facilitator EOA + captureAuthorizer so on-chain
+// `onlySender(operator)` resolves to msg.sender == captureAuthorizer on the
+// direct-EOA path (no bytecode after setCode clears it). payer = #1, receiver
+// = #2 — same role-mapping as the direct-SDK scenarios.
+const { deployer, payer, receiver } = testAccounts
 
 // ---------------------------------------------------------------------------
 // 1. Anvil bootstrap (inline subset of shared/anvil-setup.ts).
@@ -264,12 +246,13 @@ async function startResourceServer(
             // Custom AssetAmount: pin USDC + base-unit amount directly so we
             // don't rely on getDefaultAsset (which would also work but couples
             // the scenario to an extra default-asset lookup). EIP-712 domain
-            // fields go inside extra.name/version, matching the upstream
-            // example shape.
+            // fields (name/version) go in the top-level `extra` below — that's
+            // the canonical merge target in x402ResourceServer
+            // (`extra: { ...parsedPrice.extra, ...resourceConfig.extra }`),
+            // so a duplicate `price.extra` would be silently shadowed.
             price: {
               asset: USDC,
               amount: PAYMENT_AMOUNT.toString(),
-              extra: { name: 'USDC', version: '2' },
             },
             network: NETWORK,
             payTo: receiver.address,

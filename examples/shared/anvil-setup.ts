@@ -30,7 +30,7 @@ import type { ExampleContext, SetupOptions } from './types.js'
 // Anvil test accounts (deterministic mnemonic)
 // ---------------------------------------------------------------------------
 
-const testAccounts = {
+export const testAccounts = {
   deployer: {
     address: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266' as Address,
     privateKey:
@@ -67,7 +67,7 @@ const allAccountAddresses = Object.values(testAccounts).map((a) => a.address)
 const CHAIN_ID = 84532
 const chainConfig = getChainConfig(CHAIN_ID)
 const USDC = chainConfig.usdc
-const USDC_BALANCE_SLOT = 9n
+export const USDC_BALANCE_SLOT = 9n
 // FORK_BLOCK left undefined — Base Sepolia public RPC has a narrow archive
 // horizon (~last few hundred blocks); pinning a historical block fails with
 // "block not found" once the chain moves past it. Examples fork at upstream's
@@ -79,7 +79,10 @@ const ANVIL_PORT = 8846
 // Helpers
 // ---------------------------------------------------------------------------
 
-function getBalanceSlot(account: Address, baseSlot: bigint): `0x${string}` {
+export function getBalanceSlot(
+  account: Address,
+  baseSlot: bigint,
+): `0x${string}` {
   return keccak256(
     encodeAbiParameters(
       [{ type: 'address' }, { type: 'uint256' }],
