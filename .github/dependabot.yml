@@ -34,9 +34,16 @@ updates:
       interval: weekly
       day: monday
     open-pull-requests-limit: 5
+    # github-actions ecosystem only supports `default-days` (the semver-*-days
+    # sub-fields are SemVer-only and Dependabot rejects them on github-actions
+    # with "property is not supported for the package ecosystem"). 30 days is
+    # the longest defensible value short of the documented 90-day cap: it's
+    # far wider than every observed action supply-chain incident in 2025
+    # (tj-actions/changed-files and reviewdog/action-setup were both detected
+    # and revoked within hours-to-days), while still landing genuine
+    # bug/security fixes within a month.
     cooldown:
-      default-days: 7
-      semver-major-days: 30
+      default-days: 30
     groups:
       actions:
         patterns:
