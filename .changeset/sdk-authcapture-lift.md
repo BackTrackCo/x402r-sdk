@@ -1,7 +1,7 @@
 ---
-"@x402r/core": major
-"@x402r/sdk": major
-"@x402r/helpers": major
+"@x402r/core": minor
+"@x402r/sdk": minor
+"@x402r/helpers": minor
 ---
 
 Lift SDK to the authCapture contract surface (BackTrackCo/x402r-contracts#34, merged at `9786579`).
