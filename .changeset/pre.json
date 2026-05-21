@@ -1,0 +1,12 @@
+{
+  "mode": "pre",
+  "tag": "alpha",
+  "initialVersions": {
+    "examples": "0.0.0",
+    "@x402r/cli": "0.2.0",
+    "@x402r/core": "0.2.0",
+    "@x402r/helpers": "0.2.1",
+    "@x402r/sdk": "0.2.1"
+  },
+  "changesets": []
+}
