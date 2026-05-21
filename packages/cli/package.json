@@ -4,6 +4,11 @@
   "description": "One-shot CLI for paying x402 / x402r endpoints. Wallet-agnostic: raw key, JSON-RPC signer, or custom module.",
   "type": "module",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BackTrackCo/x402r-sdk.git",
+    "directory": "packages/cli"
+  },
   "publishConfig": {
     "access": "public",
     "provenance": true
