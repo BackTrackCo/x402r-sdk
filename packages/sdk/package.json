@@ -3,6 +3,11 @@
   "version": "0.2.1",
   "type": "module",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BackTrackCo/x402r-sdk.git",
+    "directory": "packages/sdk"
+  },
   "publishConfig": {
     "access": "public",
     "provenance": true

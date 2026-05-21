@@ -133,3 +133,13 @@ facilitator.
   skill wrappers can wildcard-allow exact command shapes.
 - Supports Base and Base Sepolia out of the box. Any EVM chain known to
   `viem/chains` works; unknown chain IDs require `--rpc <url>`.
+
+## Provenance
+
+Starting with `0.3.0-alpha.0`, releases of `@x402r/cli` are published with [Sigstore-backed provenance attestations](https://docs.npmjs.com/generating-provenance-statements) via [npm Trusted Publishing](https://docs.npmjs.com/trusted-publishers/). Earlier versions (`0.2.x` and below) do not carry attestations. Verify a provenance-enabled version after install:
+
+```sh
+npm audit signatures @x402r/cli
+```
+
+The attestation bundle is also visible in the npm package metadata under `dist.attestations`. See [`SECURITY.md`](../../SECURITY.md) for the full security policy and how to report vulnerabilities.
