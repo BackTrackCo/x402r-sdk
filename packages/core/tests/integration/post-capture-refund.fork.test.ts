@@ -42,7 +42,7 @@ let paymentInfo: PaymentInfo
 
 beforeAll(async () => {
   ;({ publicClient, testClient, fixtures, paymentInfo } = await setupScenario({
-    salt: 7n,
+    salt: 11n,
   }))
 
   payerClient = createX402r({
