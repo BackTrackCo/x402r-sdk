@@ -139,7 +139,11 @@ async function bootstrapAnvil(): Promise<{
     await testClient.setCode({ address: addr, bytecode: '0x' })
   }
 
-  // Fund the payer with 10K USDC via storage-slot manipulation.
+  // Fund the payer with 10K USDC via storage-slot manipulation. Mirrors the
+  // slot-fallback in shared/anvil-setup.ts: write slot 9 (Base Sepolia USDC
+  // FiatTokenV2_2 balance mapping), then probe and fall back to slot 0 if the
+  // first write didn't land. Defensive — if a future USDC upgrade ever shifts
+  // the slot, both code paths react the same way.
   const payerUsdcAmount = 10_000_000_000n
   const payerSlot = getBalanceSlot(payer.address, USDC_BALANCE_SLOT)
   await testClient.setStorageAt({
@@ -147,6 +151,20 @@ async function bootstrapAnvil(): Promise<{
     index: payerSlot,
     value: numberToHex(payerUsdcAmount, { size: 32 }),
   })
+  const payerBalance = await publicClient.readContract({
+    address: USDC,
+    abi: erc20Abi,
+    functionName: 'balanceOf',
+    args: [payer.address],
+  })
+  if (payerBalance === 0n) {
+    const fallbackSlot = getBalanceSlot(payer.address, 0n)
+    await testClient.setStorageAt({
+      address: USDC,
+      index: fallbackSlot,
+      value: numberToHex(payerUsdcAmount, { size: 32 }),
+    })
+  }
 
   return { publicClient, rpcUrl, cleanup }
 }
