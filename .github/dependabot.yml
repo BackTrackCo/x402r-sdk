@@ -1,14 +1,15 @@
 version: 2
 updates:
-  # npm dependencies across root and all workspace packages.
   - package-ecosystem: npm
-    directories:
-      - "/"
-      - "/packages/*"
+    directory: "/"
     schedule:
       interval: weekly
       day: monday
     open-pull-requests-limit: 10
+    cooldown:
+      default-days: 7
+      semver-minor-days: 14
+      semver-major-days: 30
     groups:
       production-dependencies:
         dependency-type: production
@@ -17,14 +18,14 @@ updates:
         dependency-type: development
         update-types: [minor, patch]
 
-  # GitHub Actions used in workflows. Actions are SHA-pinned; Dependabot
-  # updates the SHA and the trailing `# vX.Y.Z` comment together.
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
       interval: weekly
       day: monday
     open-pull-requests-limit: 5
+    cooldown:
+      default-days: 30
     groups:
       actions:
         patterns:
