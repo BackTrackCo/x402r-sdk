@@ -16,6 +16,7 @@ import {
   createTestClient,
   createWalletClient,
   erc20Abi,
+  type Hash,
   http,
   numberToHex,
   parseEventLogs,
@@ -420,7 +421,7 @@ async function main(): Promise<void> {
       runner.fail('settleResponse missing transaction hash')
     }
     const receipt = await ctx.publicClient.getTransactionReceipt({
-      hash: settleResponse.transaction as `0x${string}`,
+      hash: settleResponse.transaction as Hash,
     })
     runner.assert(
       receipt.status === 'success',
