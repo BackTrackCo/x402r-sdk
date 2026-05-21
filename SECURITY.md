@@ -4,12 +4,7 @@ This policy covers the code in this repository and the `@x402r/*` packages it pu
 
 ## Supported Versions
 
-`@x402r/{core,sdk,helpers,cli}` are pre-1.0. Security fixes target the current `0.x` minor; older minors may not receive backports. We're a small team — please upgrade to the latest minor before reporting a vulnerability so we can confirm it still reproduces against supported code.
-
-| Version | Supported          |
-| ------- | ------------------ |
-| Latest `0.x` minor | Yes |
-| Older `0.x` minors | Best-effort only |
+`@x402r/{core,sdk,helpers,cli}` are pre-1.0. Security fixes target the current `0.x` minor; older minors receive best-effort backports only. We're a small team — please upgrade to the latest minor before reporting a vulnerability so we can confirm it still reproduces against supported code.
 
 ## Reporting a Vulnerability
 
@@ -38,6 +33,8 @@ A useful report includes:
 - **Disclosure**: coordinated with the reporter. We'll credit you in the advisory unless you'd rather stay anonymous
 
 Soft commitments only — we'll do our best, but we don't have a 24/7 on-call rotation.
+
+We do not currently run a paid bug bounty program. Credit in the published advisory is the recognition we can offer.
 
 ## Scope
 
