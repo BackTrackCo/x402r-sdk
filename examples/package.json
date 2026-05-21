@@ -17,6 +17,7 @@
     "scenario:atomic-charge": "tsx scenarios/atomic-charge.ts",
     "scenario:partial-refund-flow": "tsx scenarios/partial-refund-flow.ts",
     "scenario:permit2-charge": "tsx scenarios/permit2-charge.ts",
+    "scenario:http-wire-capture": "tsx scenarios/http-wire-capture.ts",
     "scenarios:ci": "tsx scripts/scenarios-ci.ts"
   },
   "dependencies": {
@@ -27,6 +28,13 @@
     "viem": "^2.46.3"
   },
   "devDependencies": {
-    "@types/node": "^22.12.0"
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.12.0",
+    "@x402/core": "2.12.0",
+    "@x402/evm": "2.12.0",
+    "@x402/express": "2.12.0",
+    "@x402/fetch": "2.12.0",
+    "@x402r/evm": "0.2.0-alpha.0",
+    "express": "^5.0.0"
   }
 }
