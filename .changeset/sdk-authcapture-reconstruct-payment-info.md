@@ -1,6 +1,6 @@
 ---
-"@x402r/core": major
-"@x402r/helpers": major
+"@x402r/core": minor
+"@x402r/helpers": minor
 ---
 
 Add the `PaymentInfo` namespace in `@x402r/core` (re-exported from `@x402r/sdk`) and add `reconstructPaymentInfoWire` in `@x402r/helpers`. Together they bridge the authCapture wire format to the bigint shape SDK actions accept.

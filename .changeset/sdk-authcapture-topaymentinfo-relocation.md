@@ -1,6 +1,6 @@
 ---
-"@x402r/core": major
-"@x402r/helpers": major
+"@x402r/core": minor
+"@x402r/helpers": minor
 ---
 
 `toPaymentInfo` relocation (PR 4 of authCapture migration).
