@@ -56,11 +56,20 @@ export default defineConfig({
           name: 'core:fork',
           include: ['tests/integration/**/*.fork.test.ts'],
           globalSetup: ['tests/setup/globalSetup.ts'],
+          setupFiles: ['tests/setup/snapshot-revert.ts'],
           testTimeout: 60_000,
           hookTimeout: 60_000,
           passWithNoTests: true,
           // Fork RPC (Alchemy) can be flaky — retry individual tests instead of restarting the suite
           retry: 3,
+          // Run fork-test files sequentially (one at a time). The setupFiles
+          // snapshot/revert above gives per-file state isolation structurally
+          // — we no longer need parallel workers each spawning their own
+          // Anvil child fork. Parallel cold-spawns rate-limit Base Sepolia's
+          // public RPC and make `evm_snapshot` 400 unreliably on fresh prool
+          // subpaths. Empirically the sequential run is also faster than
+          // multi-worker parallel runs because we save N-1 fork-startup costs.
+          fileParallelism: false,
         },
       },
     ],
