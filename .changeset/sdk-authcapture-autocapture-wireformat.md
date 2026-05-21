@@ -1,7 +1,7 @@
 ---
-"@x402r/core": major
-"@x402r/helpers": major
-"@x402r/cli": major
+"@x402r/core": minor
+"@x402r/helpers": minor
+"@x402r/cli": minor
 ---
 
 authCapture wire format + autoCapture (PR 2/4 of authCapture migration).
