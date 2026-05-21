@@ -68,6 +68,14 @@ const chainConfig = getChainConfig(CHAIN_ID)
 const USDC: Address = chainConfig.usdc
 const AUTH_CAPTURE_ESCROW: Address = chainConfig.authCaptureEscrow
 
+// Canonical EIP-3009 token collector for the authCapture scheme — same
+// address on every chain commerce-payments is deployed to. Source:
+// @x402r/evm/authCapture/constants.ts (EIP3009_TOKEN_COLLECTOR_ADDRESS).
+// Hard-coded here rather than re-imported because that module isn't on
+// @x402r/evm's public export surface; only the schemes are.
+const EIP3009_TOKEN_COLLECTOR: Address =
+  '0x0E3dF9510de65469C4518D7843919c0b8C7A7757'
+
 // Reuse the deterministic Anvil accounts from shared/anvil-setup.ts.
 // deployer (#0) doubles as the facilitator EOA + captureAuthorizer so on-chain
 // `onlySender(operator)` resolves to msg.sender == captureAuthorizer on the
@@ -461,15 +469,25 @@ async function main(): Promise<void> {
       `receiver USDC unchanged (autoCapture left unset); actual delta ${receiverAfter - receiverBefore}`,
     )
 
-    runner.step('Verify escrow internal state via paymentState(hash)')
-    // Token balance checks above prove value moved. They do NOT prove the
-    // escrow's internal `_paymentState` mapping was updated — a contract bug
-    // or migration that moves tokens via ERC-3009 but leaves capturableAmount
-    // / hasCollectedPayment unset would pass everything above and only
-    // surface when a downstream capture tried to operate on the missing
-    // state. (Note: an off-by-one paymentInfoHash failure mode isn't
-    // reachable in practice — the same hash is the ERC-3009 nonce, so a
-    // bad hash either reverts the tx or debits the wrong payer.)
+    runner.step('Verify PaymentAuthorized event args + escrow internal state')
+    // Token balance checks above prove value moved. They do NOT prove:
+    //   1. the wire format the resource server published matched what the
+    //      facilitator settled with (payer / receiver / token / amount). If
+    //      the resource server emitted requirements with the wrong payer or
+    //      receiver, the facilitator would faithfully settle to those values,
+    //      paymentState would line up with the wrong hash, and every prior
+    //      assertion would still pass — the bug would only surface at
+    //      capture-time downstream.
+    //   2. the escrow's internal `_paymentState` mapping was actually
+    //      updated. A contract bug that moves tokens via ERC-3009 but leaves
+    //      capturableAmount / hasCollectedPayment unset would pass every
+    //      prior check and only surface when a downstream capture tried to
+    //      operate on missing state.
+    // Parsing the on-chain PaymentAuthorized event and reading paymentState
+    // closes both classes. (Note: an off-by-one paymentInfoHash failure mode
+    // is NOT reachable in practice — the same hash is the ERC-3009 nonce,
+    // so a bad hash either reverts the tx or debits the wrong payer, which
+    // the payer-↓ check above catches.)
     const authorizedEvents = parseEventLogs({
       abi: authCaptureEscrowAbi,
       eventName: 'PaymentAuthorized',
@@ -479,7 +497,39 @@ async function main(): Promise<void> {
       authorizedEvents.length === 1,
       `exactly one PaymentAuthorized event emitted (got ${authorizedEvents.length})`,
     )
-    const paymentInfoHash = authorizedEvents[0].args.paymentInfoHash
+    const { paymentInfoHash, paymentInfo, amount, tokenCollector } =
+      authorizedEvents[0].args
+    runner.assert(
+      paymentInfo.payer.toLowerCase() === payer.address.toLowerCase(),
+      `event paymentInfo.payer === payer (${payer.address}); actual ${paymentInfo.payer}`,
+    )
+    runner.assert(
+      paymentInfo.receiver.toLowerCase() === receiver.address.toLowerCase(),
+      `event paymentInfo.receiver === receiver (${receiver.address}); actual ${paymentInfo.receiver}`,
+    )
+    runner.assert(
+      paymentInfo.token.toLowerCase() === USDC.toLowerCase(),
+      `event paymentInfo.token === USDC (${USDC}); actual ${paymentInfo.token}`,
+    )
+    runner.assert(
+      paymentInfo.operator.toLowerCase() === deployer.address.toLowerCase(),
+      `event paymentInfo.operator === captureAuthorizer / deployer (${deployer.address}); actual ${paymentInfo.operator}`,
+    )
+    runner.assert(
+      amount === PAYMENT_AMOUNT,
+      `event amount === PAYMENT_AMOUNT (${PAYMENT_AMOUNT}); actual ${amount}`,
+    )
+    // tokenCollector is the canonical EIP-3009 collector for the default
+    // assetTransferMethod ('eip3009') the scheme uses when the merchant
+    // doesn't override it. Source: @x402r/evm/authCapture/constants.ts
+    // (EIP3009_TOKEN_COLLECTOR_ADDRESS). Pinning the value here catches a
+    // scheme regression that silently switched the collector (e.g.,
+    // accidentally routed through Permit2's collector).
+    runner.assert(
+      tokenCollector.toLowerCase() === EIP3009_TOKEN_COLLECTOR.toLowerCase(),
+      `event tokenCollector === EIP3009 collector (${EIP3009_TOKEN_COLLECTOR}); actual ${tokenCollector}`,
+    )
+
     const [hasCollectedPayment, capturableAmount, refundableAmount] =
       await ctx.publicClient.readContract({
         address: AUTH_CAPTURE_ESCROW,
