@@ -128,6 +128,16 @@ Deeper protocol semantics live in [docs.x402r.org](https://docs.x402r.org).
 
 [docs.x402r.org](https://docs.x402r.org)
 
+## Provenance
+
+Starting with `0.3.0-alpha.0`, releases of `@x402r/sdk` are published with [Sigstore-backed provenance attestations](https://docs.npmjs.com/generating-provenance-statements) via [npm Trusted Publishing](https://docs.npmjs.com/trusted-publishers/). Earlier versions (`0.2.x` and below) do not carry attestations. Verify a provenance-enabled version after install:
+
+```sh
+npm audit signatures @x402r/sdk
+```
+
+The attestation bundle is also visible in the npm package metadata under `dist.attestations`. See [`SECURITY.md`](../../SECURITY.md) for the full security policy and how to report vulnerabilities.
+
 ## License
 
 [Apache-2.0](../../LICENSE)
