@@ -1,3 +1,4 @@
+import type { Server as HttpServer } from 'node:http'
 import { x402Client } from '@x402/core/client'
 import { x402Facilitator } from '@x402/core/facilitator'
 import { HTTPFacilitatorClient, x402HTTPClient } from '@x402/core/http'
@@ -82,6 +83,22 @@ const EIP3009_TOKEN_COLLECTOR: Address =
 // direct-EOA path (no bytecode after setCode clears it). payer = #1, receiver
 // = #2 — same role-mapping as the direct-SDK scenarios.
 const { deployer, payer, receiver } = testAccounts
+
+// Await the http.Server's 'listening' event before its URL is handed out,
+// so a fast paidFetch on a cold runner doesn't race the socket bind. On
+// bind error close defensively before rejecting — server.close() is
+// idempotent on an unbound socket and the helper-local server isn't
+// reachable from main()'s finally block once the helper has rejected.
+function waitForListening(server: HttpServer, label: string): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    server.once('listening', () => resolve())
+    server.once('error', (err) => {
+      server.close(() => {
+        reject(new Error(`failed to bind ${label}: ${err.message}`))
+      })
+    })
+  })
+}
 
 // ---------------------------------------------------------------------------
 // 1. Anvil bootstrap (inline subset of shared/anvil-setup.ts).
@@ -239,21 +256,8 @@ async function startFacilitator(rpcUrl: string): Promise<{
     res.json(facilitator.getSupported())
   })
 
-  // Express's app.listen returns the http.Server synchronously; the
-  // 'listening' event fires asynchronously. Await it before returning the URL
-  // so a fast paidFetch on a cold runner doesn't race the bind. On bind error
-  // the parent's finally block can't reach this server (startFacilitator
-  // never returned), so close defensively before rejecting — server.close()
-  // is idempotent on an unbound socket.
   const server = app.listen(PORT_FACILITATOR)
-  await new Promise<void>((resolve, reject) => {
-    server.once('listening', () => resolve())
-    server.once('error', (err) => {
-      server.close(() => {
-        reject(new Error(`failed to bind ${PORT_FACILITATOR}: ${err.message}`))
-      })
-    })
-  })
+  await waitForListening(server, `facilitator port ${PORT_FACILITATOR}`)
   return {
     url: `http://127.0.0.1:${PORT_FACILITATOR}`,
     stop: () => new Promise<void>((resolve) => server.close(() => resolve())),
@@ -339,19 +343,8 @@ async function startResourceServer(
     res.send({ ok: true })
   })
 
-  // See startFacilitator for the rationale on awaiting 'listening' + the
-  // defensive close-on-error.
   const server = app.listen(PORT_RESOURCE_SERVER)
-  await new Promise<void>((resolve, reject) => {
-    server.once('listening', () => resolve())
-    server.once('error', (err) => {
-      server.close(() => {
-        reject(
-          new Error(`failed to bind ${PORT_RESOURCE_SERVER}: ${err.message}`),
-        )
-      })
-    })
-  })
+  await waitForListening(server, `resource-server port ${PORT_RESOURCE_SERVER}`)
   return {
     url: `http://127.0.0.1:${PORT_RESOURCE_SERVER}`,
     stop: () => new Promise<void>((resolve) => server.close(() => resolve())),
