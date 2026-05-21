@@ -24,8 +24,15 @@ jobs:
   # Job 1: open/update the "Version Packages" PR if there are pending
   # changesets. Doesn't publish anything. No publish secrets are needed
   # so no OIDC scope and no env gate.
+  #
+  # Ref guard: `workflow_dispatch` lets the operator pick any ref from
+  # the branch dropdown. Without binding to main, a dispatch from a
+  # stale feature branch could spend our `pull-requests: write` token
+  # opening Version PRs against arbitrary refs. Matches the 22/23
+  # upstream x402-ecosystem publish workflows that carry this guard.
   version:
     name: Version
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     outputs:
@@ -55,12 +62,10 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
 
-      # Trusted Publishing needs npm >= 11.5.1. Pin a specific version
-      # rather than @latest so a compromised npm release can't auto-land
-      # on the privileged runner. Same defense as SHA-pinning actions.
-      - name: Pin npm
-        run: npm install --global npm@11.14.1 --ignore-scripts
-
+      # Note: no `Pin npm` step here. The version job only mutates files
+      # via `changeset version` + opens a PR via the action — it never
+      # calls `npm publish`, so the Trusted-Publishing-driven npm >= 11.5.1
+      # pin is unused. The publish job has the pin where it's needed.
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
 
@@ -77,9 +82,14 @@ jobs:
   # Job 2: publish to npm. Only runs when the version job found NO
   # pending changesets (i.e., the Version PR was already merged on a
   # previous dispatch and the workspace versions are bumped + clean).
+  #
+  # Ref guard: same defense as the version job — bind to main so a
+  # dispatch from a stale feature branch can't mint a valid OIDC token
+  # and publish from an unintended ref (`environment + workflow filename`
+  # alone doesn't restrict the ref).
   publish:
     name: Publish to npm
-    if: needs.version.outputs.hasChangesets == 'false'
+    if: github.ref == 'refs/heads/main' && needs.version.outputs.hasChangesets == 'false'
     needs: version
     runs-on: ubuntu-latest
     timeout-minutes: 20
