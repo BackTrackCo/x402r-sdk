@@ -115,10 +115,10 @@ importers:
         version: 2.5.0(ethers@6.16.0)(typescript@5.9.3)
       '@x402r/evm':
         specifier: '>=0.2.0-alpha.0 <0.3.0'
-        version: 0.2.0-alpha.0(@x402/core@2.5.0)(@x402/evm@2.5.0(ethers@6.16.0)(typescript@5.9.3))(viem@2.47.1(typescript@5.9.3)(zod@4.3.6))
+        version: 0.2.0-alpha.0(@x402/core@2.5.0)(@x402/evm@2.5.0(ethers@6.16.0)(typescript@5.9.3))(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))
       viem:
         specifier: ^2.46.3
-        version: 2.47.1(typescript@5.9.3)(zod@4.3.6)
+        version: 2.47.1(typescript@5.9.3)(zod@3.25.76)
     devDependencies:
       '@types/node':
         specifier: ^20.0.0
@@ -153,8 +153,8 @@ importers:
         specifier: workspace:^
         version: link:../core
       '@x402r/erc8004':
-        specifier: ^0.1.0-alpha.1
-        version: 0.1.0-alpha.1(viem@2.47.1(typescript@5.9.3)(zod@4.3.6))
+        specifier: ^0.1.0-alpha.2
+        version: 0.1.0-alpha.2(viem@2.47.1(typescript@5.9.3)(zod@4.3.6))
       viem:
         specifier: ^2.46.3
         version: 2.47.1(typescript@5.9.3)(zod@4.3.6)
@@ -1240,8 +1240,8 @@ packages:
   '@x402/fetch@2.12.0':
     resolution: {integrity: sha512-lkN/fzkZjnbJreLwI3fessKAaTKsOrrc0mFPGHWwZy0W/s8KFusLwdHuS8ul/XdUyNcYYrwcV6z0faGGSWNUNA==}
 
-  '@x402r/erc8004@0.1.0-alpha.1':
-    resolution: {integrity: sha512-fmxSbpFAR/bVLmzcLpxyPZhr/8wAeEaLthZ8Q0PqNeO4oTGNTeoLBXOHTZMaLdETsileDHcSJJmwxbXJ3z214Q==}
+  '@x402r/erc8004@0.1.0-alpha.2':
+    resolution: {integrity: sha512-OXOz8xSlVzNEcBoV4V6Gl9uB/HFKNbDvA4PHgwTEKXsU71N3NynfuRMXAQCvwle/SfFIFy3ndGdkC/Vi2+Su3Q==}
     engines: {node: '>=18'}
     peerDependencies:
       viem: ^2.0.0
@@ -3785,7 +3785,7 @@ snapshots:
     dependencies:
       '@x402/core': 2.12.0
 
-  '@x402r/erc8004@0.1.0-alpha.1(viem@2.47.1(typescript@5.9.3)(zod@4.3.6))':
+  '@x402r/erc8004@0.1.0-alpha.2(viem@2.47.1(typescript@5.9.3)(zod@4.3.6))':
     dependencies:
       viem: 2.47.1(typescript@5.9.3)(zod@4.3.6)
 
@@ -3801,11 +3801,11 @@ snapshots:
       '@x402/evm': 2.12.0(typescript@5.9.3)
       viem: 2.50.4(typescript@5.9.3)(zod@4.3.6)
 
-  '@x402r/evm@0.2.0-alpha.0(@x402/core@2.5.0)(@x402/evm@2.5.0(ethers@6.16.0)(typescript@5.9.3))(viem@2.47.1(typescript@5.9.3)(zod@4.3.6))':
+  '@x402r/evm@0.2.0-alpha.0(@x402/core@2.5.0)(@x402/evm@2.5.0(ethers@6.16.0)(typescript@5.9.3))(viem@2.47.1(typescript@5.9.3)(zod@3.25.76))':
     dependencies:
       '@x402/core': 2.5.0
       '@x402/evm': 2.5.0(ethers@6.16.0)(typescript@5.9.3)
-      viem: 2.47.1(typescript@5.9.3)(zod@4.3.6)
+      viem: 2.47.1(typescript@5.9.3)(zod@3.25.76)
 
   abitype@1.2.3(typescript@5.9.3)(zod@3.25.76):
     optionalDependencies:
