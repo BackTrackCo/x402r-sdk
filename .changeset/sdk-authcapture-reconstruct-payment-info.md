@@ -9,7 +9,8 @@ Add the `PaymentInfo` namespace and `reconstructPaymentInfoWire` to bridge the a
 
 - `PaymentInfo` is now both a type and a namespace const in `@x402r/core` (re-exported from `@x402r/sdk`). Use `PaymentInfo.fromWire(wire)` to convert a JSON-form `PaymentInfoWire` to the bigint `PaymentInfo`, and `PaymentInfo.toWire(info)` for the reverse.
 - `PaymentInfoWire` type in `@x402r/core` — derived from the contract ABI, stays in sync at compile time when the ABI changes.
-- `reconstructPaymentInfoWire(context)` in `@x402r/helpers` — builds the wire JSON form from a verified `SettleResultContext`. Handles the wire-to-struct field renames and the EIP-3009 / Permit2 branch internally.
+- `reconstructPaymentInfoWire(context)` in `@x402r/helpers` — builds the wire JSON form from a verified `SettleResultContext`.
+- `@x402r/core` no longer declares `@x402r/evm` as a peer dependency. Consumers using only `@x402r/core` (arbiters, standalone wallet code) no longer need `@x402r/evm` installed.
 
 **Breaking**
 

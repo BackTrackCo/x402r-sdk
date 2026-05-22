@@ -4,12 +4,12 @@
 "@x402r/helpers": minor
 ---
 
-Lift the SDK to the authCapture contract surface. Clean break — no shims, no back-compat aliases.
+Lift the SDK to the authCapture contract surface.
 
 **Breaking — operator methods**
 
 - `release()` → `capture()` (SDK + on-chain).
-- `refundInEscrow(paymentInfo, amount, data)` → `voidPayment(paymentInfo, data?)`. `void` is full-only and drops the `amount` argument; use partial capture + void remainder for the old partial-refund flow (see below).
+- `refundInEscrow(paymentInfo, amount, data)` → `voidPayment(paymentInfo, data?)`. `void` is full-only and drops the `amount` argument; use partial capture + void remainder for the old partial-refund flow.
 - `refundPostEscrow()` → `refund()`. Allowance helpers renamed: `approvePostEscrowRefund` → `approveRefundAllowance`, `getPostEscrowRefundAllowance` → `getRefundAllowance`.
 - `OperatorConfig.feeRecipient` → `feeReceiver`. `OperatorSlots` fields renamed to `authorizeHook`, `captureCondition`, `feeReceiver`, etc.
 
@@ -23,9 +23,9 @@ Lift the SDK to the authCapture contract surface. Clean break — no shims, no b
 **Breaking — types, slots, events, errors**
 
 - `ConditionConfig` (constructor plugin-config arg) → `PluginConfig`. Shape is now `{authorize, charge, capture, void, refund} × {PreActionCondition, PostActionHook}` per action plus `feeReceiver` and `feeCalculator`. Use named-field syntax.
-- Slot getters renamed: `AUTHORIZE_CONDITION` → `AUTHORIZE_PRE_ACTION_CONDITION`, `AUTHORIZE_RECORDER` → `AUTHORIZE_POST_ACTION_HOOK` (same pattern for charge/capture/void/refund). `FEE_RECIPIENT` → `FEE_RECEIVER`.
+- Slot getters renamed: `AUTHORIZE_CONDITION` → `AUTHORIZE_PRE_ACTION_CONDITION`, `AUTHORIZE_RECORDER` → `AUTHORIZE_POST_ACTION_HOOK`. `FEE_RECIPIENT` → `FEE_RECEIVER`.
 - Events renamed to `<Verb>Executed`: `AuthorizationCreated` → `AuthorizeExecuted`, `ReleaseExecuted` → `CaptureExecuted`, `RefundInEscrowExecuted` → `VoidExecuted`, `RefundPostEscrowExecuted` → `RefundExecuted`. `VoidExecuted` no longer carries `amount`. `FeesDistributed.arbiterAmount` → `operatorAmount`.
-- Errors: `ConditionNotMet` → `PreActionConditionNotMet`. `ReleaseLocked` → `CaptureLocked`.
+- Errors: `ConditionNotMet` → `PreActionConditionNotMet`.
 
 **Breaking — chains and addresses**
 
