@@ -1,13 +1,5 @@
 name: Release
 
-# Manually triggered only. Click "Run workflow" in the Actions UI when
-# you want to either open/update the Version Packages PR (if there are
-# pending changesets) or publish to npm (after the Version PR is merged).
-#
-# Changesets self-selects which mode to run via its `hasChangesets`
-# output — one click does the right thing.
-#
-# Industry pattern: changesets/changesets uses the same two-job split.
 # See x402r-notes/sdk/RELEASING.md for the operator runbook.
 on:
   workflow_dispatch:
