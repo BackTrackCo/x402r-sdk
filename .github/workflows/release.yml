@@ -64,7 +64,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
-          persist-credentials: false
+          # Persist the App installation token in local git config so the
+          # version-bump push to changeset-release/main authenticates.
+          # changesets/action pushes via git CLI under the hood; env
+          # GITHUB_TOKEN only flows to octokit and user scripts, so without
+          # token: + persisted credentials the push has no auth.
+          token: ${{ steps.app-token.outputs.token }}
           # Full history so changesets can generate complete changelogs.
           fetch-depth: 0
 
@@ -148,7 +153,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
-          persist-credentials: false
+          # Same reason as version job: persisted App token is needed
+          # because `changeset publish` creates and pushes git tags via
+          # git CLI; without persisted credentials the tag push has no auth.
+          token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
 
       - name: Setup pnpm
