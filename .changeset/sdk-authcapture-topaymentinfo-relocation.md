@@ -3,12 +3,13 @@
 "@x402r/helpers": minor
 ---
 
-`toPaymentInfo` relocation (PR 4 of authCapture migration).
+Relocate `toPaymentInfo` from `@x402r/core` to `@x402r/helpers`. `@x402r/core` is now zero-dependency on `@x402*` packages (only `viem`).
 
 **Breaking**
 
-- `@x402r/core`: removed `toPaymentInfo` and `ToPaymentInfoReturnType` exports. Wire-format conversion lives in `@x402r/helpers` now — import from `@x402r/helpers` instead. Also drops `@x402r/core`'s `@x402r/evm` peerDep since core no longer references wire-format types.
+- `@x402r/core` no longer exports `toPaymentInfo` or `ToPaymentInfoReturnType`. Import from `@x402r/helpers` instead.
+- `@x402r/core` no longer declares `@x402r/evm` as a peer dependency.
 
 **New**
 
-- `@x402r/helpers`: added `toPaymentInfo` and `ToPaymentInfoReturnType` exports. Converts the on-chain `PaymentInfoStruct` (string-encoded uints from the wire) to the runtime `PaymentInfo` (bigint) used by SDK action helpers.
+- `@x402r/helpers` exports `toPaymentInfo` and `ToPaymentInfoReturnType`. Converts the on-chain `PaymentInfoStruct` (string-encoded uints) to the runtime `PaymentInfo` (bigint).
