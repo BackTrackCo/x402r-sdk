@@ -1,13 +1,5 @@
 name: Release
 
-# Manually triggered only. Click "Run workflow" in the Actions UI when
-# you want to either open/update the Version Packages PR (if there are
-# pending changesets) or publish to npm (after the Version PR is merged).
-#
-# Changesets self-selects which mode to run via its `hasChangesets`
-# output — one click does the right thing.
-#
-# Industry pattern: changesets/changesets uses the same two-job split.
 # See x402r-notes/sdk/RELEASING.md for the operator runbook.
 on:
   workflow_dispatch:
@@ -46,10 +38,30 @@ jobs:
         with:
           egress-policy: audit
 
+      # Mint a GitHub App installation token for changesets/action. Required
+      # because PRs opened with the default GITHUB_TOKEN don't trigger
+      # downstream workflows (GitHub Actions anti-recursion), which would
+      # skip required CI on the Version Packages PR. App-token-opened PRs
+      # trigger workflows like a human-opened PR would. See
+      # x402r-notes/sdk/RELEASING.md.
+      - name: Mint release-bot installation token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1  # v3.2.0
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
-          persist-credentials: false
+          # Persist the App installation token in local git config so the
+          # version-bump push to changeset-release/main authenticates.
+          # changesets/action pushes via git CLI under the hood; env
+          # GITHUB_TOKEN only flows to octokit and user scripts, so without
+          # token: + persisted credentials the push has no auth.
+          token: ${{ steps.app-token.outputs.token }}
           # Full history so changesets can generate complete changelogs.
           fetch-depth: 0
 
@@ -81,7 +93,7 @@ jobs:
           commit: "chore(release): version packages"
           title: "chore(release): version packages"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
 
   # Job 2: publish to npm. Only runs when the version job found NO
   # pending changesets (i.e., the Version PR was already merged on a
@@ -118,10 +130,25 @@ jobs:
         with:
           egress-policy: audit
 
+      # Mint a GitHub App installation token so GitHub release entries
+      # created by changesets/action are attributed to the App rather
+      # than github-actions[bot]. npm publishing itself uses Trusted
+      # Publishing (OIDC) and does not consume this token.
+      - name: Mint release-bot installation token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1  # v3.2.0
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
-          persist-credentials: false
+          # Same reason as version job: persisted App token is needed
+          # because `changeset publish` creates and pushes git tags via
+          # git CLI; without persisted credentials the tag push has no auth.
+          token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
 
       - name: Setup pnpm
@@ -160,4 +187,4 @@ jobs:
           publish: pnpm exec changeset publish
           createGithubReleases: true
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
