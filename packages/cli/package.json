@@ -1,6 +1,6 @@
 {
   "name": "@x402r/cli",
-  "version": "0.2.0",
+  "version": "0.3.0-alpha.0",
   "description": "One-shot CLI for paying x402 / x402r endpoints. Wallet-agnostic: raw key, JSON-RPC signer, or custom module.",
   "type": "module",
   "license": "Apache-2.0",
