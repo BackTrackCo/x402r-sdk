@@ -8,5 +8,10 @@
     "@x402r/helpers": "0.2.1",
     "@x402r/sdk": "0.2.1"
   },
-  "changesets": []
+  "changesets": [
+    "sdk-authcapture-autocapture-wireformat",
+    "sdk-authcapture-lift",
+    "sdk-authcapture-permit2",
+    "sdk-authcapture-reconstruct-payment-info"
+  ]
 }
