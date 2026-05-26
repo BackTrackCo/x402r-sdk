@@ -1,8 +1,13 @@
 import { encodePaymentRequiredHeader } from '@x402/core/http'
 import type { PaymentRequired, PaymentRequirements } from '@x402/core/types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { Malformed402Error, MaxAmountExceededError } from '../src/errors.js'
-import { pay } from '../src/pay/index.js'
+import {
+  Malformed402Error,
+  MaxAmountExceededError,
+  SettlementError,
+} from '../src/errors.js'
+import type { SignerMeta } from '../src/pay/index.js'
+import { applyPaymentResult, pay } from '../src/pay/index.js'
 
 const USDC = '0x036CbD53842c5426634e7929541eC2318f3dCF7e'
 const KEY = `0x${'1'.repeat(64)}`
@@ -65,9 +70,9 @@ describe('pay()', () => {
 
     const result = await pay({ url: URL, key: KEY })
 
+    expect(result.kind).toBe('no_payment_required')
     expect(result.status).toBe(200)
     expect(result.body).toBe('{"ok":true}')
-    expect(result.signer).toBeUndefined()
     expect(fetchSpy).toHaveBeenCalledTimes(1)
   })
 
@@ -147,5 +152,130 @@ describe('pay()', () => {
     await expect(
       pay({ url: URL, key: KEY, assetTransferMethod: 'gibberish' }),
     ).rejects.toThrow(/--asset-transfer-method must be 'eip3009' or 'permit2'/)
+  })
+})
+
+describe('applyPaymentResult()', () => {
+  const SIGNER: SignerMeta = {
+    kind: 'key',
+    address: '0xabCDef0123456789abcdef0123456789ABcdEF01',
+  }
+  const STARTED = Date.now() - 100
+
+  it('maps success → kind:success with tx from settleResponse', () => {
+    const result = applyPaymentResult(
+      {
+        kind: 'success',
+        response: new Response(null),
+        body: { ok: true },
+        settleResponse: {
+          success: true,
+          transaction: '0xdeadbeef',
+          network: 'eip155:84532',
+        } as never,
+      },
+      200,
+      STARTED,
+      SIGNER,
+    )
+
+    expect(result.kind).toBe('success')
+    if (result.kind !== 'success') throw new Error('unreachable')
+    expect(result.tx).toBe('0xdeadbeef')
+    expect(result.status).toBe(200)
+    expect(result.body).toBe('{"ok":true}')
+    expect(result.signer).toEqual(SIGNER)
+    expect(result.elapsedMs).toBeGreaterThanOrEqual(0)
+  })
+
+  it('maps passthrough → kind:passthrough with no tx field', () => {
+    const result = applyPaymentResult(
+      {
+        kind: 'passthrough',
+        response: new Response(null),
+        body: 'raw text body',
+      },
+      200,
+      STARTED,
+      SIGNER,
+    )
+
+    expect(result.kind).toBe('passthrough')
+    if (result.kind !== 'passthrough') throw new Error('unreachable')
+    expect(result.body).toBe('raw text body')
+    expect(result.status).toBe(200)
+    expect(result.signer).toEqual(SIGNER)
+    expect('tx' in result).toBe(false)
+  })
+
+  it('maps settle_failed → SettlementError with errorReason in message', () => {
+    expect(() =>
+      applyPaymentResult(
+        {
+          kind: 'settle_failed',
+          response: new Response(null),
+          body: null,
+          settleResponse: {
+            success: false,
+            errorReason: 'insufficient_funds',
+            network: 'eip155:84532',
+          } as never,
+        },
+        402,
+        STARTED,
+        SIGNER,
+      ),
+    ).toThrowError(new SettlementError('settlement failed: insufficient_funds'))
+  })
+
+  it('maps settle_failed without errorReason → "unknown"', () => {
+    expect(() =>
+      applyPaymentResult(
+        {
+          kind: 'settle_failed',
+          response: new Response(null),
+          body: null,
+          settleResponse: {
+            success: false,
+            network: 'eip155:84532',
+          } as never,
+        },
+        402,
+        STARTED,
+        SIGNER,
+      ),
+    ).toThrowError(new SettlementError('settlement failed: unknown'))
+  })
+
+  it('maps payment_required → SettlementError re-issued message', () => {
+    expect(() =>
+      applyPaymentResult(
+        {
+          kind: 'payment_required',
+          response: new Response(null),
+          paymentRequired: {} as never,
+        },
+        402,
+        STARTED,
+        SIGNER,
+      ),
+    ).toThrowError(new SettlementError('merchant re-issued 402 after payment'))
+  })
+
+  it('maps error → SettlementError with truncated body', () => {
+    const longBody = 'x'.repeat(500)
+    expect(() =>
+      applyPaymentResult(
+        {
+          kind: 'error',
+          response: new Response(null),
+          status: 503,
+          body: longBody,
+        },
+        503,
+        STARTED,
+        SIGNER,
+      ),
+    ).toThrow(/merchant returned 503 after payment: x{200}…/)
   })
 })
