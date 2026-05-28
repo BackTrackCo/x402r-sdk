@@ -114,6 +114,13 @@ describe('Delivery Protection: operator config verification', () => {
       operatorAddress: deployment.operatorAddress,
     })
 
+    // chargeCondition: NotCondition(AlwaysTrue) — blocks the immediate-charge
+    // bypass. Must be a real condition, never zeroAddress ("always allow").
+    expect(config.chargeCondition.toLowerCase()).toBe(
+      deployment.chargeBlockConditionAddress.toLowerCase(),
+    )
+    expect(config.chargeCondition).not.toBe(zeroAddress)
+
     // releaseCondition: OrCondition([SAC(arbiter), PayerCondition])
     expect(config.releaseCondition.toLowerCase()).toBe(
       deployment.releaseConditionAddress.toLowerCase(),

@@ -4,6 +4,7 @@ import {
   andConditionFactoryAbi,
   escrowPeriodFactoryAbi,
   freezeFactoryAbi,
+  notConditionFactoryAbi,
   orConditionFactoryAbi,
   paymentOperatorFactoryAbi,
   recorderCombinatorFactoryAbi,
@@ -26,6 +27,7 @@ import {
   computeEscrowPeriodAddress,
   computeFeeCalculatorAddress,
   computeFreezeAddress,
+  computeNotConditionAddress,
   computeOperatorAddress,
   computeOrConditionAddress,
   computeRecorderCombinatorAddress,
@@ -1078,6 +1080,8 @@ export interface DeliveryProtectionOperatorPreview {
   operatorAddress: Address
   escrowPeriodAddress: Address
   arbiterConditionAddress: Address
+  /** NotCondition(AlwaysTrue) wired into chargeCondition to block the immediate-charge bypass */
+  chargeBlockConditionAddress: Address
   releaseConditionAddress: Address
   refundInEscrowConditionAddress: Address
   authorizeRecorderAddress: Address
@@ -1089,6 +1093,8 @@ export interface DeliveryProtectionOperatorDeployment {
   operatorAddress: Address
   escrowPeriodAddress: Address
   arbiterConditionAddress: Address
+  /** NotCondition(AlwaysTrue) wired into chargeCondition to block the immediate-charge bypass */
+  chargeBlockConditionAddress: Address
   releaseConditionAddress: Address
   refundInEscrowConditionAddress: Address
   authorizeRecorderAddress: Address
@@ -1123,7 +1129,11 @@ export async function previewDeliveryProtectionOperator(
   const hasPaymentIndexRecorder = paymentIndexRecorderAddress !== zeroAddress
 
   // Batch 1 (parallel, no dependencies)
-  const [escrowPeriodAddress, arbiterConditionAddress] = await Promise.all([
+  const [
+    escrowPeriodAddress,
+    arbiterConditionAddress,
+    chargeBlockConditionAddress,
+  ] = await Promise.all([
     computeEscrowPeriodAddress(publicClient, {
       factoryAddress: factoryAddrs.escrowPeriod,
       escrowPeriod: options.escrowPeriodSeconds,
@@ -1132,6 +1142,14 @@ export async function previewDeliveryProtectionOperator(
     computeStaticAddressConditionAddress(publicClient, {
       factoryAddress: factoryAddrs.staticAddressCondition,
       designatedAddress: options.arbiter,
+    }),
+    // NotCondition(AlwaysTrue) — always returns false. Wired into chargeCondition
+    // so charge() is blocked: a zeroAddress chargeCondition means "always allow",
+    // which would let anyone settle a delivery-protected payment immediately and
+    // skip the escrow hold. Forcing payments through authorize -> release/refund.
+    computeNotConditionAddress(publicClient, {
+      factoryAddress: factoryAddrs.notCondition,
+      condition: singletons.alwaysTrue,
     }),
   ])
 
@@ -1173,7 +1191,7 @@ export async function previewDeliveryProtectionOperator(
     feeCalculator: zeroAddress,
     authorizeCondition: config.usdcTvlLimit,
     authorizeRecorder: authorizeRecorderAddress,
-    chargeCondition: zeroAddress,
+    chargeCondition: chargeBlockConditionAddress,
     chargeRecorder: zeroAddress,
     releaseCondition: releaseConditionAddress,
     releaseRecorder: zeroAddress,
@@ -1192,6 +1210,7 @@ export async function previewDeliveryProtectionOperator(
     operatorAddress,
     escrowPeriodAddress,
     arbiterConditionAddress,
+    chargeBlockConditionAddress,
     releaseConditionAddress,
     refundInEscrowConditionAddress,
     authorizeRecorderAddress,
@@ -1204,6 +1223,10 @@ export async function previewDeliveryProtectionOperator(
 // deployDeliveryProtectionOperator — single-tx via Multicall3
 //
 // Deploys a PaymentOperator where:
+// - Charge: NotCondition(AlwaysTrue) — always false, so the immediate-charge
+//   path is blocked. Payments must go authorize -> release/refund, otherwise a
+//   zeroAddress chargeCondition ("always allow") would let anyone settle a
+//   delivery-protected payment immediately and skip the escrow hold.
 // - Release: OrCondition([SAC(arbiter), PayerCondition]) — arbiter or payer
 // - RefundInEscrow: OrCondition([EscrowPeriod, ReceiverCondition, SAC(arbiter)])
 //   — after escrow window, or receiver, or arbiter
@@ -1227,6 +1250,7 @@ export async function deployDeliveryProtectionOperator(
   const {
     escrowPeriodAddress,
     arbiterConditionAddress,
+    chargeBlockConditionAddress,
     releaseConditionAddress,
     refundInEscrowConditionAddress,
     authorizeRecorderAddress,
@@ -1252,6 +1276,12 @@ export async function deployDeliveryProtectionOperator(
       abi: staticAddressConditionFactoryAbi,
       functionName: 'getDeployed',
       args: [options.arbiter],
+    },
+    {
+      address: factoryAddrs.notCondition,
+      abi: notConditionFactoryAbi,
+      functionName: 'getDeployed',
+      args: [getConditionSingletons(options.chainId).alwaysTrue],
     },
     {
       address: factoryAddrs.orCondition,
@@ -1303,6 +1333,7 @@ export async function deployDeliveryProtectionOperator(
   let idx = 0
   const escrowPeriodExists = existenceResults[idx++].result !== zeroAddress
   const arbiterCondExists = existenceResults[idx++].result !== zeroAddress
+  const chargeBlockCondExists = existenceResults[idx++].result !== zeroAddress
   const releaseCondExists = existenceResults[idx++].result !== zeroAddress
   const refundCondExists = existenceResults[idx++].result !== zeroAddress
   const combinatorExists = hasCombinator
@@ -1310,13 +1341,14 @@ export async function deployDeliveryProtectionOperator(
     : true // no combinator needed
   const operatorExists = existenceResults[idx++].result !== zeroAddress
 
-  const totalContracts = hasCombinator ? 6 : 5
+  const totalContracts = hasCombinator ? 7 : 6
 
   // If operator already deployed, return immediately
   if (operatorExists) {
     const existingDeployments: DeployResult[] = [
       { address: escrowPeriodAddress, hash: null, isNew: false },
       { address: arbiterConditionAddress, hash: null, isNew: false },
+      { address: chargeBlockConditionAddress, hash: null, isNew: false },
       { address: releaseConditionAddress, hash: null, isNew: false },
       { address: refundInEscrowConditionAddress, hash: null, isNew: false },
       ...(hasCombinator
@@ -1328,6 +1360,7 @@ export async function deployDeliveryProtectionOperator(
       operatorAddress,
       escrowPeriodAddress,
       arbiterConditionAddress,
+      chargeBlockConditionAddress,
       releaseConditionAddress,
       refundInEscrowConditionAddress,
       authorizeRecorderAddress,
@@ -1387,7 +1420,17 @@ export async function deployDeliveryProtectionOperator(
     [options.arbiter],
   )
 
-  // 3. OrCondition for release: arbiter OR payer
+  // 3. NotCondition(AlwaysTrue) — wired into chargeCondition to block charge()
+  trackDeploy(
+    chargeBlockConditionAddress,
+    chargeBlockCondExists,
+    factoryAddrs.notCondition,
+    notConditionFactoryAbi,
+    'deploy',
+    [singletons.alwaysTrue],
+  )
+
+  // 4. OrCondition for release: arbiter OR payer
   trackDeploy(
     releaseConditionAddress,
     releaseCondExists,
@@ -1397,7 +1440,7 @@ export async function deployDeliveryProtectionOperator(
     [[arbiterConditionAddress, singletons.payer]],
   )
 
-  // 4. OrCondition for refundInEscrow: escrow period OR receiver OR arbiter
+  // 5. OrCondition for refundInEscrow: escrow period OR receiver OR arbiter
   trackDeploy(
     refundInEscrowConditionAddress,
     refundCondExists,
@@ -1407,7 +1450,7 @@ export async function deployDeliveryProtectionOperator(
     [[escrowPeriodAddress, singletons.receiver, arbiterConditionAddress]],
   )
 
-  // 5. RecorderCombinator (if PaymentIndexRecorder available)
+  // 6. RecorderCombinator (if PaymentIndexRecorder available)
   if (hasCombinator) {
     trackDeploy(
       authorizeRecorderAddress,
@@ -1419,7 +1462,7 @@ export async function deployDeliveryProtectionOperator(
     )
   }
 
-  // 6. Operator (always included, never allowFailure)
+  // 7. Operator (always included, never allowFailure)
   calls.push({
     target: factoryAddrs.paymentOperator,
     allowFailure: false,
@@ -1443,6 +1486,7 @@ export async function deployDeliveryProtectionOperator(
     operatorAddress,
     escrowPeriodAddress,
     arbiterConditionAddress,
+    chargeBlockConditionAddress,
     releaseConditionAddress,
     refundInEscrowConditionAddress,
     authorizeRecorderAddress,
