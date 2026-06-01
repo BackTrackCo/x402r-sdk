@@ -185,7 +185,7 @@ describe('applyPaymentResult()', () => {
     expect(result.status).toBe(200)
     expect(result.body).toBe('{"ok":true}')
     expect(result.signer).toEqual(SIGNER)
-    expect(result.elapsedMs).toBeGreaterThanOrEqual(0)
+    expect(result.elapsedMs).toBeGreaterThanOrEqual(90)
   })
 
   it('maps passthrough → kind:passthrough with no tx field', () => {
