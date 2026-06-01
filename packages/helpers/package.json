@@ -40,7 +40,6 @@
   },
   "devDependencies": {
     "@x402/core": "2.5.0",
-    "@x402r/core": "workspace:^",
     "@x402r/evm": "0.2.0-alpha.0"
   },
   "size-limit": [
