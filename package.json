@@ -62,7 +62,6 @@
     "publint": "^0.3.21",
     "size-limit": "^12.1.0",
     "tsdown": "^0.22.1",
-    "tsup": "^8.5.1",
     "turbo": "^2.9.9",
     "typescript": "^5.9.3",
     "vitest": "^4.1.5"
