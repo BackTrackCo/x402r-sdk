@@ -1,4 +1,4 @@
-import { defineConfig } from 'tsup'
+import { defineConfig } from 'tsdown'
 
 export default defineConfig({
   entry: {
@@ -6,8 +6,10 @@ export default defineConfig({
     actions: 'src/actions/index.ts',
     plugins: 'src/plugins/index.ts',
   },
-  format: ['esm'],
+  format: 'esm',
+  fixedExtension: false,
   dts: true,
   sourcemap: true,
   clean: true,
+  outputOptions: { comments: { jsdoc: false } },
 })
