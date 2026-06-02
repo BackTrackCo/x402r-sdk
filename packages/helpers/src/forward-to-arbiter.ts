@@ -1,5 +1,6 @@
 import type { SettleResultContext } from '@x402/core/server'
 import { X402rError } from '@x402r/core'
+import { AUTH_CAPTURE_SCHEME } from '@x402r/evm'
 import { reconstructPaymentInfoWire } from './reconstruct-payment-info.js'
 
 export interface ForwardToArbiterOptions {
@@ -12,8 +13,9 @@ export interface ForwardToArbiterOptions {
  * arbiter service for evaluation. Fire-and-forget — does not block the
  * response to the client.
  *
- * Only fires for authCapture scheme settlements. Non-authCapture schemes
- * are skipped. The hook reconstructs the JSON-form `PaymentInfoWire`
+ * Only fires for `auth-capture` scheme settlements (gated on the
+ * `AUTH_CAPTURE_SCHEME` constant from `@x402r/evm`). Other schemes are
+ * skipped. The hook reconstructs the JSON-form `PaymentInfoWire`
  * from the verified context and ships it as `paymentInfoWire` in the
  * POST body — arbiters consume `req.body.paymentInfoWire`, run it
  * through `PaymentInfo.fromWire` (from `@x402r/sdk` or `@x402r/core`)
@@ -31,9 +33,10 @@ export interface ForwardToArbiterOptions {
  * @example
  * ```ts
  * import { forwardToArbiter } from '@x402r/helpers'
+ * import { AuthCaptureEvmScheme } from '@x402r/evm/auth-capture/server'
  *
  * const resourceServer = new x402ResourceServer(facilitatorClient)
- *   .register(networkId, new AuthCaptureServerScheme())
+ *   .register(networkId, new AuthCaptureEvmScheme())
  *   .onAfterSettle(
  *     forwardToArbiter('http://arbiter:3001', {
  *       onError: (err) => sentry.captureException(err),
@@ -51,7 +54,7 @@ export function forwardToArbiter(
 
   return async (context: SettleResultContext): Promise<void> => {
     if (!context.result.success) return
-    if (context.requirements.scheme !== 'authCapture') return
+    if (context.requirements.scheme !== AUTH_CAPTURE_SCHEME) return
 
     const transportCtx = context.transportContext as
       | { responseBody?: { toString(encoding: string): string } }

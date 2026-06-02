@@ -4,12 +4,13 @@ import { x402Facilitator } from '@x402/core/facilitator'
 import { HTTPFacilitatorClient, x402HTTPClient } from '@x402/core/http'
 import type { PaymentPayload, PaymentRequirements } from '@x402/core/types'
 import { toFacilitatorEvmSigner } from '@x402/evm'
+import { AuthCaptureEvmScheme as AuthCaptureEvmClient } from '@x402/evm/auth-capture/client'
 import { paymentMiddleware, x402ResourceServer } from '@x402/express'
 import { wrapFetchWithPayment } from '@x402/fetch'
 import { authCaptureEscrowAbi, getChainConfig } from '@x402r/core'
-import { AuthCaptureEvmScheme as AuthCaptureEvmClient } from '@x402r/evm/authCapture/client'
-import { AuthCaptureFacilitatorScheme } from '@x402r/evm/authCapture/facilitator'
-import { AuthCaptureServerScheme } from '@x402r/evm/authCapture/server'
+import { AUTH_CAPTURE_SCHEME } from '@x402r/evm'
+import { AuthCaptureEvmScheme as AuthCaptureFacilitatorScheme } from '@x402r/evm/auth-capture/facilitator'
+import { AuthCaptureEvmScheme as AuthCaptureServerScheme } from '@x402r/evm/auth-capture/server'
 import express from 'express'
 import {
   type Address,
@@ -51,7 +52,7 @@ import { StepRunner } from './runner.js'
 //   Anvil fork (shared prool subpath or self-spawned)
 //
 // Catches integration-seam bugs between upstream @x402/{core,evm,express,fetch}
-// at 2.12.0 and our @x402r/evm at 0.2.0-alpha.0. autoCapture is intentionally
+// at 2.14.0 and our @x402r/evm at 0.2.0-alpha.1. autoCapture is intentionally
 // left unset (authorize-only path) so the receiver should NOT see any token
 // inflow; the post-conditions check tx-target + payer-debit + receiver-flat.
 // ---------------------------------------------------------------------------
@@ -69,11 +70,11 @@ const chainConfig = getChainConfig(CHAIN_ID)
 const USDC: Address = chainConfig.usdc
 const AUTH_CAPTURE_ESCROW: Address = chainConfig.authCaptureEscrow
 
-// Canonical EIP-3009 token collector for the authCapture scheme — same
-// address on every chain commerce-payments is deployed to. Source:
-// @x402r/evm/authCapture/constants.ts (EIP3009_TOKEN_COLLECTOR_ADDRESS).
-// Hard-coded here rather than re-imported because that module isn't on
-// @x402r/evm's public export surface; only the schemes are.
+// Canonical EIP-3009 token collector for the auth-capture scheme — same
+// address on every chain commerce-payments is deployed to. Mirrors
+// `EIP3009_TOKEN_COLLECTOR_ADDRESS`, now a root export of @x402r/evm. Pinned
+// here as a literal so the scenario's tokenCollector assertion locks the
+// expected value independently of what the package re-exports.
 const EIP3009_TOKEN_COLLECTOR: Address =
   '0x0E3dF9510de65469C4518D7843919c0b8C7A7757'
 
@@ -196,7 +197,7 @@ async function bootstrapAnvil(): Promise<{
 
 // ---------------------------------------------------------------------------
 // 2. Facilitator setup (mirrors upstream
-// examples/typescript/facilitator/authCapture/index.ts).
+// examples/typescript/facilitator/auth-capture/index.ts).
 // ---------------------------------------------------------------------------
 async function startFacilitator(rpcUrl: string): Promise<{
   url: string
@@ -266,7 +267,7 @@ async function startFacilitator(rpcUrl: string): Promise<{
 
 // ---------------------------------------------------------------------------
 // 3. Resource server setup (mirrors upstream
-// examples/typescript/servers/authCapture/index.ts).
+// examples/typescript/servers/auth-capture/index.ts).
 // ---------------------------------------------------------------------------
 async function startResourceServer(
   facilitatorUrl: string,
@@ -297,7 +298,7 @@ async function startResourceServer(
       {
         'GET /widget': {
           accepts: {
-            scheme: 'authCapture',
+            scheme: AUTH_CAPTURE_SCHEME,
             // Custom AssetAmount: pin USDC + base-unit amount directly so we
             // don't rely on getDefaultAsset (which would also work but couples
             // the scenario to an extra default-asset lookup). EIP-712 domain
@@ -426,7 +427,7 @@ async function main(): Promise<void> {
     runner.log(`settle tx: ${settleResponse.transaction}`)
 
     runner.step('Verify on-chain settle landed (authorize-only)')
-    // The authCapture escrow is the canonical CREATE2-deployed AuthCaptureEscrow
+    // The auth-capture escrow is the canonical CREATE2-deployed AuthCaptureEscrow
     // singleton. Funds for an authorized-but-not-captured payment don't sit at
     // the singleton — the escrow creates a per-payment vault via internal
     // accounting (commerce-payments uses a paymentInfoHash-indexed mapping).
@@ -514,8 +515,8 @@ async function main(): Promise<void> {
     )
     // tokenCollector is the canonical EIP-3009 collector for the default
     // assetTransferMethod ('eip3009') the scheme uses when the merchant
-    // doesn't override it. Source: @x402r/evm/authCapture/constants.ts
-    // (EIP3009_TOKEN_COLLECTOR_ADDRESS). Pinning the value here catches a
+    // doesn't override it. Source: @x402r/evm EIP3009_TOKEN_COLLECTOR_ADDRESS.
+    // Pinning the value here catches a
     // scheme regression that silently switched the collector (e.g.,
     // accidentally routed through Permit2's collector).
     runner.assert(
