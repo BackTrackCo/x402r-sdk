@@ -58,10 +58,10 @@
     "prepublishOnly": "publint --strict && attw --pack --ignore-rules no-resolution cjs-resolves-to-esm"
   },
   "dependencies": {
-    "viem": "^2.46.3"
+    "viem": "^2.50.3"
   },
   "devDependencies": {
-    "prool": "^0.2.3"
+    "prool": "^0.2.4"
   },
   "size-limit": [
     {
