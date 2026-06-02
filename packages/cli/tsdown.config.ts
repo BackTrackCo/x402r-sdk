@@ -9,5 +9,6 @@ export default defineConfig({
   dts: true,
   sourcemap: true,
   clean: true,
-  target: false,
+  target: 'node22',
+  fixedExtension: false,
 })
