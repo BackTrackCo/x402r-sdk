@@ -251,10 +251,10 @@ export interface ArbiterIdentity {
 
 /**
  * A single agent registration from the upstream x402 reputation extension.
- * Matches the `AgentRegistration` object in the upstream spec (PR #1024).
+ * Matches the `AgentRegistration` object in the upstream reputation extension spec.
  *
  * @experimental Upstream x402 reputation extension is not merged.
- * The shape may change. See x402-foundation/x402#931.
+ * The shape may change; see the related upstream x402 reputation extension discussion.
  */
 export interface AgentRegistration {
   agentId: bigint

@@ -54,15 +54,15 @@ export function extractArbiterIdentity(
 /**
  * Extract agent registrations from the upstream x402 reputation extension.
  *
- * Parses `extensions["reputation"].info.registrations` per the upstream spec
- * (x402-foundation/x402 PR #1024). Returns validated registrations as an array.
+ * Parses `extensions["reputation"].info.registrations` per the upstream x402
+ * reputation extension spec. Returns validated registrations as an array.
  *
  * Agents can have multiple registrations across chains (EVM + Solana).
  * Each registration has a CAIP-10 `agentRegistry` and a string `agentId`.
  *
  * @experimental The upstream x402 reputation extension is not merged.
- * The shape of `extensions["reputation"]` may change.
- * See x402-foundation/x402#931.
+ * The shape of `extensions["reputation"]` may change; see the related
+ * upstream x402 reputation extension discussion.
  *
  * @param extensions - Extensions object from PaymentRequired or PaymentPayload
  * @returns Array of validated registrations, or empty array if extension is absent
