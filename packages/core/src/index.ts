@@ -205,6 +205,7 @@ export {
 // Config
 // ---------------------------------------------------------------------------
 export type {
+  CollectorAddresses,
   ConditionSingletonAddresses,
   FactoryAddresses,
   HookSingletonAddresses,
@@ -217,6 +218,7 @@ export {
   factories,
   fromNetworkId,
   getChainConfig,
+  getCollectorAddress,
   getConditionSingletons,
   getFactoryAddress,
   getFactoryAddresses,
@@ -229,7 +231,6 @@ export {
   protocolFeeConfig,
   receiverRefundCollector,
   supportedChainIds,
-  tokenCollector,
   toNetworkId,
   x402rChains,
 } from './config/index.js'

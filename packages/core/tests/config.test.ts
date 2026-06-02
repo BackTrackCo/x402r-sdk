@@ -6,6 +6,7 @@ import {
   factories,
   fromNetworkId,
   getChainConfig,
+  getCollectorAddress,
   getConditionSingletons,
   getFactoryAddress,
   getFactoryAddresses,
@@ -13,7 +14,6 @@ import {
   protocolFeeConfig,
   receiverRefundCollector,
   supportedChainIds,
-  tokenCollector,
   toNetworkId,
 } from '../src/index.js'
 
@@ -89,13 +89,36 @@ describe('named address constants match getChainConfig()', () => {
     it(`chain ${chainId}`, () => {
       const config = getChainConfig(chainId)
       expect(config.authCaptureEscrow).toBe(authCaptureEscrow)
-      expect(config.tokenCollector).toBe(tokenCollector)
       expect(config.protocolFeeConfig).toBe(protocolFeeConfig)
       expect(config.receiverRefundCollector).toBe(receiverRefundCollector)
       expect(config.factories).toEqual(factories)
       expect(config.conditions).toEqual(conditions)
     })
   }
+})
+
+describe('collectors', () => {
+  for (const chainId of supportedChainIds) {
+    it(`chain ${chainId} exposes eip3009 + permit2 collectors`, () => {
+      const config = getChainConfig(chainId)
+      expect(config.collectors.eip3009).toMatch(/^0x[0-9a-fA-F]{40}$/)
+      expect(config.collectors.permit2).toMatch(/^0x[0-9a-fA-F]{40}$/)
+      // eip3009 collector and permit2 collector are distinct canonical addresses
+      expect(config.collectors.eip3009).not.toBe(config.collectors.permit2)
+    })
+  }
+})
+
+describe('getCollectorAddress', () => {
+  it('returns the canonical address for a supported chain', () => {
+    const config = getChainConfig(8453)
+    expect(getCollectorAddress(8453, 'eip3009')).toBe(config.collectors.eip3009)
+    expect(getCollectorAddress(8453, 'permit2')).toBe(config.collectors.permit2)
+  })
+
+  it('throws ConfigError for unknown chain', () => {
+    expect(() => getCollectorAddress(999999, 'eip3009')).toThrow(ConfigError)
+  })
 })
 
 describe('toNetworkId / fromNetworkId', () => {
