@@ -108,14 +108,11 @@ importers:
   packages/cli:
     dependencies:
       '@x402/core':
-        specifier: ^2.12.0
-        version: 2.12.0
+        specifier: ^2.14.0
+        version: 2.14.0
       '@x402/evm':
-        specifier: ^2.12.0
-        version: 2.12.0(typescript@5.9.3)
-      '@x402r/evm':
-        specifier: '>=0.2.0-alpha.0 <0.3.0'
-        version: 0.2.0-alpha.0(@x402/core@2.12.0)(@x402/evm@2.12.0(typescript@5.9.3))(viem@2.52.0(typescript@5.9.3)(zod@4.4.3))
+        specifier: ^2.14.0
+        version: 2.14.0(typescript@5.9.3)
       viem:
         specifier: ^2.50.3
         version: 2.52.0(typescript@5.9.3)(zod@4.4.3)
@@ -1501,14 +1498,8 @@ packages:
       typescript:
         optional: true
 
-  '@x402/core@2.12.0':
-    resolution: {integrity: sha512-dLae9AbZRN/W7GsKe9ngqGsflnP+esE72s0GjmqDZbPihM/tlHCA6UnDdgM0qfOiDOf9iL+mmCs1OyLWpwnGLQ==}
-
   '@x402/core@2.14.0':
     resolution: {integrity: sha512-+xTM6hfGduYvFcQ7QwKvCwommL6+zqzqmr5IuPojbt+RZjo4QUjSkHW+arMtPoIKRLxWAI+e6P4UJMMblwG+Dw==}
-
-  '@x402/evm@2.12.0':
-    resolution: {integrity: sha512-kZUoHPVdBS8wlTg5K1eoh/1V0+5n9ABGRPC5DOQwRlkAwIrAFOEi2pQE+jgvOx0iM5ib2xj9gJjpldRbasX12w==}
 
   '@x402/evm@2.14.0':
     resolution: {integrity: sha512-Qrm0+hN1gMK1vrX4vW4sdcx5txYTx8J2uDNulcNoIdtz15kTU5hjNUyZaCpI3i6x0MXnUBGfyar9Ut9uoAoPMw==}
@@ -1532,13 +1523,6 @@ packages:
     resolution: {integrity: sha512-OXOz8xSlVzNEcBoV4V6Gl9uB/HFKNbDvA4PHgwTEKXsU71N3NynfuRMXAQCvwle/SfFIFy3ndGdkC/Vi2+Su3Q==}
     engines: {node: '>=18'}
     peerDependencies:
-      viem: ^2.0.0
-
-  '@x402r/evm@0.2.0-alpha.0':
-    resolution: {integrity: sha512-kJnBebrqbz/GryfL/ellXbFRPLcYWd2X0WhhCmsgg+zLMDF6rgbvfk1ddQQJb0KuDKcgVbNVITkfnFvoVepbfQ==}
-    peerDependencies:
-      '@x402/core': ^2.4.0
-      '@x402/evm': ^2.0.0
       viem: ^2.0.0
 
   '@x402r/evm@0.2.0-alpha.1':
@@ -4117,23 +4101,9 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@x402/core@2.12.0':
-    dependencies:
-      zod: 3.25.76
-
   '@x402/core@2.14.0':
     dependencies:
       zod: 3.25.76
-
-  '@x402/evm@2.12.0(typescript@5.9.3)':
-    dependencies:
-      '@x402/core': 2.12.0
-      viem: 2.52.0(typescript@5.9.3)(zod@3.25.76)
-      zod: 3.25.76
-    transitivePeerDependencies:
-      - bufferutil
-      - typescript
-      - utf-8-validate
 
   '@x402/evm@2.14.0(typescript@5.9.3)':
     dependencies:
@@ -4179,12 +4149,6 @@ snapshots:
 
   '@x402r/erc8004@0.1.0-alpha.2(viem@2.52.0(typescript@5.9.3)(zod@4.4.3))':
     dependencies:
-      viem: 2.52.0(typescript@5.9.3)(zod@4.4.3)
-
-  '@x402r/evm@0.2.0-alpha.0(@x402/core@2.12.0)(@x402/evm@2.12.0(typescript@5.9.3))(viem@2.52.0(typescript@5.9.3)(zod@4.4.3))':
-    dependencies:
-      '@x402/core': 2.12.0
-      '@x402/evm': 2.12.0(typescript@5.9.3)
       viem: 2.52.0(typescript@5.9.3)(zod@4.4.3)
 
   '@x402r/evm@0.2.0-alpha.1(@x402/core@2.14.0)(@x402/evm@2.14.0(typescript@5.9.3))(viem@2.52.0(typescript@5.9.3)(zod@4.4.3))':
