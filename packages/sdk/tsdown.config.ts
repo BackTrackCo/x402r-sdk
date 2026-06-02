@@ -12,4 +12,6 @@ export default defineConfig({
   clean: true,
   target: 'node22',
   fixedExtension: false,
+  publint: { level: 'error' },
+  attw: { level: 'error', profile: 'esm-only' },
 })

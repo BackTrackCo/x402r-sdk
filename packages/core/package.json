@@ -54,8 +54,7 @@
     "test:unit": "vitest run --project core",
     "test:fork": "vitest run --project core:fork",
     "test:cov": "vitest run --coverage --project core",
-    "typecheck": "tsc --noEmit",
-    "prepublishOnly": "publint --strict && attw --pack --ignore-rules no-resolution cjs-resolves-to-esm"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "viem": "^2.46.3"
