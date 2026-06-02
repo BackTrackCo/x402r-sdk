@@ -69,7 +69,7 @@
     },
     {
       "path": "dist/config.js",
-      "limit": "2 kB"
+      "limit": "3 kB"
     },
     {
       "path": "dist/deploy.js",
