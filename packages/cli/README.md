@@ -43,8 +43,11 @@ convention. The flag form is available when you want to avoid collisions.
 
 ## `--json` envelope
 
+The emitted JSON is a discriminated union — branch on `kind`:
+
 ```json
 {
+  "kind": "success",
   "body": "<merchant response body>",
   "status": 200,
   "tx": "0x…",
@@ -53,7 +56,30 @@ convention. The flag form is available when you want to avoid collisions.
 }
 ```
 
-`signer` is omitted when the URL returned non-402 (no payment was made).
+```json
+{
+  "kind": "passthrough",
+  "body": "<merchant response body>",
+  "status": 200,
+  "elapsedMs": 1234,
+  "signer": { "kind": "key", "address": "0x…" }
+}
+```
+
+```json
+{
+  "kind": "no_payment_required",
+  "body": "<merchant response body>",
+  "status": 200,
+  "elapsedMs": 1234
+}
+```
+
+- `kind: "success"` — paid request settled successfully; `tx` is the settlement transaction hash.
+- `kind: "passthrough"` — paid request returned ok with no settle header; merchant did not surface a settlement (`tx` absent).
+- `kind: "no_payment_required"` — first request returned non-402; no payment was made (`signer` and `tx` absent).
+
+Terminal failures (`settle_failed`, `payment_required` re-issued after payment, merchant 4xx/5xx after payment) throw and exit with code `5` rather than emitting a result envelope.
 
 ## Examples
 
