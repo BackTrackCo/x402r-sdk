@@ -30,5 +30,8 @@ export type { ForwardToArbiterOptions } from './forward-to-arbiter.js'
 export { forwardToArbiter } from './forward-to-arbiter.js'
 export type { ReconstructPaymentInfoWireReturnType } from './reconstruct-payment-info.js'
 export { reconstructPaymentInfoWire } from './reconstruct-payment-info.js'
-export type { X402rDefaultsInput } from './x402r-defaults.js'
+export type {
+  X402rDefaultsExtra,
+  X402rDefaultsInput,
+} from './x402r-defaults.js'
 export { x402rDefaults } from './x402r-defaults.js'
