@@ -107,8 +107,10 @@ function emit(result: PayResult, json: boolean): void {
   }
   process.stdout.write(result.body)
   if (!result.body.endsWith('\n')) process.stdout.write('\n')
-  if (result.tx) process.stderr.write(`tx: ${result.tx}\n`)
-  if (result.signer) {
+  if (result.kind === 'success') {
+    process.stderr.write(`tx: ${result.tx}\n`)
+  }
+  if (result.kind === 'success' || result.kind === 'passthrough') {
     process.stderr.write(
       `signer: ${result.signer.kind} (${result.signer.address})\n`,
     )

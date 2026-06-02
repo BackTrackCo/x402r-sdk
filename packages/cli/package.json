@@ -36,8 +36,8 @@
     "prepublishOnly": "publint --strict && attw --pack --ignore-rules no-resolution cjs-resolves-to-esm"
   },
   "dependencies": {
-    "@x402/core": "^2.5.0",
-    "@x402/evm": "^2.5.0",
+    "@x402/core": "^2.12.0",
+    "@x402/evm": "^2.12.0",
     "@x402r/evm": ">=0.2.0-alpha.0 <0.3.0",
     "viem": "^2.46.3"
   },

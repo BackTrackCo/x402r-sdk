@@ -28,14 +28,33 @@ export interface PayFlags extends SignerFlags {
   json?: boolean
 }
 
-export interface PayResult {
-  body: string
-  status: number
-  tx?: string
-  elapsedMs: number
-  /** Present only when a payment was made; omitted on non-402 short-circuits. */
-  signer?: { kind: SignerKind; address: string }
+export interface SignerMeta {
+  kind: SignerKind
+  address: string
 }
+
+export type PayResult =
+  | {
+      kind: 'success'
+      body: string
+      status: number
+      tx: string
+      elapsedMs: number
+      signer: SignerMeta
+    }
+  | {
+      kind: 'passthrough'
+      body: string
+      status: number
+      elapsedMs: number
+      signer: SignerMeta
+    }
+  | {
+      kind: 'no_payment_required'
+      body: string
+      status: number
+      elapsedMs: number
+    }
 
 export async function pay(flags: PayFlags): Promise<PayResult> {
   const started = Date.now()
@@ -44,6 +63,7 @@ export async function pay(flags: PayFlags): Promise<PayResult> {
 
   if (peek.status !== 402) {
     return {
+      kind: 'no_payment_required',
       body: await peek.text(),
       status: peek.status,
       elapsedMs: Date.now() - started,
@@ -91,29 +111,53 @@ export async function pay(flags: PayFlags): Promise<PayResult> {
     },
   })
 
-  const body = await paid.text()
-  if (paid.status >= 400) {
-    throw new SettlementError(
-      `merchant returned ${paid.status} after payment: ${truncate(body, 200)}`,
-    )
-  }
+  const result = await paymentHttpClient.processResponse(paid)
+  return applyPaymentResult(result, paid.status, started, {
+    kind: resolved.kind,
+    address: resolved.account.address,
+  })
+}
 
-  const settle = tryParseSettle(paid, paymentHttpClient)
-  if (settle && settle.success === false) {
-    throw new SettlementError(
-      `settlement failed: ${settle.errorReason ?? 'unknown'}`,
-    )
-  }
-
-  return {
-    body,
-    status: paid.status,
-    tx: settle?.transaction,
-    elapsedMs: Date.now() - started,
-    signer: {
-      kind: resolved.kind,
-      address: resolved.account.address,
-    },
+/**
+ * Maps upstream `x402PaymentResult` to a cli `PayResult`. Terminal failure
+ * variants throw `SettlementError`; success/passthrough return.
+ *
+ * Exported for tests.
+ */
+export function applyPaymentResult(
+  result: Awaited<ReturnType<x402HTTPClient['processResponse']>>,
+  paidStatus: number,
+  startedMs: number,
+  signer: SignerMeta,
+): PayResult {
+  switch (result.kind) {
+    case 'success':
+      return {
+        kind: 'success',
+        body: stringifyBody(result.body),
+        status: paidStatus,
+        tx: result.settleResponse.transaction,
+        elapsedMs: Date.now() - startedMs,
+        signer,
+      }
+    case 'passthrough':
+      return {
+        kind: 'passthrough',
+        body: stringifyBody(result.body),
+        status: paidStatus,
+        elapsedMs: Date.now() - startedMs,
+        signer,
+      }
+    case 'settle_failed':
+      throw new SettlementError(
+        `settlement failed: ${result.settleResponse.errorReason ?? 'unknown'}`,
+      )
+    case 'payment_required':
+      throw new SettlementError('merchant re-issued 402 after payment')
+    case 'error':
+      throw new SettlementError(
+        `merchant returned ${result.status} after payment: ${truncate(stringifyBody(result.body), 200)}`,
+      )
   }
 }
 
@@ -154,15 +198,8 @@ function parsePaymentRequired(
   }
 }
 
-function tryParseSettle(
-  res: Response,
-  httpClient: x402HTTPClient,
-): ReturnType<x402HTTPClient['getPaymentSettleResponse']> | undefined {
-  try {
-    return httpClient.getPaymentSettleResponse((name) => res.headers.get(name))
-  } catch {
-    return undefined
-  }
+function stringifyBody(body: unknown): string {
+  return typeof body === 'string' ? body : JSON.stringify(body)
 }
 
 function adaptAccount(
