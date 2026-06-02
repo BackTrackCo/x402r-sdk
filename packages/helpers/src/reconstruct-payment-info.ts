@@ -25,7 +25,7 @@ export type ReconstructPaymentInfoWireReturnType = PaymentInfoWire
  *
  * Throws `ValidationError` when:
  * - `context.requirements.extra` isn't a valid `AuthCaptureExtra`
- *   (typically because the hook fired on a non-authCapture scheme)
+ *   (typically because the hook fired on a non-`auth-capture` scheme)
  * - `context.paymentPayload.payload` isn't a valid `AuthCapturePayload`
  * - `context.result.payer` is missing
  */

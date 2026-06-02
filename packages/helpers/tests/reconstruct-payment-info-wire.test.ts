@@ -1,4 +1,5 @@
 import { ValidationError } from '@x402r/core/errors'
+import { AUTH_CAPTURE_SCHEME } from '@x402r/evm'
 import { describe, expect, it } from 'vitest'
 import { reconstructPaymentInfoWire } from '../src/reconstruct-payment-info.js'
 
@@ -22,7 +23,7 @@ const BASE_EXTRA = {
 }
 
 const BASE_REQUIREMENTS = {
-  scheme: 'authCapture',
+  scheme: AUTH_CAPTURE_SCHEME,
   network: 'eip155:84532',
   payTo: TEST_ADDRESSES.payTo,
   asset: TEST_ADDRESSES.asset,
@@ -67,7 +68,7 @@ function makeContext(overrides: {
   return {
     paymentPayload: {
       x402Version: 2,
-      accepted: { scheme: 'authCapture', network: 'eip155:84532' },
+      accepted: { scheme: AUTH_CAPTURE_SCHEME, network: 'eip155:84532' },
       payload: overrides.payload ?? EIP3009_PAYLOAD,
     },
     requirements: {
