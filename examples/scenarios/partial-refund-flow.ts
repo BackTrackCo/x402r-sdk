@@ -12,7 +12,7 @@ import { StepRunner } from './runner.js'
 // ---------------------------------------------------------------------------
 // Scenario: Partial Refund Flow
 //
-// The new authCapture partial-refund pattern: capture(merchantKeep) then
+// The new auth-capture partial-refund pattern: capture(merchantKeep) then
 // voidPayment() returns the remainder to the payer. Replaces the old
 // single-tx refundInEscrow(amount) — two transactions, no allowance setup,
 // no ReceiverRefundCollector. Asserts real balance deltas: payer recovers

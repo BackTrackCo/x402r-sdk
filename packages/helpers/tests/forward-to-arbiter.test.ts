@@ -1,4 +1,5 @@
 import { X402rError } from '@x402r/core'
+import { AUTH_CAPTURE_SCHEME } from '@x402r/evm'
 import { describe, expect, it, vi } from 'vitest'
 import { forwardToArbiter } from '../src/forward-to-arbiter.js'
 
@@ -36,7 +37,7 @@ const EIP3009_PAYLOAD = {
 
 const MOCK_PAYMENT_PAYLOAD = {
   x402Version: 2,
-  accepted: { scheme: 'authCapture', network: 'eip155:84532' },
+  accepted: { scheme: AUTH_CAPTURE_SCHEME, network: 'eip155:84532' },
   payload: EIP3009_PAYLOAD,
 }
 
@@ -55,7 +56,7 @@ function makeContext(overrides: {
       payer: TEST_ADDRESSES.payer,
     },
     requirements: {
-      scheme: overrides.scheme ?? 'authCapture',
+      scheme: overrides.scheme ?? AUTH_CAPTURE_SCHEME,
       network: 'eip155:84532',
       payTo: TEST_ADDRESSES.payTo,
       asset: TEST_ADDRESSES.asset,
@@ -66,14 +67,15 @@ function makeContext(overrides: {
       ...MOCK_PAYMENT_PAYLOAD,
       payload: overrides.payload ?? EIP3009_PAYLOAD,
     },
+    declaredExtensions: {},
     transportContext: overrides.responseBody
       ? { responseBody: Buffer.from(overrides.responseBody) }
       : undefined,
-  }
+  } as Parameters<ReturnType<typeof forwardToArbiter>>[0]
 }
 
 describe('forwardToArbiter', () => {
-  it('POSTs reconstructed paymentInfoWire on successful authCapture settlement', async () => {
+  it('POSTs reconstructed paymentInfoWire on successful auth-capture settlement', async () => {
     let capturedUrl = ''
     let capturedBody = ''
     const original = globalThis.fetch
@@ -131,7 +133,28 @@ describe('forwardToArbiter', () => {
     }
   })
 
-  it('skips on non-authCapture scheme', async () => {
+  it('fires when scheme === AUTH_CAPTURE_SCHEME', async () => {
+    const original = globalThis.fetch
+    const spy = vi.fn(async () => new Response('ok'))
+    globalThis.fetch = spy as any
+
+    try {
+      const hook = forwardToArbiter('http://localhost:3001')
+      await hook(
+        makeContext({
+          scheme: AUTH_CAPTURE_SCHEME,
+          responseBody: '{"data": true}',
+        }),
+      )
+      await new Promise((r) => setTimeout(r, 50))
+
+      expect(spy).toHaveBeenCalledTimes(1)
+    } finally {
+      globalThis.fetch = original
+    }
+  })
+
+  it('skips a clearly-different scheme (exact)', async () => {
     const original = globalThis.fetch
     const spy = vi.fn()
     globalThis.fetch = spy as any
@@ -140,6 +163,28 @@ describe('forwardToArbiter', () => {
       const hook = forwardToArbiter('http://localhost:3001')
       await hook(
         makeContext({ scheme: 'exact', responseBody: '{"data": true}' }),
+      )
+      await new Promise((r) => setTimeout(r, 50))
+
+      expect(spy).not.toHaveBeenCalled()
+    } finally {
+      globalThis.fetch = original
+    }
+  })
+
+  it('skips the legacy camelCase "authCapture" literal (rename regression guard)', async () => {
+    // Guards against the pre-rename bug: the gate must compare against the
+    // 'auth-capture' constant, so the dropped camelCase literal must NOT match.
+    expect(AUTH_CAPTURE_SCHEME).toBe('auth-capture')
+
+    const original = globalThis.fetch
+    const spy = vi.fn()
+    globalThis.fetch = spy as any
+
+    try {
+      const hook = forwardToArbiter('http://localhost:3001')
+      await hook(
+        makeContext({ scheme: 'authCapture', responseBody: '{"data": true}' }),
       )
       await new Promise((r) => setTimeout(r, 50))
 

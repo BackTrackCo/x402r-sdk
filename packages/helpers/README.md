@@ -11,10 +11,11 @@ pnpm add @x402r/helpers
 ## Usage
 
 ```ts
+import { AuthCaptureEvmScheme } from '@x402r/evm/auth-capture/server'
 import { forwardToArbiter } from '@x402r/helpers'
 
 const resourceServer = new x402ResourceServer(facilitatorClient)
-  .register(networkId, new AuthCaptureServerScheme())
+  .register(networkId, new AuthCaptureEvmScheme())
   .onAfterSettle(forwardToArbiter('http://arbiter:3001'))
 ```
 
@@ -35,7 +36,7 @@ See JSDoc on `X402rDefaultsInput` for per-field overrides and production-footgun
 
 ## Reconstructing PaymentInfo after settlement
 
-The authCapture wire format omits the on-chain `PaymentInfo` struct (it's derivable from `requirements + payload.salt + payer`). Merchants needing to call escrow actions later (`payment.capture`, `payment.voidPayment`, `payment.refund`) use two pieces to bridge the wire format to the runtime form SDK actions accept:
+The auth-capture wire format omits the on-chain `PaymentInfo` struct (it's derivable from `requirements + payload.salt + payer`). Merchants needing to call escrow actions later (`payment.capture`, `payment.voidPayment`, `payment.refund`) use two pieces to bridge the wire format to the runtime form SDK actions accept:
 
 - **`reconstructPaymentInfoWire(context)`** — from `@x402r/helpers`. Builds the JSON-form `PaymentInfoWire` from a verified `SettleResultContext`. Handles the wire→struct field renames and the EIP-3009 vs Permit2 branch internally.
 - **`PaymentInfo.fromWire(wire)`** — from `@x402r/sdk` (or `@x402r/core`). Converts the JSON-form `PaymentInfoWire` to the bigint-form `PaymentInfo` SDK actions accept.
@@ -75,7 +76,7 @@ async function processJob(job) {
 
 For in-process synchronous use, chain them in one expression: `PaymentInfo.fromWire(reconstructPaymentInfoWire(context))`.
 
-`reconstructPaymentInfoWire` throws `ValidationError` if the context isn't a verified authCapture settlement (`requirements.extra` not an `AuthCaptureExtra`, payload not an `AuthCapturePayload`, or `result.payer` missing). `PaymentInfo.fromWire` throws `ValidationError` on malformed `maxAmount` (non-decimal) or `salt` (non-hex).
+`reconstructPaymentInfoWire` throws `ValidationError` if the context isn't a verified auth-capture settlement (`requirements.extra` not an `AuthCaptureExtra`, payload not an `AuthCapturePayload`, or `result.payer` missing). `PaymentInfo.fromWire` throws `ValidationError` on malformed `maxAmount` (non-decimal) or `salt` (non-hex).
 
 ## API
 
@@ -83,7 +84,7 @@ For in-process synchronous use, chain them in one expression: `PaymentInfo.fromW
 
 Creates an `onAfterSettle` hook that forwards the response body to an arbiter service for evaluation. Fire-and-forget — does not block the response to the client.
 
-- Only fires for successful authCapture scheme settlements
+- Only fires for successful auth-capture scheme settlements
 - Calls `reconstructPaymentInfoWire` internally; POSTs `{ responseBody, transaction, paymentInfoWire }` to `{arbiterUrl}/verify`
 - `paymentInfoWire` is the JSON-form `PaymentInfoWire` — arbiters run it through `PaymentInfo.fromWire` (from `@x402r/sdk`) to get bigints for SDK actions
 - Errors silently caught (arbiter being down shouldn't break payment flow); if reconstruction itself fails, the POST is skipped and `onError` is invoked
@@ -109,7 +110,7 @@ app.post('/verify', async (req) => {
 
 #### Migration note
 
-Prior versions shipped `paymentPayload` (the raw wire payload) instead of `paymentInfoWire`. That worked under the legacy `commerce` scheme where the payload carried the struct directly, but the authCapture wire format omits it. Update your arbiter to read `req.body.paymentInfoWire` and run it through `PaymentInfo.fromWire` to get bigints; remove any legacy `paymentPayload.payload.paymentInfo` access path. The deleted `toPaymentInfo` helper is replaced by `PaymentInfo.fromWire` — same conversion logic, new home.
+Prior versions shipped `paymentPayload` (the raw wire payload) instead of `paymentInfoWire`. That worked under the legacy `commerce` scheme where the payload carried the struct directly, but the auth-capture wire format omits it. Update your arbiter to read `req.body.paymentInfoWire` and run it through `PaymentInfo.fromWire` to get bigints; remove any legacy `paymentPayload.payload.paymentInfo` access path. The deleted `toPaymentInfo` helper is replaced by `PaymentInfo.fromWire` — same conversion logic, new home.
 
 #### Options
 
