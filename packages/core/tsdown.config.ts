@@ -20,8 +20,8 @@ export default defineConfig({
   define: {
     __VERSION__: JSON.stringify(pkg.version),
   },
-  target: 'node22',
+  target: 'es2022',
   fixedExtension: false,
-  publint: { level: 'error' },
+  publint: { strict: true },
   attw: { level: 'error', profile: 'esm-only' },
 })

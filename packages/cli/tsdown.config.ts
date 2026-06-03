@@ -9,8 +9,8 @@ export default defineConfig({
   dts: true,
   sourcemap: true,
   clean: true,
-  target: 'node22',
+  target: 'es2022',
   fixedExtension: false,
-  publint: { level: 'error' },
+  publint: { strict: true },
   attw: { level: 'error', profile: 'esm-only' },
 })
