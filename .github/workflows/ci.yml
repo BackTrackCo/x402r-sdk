@@ -182,17 +182,12 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile --ignore-scripts
-      - run: pnpm build
-      - name: publint
-        run: |
-          pnpm --filter=@x402r/core exec publint --strict
-          pnpm --filter=@x402r/helpers exec publint --strict
-          pnpm --filter=@x402r/sdk exec publint --strict
-      - name: attw
-        run: |
-          pnpm --filter=@x402r/core exec attw --pack --ignore-rules no-resolution cjs-resolves-to-esm
-          pnpm --filter=@x402r/helpers exec attw --pack --ignore-rules no-resolution cjs-resolves-to-esm
-          pnpm --filter=@x402r/sdk exec attw --pack --ignore-rules no-resolution cjs-resolves-to-esm
+      # tsdown runs publint + attw natively during the build (level: error,
+      # profile: esm-only) for ALL four packages, including @x402r/cli which the
+      # previous standalone gate skipped. test:pkg forces a fresh build so the
+      # checks run rather than replaying a cache hit.
+      - name: Build + validate packages (publint + attw, all 4)
+        run: pnpm test:pkg
       - name: knip
         run: pnpm knip
       - name: size-limit

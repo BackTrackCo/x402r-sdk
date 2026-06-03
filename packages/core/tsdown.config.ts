@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { defineConfig } from 'tsup'
+import { defineConfig } from 'tsdown'
 
 const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'))
 
@@ -20,4 +20,8 @@ export default defineConfig({
   define: {
     __VERSION__: JSON.stringify(pkg.version),
   },
+  target: 'es2022',
+  fixedExtension: false,
+  publint: { strict: true },
+  attw: { level: 'error', profile: 'esm-only' },
 })

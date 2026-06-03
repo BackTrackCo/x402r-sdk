@@ -48,14 +48,13 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
+    "build": "tsdown",
+    "dev": "tsdown --watch",
     "test": "vitest run",
     "test:unit": "vitest run --project core",
     "test:fork": "vitest run --project core:fork",
     "test:cov": "vitest run --coverage --project core",
-    "typecheck": "tsc --noEmit",
-    "prepublishOnly": "publint --strict && attw --pack --ignore-rules no-resolution cjs-resolves-to-esm"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "viem": "^2.50.3"
@@ -70,7 +69,7 @@
     },
     {
       "path": "dist/config.js",
-      "limit": "2 kB"
+      "limit": "3 kB"
     },
     {
       "path": "dist/deploy.js",

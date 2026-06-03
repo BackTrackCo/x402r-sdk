@@ -171,14 +171,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
 
-      - name: Build packages
-        run: pnpm build
-
-      # Upfront gate: publint + attw across all publishable packages.
-      # Without this, a per-package prepublishOnly failure can occur
-      # *after* earlier packages have already published, leaving a
+      # Build + validate all four packages in one step: test:pkg force-builds
+      # with tsdown, which runs publint + attw (level: error, esm-only) natively
+      # as part of the build. Upfront gate — without it a publint/attw failure
+      # could occur *after* earlier packages have already published, leaving a
       # partial release.
-      - name: Validate package tarballs (publint + attw)
+      - name: Build + validate packages (publint + attw)
         run: pnpm test:pkg
 
       - name: Publish to npm
