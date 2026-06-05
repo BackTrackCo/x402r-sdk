@@ -117,6 +117,8 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@c7450ba673e133f5ee30098b3b54f444d3a2ca2d  # v1.8.0
+        with:
+          version: v1.7.1
       - name: Clone x402r-contracts (with submodules)
         run: git clone --depth 1 --recurse-submodules https://github.com/BackTrackCo/x402r-contracts.git ../x402r-contracts
       - name: Build contracts
@@ -208,6 +210,8 @@ jobs:
         run: git clone --depth 1 --recurse-submodules https://github.com/BackTrackCo/x402r-contracts.git ../x402r-contracts
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@c7450ba673e133f5ee30098b3b54f444d3a2ca2d  # v1.8.0
+        with:
+          version: v1.7.1
       - name: Build contracts
         run: cd ../x402r-contracts && forge build
       - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093  # v6.0.8
