@@ -38,7 +38,19 @@ export async function charge(
       address: operatorAddress,
       abi: paymentOperatorAbi,
       functionName: 'charge',
-      args: [paymentInfo, amount, tokenCollector, collectorData],
+      // Operator `charge` mirrors the escrow's 6-arg selector. The two trailing
+      // fee args are constrained: the operator ignores `feeBps` and recomputes
+      // the rate internally (so `minFeeBps` is a safe in-range placeholder), and
+      // it forwards `feeReceiver` to the escrow, which requires it to equal
+      // `paymentInfo.feeReceiver`.
+      args: [
+        paymentInfo,
+        amount,
+        tokenCollector,
+        collectorData,
+        paymentInfo.minFeeBps,
+        paymentInfo.feeReceiver,
+      ],
       chain: walletClient.chain,
       account: walletClient.account,
     }),
