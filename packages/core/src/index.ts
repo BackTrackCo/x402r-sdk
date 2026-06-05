@@ -342,6 +342,7 @@ export type { X402rErrorArgs } from './errors/index.js'
 export {
   ConfigError,
   ContractCallError,
+  formatViemError,
   NotImplementedError,
   ValidationError,
   X402rError,
