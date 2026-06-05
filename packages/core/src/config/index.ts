@@ -85,8 +85,9 @@ export const receiverRefundCollector =
 
 /** Chain-invariant CREATE2 factory addresses. Same as `getChainConfig(chainId).factories`. */
 export const factories = {
+  // v1.0.2 (escrow-bound; factory embeds PaymentOperator, whose charge moved to the 6-arg escrow selector)
+  paymentOperator: '0xc24153B7ED8DC03e551F29DDEeA5CadFe57e2716',
   // v1.0.1 (escrow-bound)
-  paymentOperator: '0xa0d4734842df1690a5B33Cb21828c946e39D55a2',
   escrowPeriod: '0xe72D2014ebC48F1d92521e8629574918E8030548',
   freeze: '0xeC092cf1215DB44af0Abe87c1157E304FEa5d0Eb',
   refundRequest: '0xe971C674fD5c3462023f3F891dF6289DFbC9CEFC',
