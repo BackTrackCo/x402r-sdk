@@ -79,7 +79,7 @@ describe('x402rDefaults', () => {
       expect(nowSpy).not.toHaveBeenCalled()
     })
 
-    it('is deterministic — same input yields byte-identical output', () => {
+    it('is deterministic — same input yields deep-equal output', () => {
       expect(x402rDefaults(minimalInput)).toEqual(x402rDefaults(minimalInput))
     })
 
@@ -158,6 +158,31 @@ describe('x402rDefaults', () => {
           captureDeadlineSeconds: 604_800,
           refundDeadlineSeconds: 86_400,
         }),
+      ).toThrow(ValidationError)
+    })
+
+    it('throws when captureDeadlineSeconds is 0', () => {
+      // A non-positive relative offset resolves to a deadline at or before now.
+      expect(() =>
+        x402rDefaults({ ...minimalInput, captureDeadlineSeconds: 0 }),
+      ).toThrow(ValidationError)
+    })
+
+    it('throws when captureDeadlineSeconds is negative', () => {
+      expect(() =>
+        x402rDefaults({ ...minimalInput, captureDeadlineSeconds: -1 }),
+      ).toThrow(ValidationError)
+    })
+
+    it('throws when refundDeadlineSeconds is 0', () => {
+      expect(() =>
+        x402rDefaults({ ...minimalInput, refundDeadlineSeconds: 0 }),
+      ).toThrow(ValidationError)
+    })
+
+    it('throws when refundDeadlineSeconds is negative', () => {
+      expect(() =>
+        x402rDefaults({ ...minimalInput, refundDeadlineSeconds: -1 }),
       ).toThrow(ValidationError)
     })
 

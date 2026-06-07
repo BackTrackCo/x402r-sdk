@@ -22,7 +22,7 @@ const DEFAULT_TOKEN_VERSION = '2'
  * them to absolute deadlines before the wire payload is built). We model the
  * relative variant here, in helpers, rather than widening the wire type.
  */
-type DeadlineExtra = (
+export type DeadlineExtra = (
   | { captureDeadline: number }
   | { captureDeadlineSeconds: number }
 ) &
@@ -85,12 +85,18 @@ export interface X402rDefaultsInput {
    * which the server scheme refreshes per request. Resolved independently of
    * the refund window — set this to fix the capture deadline while leaving the
    * refund window relative (or vice versa).
+   *
+   * If both this and `captureDeadlineSeconds` are set, the absolute value
+   * wins and the relative offset is ignored.
    */
   captureDeadline?: number
   /**
    * Absolute Unix seconds; refunds allowed until this. Opt-in escape hatch —
    * see `captureDeadline`. Prefer `refundDeadlineSeconds`. Resolved
    * independently of the capture window.
+   *
+   * If both this and `refundDeadlineSeconds` are set, the absolute value wins
+   * and the relative offset is ignored.
    */
   refundDeadline?: number
   /** Floor on the captureAuthorizer's fee in basis points. Defaults to `0` (no minimum). */
@@ -167,20 +173,36 @@ export function x402rDefaults(input: X402rDefaultsInput): X402rDefaultsExtra {
   // value when the caller passed it, else its relative offset — which the
   // server scheme refreshes per request, avoiding the wall-clock-frozen-at-boot
   // footgun the absolute defaults used to cause.
-  const capture =
-    input.captureDeadline !== undefined
-      ? { captureDeadline: input.captureDeadline }
-      : {
-          captureDeadlineSeconds:
-            input.captureDeadlineSeconds ?? DEFAULT_CAPTURE_WINDOW_SECONDS,
-        }
-  const refund =
-    input.refundDeadline !== undefined
-      ? { refundDeadline: input.refundDeadline }
-      : {
-          refundDeadlineSeconds:
-            input.refundDeadlineSeconds ?? DEFAULT_REFUND_WINDOW_SECONDS,
-        }
+  let capture: { captureDeadline: number } | { captureDeadlineSeconds: number }
+  if (input.captureDeadline !== undefined) {
+    capture = { captureDeadline: input.captureDeadline }
+  } else {
+    const captureDeadlineSeconds =
+      input.captureDeadlineSeconds ?? DEFAULT_CAPTURE_WINDOW_SECONDS
+    // A non-positive relative offset resolves to a deadline at or before now,
+    // which is never what the caller intends. This is clock-free: we reject the
+    // offset itself, not a computed wall-clock deadline.
+    if (captureDeadlineSeconds <= 0) {
+      throw new ValidationError(
+        `captureDeadlineSeconds (${captureDeadlineSeconds}) must be a positive number of seconds: a non-positive offset resolves to a capture deadline at or before now`,
+      )
+    }
+    capture = { captureDeadlineSeconds }
+  }
+
+  let refund: { refundDeadline: number } | { refundDeadlineSeconds: number }
+  if (input.refundDeadline !== undefined) {
+    refund = { refundDeadline: input.refundDeadline }
+  } else {
+    const refundDeadlineSeconds =
+      input.refundDeadlineSeconds ?? DEFAULT_REFUND_WINDOW_SECONDS
+    if (refundDeadlineSeconds <= 0) {
+      throw new ValidationError(
+        `refundDeadlineSeconds (${refundDeadlineSeconds}) must be a positive number of seconds: a non-positive offset resolves to a refund deadline at or before now`,
+      )
+    }
+    refund = { refundDeadlineSeconds }
+  }
 
   // Guard ordering only when it's comparable without reading the clock: both
   // absolute, or both relative. The refund window must not end before the
@@ -200,8 +222,6 @@ export function x402rDefaults(input: X402rDefaultsInput): X402rDefaultsExtra {
   if (
     'captureDeadlineSeconds' in capture &&
     'refundDeadlineSeconds' in refund &&
-    capture.captureDeadlineSeconds !== undefined &&
-    refund.refundDeadlineSeconds !== undefined &&
     refund.refundDeadlineSeconds < capture.captureDeadlineSeconds
   ) {
     throw new ValidationError(
