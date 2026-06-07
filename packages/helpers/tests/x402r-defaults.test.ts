@@ -186,6 +186,54 @@ describe('x402rDefaults', () => {
       ).toThrow(ValidationError)
     })
 
+    it('throws when captureDeadlineSeconds is NaN', () => {
+      // NaN <= 0 is false, so the integer guard is what rejects it; left
+      // through, NaN serializes to null on the wire (silent corruption).
+      expect(() =>
+        x402rDefaults({ ...minimalInput, captureDeadlineSeconds: NaN }),
+      ).toThrow(ValidationError)
+    })
+
+    it('throws when refundDeadlineSeconds is NaN', () => {
+      expect(() =>
+        x402rDefaults({ ...minimalInput, refundDeadlineSeconds: NaN }),
+      ).toThrow(ValidationError)
+    })
+
+    it('throws when captureDeadlineSeconds is fractional', () => {
+      // Deadlines are integer seconds (uint48 on-chain), so fractional offsets
+      // are invalid input.
+      expect(() =>
+        x402rDefaults({ ...minimalInput, captureDeadlineSeconds: 0.5 }),
+      ).toThrow(ValidationError)
+    })
+
+    it('throws when refundDeadlineSeconds is fractional', () => {
+      expect(() =>
+        x402rDefaults({ ...minimalInput, refundDeadlineSeconds: 0.5 }),
+      ).toThrow(ValidationError)
+    })
+
+    it('absolute captureDeadline wins over captureDeadlineSeconds when both set', () => {
+      const extra = x402rDefaults({
+        ...minimalInput,
+        captureDeadline: 1_999_999_999,
+        captureDeadlineSeconds: 60,
+      })
+      expect(extra).toMatchObject({ captureDeadline: 1_999_999_999 })
+      expect('captureDeadlineSeconds' in extra).toBe(false)
+    })
+
+    it('absolute refundDeadline wins over refundDeadlineSeconds when both set', () => {
+      const extra = x402rDefaults({
+        ...minimalInput,
+        refundDeadline: 2_999_999_999,
+        refundDeadlineSeconds: 60,
+      })
+      expect(extra).toMatchObject({ refundDeadline: 2_999_999_999 })
+      expect('refundDeadlineSeconds' in extra).toBe(false)
+    })
+
     it('does not throw for a mixed shape even when values look out of order', () => {
       // Absolute capture + relative refund: not comparable without the wall
       // clock, so the helper defers ordering validation to the facilitator.

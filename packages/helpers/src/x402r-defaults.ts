@@ -182,9 +182,12 @@ export function x402rDefaults(input: X402rDefaultsInput): X402rDefaultsExtra {
     // A non-positive relative offset resolves to a deadline at or before now,
     // which is never what the caller intends. This is clock-free: we reject the
     // offset itself, not a computed wall-clock deadline.
-    if (captureDeadlineSeconds <= 0) {
+    if (
+      !Number.isSafeInteger(captureDeadlineSeconds) ||
+      captureDeadlineSeconds <= 0
+    ) {
       throw new ValidationError(
-        `captureDeadlineSeconds (${captureDeadlineSeconds}) must be a positive number of seconds: a non-positive offset resolves to a capture deadline at or before now`,
+        `captureDeadlineSeconds (${captureDeadlineSeconds}) must be a positive integer number of seconds: a non-positive offset resolves to a capture deadline at or before now`,
       )
     }
     capture = { captureDeadlineSeconds }
@@ -196,9 +199,12 @@ export function x402rDefaults(input: X402rDefaultsInput): X402rDefaultsExtra {
   } else {
     const refundDeadlineSeconds =
       input.refundDeadlineSeconds ?? DEFAULT_REFUND_WINDOW_SECONDS
-    if (refundDeadlineSeconds <= 0) {
+    if (
+      !Number.isSafeInteger(refundDeadlineSeconds) ||
+      refundDeadlineSeconds <= 0
+    ) {
       throw new ValidationError(
-        `refundDeadlineSeconds (${refundDeadlineSeconds}) must be a positive number of seconds: a non-positive offset resolves to a refund deadline at or before now`,
+        `refundDeadlineSeconds (${refundDeadlineSeconds}) must be a positive integer number of seconds: a non-positive offset resolves to a refund deadline at or before now`,
       )
     }
     refund = { refundDeadlineSeconds }
