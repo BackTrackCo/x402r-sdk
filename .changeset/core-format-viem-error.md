@@ -2,4 +2,4 @@
 "@x402r/core": minor
 ---
 
-Add `formatViemError(err)` for flattening viem/contract errors to a string.
+Add `formatError(err)` for flattening any error (viem/contract, `X402rError`, or unknown) to a human-readable string.

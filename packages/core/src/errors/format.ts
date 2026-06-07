@@ -4,9 +4,9 @@ import { X402rError } from './base.js'
  * Flatten any thrown value to a human-readable string.
  *
  * @example
- * try { await capture(client, args) } catch (err) { res.status(500).json({ error: formatViemError(err) }) }
+ * try { await capture(client, args) } catch (err) { console.error(formatError(err)) }
  */
-export function formatViemError(err: unknown): string {
+export function formatError(err: unknown): string {
   if (err instanceof X402rError) return err.message
   if (
     err !== null &&
