@@ -37,7 +37,7 @@
   "dependencies": {
     "@x402/core": "^2.14.0",
     "@x402/evm": "^2.14.0",
-    "viem": "^2.50.3"
+    "viem": "^2.52.2"
   },
   "devDependencies": {
     "@types/node": "^25.9.1"

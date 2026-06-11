@@ -57,7 +57,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "viem": "^2.50.3"
+    "viem": "^2.52.2"
   },
   "devDependencies": {
     "prool": "^0.2.4"
