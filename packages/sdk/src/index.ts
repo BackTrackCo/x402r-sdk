@@ -38,6 +38,7 @@ export {
   ContractCallError,
   computePaymentInfoHash,
   createPermit2ApprovalTx,
+  formatError,
   formatFeeBreakdown,
   getChainConfig,
   getPermit2AllowanceReadParams,

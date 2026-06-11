@@ -13,6 +13,13 @@ describe('formatError', () => {
     expect(formatError(viemLike)).toBe('The contract function reverted.')
   })
 
+  it('prefers shortMessage over .message for an Error that carries both (viem BaseError shape)', () => {
+    const err = Object.assign(new Error('long verbose message'), {
+      shortMessage: 'short',
+    })
+    expect(formatError(err)).toBe('short')
+  })
+
   it('returns .message for a plain Error', () => {
     const err = new Error('something went wrong')
     expect(formatError(err)).toBe('something went wrong')
