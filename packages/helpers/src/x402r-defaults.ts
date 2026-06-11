@@ -175,6 +175,18 @@ export function x402rDefaults(input: X402rDefaultsInput): X402rDefaultsExtra {
   // footgun the absolute defaults used to cause.
   let capture: { captureDeadline: number } | { captureDeadlineSeconds: number }
   if (input.captureDeadline !== undefined) {
+    // Clock-free guard on the absolute opt-in: NaN serializes to null on the
+    // wire and fractional/non-positive values are invalid Unix seconds. We do
+    // NOT reject a past deadline (< now) — that needs the wall clock and is
+    // deliberately deferred to the facilitator.
+    if (
+      !Number.isSafeInteger(input.captureDeadline) ||
+      input.captureDeadline <= 0
+    ) {
+      throw new ValidationError(
+        `captureDeadline (${input.captureDeadline}) must be a positive integer (Unix seconds)`,
+      )
+    }
     capture = { captureDeadline: input.captureDeadline }
   } else {
     const captureDeadlineSeconds =
@@ -195,6 +207,14 @@ export function x402rDefaults(input: X402rDefaultsInput): X402rDefaultsExtra {
 
   let refund: { refundDeadline: number } | { refundDeadlineSeconds: number }
   if (input.refundDeadline !== undefined) {
+    if (
+      !Number.isSafeInteger(input.refundDeadline) ||
+      input.refundDeadline <= 0
+    ) {
+      throw new ValidationError(
+        `refundDeadline (${input.refundDeadline}) must be a positive integer (Unix seconds)`,
+      )
+    }
     refund = { refundDeadline: input.refundDeadline }
   } else {
     const refundDeadlineSeconds =

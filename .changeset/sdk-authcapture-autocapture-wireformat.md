@@ -14,5 +14,5 @@ authCapture wire format glue and autoCapture builder.
 
 **New**
 
-- `x402rDefaults(input) → AuthCaptureExtra` from `@x402r/helpers` — only `captureAuthorizer` is required.
+- `x402rDefaults(input) → X402rDefaultsExtra` from `@x402r/helpers` — only `captureAuthorizer` is required.
 - Wire-format types re-exported from `@x402r/helpers`: `AuthCaptureExtra`, `AuthCapturePayload`, `Eip3009Payload`, `Permit2Payload`, `PaymentInfoStruct`, plus payload type guards.

@@ -214,6 +214,34 @@ describe('x402rDefaults', () => {
       ).toThrow(ValidationError)
     })
 
+    it('throws when absolute captureDeadline is NaN', () => {
+      // NaN <= 0 is false, so the integer guard is what rejects it; left
+      // through, NaN serializes to null on the wire (silent corruption).
+      expect(() =>
+        x402rDefaults({ ...minimalInput, captureDeadline: NaN }),
+      ).toThrow(ValidationError)
+    })
+
+    it('throws when absolute refundDeadline is NaN', () => {
+      expect(() =>
+        x402rDefaults({ ...minimalInput, refundDeadline: NaN }),
+      ).toThrow(ValidationError)
+    })
+
+    it('throws when absolute captureDeadline is fractional', () => {
+      // Deadlines are integer Unix seconds (uint48 on-chain), so fractional
+      // absolute values are invalid input.
+      expect(() =>
+        x402rDefaults({ ...minimalInput, captureDeadline: 0.5 }),
+      ).toThrow(ValidationError)
+    })
+
+    it('throws when absolute refundDeadline is non-positive', () => {
+      expect(() =>
+        x402rDefaults({ ...minimalInput, refundDeadline: -5 }),
+      ).toThrow(ValidationError)
+    })
+
     it('absolute captureDeadline wins over captureDeadlineSeconds when both set', () => {
       const extra = x402rDefaults({
         ...minimalInput,
