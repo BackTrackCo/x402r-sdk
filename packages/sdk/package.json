@@ -42,7 +42,7 @@
   "dependencies": {
     "@x402r/core": "workspace:^",
     "@x402r/erc8004": "^0.1.0-alpha.2",
-    "viem": "^2.50.3"
+    "viem": "^2.52.2"
   },
   "size-limit": [
     {
