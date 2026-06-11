@@ -84,7 +84,7 @@ jobs:
       - run: pnpm build
       - run: pnpm --filter=@x402r/core test:cov
       - name: Upload core coverage
-        uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2  # v6.0.0
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f  # v7.0.0
         with:
           use_oidc: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork) }}
           files: packages/core/coverage/lcov.info
@@ -92,7 +92,7 @@ jobs:
           fail_ci_if_error: true
       - run: pnpm --filter=@x402r/helpers test:cov
       - name: Upload helpers coverage
-        uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2  # v6.0.0
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f  # v7.0.0
         with:
           use_oidc: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork) }}
           files: packages/helpers/coverage/lcov.info
@@ -100,7 +100,7 @@ jobs:
           fail_ci_if_error: true
       - run: pnpm --filter=@x402r/sdk test:cov
       - name: Upload SDK coverage
-        uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2  # v6.0.0
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f  # v7.0.0
         with:
           use_oidc: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork) }}
           files: packages/sdk/coverage/lcov.info
