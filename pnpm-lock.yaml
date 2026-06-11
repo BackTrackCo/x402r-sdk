@@ -140,15 +140,9 @@ importers:
       '@x402/core':
         specifier: 2.14.0
         version: 2.14.0
-      '@x402/evm':
-        specifier: 2.14.0
-        version: 2.14.0(typescript@6.0.3)
       '@x402r/evm':
         specifier: 0.2.0-alpha.1
         version: 0.2.0-alpha.1(@x402/core@2.14.0)(@x402/evm@2.14.0(typescript@6.0.3))(viem@2.52.0(typescript@6.0.3)(zod@4.4.3))
-      viem:
-        specifier: ^2.48.11
-        version: 2.52.0(typescript@6.0.3)(zod@4.4.3)
 
   packages/sdk:
     dependencies:

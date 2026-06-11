@@ -35,15 +35,11 @@
   },
   "peerDependencies": {
     "@x402/core": "^2.14.0",
-    "@x402/evm": "^2.14.0",
-    "@x402r/evm": ">=0.2.0-alpha.1 <0.3.0",
-    "viem": "^2.48.11"
+    "@x402r/evm": ">=0.2.0-alpha.1 <0.3.0"
   },
   "devDependencies": {
     "@x402/core": "2.14.0",
-    "@x402/evm": "2.14.0",
-    "@x402r/evm": "0.2.0-alpha.1",
-    "viem": "^2.48.11"
+    "@x402r/evm": "0.2.0-alpha.1"
   },
   "size-limit": [
     {
