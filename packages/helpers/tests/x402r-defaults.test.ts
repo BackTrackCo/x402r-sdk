@@ -64,6 +64,8 @@ describe('x402rDefaults', () => {
 
     const minimalInput = {
       captureAuthorizer: '0x000000000000000000000000000000000000dEaD' as const,
+      name: 'USDC',
+      version: '2',
     }
 
     it('emits relative offsets by default and never reads the wall clock', () => {
@@ -278,6 +280,8 @@ describe('x402rDefaults', () => {
   describe('non-deadline defaults', () => {
     const minimalInput = {
       captureAuthorizer: '0x000000000000000000000000000000000000dEaD' as const,
+      name: 'USDC',
+      version: '2',
     }
 
     it('defaults feeRecipient to captureAuthorizer', () => {
@@ -301,10 +305,28 @@ describe('x402rDefaults', () => {
       expect(extra.maxFeeBps).toBe(100)
     })
 
-    it('defaults token domain to USDC / 2', () => {
-      const extra = x402rDefaults(minimalInput)
-      expect(extra.name).toBe('USDC')
-      expect(extra.version).toBe('2')
+    it('carries the explicit token domain through unchanged', () => {
+      const extra = x402rDefaults({
+        ...minimalInput,
+        name: 'USD Coin',
+        version: '1',
+      })
+      expect(extra.name).toBe('USD Coin')
+      expect(extra.version).toBe('1')
+    })
+
+    it('throws when name is empty (the EIP-712 domain has no safe default)', () => {
+      // Empty string satisfies the `string` type but the runtime guard rejects
+      // it: an empty domain name would silently fail signature verification.
+      expect(() => x402rDefaults({ ...minimalInput, name: '' })).toThrow(
+        ValidationError,
+      )
+    })
+
+    it('throws when version is empty (the EIP-712 domain has no safe default)', () => {
+      expect(() => x402rDefaults({ ...minimalInput, version: '' })).toThrow(
+        ValidationError,
+      )
     })
   })
 })
