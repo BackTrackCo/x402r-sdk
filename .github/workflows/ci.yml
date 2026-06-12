@@ -141,6 +141,15 @@ jobs:
           timeout_minutes: 10
           max_attempts: 2
           command: pnpm test:fork
+      - name: Run http-wire-capture scenario
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60  # v4.0.0
+        with:
+          # The HTTP-402 wire test is the only guard for the @x402/express <->
+          # @x402r/evm integration seam; it stays an example (boots live Express
+          # servers) but runs in CI here. Retry guards public Base Sepolia RPC flake.
+          timeout_minutes: 5
+          max_attempts: 2
+          command: pnpm --filter examples run scenario:http-wire-capture
 
   build:
     name: Build

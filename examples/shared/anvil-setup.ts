@@ -97,49 +97,23 @@ export function getBalanceSlot(
 
 export async function setup(options?: SetupOptions): Promise<ExampleContext> {
   const skipAuthorize = options?.authorize === false
-  // 1. Start Anvil fork (two modes)
-  //   a) Shared mode: when SCENARIO_RPC_URL is set by an external prool
-  //      orchestrator, reuse that prool subpath URL and skip spawning our own
-  //      server. The orchestrator owns prool lifecycle, so cleanup is a no-op
-  //      here. Each caller gets a unique subpath, so prool routes each to its
-  //      own forked Anvil child (no port collision).
-  //   b) Standalone mode (e.g. `pnpm --filter examples run <name>` direct
-  //      invocation): spawn an isolated prool server on ANVIL_PORT and tear it
-  //      down on cleanup. Preserves backward-compat for developers running one
-  //      example locally.
-  const sharedRpcUrl = process.env.SCENARIO_RPC_URL
-  let rpcUrl: string
-  let cleanup: () => Promise<void>
-
-  if (sharedRpcUrl) {
-    // Eagerly validate so a malformed env var fails here with a clear message
-    // rather than mid-test through viem's transport with a less actionable error.
-    try {
-      new URL(sharedRpcUrl)
-    } catch {
-      throw new Error(
-        `anvil-setup: SCENARIO_RPC_URL is not a valid URL: ${sharedRpcUrl}`,
-      )
-    }
-    rpcUrl = sharedRpcUrl
-    cleanup = async () => {}
-  } else {
-    const { Instance, Server } = await import('prool')
-    const server = Server.create({
-      instance: Instance.anvil({
-        chainId: CHAIN_ID,
-        forkUrl:
-          process.env.VITE_ANVIL_FORK_URL_BASE_SEPOLIA ??
-          'https://sepolia.base.org',
-        forkBlockNumber: FORK_BLOCK,
-      }),
-      port: ANVIL_PORT,
-    })
-    await server.start()
-    rpcUrl = `http://127.0.0.1:${ANVIL_PORT}/1`
-    cleanup = async () => {
-      await server.stop()
-    }
+  // 1. Start an isolated Anvil fork — spawn a prool server on ANVIL_PORT and
+  //    tear it down on cleanup.
+  const { Instance, Server } = await import('prool')
+  const server = Server.create({
+    instance: Instance.anvil({
+      chainId: CHAIN_ID,
+      forkUrl:
+        process.env.VITE_ANVIL_FORK_URL_BASE_SEPOLIA ??
+        'https://sepolia.base.org',
+      forkBlockNumber: FORK_BLOCK,
+    }),
+    port: ANVIL_PORT,
+  })
+  await server.start()
+  const rpcUrl = `http://127.0.0.1:${ANVIL_PORT}/1`
+  const cleanup = async () => {
+    await server.stop()
   }
 
   const transport = http(rpcUrl)
