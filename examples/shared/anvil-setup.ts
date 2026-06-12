@@ -98,15 +98,15 @@ export function getBalanceSlot(
 export async function setup(options?: SetupOptions): Promise<ExampleContext> {
   const skipAuthorize = options?.authorize === false
   // 1. Start Anvil fork (two modes)
-  //   a) Shared mode (CI orchestrator path): when SCENARIO_RPC_URL is set by
-  //      examples/scripts/scenarios-ci.ts, reuse that prool subpath URL and
-  //      skip spawning our own server. The orchestrator owns prool lifecycle,
-  //      so cleanup is a no-op here. Each scenario gets a unique subpath, so
-  //      prool routes each to its own forked Anvil child (no port collision).
-  //   b) Standalone mode (e.g. `pnpm scenario:capture` direct invocation):
-  //      spawn an isolated prool server on ANVIL_PORT and tear it down on
-  //      cleanup. Preserves backward-compat for developers running one
-  //      scenario locally.
+  //   a) Shared mode: when SCENARIO_RPC_URL is set by an external prool
+  //      orchestrator, reuse that prool subpath URL and skip spawning our own
+  //      server. The orchestrator owns prool lifecycle, so cleanup is a no-op
+  //      here. Each caller gets a unique subpath, so prool routes each to its
+  //      own forked Anvil child (no port collision).
+  //   b) Standalone mode (e.g. `pnpm --filter examples run <name>` direct
+  //      invocation): spawn an isolated prool server on ANVIL_PORT and tear it
+  //      down on cleanup. Preserves backward-compat for developers running one
+  //      example locally.
   const sharedRpcUrl = process.env.SCENARIO_RPC_URL
   let rpcUrl: string
   let cleanup: () => Promise<void>
