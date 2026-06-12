@@ -1,10 +1,7 @@
 import type { Address, Hex } from 'viem'
 import { encodeFunctionData, erc20Abi, getAddress } from 'viem'
 import type { LocalAccount } from 'viem/accounts'
-import {
-  commercePaymentsPermit2PaymentCollector,
-  getChainConfig,
-} from '../config/index.js'
+import { getChainConfig } from '../config/index.js'
 import type { PaymentInfo } from '../types/index.js'
 import { computeEscrowNonce } from './hashing.js'
 
@@ -46,10 +43,7 @@ export type SignPermit2AuthorizationParameters = {
   account: LocalAccount
   chainId: number
   paymentInfo: PaymentInfo
-  /**
-   * Override the Permit2 token collector (default: canonical
-   * `commercePaymentsPermit2PaymentCollector`).
-   */
+  /** Override the Permit2 token collector (default: from chain config) */
   tokenCollector?: Address
   /** Override escrow address for nonce computation (default: from chain config) */
   escrowAddress?: Address
@@ -114,7 +108,7 @@ export async function signPermit2Authorization(
   const { account, chainId, paymentInfo } = parameters
   const chainConfig = getChainConfig(chainId)
   const tokenCollector = getAddress(
-    parameters.tokenCollector ?? commercePaymentsPermit2PaymentCollector,
+    parameters.tokenCollector ?? chainConfig.collectors.permit2,
   )
   const escrowAddress =
     parameters.escrowAddress ?? chainConfig.authCaptureEscrow

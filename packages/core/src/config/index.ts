@@ -263,23 +263,6 @@ export function getFactoryAddress(
   return address
 }
 
-export function getCollectorAddress(
-  chainId: number,
-  method: keyof CollectorAddresses,
-): Address {
-  const config = getChainConfig(chainId)
-  if (!config.collectors) {
-    throw new ConfigError(`Collectors are not deployed on ${config.name}`)
-  }
-  const address = config.collectors[method]
-  if (address === zeroAddress) {
-    throw new ConfigError(
-      `${method} collector is not deployed on ${config.name}`,
-    )
-  }
-  return address
-}
-
 export function getConditionSingletons(
   chainId: number,
 ): ConditionSingletonAddresses {

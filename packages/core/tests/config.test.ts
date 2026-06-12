@@ -6,7 +6,6 @@ import {
   factories,
   fromNetworkId,
   getChainConfig,
-  getCollectorAddress,
   getConditionSingletons,
   getFactoryAddress,
   getFactoryAddresses,
@@ -107,18 +106,6 @@ describe('collectors', () => {
       expect(config.collectors.eip3009).not.toBe(config.collectors.permit2)
     })
   }
-})
-
-describe('getCollectorAddress', () => {
-  it('returns the canonical address for a supported chain', () => {
-    const config = getChainConfig(8453)
-    expect(getCollectorAddress(8453, 'eip3009')).toBe(config.collectors.eip3009)
-    expect(getCollectorAddress(8453, 'permit2')).toBe(config.collectors.permit2)
-  })
-
-  it('throws ConfigError for unknown chain', () => {
-    expect(() => getCollectorAddress(999999, 'eip3009')).toThrow(ConfigError)
-  })
 })
 
 describe('toNetworkId / fromNetworkId', () => {

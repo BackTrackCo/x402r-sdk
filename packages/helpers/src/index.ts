@@ -6,7 +6,6 @@ export {
   conditions,
   factories,
   getChainConfig,
-  getCollectorAddress,
   protocolFeeConfig,
   receiverRefundCollector,
   supportedChainIds,

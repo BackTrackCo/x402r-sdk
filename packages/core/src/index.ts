@@ -218,7 +218,6 @@ export {
   factories,
   fromNetworkId,
   getChainConfig,
-  getCollectorAddress,
   getConditionSingletons,
   getFactoryAddress,
   getFactoryAddresses,
