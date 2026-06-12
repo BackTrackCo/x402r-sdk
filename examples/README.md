@@ -43,8 +43,9 @@ Multi-role integration scenarios running against a local Anvil fork.
 
 | Scenario | Description |
 |----------|-------------|
-| [`scenarios/happy-path-capture.ts`](scenarios/happy-path-capture.ts) | authorize → capture (2 roles) |
-| [`scenarios/dispute-resolution.ts`](scenarios/dispute-resolution.ts) | Full lifecycle with arbitration (3 roles) |
+| [`scenarios/http-wire-capture.ts`](scenarios/http-wire-capture.ts) | End-to-end HTTP 402 wire against an in-process facilitator + resource server |
+
+The assertion-driven scenarios (`happy-path-capture`, `atomic-charge`, `partial-refund-flow`, `dispute-resolution`, `permit2-charge`) moved into the core vitest fork-test suite at `packages/core/tests/integration/*.fork.test.ts` and run under `pnpm test:fork`.
 
 See [`scenarios/README.md`](scenarios/README.md) for details.
 
@@ -57,6 +58,5 @@ pnpm example:merchant:charge
 pnpm example:arbiter:approve-refund
 
 # Scenarios
-pnpm scenario:capture
-pnpm scenario:dispute
+pnpm scenario:http-wire-capture
 ```

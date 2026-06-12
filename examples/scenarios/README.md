@@ -1,6 +1,8 @@
 # Scenarios
 
-Multi-role integration scenarios that exercise the full x402r payment lifecycle against a local Anvil fork.
+Multi-role integration scenarios that exercise the x402r payment lifecycle against a local Anvil fork.
+
+The assertion-driven scenarios (`happy-path-capture`, `atomic-charge`, `partial-refund-flow`, `dispute-resolution`, `permit2-charge`) have moved into the core vitest fork-test suite at `packages/core/tests/integration/*.fork.test.ts` — they were integration tests, not teaching examples, and now run under `pnpm test:fork`. `http-wire-capture` stays here because it exercises the upstream `@x402/express` ↔ `@x402r/evm` HTTP-wire integration, not the SDK payer-signing surface.
 
 ## Prerequisites
 
@@ -9,43 +11,6 @@ Multi-role integration scenarios that exercise the full x402r payment lifecycle 
 - `x402r-sdk` packages built (`pnpm build` from root)
 
 ## Available Scenarios
-
-### happy-path-capture
-
-2-role flow: authorize → capture.
-
-Demonstrates the simplest payment lifecycle — merchant authorizes a payment, waits for escrow expiry, and captures.
-
-### dispute-resolution
-
-3-role flow: full lifecycle with arbitration.
-
-Exercises the complete dispute flow:
-1. Deploy marketplace operator
-2. Authorize payment via SDK viem flow
-3. Payer requests refund
-4. Both parties submit evidence
-5. Arbiter reviews evidence and approves refund
-6. Verify refund amounts
-7. Verify zero protocol fees accrued
-
-### atomic-charge
-
-2-role flow: payer signs once, merchant calls `payment.charge()` (single tx, no escrow).
-
-Demonstrates the atomic settlement path. In production the merchant advertises this intent via `PaymentRequirements.extra.autoCapture`; the facilitator reads the flag and dispatches to `escrow.charge()` vs `escrow.authorize()`. Asserts real ERC-20 balance deltas (payer ↓ amount, receiver + fee ↑ to total).
-
-### partial-refund-flow
-
-2-role flow: authorize → capture(partial) → voidPayment().
-
-The new auth-capture partial-refund pattern. Replaces the old single-tx `refundInEscrow(amount)` with a two-tx flow: merchant captures the amount they keep, then `voidPayment()` returns the remainder to the payer. No allowance setup, no ReceiverRefundCollector — the escrow handles it. Asserts payer net loss equals merchant-keep, receiver delta + fee delta equals merchant-keep.
-
-### permit2-charge
-
-2-role atomic-charge flow routed through Uniswap Permit2 instead of EIP-3009.
-
-Demonstrates the two payer-side moves Permit2 requires: a one-time `ERC20.approve(PERMIT2, MAX)` so the canonical Permit2 contract can pull tokens for any Permit2 spender, then a per-payment `signPermit2Authorization(...)` that the merchant consumes via `payment.charge()`. Asserts payer ↓ amount, receiver Δ + fee Δ === amount, fee Δ > 0.
 
 ### http-wire-capture
 
@@ -59,12 +24,7 @@ This is the only scenario that exercises the `@x402/express` ↔ `@x402r/evm` in
 
 ```bash
 # From x402r-sdk root
-pnpm scenario:capture
-pnpm scenario:dispute
-pnpm scenario:atomic-charge
-pnpm scenario:partial-refund-flow
-pnpm scenario:permit2-charge
 pnpm scenario:http-wire-capture
 ```
 
-All scenarios run against a local Anvil fork — no real testnet funds needed.
+Runs against a local Anvil fork — no real testnet funds needed.
