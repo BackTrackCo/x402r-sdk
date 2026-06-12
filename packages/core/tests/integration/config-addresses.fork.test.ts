@@ -79,8 +79,18 @@ describe('Config Address Smoke Tests (Fork)', () => {
     expect(result).toBe(config.authCaptureEscrow)
   })
 
-  it('tokenCollector has non-zero bytecode', async () => {
-    const code = await publicClient.getCode({ address: config.tokenCollector })
+  it('eip3009 collector has non-zero bytecode', async () => {
+    const code = await publicClient.getCode({
+      address: config.collectors.eip3009,
+    })
+    expect(code).toBeDefined()
+    expect(code).not.toBe('0x')
+  })
+
+  it('permit2 collector has non-zero bytecode', async () => {
+    const code = await publicClient.getCode({
+      address: config.collectors.permit2,
+    })
     expect(code).toBeDefined()
     expect(code).not.toBe('0x')
   })

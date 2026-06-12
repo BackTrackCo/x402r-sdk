@@ -9,7 +9,6 @@ export {
   protocolFeeConfig,
   receiverRefundCollector,
   supportedChainIds,
-  tokenCollector,
 } from '@x402r/core'
 // Wire-format type re-exports from @x402r/evm so consumers can construct and
 // narrow PaymentRequirements/PaymentPayload without taking a direct dep.

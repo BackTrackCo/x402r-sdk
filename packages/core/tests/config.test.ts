@@ -13,7 +13,6 @@ import {
   protocolFeeConfig,
   receiverRefundCollector,
   supportedChainIds,
-  tokenCollector,
   toNetworkId,
 } from '../src/index.js'
 
@@ -89,11 +88,22 @@ describe('named address constants match getChainConfig()', () => {
     it(`chain ${chainId}`, () => {
       const config = getChainConfig(chainId)
       expect(config.authCaptureEscrow).toBe(authCaptureEscrow)
-      expect(config.tokenCollector).toBe(tokenCollector)
       expect(config.protocolFeeConfig).toBe(protocolFeeConfig)
       expect(config.receiverRefundCollector).toBe(receiverRefundCollector)
       expect(config.factories).toEqual(factories)
       expect(config.conditions).toEqual(conditions)
+    })
+  }
+})
+
+describe('collectors', () => {
+  for (const chainId of supportedChainIds) {
+    it(`chain ${chainId} exposes eip3009 + permit2 collectors`, () => {
+      const config = getChainConfig(chainId)
+      expect(config.collectors.eip3009).toMatch(/^0x[0-9a-fA-F]{40}$/)
+      expect(config.collectors.permit2).toMatch(/^0x[0-9a-fA-F]{40}$/)
+      // eip3009 collector and permit2 collector are distinct canonical addresses
+      expect(config.collectors.eip3009).not.toBe(config.collectors.permit2)
     })
   }
 })

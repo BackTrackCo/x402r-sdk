@@ -65,7 +65,8 @@ export async function signReceiveAuthorization(
 ): Promise<SignReceiveAuthorizationReturnType> {
   const { account, chainId, paymentInfo } = parameters
   const chainConfig = getChainConfig(chainId)
-  const tokenCollector = parameters.tokenCollector ?? chainConfig.tokenCollector
+  const tokenCollector =
+    parameters.tokenCollector ?? chainConfig.collectors.eip3009
   const escrowAddress =
     parameters.escrowAddress ?? chainConfig.authCaptureEscrow
   const nonce = computeEscrowNonce(chainId, escrowAddress, paymentInfo)

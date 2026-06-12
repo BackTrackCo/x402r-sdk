@@ -33,7 +33,7 @@ export async function createCollectorData(
   walletClient: WalletClient,
   paymentInfo: PaymentInfo,
 ): Promise<{ collectorData: Hex; tokenCollector: Address }> {
-  const tokenCollector = baseSepolia.tokenCollector
+  const tokenCollector = baseSepolia.collectors.eip3009
   const escrowAddress = baseSepolia.authCaptureEscrow
   const payer = walletClient.account!.address
 

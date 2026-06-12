@@ -31,11 +31,22 @@ export interface HookSingletonAddresses {
   paymentIndexRecorderHook: Address
 }
 
+/**
+ * Canonical `commerce-payments v1.0.0` payment collectors, keyed by the
+ * `assetTransferMethod` a merchant advertises. Pick `eip3009` for
+ * `ReceiveWithAuthorization` payloads and `permit2` for Permit2 payloads.
+ */
+export interface CollectorAddresses {
+  eip3009: Address
+  permit2: Address
+}
+
 export interface X402rChainConfig {
   name: string
   chainId: number
   authCaptureEscrow: Address
-  tokenCollector: Address
+  /** Payment collectors keyed by asset transfer method (`eip3009` / `permit2`). */
+  collectors: CollectorAddresses
   protocolFeeConfig: Address
   receiverRefundCollector: Address
   usdc: Address
@@ -70,13 +81,6 @@ export interface X402rChainConfig {
 /** AuthCaptureEscrow at the canonical `commerce-payments at v1.0.0` deployment. */
 export const authCaptureEscrow =
   '0xBdEA0D1bcC5966192B070Fdf62aB4EF5b4420cff' as const satisfies Address
-
-/**
- * Primary token collector. Currently aliases the canonical
- * `ERC3009PaymentCollector` — Permit2 lands in a follow-up PR.
- */
-export const tokenCollector =
-  '0x0E3dF9510de65469C4518D7843919c0b8C7A7757' as const satisfies Address
 
 export const protocolFeeConfig =
   '0xBe2d24614F339a1eB103A399F93AA2a39Ca815Bc' as const satisfies Address
@@ -163,13 +167,16 @@ export const commercePaymentsAddresses = {
 
 const PROTOCOL_ADDRESSES = {
   authCaptureEscrow,
-  tokenCollector,
+  collectors: {
+    eip3009: commercePaymentsErc3009PaymentCollector,
+    permit2: commercePaymentsPermit2PaymentCollector,
+  },
   protocolFeeConfig,
   receiverRefundCollector,
   factories,
   conditions,
   hooks,
-} as const
+} as const satisfies Omit<X402rChainConfig, 'name' | 'chainId' | 'usdc'>
 
 /** Build a chain config by spreading unified protocol addresses + chain-specific USDC */
 function chainConfig(
