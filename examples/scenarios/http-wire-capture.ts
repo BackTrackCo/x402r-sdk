@@ -11,6 +11,7 @@ import { authCaptureEscrowAbi, getChainConfig } from '@x402r/core'
 import { AUTH_CAPTURE_SCHEME } from '@x402r/evm'
 import { AuthCaptureEvmScheme as AuthCaptureFacilitatorScheme } from '@x402r/evm/auth-capture/facilitator'
 import { AuthCaptureEvmScheme as AuthCaptureServerScheme } from '@x402r/evm/auth-capture/server'
+import { x402rDefaults } from '@x402r/helpers'
 import express from 'express'
 import {
   type Address,
@@ -316,7 +317,10 @@ async function startResourceServer(
             // derive preApprovalExpiry). Upstream example omits this because
             // it has a default; we set it explicitly for clarity.
             maxTimeoutSeconds: 600,
-            extra: {
+            // x402rDefaults supplies the fee policy (0-100 bps) and the USDC
+            // EIP-712 domain (name 'USDC', version '2'); only the
+            // scenario-specific values are passed explicitly.
+            extra: x402rDefaults({
               captureAuthorizer,
               // Absolute deadlines instead of *Seconds offsets — easier to
               // reason about in a one-off scenario.
@@ -327,11 +331,7 @@ async function startResourceServer(
               // time). Since the scenario only authorizes (autoCapture left
               // unset), no fee is actually paid out in this run.
               feeRecipient: zeroAddress,
-              minFeeBps: 0,
-              maxFeeBps: 100,
-              name: 'USDC',
-              version: '2',
-            },
+            }),
           },
           description: 'A widget',
           mimeType: 'application/json',
