@@ -3,7 +3,6 @@ import {
   authCaptureEscrowAbi,
   paymentOperatorAbi,
 } from '../../abis/generated.js'
-import { computePaymentInfoHash } from '../../payment/hashing.js'
 import type { PaymentInfo } from '../../types/index.js'
 import { wrapContractCall } from '../_internal/error-wrapping.js'
 
@@ -18,7 +17,7 @@ export async function getPaymentState(
   publicClient: PublicClient,
   parameters: GetPaymentStateParameters,
 ): Promise<GetPaymentStateReturnType> {
-  const { operatorAddress, chainId, paymentInfo } = parameters
+  const { operatorAddress, paymentInfo } = parameters
 
   const escrowAddress = await wrapContractCall('getPaymentState.ESCROW', () =>
     publicClient.readContract({
@@ -28,7 +27,14 @@ export async function getPaymentState(
     }),
   )
 
-  const hash = computePaymentInfoHash(chainId, escrowAddress, paymentInfo)
+  const hash = await wrapContractCall('getPaymentState.getHash', () =>
+    publicClient.readContract({
+      address: escrowAddress,
+      abi: authCaptureEscrowAbi,
+      functionName: 'getHash',
+      args: [paymentInfo],
+    }),
+  )
 
   return wrapContractCall('getPaymentState.paymentState', () =>
     publicClient.readContract({

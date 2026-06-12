@@ -15,6 +15,7 @@ import {
 
 const MOCK_OPERATOR = '0x1111111111111111111111111111111111111111' as const
 const MOCK_ESCROW = '0x2222222222222222222222222222222222222222' as const
+const MOCK_HASH = `0x${'ab'.repeat(32)}` as const
 
 // ---------------------------------------------------------------------------
 // getPaymentState
@@ -23,9 +24,10 @@ const MOCK_ESCROW = '0x2222222222222222222222222222222222222222' as const
 describe('getPaymentState', () => {
   const paymentInfo = makePaymentInfo()
 
-  it('chains ESCROW lookup → hash computation → escrow read', async () => {
+  it('chains ESCROW lookup → on-chain getHash → escrow read', async () => {
     const client = createMockPublicClient({
       [`${MOCK_OPERATOR}:ESCROW`]: MOCK_ESCROW,
+      [`${MOCK_ESCROW}:getHash`]: MOCK_HASH,
       [`${MOCK_ESCROW}:paymentState`]: [true, 500000n, 500000n],
     })
 
@@ -36,16 +38,17 @@ describe('getPaymentState', () => {
     })
 
     expect(result).toEqual([true, 500000n, 500000n])
-    expect(client.readContract).toHaveBeenCalledTimes(2)
+    expect(client.readContract).toHaveBeenCalledTimes(3)
   })
 
-  it('uses chainId and escrowAddress for hash computation', async () => {
+  it('reads the payment hash from the escrow via on-chain getHash', async () => {
     const calls: any[] = []
     const client = {
       readContract: vi.fn((params: any) => {
         calls.push(params)
         if (params.functionName === 'ESCROW')
           return Promise.resolve(MOCK_ESCROW)
+        if (params.functionName === 'getHash') return Promise.resolve(MOCK_HASH)
         return Promise.resolve([false, 0n, 0n])
       }),
     } as unknown as PublicClient
@@ -56,39 +59,50 @@ describe('getPaymentState', () => {
       paymentInfo,
     })
 
-    // Second call should be to escrow address with a bytes32 hash arg
-    const escrowCall = calls[1]
-    expect(escrowCall.address).toBe(MOCK_ESCROW)
-    expect(escrowCall.functionName).toBe('paymentState')
-    expect(escrowCall.args[0]).toMatch(/^0x[0-9a-f]{64}$/)
+    // Second call: getHash on the escrow, passed the full paymentInfo struct
+    const getHashCall = calls[1]
+    expect(getHashCall.address).toBe(MOCK_ESCROW)
+    expect(getHashCall.functionName).toBe('getHash')
+    expect(getHashCall.args[0]).toBe(paymentInfo)
+
+    // Third call: paymentState on the escrow, keyed by the hash getHash returned
+    const stateCall = calls[2]
+    expect(stateCall.address).toBe(MOCK_ESCROW)
+    expect(stateCall.functionName).toBe('paymentState')
+    expect(stateCall.args[0]).toBe(MOCK_HASH)
   })
 
-  it('produces different hashes for different chainIds', async () => {
-    const hashes: string[] = []
+  it('keys paymentState by whatever hash the escrow getHash returns', async () => {
+    // The hash now comes from the contract, not a local computation, so a
+    // different getHash result must flow through to the paymentState key.
+    const stateArgs: string[] = []
 
-    for (const chainId of [1, 84532]) {
+    for (const escrowHash of [`0x${'11'.repeat(32)}`, `0x${'22'.repeat(32)}`]) {
       const client = {
         readContract: vi.fn((params: any) => {
           if (params.functionName === 'ESCROW')
             return Promise.resolve(MOCK_ESCROW)
-          hashes.push(params.args[0])
+          if (params.functionName === 'getHash')
+            return Promise.resolve(escrowHash)
+          stateArgs.push(params.args[0])
           return Promise.resolve([false, 0n, 0n])
         }),
       } as unknown as PublicClient
 
       await getPaymentState(client, {
         operatorAddress: MOCK_OPERATOR,
-        chainId,
+        chainId: TEST_CHAIN_ID,
         paymentInfo,
       })
     }
 
-    expect(hashes[0]).not.toBe(hashes[1])
+    expect(stateArgs[0]).not.toBe(stateArgs[1])
   })
 
   it('returns correct tuple values from escrow response', async () => {
     const client = createMockPublicClient({
       [`${MOCK_OPERATOR}:ESCROW`]: MOCK_ESCROW,
+      [`${MOCK_ESCROW}:getHash`]: MOCK_HASH,
       [`${MOCK_ESCROW}:paymentState`]: [true, 750000n, 250000n],
     })
 
@@ -126,6 +140,7 @@ describe('getPaymentState', () => {
       readContract: vi.fn((params: any) => {
         if (params.functionName === 'ESCROW')
           return Promise.resolve(MOCK_ESCROW)
+        if (params.functionName === 'getHash') return Promise.resolve(MOCK_HASH)
         throw new BaseError('execution reverted', {
           details: 'state read failed',
         })
@@ -152,6 +167,7 @@ describe('getPaymentAmounts', () => {
   it('returns named object from tuple', async () => {
     const client = createMockPublicClient({
       [`${MOCK_OPERATOR}:ESCROW`]: MOCK_ESCROW,
+      [`${MOCK_ESCROW}:getHash`]: MOCK_HASH,
       [`${MOCK_ESCROW}:paymentState`]: [true, 750000n, 250000n],
     })
 
