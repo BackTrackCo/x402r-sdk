@@ -21,7 +21,7 @@ const resourceServer = new x402ResourceServer(facilitatorClient)
 
 ## Building PaymentRequirements.extra
 
-`x402rDefaults` is a quick-start builder for the wire-format `extra`. Only the facilitator's captureAuthorizer is required:
+`x402rDefaults` is a quick-start builder for the server-side, pre-wire `extra` input. Only the facilitator's captureAuthorizer is required:
 
 ```ts
 import { x402rDefaults } from '@x402r/helpers'
@@ -29,8 +29,10 @@ import { x402rDefaults } from '@x402r/helpers'
 const extra = x402rDefaults({
   captureAuthorizer: '0xCaptureAuthorizer...',
 })
-// → fully-populated AuthCaptureExtra with sensible defaults
+// → server-side extra input with sensible defaults and RELATIVE deadline offsets
 ```
+
+By default the output carries **relative** deadline offsets (`captureDeadlineSeconds` / `refundDeadlineSeconds`, defaults `86400` / `604800`) rather than absolute wire deadlines. The auth-capture server scheme resolves each offset into an absolute wire deadline (`now + offset`) per request, before the payer client signs — so every authorization gets a fresh window and the helper never reads the wall clock. Pass an absolute `captureDeadline` and/or `refundDeadline` to fix either window to a wall-clock deadline; capture and refund resolve independently.
 
 See JSDoc on `X402rDefaultsInput` for per-field overrides and production-footgun warnings.
 
