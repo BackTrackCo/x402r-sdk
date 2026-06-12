@@ -177,14 +177,9 @@ export function x402rDefaults(input: X402rDefaultsInput): X402rDefaultsExtra {
   // The EIP-712 token domain has no safe default (see X402rDefaultsInput.name).
   // Required at the type level; this guards JS consumers who bypass types — an
   // empty name/version would silently produce a domain that fails on-chain.
-  if (!input.name) {
+  if (!input.name || !input.version) {
     throw new ValidationError(
-      'name is required (the token EIP-712 domain name)',
-    )
-  }
-  if (!input.version) {
-    throw new ValidationError(
-      'version is required (the token EIP-712 domain version)',
+      'x402rDefaults requires explicit name and version (the EIP-712 token domain)',
     )
   }
 
