@@ -315,18 +315,21 @@ describe('x402rDefaults', () => {
       expect(extra.version).toBe('1')
     })
 
-    it('throws when name is empty (the EIP-712 domain has no safe default)', () => {
-      // Empty string satisfies the `string` type but the runtime guard rejects
-      // it: an empty domain name would silently fail signature verification.
-      expect(() => x402rDefaults({ ...minimalInput, name: '' })).toThrow(
-        ValidationError,
+    it('is a compile error to omit the required name/version token domain', () => {
+      // Type-level enforcement, zero runtime cost: the EIP-712 token domain is
+      // required input (no safe default — it must match the token contract's
+      // name()/version()). Test files are typechecked, so the @ts-expect-error
+      // below fails the build if omitting name/version ever stops being a type
+      // error — locking the enforcement in without any runtime bytes.
+      const noDomain = {
+        captureAuthorizer:
+          '0x000000000000000000000000000000000000dEaD' as const,
+      }
+      const extra = x402rDefaults(
+        // @ts-expect-error name and version are required
+        noDomain,
       )
-    })
-
-    it('throws when version is empty (the EIP-712 domain has no safe default)', () => {
-      expect(() => x402rDefaults({ ...minimalInput, version: '' })).toThrow(
-        ValidationError,
-      )
+      expect(extra.captureAuthorizer).toBe(noDomain.captureAuthorizer)
     })
   })
 })
