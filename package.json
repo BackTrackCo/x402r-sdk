@@ -42,7 +42,8 @@
       "tar": ">=7.5.11",
       "picomatch": ">=4.0.4",
       "vite": ">=7.3.2",
-      "fast-uri": ">=3.1.2"
+      "fast-uri": ">=3.1.2",
+      "esbuild": ">=0.28.1"
     },
     "patchedDependencies": {
       "http-proxy@1.18.1": "patches/http-proxy@1.18.1.patch"
