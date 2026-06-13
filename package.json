@@ -27,7 +27,8 @@
     "example:arbiter:distribute-fees": "pnpm --filter examples run arbiter:distribute-fees",
     "example:arbiter:approve-refund": "pnpm --filter examples run arbiter:approve-refund",
     "example:payer:freeze": "pnpm --filter examples run payer:freeze",
-    "example:arbiter:review-evidence": "pnpm --filter examples run arbiter:review-evidence"
+    "example:arbiter:review-evidence": "pnpm --filter examples run arbiter:review-evidence",
+    "scenario:http-wire-capture": "pnpm --filter examples run scenario:http-wire-capture"
   },
   "engines": {
     "node": ">=22.18.0"

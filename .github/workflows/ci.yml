@@ -149,7 +149,7 @@ jobs:
           # servers) but runs in CI here. Retry guards public Base Sepolia RPC flake.
           timeout_minutes: 5
           max_attempts: 2
-          command: pnpm --filter examples run scenario:http-wire-capture
+          command: pnpm scenario:http-wire-capture
 
   build:
     name: Build
