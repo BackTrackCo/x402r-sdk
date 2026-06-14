@@ -115,36 +115,20 @@ async function bootstrapAnvil(): Promise<{
   rpcUrl: string
   cleanup: () => Promise<void>
 }> {
-  const sharedRpcUrl = process.env.SCENARIO_RPC_URL
-  let rpcUrl: string
-  let cleanup: () => Promise<void>
-
-  if (sharedRpcUrl) {
-    try {
-      new URL(sharedRpcUrl)
-    } catch {
-      throw new Error(
-        `http-wire-capture: SCENARIO_RPC_URL is not a valid URL: ${sharedRpcUrl}`,
-      )
-    }
-    rpcUrl = sharedRpcUrl
-    cleanup = async () => {}
-  } else {
-    const { Instance, Server } = await import('prool')
-    const server = Server.create({
-      instance: Instance.anvil({
-        chainId: CHAIN_ID,
-        forkUrl:
-          process.env.VITE_ANVIL_FORK_URL_BASE_SEPOLIA ??
-          'https://sepolia.base.org',
-      }),
-      port: ANVIL_PORT,
-    })
-    await server.start()
-    rpcUrl = `http://127.0.0.1:${ANVIL_PORT}/1`
-    cleanup = async () => {
-      await server.stop()
-    }
+  const { Instance, Server } = await import('prool')
+  const server = Server.create({
+    instance: Instance.anvil({
+      chainId: CHAIN_ID,
+      forkUrl:
+        process.env.VITE_ANVIL_FORK_URL_BASE_SEPOLIA ??
+        'https://sepolia.base.org',
+    }),
+    port: ANVIL_PORT,
+  })
+  await server.start()
+  const rpcUrl = `http://127.0.0.1:${ANVIL_PORT}/1`
+  const cleanup = async () => {
+    await server.stop()
   }
 
   const transport = http(rpcUrl)

@@ -111,7 +111,7 @@ Shipped plugins (`escrowPeriodActions`, `freezeActions`) fill optional `escrow`/
 
 1. **Evidence is 1:1 with RefundRequest** — each RefundRequest gets its own factory-deployed Evidence contract. Different arbiter = different contracts = separate evidence stores. Evidence is required when refund is configured (`refundRequestEvidenceAddress` must be provided alongside `refundRequestAddress`).
 2. **Freeze roles** — payer freezes (time extension near deadline), arbiter unfreezes (investigation resolved).
-3. **Recovery if partial-capture's second tx never lands** — the partial-refund pattern is two transactions (`capture(merchantAmount)` then `voidPayment()`; see `examples/scenarios/partial-refund-flow.ts`). If the second tx never executes (crash, gas exhaustion, key loss), the payer's remainder sits in escrow under the original authorization. Recovery is on-chain via `AuthCaptureEscrow.reclaim(paymentInfo)`, callable by the payer after `paymentInfo.refundExpiry`. The SDK does not currently ship a `payment.reclaim()` wrapper; call the contract directly:
+3. **Recovery if partial-capture's second tx never lands** — the partial-refund pattern is two transactions (`capture(merchantAmount)` then `voidPayment()`). If the second tx never executes (crash, gas exhaustion, key loss), the payer's remainder sits in escrow under the original authorization. Recovery is on-chain via `AuthCaptureEscrow.reclaim(paymentInfo)`, callable by the payer after `paymentInfo.refundExpiry`. The SDK does not currently ship a `payment.reclaim()` wrapper; call the contract directly:
 
    ```ts
    walletClient.writeContract({

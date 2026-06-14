@@ -141,16 +141,15 @@ jobs:
           timeout_minutes: 10
           max_attempts: 2
           command: pnpm test:fork
-      - name: Run CI scenarios (dispute + permit2)
+      - name: Run http-wire-capture scenario
         uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60  # v4.0.0
         with:
-          # Retry guards against public Base Sepolia RPC flake on the upstream
-          # fork. Port-collision band-aid is no longer needed: the orchestrator
-          # at examples/scripts/scenarios-ci.ts runs ONE prool with per-scenario
-          # URL subpaths, so retries don't race a TIME_WAIT port.
+          # The HTTP-402 wire test is the only guard for the @x402/express <->
+          # @x402r/evm integration seam; it stays an example (boots live Express
+          # servers) but runs in CI here. Retry guards public Base Sepolia RPC flake.
           timeout_minutes: 5
           max_attempts: 2
-          command: pnpm scenarios:ci
+          command: pnpm scenario:http-wire-capture
 
   build:
     name: Build
