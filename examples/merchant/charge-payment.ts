@@ -1,7 +1,7 @@
-import { signReceiveAuthorization } from '@x402r/core'
 import { privateKeyToAccount } from 'viem/accounts'
 import { setup } from '../shared/anvil-setup.js'
 import { PAYER_PRIVATE_KEY } from '../shared/constants.js'
+import { signReceiveAuthorization } from '../shared/sign-collector-data.js'
 
 const ctx = await setup({ authorize: false })
 
