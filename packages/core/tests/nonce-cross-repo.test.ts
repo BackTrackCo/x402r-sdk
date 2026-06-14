@@ -1,7 +1,6 @@
 import { encodeAbiParameters, keccak256 } from 'viem'
 import { describe, expect, it } from 'vitest'
 import {
-  computeEscrowNonce,
   computePaymentInfoHash,
   PAYMENT_INFO_TYPEHASH,
 } from '../src/payment/hashing.js'
@@ -117,20 +116,6 @@ const schemePaymentInfo = {
 describe('Cross-repo nonce consistency', () => {
   it('PAYMENT_INFO_TYPEHASH matches between SDK (toHex) and scheme (TextEncoder)', () => {
     expect(PAYMENT_INFO_TYPEHASH).toBe(SCHEME_PAYMENT_INFO_TYPEHASH)
-  })
-
-  it('computeEscrowNonce matches scheme nonce for identical inputs', () => {
-    const sdkNonce = computeEscrowNonce(
-      TEST_CHAIN_ID,
-      TEST_ESCROW_ADDRESS,
-      sdkPaymentInfo,
-    )
-    const schemeNonce = schemeComputeEscrowNonce(
-      TEST_CHAIN_ID,
-      TEST_ESCROW_ADDRESS,
-      schemePaymentInfo,
-    )
-    expect(sdkNonce).toBe(schemeNonce)
   })
 
   it('computePaymentInfoHash with zero payer matches scheme nonce', () => {

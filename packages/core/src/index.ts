@@ -351,23 +351,9 @@ export {
 // Payment
 // ---------------------------------------------------------------------------
 export {
-  type ComputeEscrowNonceReturnType,
   type ComputePaymentInfoHashReturnType,
-  type CreatePermit2ApprovalTxReturnType,
-  computeEscrowNonce,
   computePaymentInfoHash,
-  createPermit2ApprovalTx,
-  type GetPermit2AllowanceReadParamsInput,
-  type GetPermit2AllowanceReadParamsReturnType,
-  getPermit2AllowanceReadParams,
   PAYMENT_INFO_TYPEHASH,
-  PERMIT2_ADDRESS,
-  type SignPermit2AuthorizationParameters,
-  type SignPermit2AuthorizationReturnType,
-  type SignReceiveAuthorizationParameters,
-  type SignReceiveAuthorizationReturnType,
-  signPermit2Authorization,
-  signReceiveAuthorization,
 } from './payment/index.js'
 export { validatePaymentInfo } from './payment/validation.js'
 // ---------------------------------------------------------------------------

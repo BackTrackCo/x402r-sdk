@@ -2,15 +2,15 @@ import type { PublicClient } from 'viem'
 import { erc20Abi } from 'viem'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { createX402r, type X402r } from '../../../sdk/src/index.js'
-import {
-  createPermit2ApprovalTx,
-  getPermit2AllowanceReadParams,
-} from '../../src/payment/permit2.js'
 import type { PaymentInfo } from '../../src/types/index.js'
 import { anvilBaseSepolia } from '../setup/anvil.js'
 import { DEFAULT_AMOUNT, testRoles } from '../setup/constants.js'
 import type { DeployedFixtures } from '../setup/deploy-fixtures.js'
-import { createPermit2CollectorData } from '../setup/permit2-helper.js'
+import {
+  createPermit2ApprovalTx,
+  createPermit2CollectorData,
+  getPermit2AllowanceReadParams,
+} from '../setup/permit2-helper.js'
 import { setupScenario } from '../setup/scenario-helper.js'
 
 // ---------------------------------------------------------------------------

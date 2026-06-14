@@ -1,5 +1,5 @@
 import type { Hex } from 'viem'
-import { encodeAbiParameters, keccak256, toHex, zeroAddress } from 'viem'
+import { encodeAbiParameters, keccak256, toHex } from 'viem'
 import type { PaymentInfo } from '../types/index.js'
 
 // ---------------------------------------------------------------------------
@@ -7,7 +7,6 @@ import type { PaymentInfo } from '../types/index.js'
 // ---------------------------------------------------------------------------
 
 export type ComputePaymentInfoHashReturnType = Hex
-export type ComputeEscrowNonceReturnType = Hex
 
 // ---------------------------------------------------------------------------
 // Typehash
@@ -82,16 +81,4 @@ export function computePaymentInfoHash(
   ])
 
   return keccak256(encodedFinal)
-}
-
-/** Same as `computePaymentInfoHash` but with `payer = address(0)` — the ERC-3009 nonce. */
-export function computeEscrowNonce(
-  chainId: number,
-  escrowAddress: `0x${string}`,
-  paymentInfo: PaymentInfo,
-): ComputeEscrowNonceReturnType {
-  return computePaymentInfoHash(chainId, escrowAddress, {
-    ...paymentInfo,
-    payer: zeroAddress,
-  })
 }
