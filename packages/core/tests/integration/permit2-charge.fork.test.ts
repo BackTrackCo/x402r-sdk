@@ -1,3 +1,7 @@
+import {
+  createPermit2ApprovalTx,
+  getPermit2AllowanceReadParams,
+} from '@x402/evm'
 import type { PublicClient } from 'viem'
 import { erc20Abi } from 'viem'
 import { beforeAll, describe, expect, it } from 'vitest'
@@ -6,11 +10,7 @@ import type { PaymentInfo } from '../../src/types/index.js'
 import { anvilBaseSepolia } from '../setup/anvil.js'
 import { DEFAULT_AMOUNT, testRoles } from '../setup/constants.js'
 import type { DeployedFixtures } from '../setup/deploy-fixtures.js'
-import {
-  createPermit2ApprovalTx,
-  createPermit2CollectorData,
-  getPermit2AllowanceReadParams,
-} from '../setup/permit2-helper.js'
+import { createPermit2CollectorData } from '../setup/permit2-helper.js'
 import { setupScenario } from '../setup/scenario-helper.js'
 
 // ---------------------------------------------------------------------------

@@ -1,11 +1,6 @@
+import { PERMIT2_ADDRESS } from '@x402/evm'
 import type { Address, Hex, WalletClient } from 'viem'
-import {
-  encodeFunctionData,
-  erc20Abi,
-  getAddress,
-  maxUint256,
-  zeroAddress,
-} from 'viem'
+import { getAddress, zeroAddress } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { x402rChains } from '../../src/config/index.js'
 import { computePaymentInfoHash } from '../../src/payment/hashing.js'
@@ -14,15 +9,6 @@ import { accounts } from './constants.js'
 
 const baseSepolia = x402rChains[84532]
 const CHAIN_ID = 84532
-
-/**
- * Canonical Uniswap Permit2 contract — same address on every chain it's
- * deployed to. Pinned as a literal here (test infra) rather than imported,
- * matching the literal-pin precedent in
- * examples/scenarios/http-wire-capture.ts. https://github.com/Uniswap/permit2
- */
-const PERMIT2_ADDRESS =
-  '0x000000000022D473030F116dDEE9F6B43aC78BA3' as const satisfies Address
 
 // Plain Permit2 PermitTransferFrom (no witness). The x402r Permit2PaymentCollector
 // forwards collectorData straight to permit2.permitTransferFrom, so the signature
@@ -52,7 +38,7 @@ const addressToKey = new Map<string, `0x${string}`>(
  * correct EIP-712 signatures.
  *
  * Requires a one-time ERC20.approve(PERMIT2_ADDRESS, …) on the payer's token
- * before the signature can settle.
+ * before the signature can settle (see `@x402/evm`'s `createPermit2ApprovalTx`).
  */
 export async function createPermit2CollectorData(
   walletClient: WalletClient,
@@ -99,45 +85,4 @@ export async function createPermit2CollectorData(
   })
 
   return { collectorData: signature, tokenCollector }
-}
-
-/**
- * Build the one-time ERC20.approve(PERMIT2, MAX) tx the payer sends so the
- * canonical Permit2 contract can pull funds. Ported from the removed
- * @x402r/core helper of the same name (its published equivalent lives in
- * @x402/evm); kept here as fork-test infra.
- */
-export function createPermit2ApprovalTx(tokenAddress: Address): {
-  to: Address
-  data: Hex
-} {
-  return {
-    to: getAddress(tokenAddress),
-    data: encodeFunctionData({
-      abi: erc20Abi,
-      functionName: 'approve',
-      args: [PERMIT2_ADDRESS, maxUint256],
-    }),
-  }
-}
-
-/**
- * Build readContract args for the payer's current Permit2 allowance over a
- * token. Ported from the removed @x402r/core helper of the same name.
- */
-export function getPermit2AllowanceReadParams(input: {
-  tokenAddress: Address
-  ownerAddress: Address
-}): {
-  address: Address
-  abi: typeof erc20Abi
-  functionName: 'allowance'
-  args: readonly [Address, Address]
-} {
-  return {
-    address: getAddress(input.tokenAddress),
-    abi: erc20Abi,
-    functionName: 'allowance',
-    args: [getAddress(input.ownerAddress), PERMIT2_ADDRESS],
-  }
 }
