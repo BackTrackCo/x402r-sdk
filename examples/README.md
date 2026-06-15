@@ -1,62 +1,51 @@
 # x402r SDK Examples
 
-Runnable examples demonstrating every SDK operation by role (payer, merchant, arbiter) and multi-role integration scenarios.
+Two buckets: type-checked **snippets** that show the shape of common SDK calls,
+and runnable multi-role **scenarios** that exercise the full payment lifecycle
+against a local Anvil fork.
+
+The per-action SDK operations that used to live here (payer/merchant/arbiter)
+are now covered by assertion-driven fork tests in
+`packages/core/tests/integration/*.fork.test.ts` — they were integration tests,
+not teaching examples, and run under `pnpm test:fork`.
 
 ## Quick Start
 
 ```bash
 cd x402r-sdk
 pnpm install && pnpm build
-pnpm example:payer:request-refund
+pnpm scenario:http-wire-capture
 ```
 
-Each example starts a local Anvil fork, deploys contracts, and runs — no wallet or testnet funds needed.
+## Snippets
 
-## Examples
+Small, illustrative fragments that compile but don't run a chain. Type-checked,
+not executed.
 
-### Payer
+| Snippet | Shows |
+|---------|-------|
+| [`snippets/construct-payment-info.ts`](snippets/construct-payment-info.ts) | Build a `PaymentInfo` with `getChainConfig` |
+| [`snippets/wire-payer-client.ts`](snippets/wire-payer-client.ts) | Construct a payer client with viem clients |
+| [`snippets/request-refund.ts`](snippets/request-refund.ts) | Call `refund.request(paymentInfo, amount)` |
+| [`snippets/wire-arbiter-client.ts`](snippets/wire-arbiter-client.ts) | Construct an arbiter client + evidence/void call shapes |
 
-| Example | Description |
-|---------|-------------|
-| [`payer/request-refund.ts`](payer/request-refund.ts) | Request a refund for a payment in escrow |
-| [`payer/submit-evidence.ts`](payer/submit-evidence.ts) | Submit evidence CID for a dispute |
-| [`payer/freeze-payment.ts`](payer/freeze-payment.ts) | Freeze a payment to block capture during investigation |
+```bash
+pnpm snippets:check
+```
 
-### Merchant
+See [`snippets/README.md`](snippets/README.md) for details.
 
-| Example | Description |
-|---------|-------------|
-| [`merchant/charge-payment.ts`](merchant/charge-payment.ts) | Charge an authorized payment |
-| [`merchant/capture-payment.ts`](merchant/capture-payment.ts) | Capture funds after escrow expires |
+## Scenarios
 
-### Arbiter
-
-| Example | Description |
-|---------|-------------|
-| [`arbiter/approve-refund.ts`](arbiter/approve-refund.ts) | Approve a payer's refund request |
-| [`arbiter/review-evidence.ts`](arbiter/review-evidence.ts) | Review all submitted evidence |
-| [`arbiter/distribute-fees.ts`](arbiter/distribute-fees.ts) | Distribute accumulated protocol fees |
-
-### Scenarios
-
-Multi-role integration scenarios running against a local Anvil fork.
+Multi-role integration scenarios running against a local Anvil fork — no wallet
+or testnet funds needed.
 
 | Scenario | Description |
 |----------|-------------|
 | [`scenarios/http-wire-capture.ts`](scenarios/http-wire-capture.ts) | End-to-end HTTP 402 wire against an in-process facilitator + resource server |
 
-The assertion-driven scenarios (`happy-path-capture`, `atomic-charge`, `partial-refund-flow`, `dispute-resolution`, `permit2-charge`) moved into the core vitest fork-test suite at `packages/core/tests/integration/*.fork.test.ts` and run under `pnpm test:fork`.
-
-See [`scenarios/README.md`](scenarios/README.md) for details.
-
-## Running
-
 ```bash
-# Per-action examples
-pnpm example:payer:request-refund
-pnpm example:merchant:charge
-pnpm example:arbiter:approve-refund
-
-# Scenarios
 pnpm scenario:http-wire-capture
 ```
+
+See [`scenarios/README.md`](scenarios/README.md) for details.

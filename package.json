@@ -21,14 +21,8 @@
     "knip": "knip",
     "size-limit": "pnpm --filter=@x402r/core exec size-limit && pnpm --filter=@x402r/helpers exec size-limit && pnpm --filter=@x402r/sdk exec size-limit",
     "test:pkg": "turbo run build --force",
-    "example:payer:request-refund": "pnpm --filter examples run payer:request-refund",
-    "example:payer:submit-evidence": "pnpm --filter examples run payer:submit-evidence",
-    "example:merchant:charge": "pnpm --filter examples run merchant:charge",
-    "example:arbiter:distribute-fees": "pnpm --filter examples run arbiter:distribute-fees",
-    "example:arbiter:approve-refund": "pnpm --filter examples run arbiter:approve-refund",
-    "example:payer:freeze": "pnpm --filter examples run payer:freeze",
-    "example:arbiter:review-evidence": "pnpm --filter examples run arbiter:review-evidence",
-    "scenario:http-wire-capture": "pnpm --filter examples run scenario:http-wire-capture"
+    "scenario:http-wire-capture": "pnpm --filter examples run scenario:http-wire-capture",
+    "snippets:check": "pnpm --filter @x402r/example-snippets run typecheck"
   },
   "engines": {
     "node": ">=22.18.0"

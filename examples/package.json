@@ -4,14 +4,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "payer:request-refund": "tsx payer/request-refund.ts",
-    "payer:submit-evidence": "tsx payer/submit-evidence.ts",
-    "merchant:charge": "tsx merchant/charge-payment.ts",
-    "merchant:capture": "tsx merchant/capture-payment.ts",
-    "arbiter:distribute-fees": "tsx arbiter/distribute-fees.ts",
-    "arbiter:approve-refund": "tsx arbiter/approve-refund.ts",
-    "payer:freeze": "tsx payer/freeze-payment.ts",
-    "arbiter:review-evidence": "tsx arbiter/review-evidence.ts",
     "scenario:http-wire-capture": "tsx scenarios/http-wire-capture.ts"
   },
   "dependencies": {

@@ -28,12 +28,12 @@ import {
 } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { baseSepolia } from 'viem/chains'
+import { PAYMENT_AMOUNT } from '../shared/constants.js'
 import {
   getBalanceSlot,
   testAccounts,
   USDC_BALANCE_SLOT,
-} from '../shared/anvil-setup.js'
-import { PAYMENT_AMOUNT } from '../shared/constants.js'
+} from '../shared/fork-helpers.js'
 import { StepRunner } from './runner.js'
 
 // ---------------------------------------------------------------------------
@@ -78,11 +78,11 @@ const AUTH_CAPTURE_ESCROW: Address = chainConfig.authCaptureEscrow
 const EIP3009_TOKEN_COLLECTOR: Address =
   '0x0E3dF9510de65469C4518D7843919c0b8C7A7757'
 
-// Reuse the deterministic Anvil accounts from shared/anvil-setup.ts.
+// Reuse the deterministic Anvil accounts from shared/fork-helpers.ts.
 // deployer (#0) doubles as the facilitator EOA + captureAuthorizer so on-chain
 // `onlySender(operator)` resolves to msg.sender == captureAuthorizer on the
 // direct-EOA path (no bytecode after setCode clears it). payer = #1, receiver
-// = #2 — same role-mapping as the direct-SDK scenarios.
+// = #2.
 const { deployer, payer, receiver } = testAccounts
 
 // Await the http.Server's 'listening' event before its URL is handed out,
@@ -102,13 +102,11 @@ function waitForListening(server: HttpServer, label: string): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// 1. Anvil bootstrap (inline subset of shared/anvil-setup.ts).
+// 1. Anvil bootstrap.
 //
-// Direct-SDK scenarios in this examples folder use the shared setup() because
-// they need a deployed MarketplaceOperator. The HTTP-wire path doesn't —
-// captureAuthorizer is an EOA — so we keep the bootstrap minimal and avoid
-// branching anvil-setup.ts on a skipOperatorDeploy flag (would force its
-// return-shape to splinter for one caller).
+// The HTTP-wire path doesn't need a deployed MarketplaceOperator —
+// captureAuthorizer is an EOA — so the bootstrap stays minimal, pulling only
+// the deterministic accounts + balance-slot helpers from shared/fork-helpers.ts.
 // ---------------------------------------------------------------------------
 async function bootstrapAnvil(): Promise<{
   publicClient: ReturnType<typeof createPublicClient>
@@ -150,7 +148,7 @@ async function bootstrapAnvil(): Promise<{
   }
 
   // Fund the payer with 10K USDC via storage-slot manipulation. Mirrors the
-  // slot-fallback in shared/anvil-setup.ts: write slot 9 (Base Sepolia USDC
+  // slot-fallback approach: write slot 9 (Base Sepolia USDC
   // FiatTokenV2_2 balance mapping), then probe and fall back to slot 0 if the
   // first write didn't land. Defensive — if a future USDC upgrade ever shifts
   // the slot, both code paths react the same way.
