@@ -11,29 +11,27 @@ import { authCaptureEscrowAbi, getChainConfig } from '@x402r/core'
 import { AUTH_CAPTURE_SCHEME } from '@x402r/evm'
 import { AuthCaptureEvmScheme as AuthCaptureFacilitatorScheme } from '@x402r/evm/auth-capture/facilitator'
 import { AuthCaptureEvmScheme as AuthCaptureServerScheme } from '@x402r/evm/auth-capture/server'
+import {
+  clearTestAccountCode,
+  defineAnvil,
+  fundPayerUsdc,
+  testRoles,
+} from '@x402r/test-fixtures'
 import express from 'express'
 import {
   type Address,
-  createPublicClient,
-  createTestClient,
+  type createPublicClient,
   createWalletClient,
   erc20Abi,
   type Hash,
   http,
-  numberToHex,
   parseEventLogs,
   publicActions,
-  type TestClient,
   zeroAddress,
 } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { baseSepolia } from 'viem/chains'
 import { PAYMENT_AMOUNT } from '../shared/constants.js'
-import {
-  getBalanceSlot,
-  testAccounts,
-  USDC_BALANCE_SLOT,
-} from '../shared/fork-helpers.js'
 import { StepRunner } from './runner.js'
 
 // ---------------------------------------------------------------------------
@@ -78,12 +76,12 @@ const AUTH_CAPTURE_ESCROW: Address = chainConfig.authCaptureEscrow
 const EIP3009_TOKEN_COLLECTOR: Address =
   '0x0E3dF9510de65469C4518D7843919c0b8C7A7757'
 
-// Reuse the deterministic Anvil accounts from shared/fork-helpers.ts.
+// Reuse the deterministic Anvil accounts from @x402r/test-fixtures.
 // deployer (#0) doubles as the facilitator EOA + captureAuthorizer so on-chain
 // `onlySender(operator)` resolves to msg.sender == captureAuthorizer on the
 // direct-EOA path (no bytecode after setCode clears it). payer = #1, receiver
 // = #2.
-const { deployer, payer, receiver } = testAccounts
+const { deployer, payer, receiver } = testRoles
 
 // Await the http.Server's 'listening' event before its URL is handed out,
 // so a fast paidFetch on a cold runner doesn't race the socket bind. On
@@ -105,76 +103,44 @@ function waitForListening(server: HttpServer, label: string): Promise<void> {
 // 1. Anvil bootstrap.
 //
 // The HTTP-wire path doesn't need a deployed MarketplaceOperator —
-// captureAuthorizer is an EOA — so the bootstrap stays minimal, pulling only
-// the deterministic accounts + balance-slot helpers from shared/fork-helpers.ts.
+// captureAuthorizer is an EOA — so the bootstrap stays minimal: spin up the
+// shared @x402r/test-fixtures Anvil factory, clear EOA bytecode, and fund the
+// payer via the shared slot helper.
 // ---------------------------------------------------------------------------
 async function bootstrapAnvil(): Promise<{
   publicClient: ReturnType<typeof createPublicClient>
   rpcUrl: string
   cleanup: () => Promise<void>
 }> {
-  const { Instance, Server } = await import('prool')
-  const server = Server.create({
-    instance: Instance.anvil({
-      chainId: CHAIN_ID,
-      forkUrl:
-        process.env.VITE_ANVIL_FORK_URL_BASE_SEPOLIA ??
-        'https://sepolia.base.org',
-    }),
+  // Fixed RPC subpath — this standalone scenario owns the whole port (the
+  // vitest fork harness passes its poolId instead).
+  const anvil = defineAnvil({
+    chain: baseSepolia,
     port: ANVIL_PORT,
+    rpcSubpath: 1,
   })
-  await server.start()
-  const rpcUrl = `http://127.0.0.1:${ANVIL_PORT}/1`
-  const cleanup = async () => {
-    await server.stop()
-  }
+  await anvil.start()
 
-  const transport = http(rpcUrl)
-  const publicClient = createPublicClient({
-    chain: baseSepolia,
-    transport,
-    cacheTime: 0,
-  })
-  const testClient = createTestClient({
-    chain: baseSepolia,
-    transport,
-    mode: 'anvil',
-  }) as unknown as TestClient
+  const publicClient = anvil.getPublicClient()
+  const testClient = anvil.getTestClient()
 
   // Clear bytecode at the EOA accounts so ERC-3009 signer checks pass and so
   // the facilitator's `getCode(captureAuthorizer)` probe returns '0x' (EOA path).
-  for (const addr of [deployer.address, payer.address, receiver.address]) {
-    await testClient.setCode({ address: addr, bytecode: '0x' })
-  }
+  await clearTestAccountCode(testClient, [
+    deployer.address,
+    payer.address,
+    receiver.address,
+  ])
 
-  // Fund the payer with 10K USDC via storage-slot manipulation. Mirrors the
-  // slot-fallback approach: write slot 9 (Base Sepolia USDC
-  // FiatTokenV2_2 balance mapping), then probe and fall back to slot 0 if the
-  // first write didn't land. Defensive — if a future USDC upgrade ever shifts
-  // the slot, both code paths react the same way.
-  const payerUsdcAmount = 10_000_000_000n
-  const payerSlot = getBalanceSlot(payer.address, USDC_BALANCE_SLOT)
-  await testClient.setStorageAt({
-    address: USDC,
-    index: payerSlot,
-    value: numberToHex(payerUsdcAmount, { size: 32 }),
+  // Fund the payer with USDC via the shared slot-9/slot-0 funding helper.
+  await fundPayerUsdc({
+    publicClient,
+    testClient,
+    usdc: USDC,
+    payer: payer.address,
   })
-  const payerBalance = await publicClient.readContract({
-    address: USDC,
-    abi: erc20Abi,
-    functionName: 'balanceOf',
-    args: [payer.address],
-  })
-  if (payerBalance === 0n) {
-    const fallbackSlot = getBalanceSlot(payer.address, 0n)
-    await testClient.setStorageAt({
-      address: USDC,
-      index: fallbackSlot,
-      value: numberToHex(payerUsdcAmount, { size: 32 }),
-    })
-  }
 
-  return { publicClient, rpcUrl, cleanup }
+  return { publicClient, rpcUrl: anvil.rpcUrl, cleanup: () => anvil.stop() }
 }
 
 // ---------------------------------------------------------------------------
