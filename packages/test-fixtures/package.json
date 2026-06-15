@@ -3,11 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "description": "Shared Anvil fork + USDC funding fixtures for the @x402r fork-test suite and runnable examples",
   "exports": {
     ".": "./src/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "prool": "^0.2.4",

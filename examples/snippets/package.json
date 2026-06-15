@@ -5,7 +5,7 @@
   "type": "module",
   "description": "No-anvil illustrative snippets for @x402r/sdk and @x402r/core",
   "scripts": {
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@x402r/core": "workspace:*",
