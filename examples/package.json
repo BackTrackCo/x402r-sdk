@@ -13,7 +13,7 @@
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
-    "@types/node": "^25.9.1",
+    "@types/node": "^25.9.2",
     "@x402/core": "2.14.0",
     "@x402/evm": "2.14.0",
     "@x402/express": "2.14.0",
