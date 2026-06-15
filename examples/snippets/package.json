@@ -1,0 +1,19 @@
+{
+  "name": "@x402r/example-snippets",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "No-anvil illustrative snippets for @x402r/sdk and @x402r/core",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@x402r/core": "workspace:*",
+    "@x402r/sdk": "workspace:*",
+    "viem": "^2.52.2"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "typescript": "^6.0.3"
+  }
+}

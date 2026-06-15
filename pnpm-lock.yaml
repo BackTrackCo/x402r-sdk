@@ -68,12 +68,6 @@ importers:
       '@x402r/core':
         specifier: workspace:*
         version: link:../packages/core
-      '@x402r/sdk':
-        specifier: workspace:*
-        version: link:../packages/sdk
-      prool:
-        specifier: ^0.2.4
-        version: 0.2.4
       tsx:
         specifier: ^4.22.4
         version: 4.22.4
@@ -102,9 +96,31 @@ importers:
       '@x402r/evm':
         specifier: 0.2.0-alpha.1
         version: 0.2.0-alpha.1(@x402/core@2.14.0)(@x402/evm@2.14.0(typescript@6.0.3))(viem@2.52.2(typescript@6.0.3)(zod@4.4.3))
+      '@x402r/test-fixtures':
+        specifier: workspace:*
+        version: link:../packages/test-fixtures
       express:
         specifier: ^5.0.0
         version: 5.2.1
+
+  examples/snippets:
+    dependencies:
+      '@x402r/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@x402r/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
+      viem:
+        specifier: ^2.52.2
+        version: 2.52.2(typescript@6.0.3)(zod@4.4.3)
+    devDependencies:
+      '@types/node':
+        specifier: ^25.9.1
+        version: 25.9.1
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
 
   packages/cli:
     dependencies:
@@ -131,9 +147,9 @@ importers:
       '@x402/evm':
         specifier: ^2.14.0
         version: 2.14.0(typescript@6.0.3)
-      prool:
-        specifier: ^0.2.4
-        version: 0.2.4
+      '@x402r/test-fixtures':
+        specifier: workspace:*
+        version: link:../test-fixtures
 
   packages/helpers:
     dependencies:
@@ -159,6 +175,22 @@ importers:
       viem:
         specifier: ^2.52.2
         version: 2.52.2(typescript@6.0.3)(zod@4.4.3)
+
+  packages/test-fixtures:
+    dependencies:
+      prool:
+        specifier: ^0.2.4
+        version: 0.2.4
+      viem:
+        specifier: ^2.52.2
+        version: 2.52.2(typescript@6.0.3)(zod@4.4.3)
+    devDependencies:
+      '@types/node':
+        specifier: ^25.9.1
+        version: 25.9.1
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
 
 packages:
 

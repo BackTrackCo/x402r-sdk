@@ -1,0 +1,21 @@
+{
+  "name": "@x402r/test-fixtures",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared Anvil fork + USDC funding fixtures for the @x402r fork-test suite and runnable examples",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "prool": "^0.2.4",
+    "viem": "^2.52.2"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "typescript": "^6.0.3"
+  }
+}
