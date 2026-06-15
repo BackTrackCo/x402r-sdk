@@ -20,6 +20,9 @@
     },
     "packages/cli": {
       "entry": ["tests/**/*.test.ts", "tests/**/*.ts", "vitest.config.ts"]
+    },
+    "examples/snippets": {
+      "entry": ["**/*.ts"]
     }
   }
 }

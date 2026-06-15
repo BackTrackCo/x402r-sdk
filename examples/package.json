@@ -8,8 +8,6 @@
   },
   "dependencies": {
     "@x402r/core": "workspace:*",
-    "@x402r/sdk": "workspace:*",
-    "prool": "^0.2.4",
     "tsx": "^4.22.4",
     "viem": "^2.52.2"
   },
