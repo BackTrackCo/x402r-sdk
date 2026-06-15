@@ -2,7 +2,6 @@ import {
   deployMarketplaceOperator,
   getChainConfig,
   type PaymentInfo,
-  signReceiveAuthorization,
 } from '@x402r/core'
 import {
   createArbiterClient,
@@ -24,6 +23,7 @@ import {
 import { privateKeyToAccount } from 'viem/accounts'
 import { baseSepolia } from 'viem/chains'
 import { FAR_FUTURE, PAYMENT_AMOUNT } from './constants.js'
+import { signReceiveAuthorization } from './sign-collector-data.js'
 import type { ExampleContext, SetupOptions } from './types.js'
 
 // ---------------------------------------------------------------------------

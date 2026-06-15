@@ -1,8 +1,8 @@
 import type { Address, Hex, WalletClient } from 'viem'
-import { getAddress } from 'viem'
+import { getAddress, zeroAddress } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { x402rChains } from '../../src/config/index.js'
-import { computeEscrowNonce } from '../../src/payment/hashing.js'
+import { computePaymentInfoHash } from '../../src/payment/hashing.js'
 import type { PaymentInfo } from '../../src/types/index.js'
 import { accounts } from './constants.js'
 
@@ -45,7 +45,10 @@ export async function createCollectorData(
   const localAccount = privateKeyToAccount(privateKey)
 
   // Compute nonce (matches AuthCaptureEscrow.getHash with payer=0x0)
-  const nonce = computeEscrowNonce(CHAIN_ID, escrowAddress, paymentInfo)
+  const nonce = computePaymentInfoHash(CHAIN_ID, escrowAddress, {
+    ...paymentInfo,
+    payer: zeroAddress,
+  })
 
   // Sign ERC-3009 ReceiveWithAuthorization (EIP-712) with local key
   const signature = await localAccount.signTypedData({

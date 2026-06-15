@@ -1,5 +1,5 @@
 import type { PublicClient, TestClient } from 'viem'
-import { erc20Abi, parseEventLogs } from 'viem'
+import { erc20Abi, parseEventLogs, zeroAddress } from 'viem'
 import { beforeAll, describe, expect, it } from 'vitest'
 import {
   createMerchantClient,
@@ -9,7 +9,7 @@ import {
 } from '../../../sdk/src/index.js'
 import { authCaptureEscrowAbi } from '../../src/abis/generated.js'
 import { authCaptureEscrow, x402rChains } from '../../src/config/index.js'
-import { computeEscrowNonce } from '../../src/payment/hashing.js'
+import { computePaymentInfoHash } from '../../src/payment/hashing.js'
 import type { PaymentInfo } from '../../src/types/index.js'
 import { anvilBaseSepolia } from '../setup/anvil.js'
 import {
@@ -290,11 +290,10 @@ describe('Edge case: voidPayment after full capture', () => {
 // remainder` describe block. Vitest runs `describe` blocks in file order, so
 // by the time this runs, `paymentInfo` has been fully consumed (authorized,
 // partial-captured, then voided). Reusing the same paymentInfo here exercises
-// the replay-protection boundary: the escrow nonce (see
-// `computeEscrowNonce` at packages/core/src/payment/hashing.ts:87-97) is
-// derived from `(chainId, escrowAddress, paymentInfo with payer=0)`, so a
-// second authorize with the same salt should collide with the already-spent
-// nonce and revert.
+// the replay-protection boundary: the escrow nonce is the payer-agnostic
+// PaymentInfo hash (`computePaymentInfoHash` with payer=0x0), derived from
+// `(chainId, escrowAddress, paymentInfo with payer=0)`, so a second authorize
+// with the same salt should collide with the already-spent nonce and revert.
 describe('Edge case: double capture+void on same paymentInfo', () => {
   it('rejects second authorize on the same salt (nonce collision)', async () => {
     // Precondition (in-test guard): Scenario 3 above must have fully consumed
@@ -321,8 +320,8 @@ describe('Edge case: double capture+void on same paymentInfo', () => {
     // reverts in production. The on-chain `authorize()` REVERTS in the
     // receipt — the replay-protection gate is USDC's ERC-3009
     // `authorizationState(payer, nonce)` mapping — the nonce was consumed
-    // when the first authorize landed (Scenario 3 above). `computeEscrowNonce`
-    // at `packages/core/src/payment/hashing.ts:87-97` is just the
+    // when the first authorize landed (Scenario 3 above). The payer-agnostic
+    // PaymentInfo hash (`computePaymentInfoHash` with payer=0x0) is just the
     // deterministic nonce *derivation*; the escrow contract doesn't maintain
     // its own consumption map. So the second authorize cannot pull tokens.
     // The capturableAmount stays at 0n.
@@ -445,10 +444,13 @@ describe('Edge case: double capture+void on same paymentInfo', () => {
     const preAmounts = await merchant.payment.getAmounts(paymentInfo)
     expect(preAmounts.capturableAmount).toBe(0n)
 
-    const escrowNonce = computeEscrowNonce(
+    const escrowNonce = computePaymentInfoHash(
       baseSepolia.chainId,
       authCaptureEscrow,
-      paymentInfo,
+      {
+        ...paymentInfo,
+        payer: zeroAddress,
+      },
     )
 
     const consumed = await publicClient.readContract({

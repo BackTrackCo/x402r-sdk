@@ -1,9 +1,9 @@
+import { PERMIT2_ADDRESS } from '@x402/evm'
 import type { Address, Hex, WalletClient } from 'viem'
-import { getAddress } from 'viem'
+import { getAddress, zeroAddress } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { x402rChains } from '../../src/config/index.js'
-import { computeEscrowNonce } from '../../src/payment/hashing.js'
-import { PERMIT2_ADDRESS } from '../../src/payment/permit2.js'
+import { computePaymentInfoHash } from '../../src/payment/hashing.js'
 import type { PaymentInfo } from '../../src/types/index.js'
 import { accounts } from './constants.js'
 
@@ -38,7 +38,7 @@ const addressToKey = new Map<string, `0x${string}`>(
  * correct EIP-712 signatures.
  *
  * Requires a one-time ERC20.approve(PERMIT2_ADDRESS, …) on the payer's token
- * before the signature can settle.
+ * before the signature can settle (see `@x402/evm`'s `createPermit2ApprovalTx`).
  */
 export async function createPermit2CollectorData(
   walletClient: WalletClient,
@@ -57,7 +57,12 @@ export async function createPermit2CollectorData(
 
   // Payer-agnostic nonce (matches AuthCaptureEscrow.getHash with payer=0x0).
   // Permit2's nonce field is uint256, so coerce the bytes32 hash to bigint.
-  const nonce = BigInt(computeEscrowNonce(CHAIN_ID, escrowAddress, paymentInfo))
+  const nonce = BigInt(
+    computePaymentInfoHash(CHAIN_ID, escrowAddress, {
+      ...paymentInfo,
+      payer: zeroAddress,
+    }),
+  )
 
   // Sign Permit2 PermitTransferFrom (EIP-712) with local key
   const signature = await localAccount.signTypedData({

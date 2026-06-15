@@ -60,6 +60,7 @@
     "viem": "^2.52.2"
   },
   "devDependencies": {
+    "@x402/evm": "^2.14.0",
     "prool": "^0.2.4"
   },
   "size-limit": [

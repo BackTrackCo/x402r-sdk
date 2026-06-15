@@ -1,11 +1,11 @@
+import {
+  createPermit2ApprovalTx,
+  getPermit2AllowanceReadParams,
+} from '@x402/evm'
 import type { PublicClient } from 'viem'
 import { erc20Abi } from 'viem'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { createX402r, type X402r } from '../../../sdk/src/index.js'
-import {
-  createPermit2ApprovalTx,
-  getPermit2AllowanceReadParams,
-} from '../../src/payment/permit2.js'
 import type { PaymentInfo } from '../../src/types/index.js'
 import { anvilBaseSepolia } from '../setup/anvil.js'
 import { DEFAULT_AMOUNT, testRoles } from '../setup/constants.js'

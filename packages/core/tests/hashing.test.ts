@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  computeEscrowNonce,
   computePaymentInfoHash,
   PAYMENT_INFO_TYPEHASH,
 } from '../src/payment/hashing.js'
@@ -8,7 +7,6 @@ import {
   makePaymentInfo,
   TEST_CHAIN_ID,
   TEST_ESCROW_ADDRESS,
-  zeroAddress,
 } from './fixtures.js'
 
 const samplePaymentInfo = makePaymentInfo()
@@ -81,50 +79,5 @@ describe('computePaymentInfoHash', () => {
       samplePaymentInfo,
     )
     expect(hash1).not.toBe(hash2)
-  })
-})
-
-// ---------------------------------------------------------------------------
-// computeEscrowNonce
-// ---------------------------------------------------------------------------
-
-describe('computeEscrowNonce', () => {
-  it('is payer-agnostic (ignores payer field)', () => {
-    const n1 = computeEscrowNonce(
-      TEST_CHAIN_ID,
-      TEST_ESCROW_ADDRESS,
-      samplePaymentInfo,
-    )
-    const n2 = computeEscrowNonce(TEST_CHAIN_ID, TEST_ESCROW_ADDRESS, {
-      ...samplePaymentInfo,
-      payer: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-    })
-    expect(n1).toBe(n2)
-  })
-
-  it('matches computePaymentInfoHash with zero payer', () => {
-    const nonce = computeEscrowNonce(
-      TEST_CHAIN_ID,
-      TEST_ESCROW_ADDRESS,
-      samplePaymentInfo,
-    )
-    const hash = computePaymentInfoHash(TEST_CHAIN_ID, TEST_ESCROW_ADDRESS, {
-      ...samplePaymentInfo,
-      payer: zeroAddress,
-    })
-    expect(nonce).toBe(hash)
-  })
-
-  it('produces different nonces for different maxAmount', () => {
-    const n1 = computeEscrowNonce(
-      TEST_CHAIN_ID,
-      TEST_ESCROW_ADDRESS,
-      samplePaymentInfo,
-    )
-    const n2 = computeEscrowNonce(TEST_CHAIN_ID, TEST_ESCROW_ADDRESS, {
-      ...samplePaymentInfo,
-      maxAmount: 2000000n,
-    })
-    expect(n1).not.toBe(n2)
   })
 })
