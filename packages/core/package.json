@@ -61,6 +61,7 @@
   },
   "devDependencies": {
     "@x402/evm": "^2.14.0",
+    "@x402r/test-fixtures": "workspace:*",
     "prool": "^0.2.4"
   },
   "size-limit": [

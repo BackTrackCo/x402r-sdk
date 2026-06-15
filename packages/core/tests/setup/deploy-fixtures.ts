@@ -1,11 +1,11 @@
-import type { Address, PublicClient, TestClient, WalletClient } from 'viem'
 import {
-  encodeAbiParameters,
-  erc20Abi,
-  keccak256,
-  pad,
-  zeroAddress,
-} from 'viem'
+  accounts,
+  clearTestAccountCode,
+  fundPayerUsdc,
+  testRoles,
+} from '@x402r/test-fixtures'
+import type { Address, PublicClient, TestClient, WalletClient } from 'viem'
+import { pad, zeroAddress } from 'viem'
 import {
   andConditionFactoryAbi,
   escrowPeriodFactoryAbi,
@@ -16,7 +16,6 @@ import {
 } from '../../src/abis/generated.js'
 import { x402rChains } from '../../src/config/index.js'
 import { deployArbiterSetup } from '../../src/deploy/index.js'
-import { accounts, testRoles } from './constants.js'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -47,22 +46,6 @@ const USDC = baseSepolia.usdc
 const FEE_BPS = 50n
 const ESCROW_PERIOD_SECONDS = 604800n // 7 days
 
-// USDC (proxy) balanceOf mapping is at storage slot 9
-const USDC_BALANCE_SLOT = 9n
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function getBalanceSlot(account: Address, baseSlot: bigint): `0x${string}` {
-  return keccak256(
-    encodeAbiParameters(
-      [{ type: 'address' }, { type: 'uint256' }],
-      [account, baseSlot],
-    ),
-  )
-}
-
 // ---------------------------------------------------------------------------
 // Deploy
 // ---------------------------------------------------------------------------
@@ -74,13 +57,11 @@ export async function deployTestFixtures(
 ): Promise<DeployedFixtures> {
   const deployer = testRoles.deployer.address
 
-  // 0. Clear contract code at all test accounts
-  //    On Base Sepolia, standard Anvil/Hardhat addresses have contracts deployed.
-  //    USDC FiatTokenV2_2 uses OZ SignatureChecker which checks signer.code.length —
-  //    if code exists, it skips ecrecover and tries EIP-1271 instead, breaking ERC-3009.
-  for (const account of accounts) {
-    await testClient.setCode({ address: account.address, bytecode: '0x' })
-  }
+  // 0. Clear contract code at all test accounts so ERC-3009 signer checks pass.
+  await clearTestAccountCode(
+    testClient,
+    accounts.map((account) => account.address),
+  )
 
   // 1. Deploy StaticFeeCalculator via factory
   const feeCalcHash = await walletClient.writeContract({
@@ -368,41 +349,12 @@ export async function deployTestFixtures(
   // ---------------------------------------------------------------------------
   // 4. Fund payer with USDC via storage slot manipulation
   // ---------------------------------------------------------------------------
-  const payerUsdcAmount = 10_000_000_000n // 10,000 USDC (6 decimals)
-  const payerSlot = getBalanceSlot(testRoles.payer.address, USDC_BALANCE_SLOT)
-  await testClient.setStorageAt({
-    address: USDC,
-    index: payerSlot,
-    value: pad(`0x${payerUsdcAmount.toString(16)}` as `0x${string}`),
+  await fundPayerUsdc({
+    publicClient,
+    testClient,
+    usdc: USDC,
+    payer: testRoles.payer.address,
   })
-
-  const payerBalance = await publicClient.readContract({
-    address: USDC,
-    abi: erc20Abi,
-    functionName: 'balanceOf',
-    args: [testRoles.payer.address],
-  })
-
-  if (payerBalance === 0n) {
-    const fallbackSlot = getBalanceSlot(testRoles.payer.address, 0n)
-    await testClient.setStorageAt({
-      address: USDC,
-      index: fallbackSlot,
-      value: pad(`0x${payerUsdcAmount.toString(16)}` as `0x${string}`),
-    })
-
-    const retryBalance = await publicClient.readContract({
-      address: USDC,
-      abi: erc20Abi,
-      functionName: 'balanceOf',
-      args: [testRoles.payer.address],
-    })
-    if (retryBalance === 0n) {
-      throw new Error(
-        'Failed to fund payer — USDC storage slot unknown (tried slots 9 and 0)',
-      )
-    }
-  }
 
   return {
     operatorAddress,

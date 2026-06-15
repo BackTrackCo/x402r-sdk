@@ -4,8 +4,9 @@ Small, illustrative code fragments for common x402r SDK calls. Unlike the
 [scenarios](../scenarios/README.md), these do **not** run a chain — they show
 the shape of the API and are type-checked, not executed.
 
-These live in their own `@x402r/example-snippets` package (depending only on
-`@x402r/sdk` + viem) so they type-check against the real published API surface.
+These live in their own `@x402r/example-snippets` package (depending on
+`@x402r/sdk`, `@x402r/core` + viem) so they type-check against the real
+published API surface.
 Run the type check from the `x402r-sdk` root:
 
 ```bash

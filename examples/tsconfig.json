@@ -1,6 +1,7 @@
 {
   "extends": "../tsconfig.base.json",
   "include": ["**/*.ts"],
+  "exclude": ["snippets"],
   "compilerOptions": {
     "noUnusedLocals": false,
     "noUnusedParameters": false,
