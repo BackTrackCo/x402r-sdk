@@ -64,6 +64,8 @@ describe('x402rDefaults', () => {
 
     const minimalInput = {
       captureAuthorizer: '0x000000000000000000000000000000000000dEaD' as const,
+      name: 'USDC',
+      version: '2',
     }
 
     it('emits relative offsets by default and never reads the wall clock', () => {
@@ -278,6 +280,8 @@ describe('x402rDefaults', () => {
   describe('non-deadline defaults', () => {
     const minimalInput = {
       captureAuthorizer: '0x000000000000000000000000000000000000dEaD' as const,
+      name: 'USDC',
+      version: '2',
     }
 
     it('defaults feeRecipient to captureAuthorizer', () => {
@@ -301,10 +305,31 @@ describe('x402rDefaults', () => {
       expect(extra.maxFeeBps).toBe(100)
     })
 
-    it('defaults token domain to USDC / 2', () => {
-      const extra = x402rDefaults(minimalInput)
-      expect(extra.name).toBe('USDC')
-      expect(extra.version).toBe('2')
+    it('carries the explicit token domain through unchanged', () => {
+      const extra = x402rDefaults({
+        ...minimalInput,
+        name: 'USD Coin',
+        version: '1',
+      })
+      expect(extra.name).toBe('USD Coin')
+      expect(extra.version).toBe('1')
+    })
+
+    it('is a compile error to omit the required name/version token domain', () => {
+      // Type-level enforcement, zero runtime cost: the EIP-712 token domain is
+      // required input (no safe default — it must match the token contract's
+      // name()/version()). Test files are typechecked, so the @ts-expect-error
+      // below fails the build if omitting name/version ever stops being a type
+      // error — locking the enforcement in without any runtime bytes.
+      const noDomain = {
+        captureAuthorizer:
+          '0x000000000000000000000000000000000000dEaD' as const,
+      }
+      const extra = x402rDefaults(
+        // @ts-expect-error name and version are required
+        noDomain,
+      )
+      expect(extra.captureAuthorizer).toBe(noDomain.captureAuthorizer)
     })
   })
 })

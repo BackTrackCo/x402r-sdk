@@ -5,8 +5,6 @@ const DEFAULT_CAPTURE_WINDOW_SECONDS = 60 * 60 * 24 // 24 hours
 const DEFAULT_REFUND_WINDOW_SECONDS = 60 * 60 * 24 * 7 // 7 days
 const DEFAULT_MIN_FEE_BPS = 0
 const DEFAULT_MAX_FEE_BPS = 100 // 1%
-const DEFAULT_TOKEN_NAME = 'USDC'
-const DEFAULT_TOKEN_VERSION = '2'
 
 /**
  * The deadline fields `x402rDefaults` may emit. Capture and refund are resolved
@@ -111,20 +109,18 @@ export interface X402rDefaultsInput {
    */
   maxFeeBps?: number
   /**
-   * EIP-712 token-domain name. Defaults to `'USDC'`.
-   *
-   * Must match the token contract's EIP-712 domain `name()` exactly.
-   * Defaults assume USDC; override for any other token (EURC, PYUSD, DAI,
-   * etc.) or signatures will fail verification on-chain.
+   * EIP-712 token-domain name. Required — no safe default, since the helper
+   * never sees the token address. Must match the token's `name()` exactly or
+   * the signature fails verification and settle reverts on-chain. Even USDC
+   * varies: `'USDC'` on testnets, `'USD Coin'` for canonical USDC on Base
+   * mainnet. Read it from the token (EURC, PYUSD, DAI, etc.).
    */
-  name?: string
+  name: string
   /**
-   * EIP-712 token-domain version. Defaults to `'2'`.
-   *
-   * Must match the token contract's EIP-712 domain `version()` exactly. See
-   * the `name` field warning — same domain-mismatch class of bug.
+   * EIP-712 token-domain version. Required — same as `name`: must match the
+   * token's `version()` exactly, no safe default, mismatch reverts settle.
    */
-  version?: string
+  version: string
   /** When `true`, facilitator calls `charge()` (atomic, no escrow). Omit for facilitator default (`false`). */
   autoCapture?: boolean
   /** Asset transfer method. Omit for facilitator default (`'eip3009'`). */
@@ -142,11 +138,11 @@ export interface X402rDefaultsInput {
  * requirements via `AuthCaptureServerScheme.enhancePaymentRequirements`
  * (`@x402r/evm`).
  *
- * **Required:** only the facilitator-specific `captureAuthorizer`. Everything
- * else has a sensible default — `feeRecipient` (defaults to the
+ * **Required:** the facilitator-specific `captureAuthorizer` and the EIP-712
+ * token domain (`name` / `version`) — no safe default; see those fields.
+ * Everything else has a sensible default — `feeRecipient` (defaults to the
  * `captureAuthorizer`, per the x402r deployment convention), deadlines
- * (relative `24h` / `7d` windows, see below), fee policy (`0`–`100` bps), and
- * EIP-712 token domain (`USDC` / `2`).
+ * (relative `24h` / `7d` windows, see below), and fee policy (`0`–`100` bps).
  *
  * **Deadlines are relative by default.** The output carries
  * `captureDeadlineSeconds` / `refundDeadlineSeconds` (`86400` / `604800`),
@@ -162,8 +158,8 @@ export interface X402rDefaultsInput {
  * conscious fee policy on every wire payload. This helper deliberately
  * provides defaults at the SDK layer for quick-start ergonomics. Production
  * callers should override fee bps to match their facilitator's published
- * policy, deadlines to match their settlement cadence, and token domain to
- * match their actual ERC-20.
+ * policy and deadlines to match their settlement cadence. The token domain
+ * (`name` / `version`) is required input, not a default.
  *
  * Optional flags (`autoCapture`, `assetTransferMethod`) are omitted from the
  * output when undefined so the facilitator's wire-spec defaults take over.
@@ -262,8 +258,8 @@ export function x402rDefaults(input: X402rDefaultsInput): X402rDefaultsExtra {
     feeRecipient: input.feeRecipient ?? input.captureAuthorizer,
     minFeeBps: input.minFeeBps ?? DEFAULT_MIN_FEE_BPS,
     maxFeeBps: input.maxFeeBps ?? DEFAULT_MAX_FEE_BPS,
-    name: input.name ?? DEFAULT_TOKEN_NAME,
-    version: input.version ?? DEFAULT_TOKEN_VERSION,
+    name: input.name,
+    version: input.version,
     // Conditional spread preserves the omit-from-wire signal — explicit
     // undefined ≠ field-not-set on the wire, which is what lets the
     // facilitator's documented default win.
