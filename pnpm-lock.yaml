@@ -82,11 +82,11 @@ importers:
         specifier: ^25.9.1
         version: 25.9.1
       '@x402/core':
-        specifier: 2.14.0
-        version: 2.14.0
+        specifier: 2.15.0
+        version: 2.15.0
       '@x402/evm':
-        specifier: 2.14.0
-        version: 2.14.0(typescript@6.0.3)
+        specifier: 2.15.0
+        version: 2.15.0(typescript@6.0.3)
       '@x402/express':
         specifier: 2.14.0
         version: 2.14.0(ethers@6.16.0)(express@5.2.1)(typescript@6.0.3)
@@ -95,7 +95,7 @@ importers:
         version: 2.14.0
       '@x402r/evm':
         specifier: 0.2.0-alpha.1
-        version: 0.2.0-alpha.1(@x402/core@2.14.0)(@x402/evm@2.14.0(typescript@6.0.3))(viem@2.52.2(typescript@6.0.3)(zod@4.4.3))
+        version: 0.2.0-alpha.1(@x402/core@2.15.0)(@x402/evm@2.15.0(typescript@6.0.3))(viem@2.52.2(typescript@6.0.3)(zod@4.4.3))
       '@x402r/test-fixtures':
         specifier: workspace:*
         version: link:../packages/test-fixtures
@@ -125,11 +125,11 @@ importers:
   packages/cli:
     dependencies:
       '@x402/core':
-        specifier: ^2.14.0
-        version: 2.14.0
+        specifier: ^2.15.0
+        version: 2.15.0
       '@x402/evm':
-        specifier: ^2.14.0
-        version: 2.14.0(typescript@6.0.3)
+        specifier: ^2.15.0
+        version: 2.15.0(typescript@6.0.3)
       viem:
         specifier: ^2.52.2
         version: 2.52.2(typescript@6.0.3)(zod@4.4.3)
@@ -145,8 +145,8 @@ importers:
         version: 2.52.2(typescript@6.0.3)(zod@4.4.3)
     devDependencies:
       '@x402/evm':
-        specifier: ^2.14.0
-        version: 2.14.0(typescript@6.0.3)
+        specifier: ^2.15.0
+        version: 2.15.0(typescript@6.0.3)
       '@x402r/test-fixtures':
         specifier: workspace:*
         version: link:../test-fixtures
@@ -158,11 +158,11 @@ importers:
         version: link:../core
     devDependencies:
       '@x402/core':
-        specifier: 2.14.0
-        version: 2.14.0
+        specifier: 2.15.0
+        version: 2.15.0
       '@x402r/evm':
         specifier: 0.2.0-alpha.1
-        version: 0.2.0-alpha.1(@x402/core@2.14.0)(@x402/evm@2.14.0(typescript@6.0.3))(viem@2.52.2(typescript@6.0.3)(zod@4.4.3))
+        version: 0.2.0-alpha.1(@x402/core@2.15.0)(@x402/evm@2.15.0(typescript@6.0.3))(viem@2.52.2(typescript@6.0.3)(zod@4.4.3))
 
   packages/sdk:
     dependencies:
@@ -596,6 +596,12 @@ packages:
 
   '@napi-rs/wasm-runtime@1.1.5':
     resolution: {integrity: sha512-AWPoBRJ9tsnVhor4sjO7rkni+7p+2IAEFj6cx06UgP10jkQHqay/36uRV/bFkgrh18D9vb4cr8Q0Pthskgzy+Q==}
+    peerDependencies:
+      '@emnapi/core': ^1.7.1
+      '@emnapi/runtime': ^1.7.1
+
+  '@napi-rs/wasm-runtime@1.1.6':
+    resolution: {integrity: sha512-ZLv/JdUfkvOy9eCnnBaGfiO+XimbjebAeO+MRQqD/B+FR1tnRN0tpKSJHRbE8sFfS6aqsXZ67TQjfwfsxULVbg==}
     peerDependencies:
       '@emnapi/core': ^1.7.1
       '@emnapi/runtime': ^1.7.1
@@ -1117,6 +1123,9 @@ packages:
   '@tybys/wasm-util@0.10.2':
     resolution: {integrity: sha512-RoBvJ2X0wuKlWFIjrwffGw1IqZHKQqzIchKaadZZfnNpsAYp2mM0h36JtPCjNDAHGgYez/15uMBpfGwchhiMgg==}
 
+  '@tybys/wasm-util@0.10.3':
+    resolution: {integrity: sha512-F3fo1MYrRJYL3zER0OUOmkutjr1Vp23m7OsSgp7nq4SP6OqX6C/56XFIPAl5bt3zaBRjmW7SGz3u/6LwFpYcOg==}
+
   '@types/body-parser@1.19.6':
     resolution: {integrity: sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g==}
 
@@ -1215,8 +1224,11 @@ packages:
   '@x402/core@2.14.0':
     resolution: {integrity: sha512-+xTM6hfGduYvFcQ7QwKvCwommL6+zqzqmr5IuPojbt+RZjo4QUjSkHW+arMtPoIKRLxWAI+e6P4UJMMblwG+Dw==}
 
-  '@x402/evm@2.14.0':
-    resolution: {integrity: sha512-Qrm0+hN1gMK1vrX4vW4sdcx5txYTx8J2uDNulcNoIdtz15kTU5hjNUyZaCpI3i6x0MXnUBGfyar9Ut9uoAoPMw==}
+  '@x402/core@2.15.0':
+    resolution: {integrity: sha512-Hwop1cu80sf3H4dpNdiMJt7ay30Jf7JUjgx7dXHxQm/nYqOjTcm71FC/ZhpnIpeg6RSAUt7EI/rFTXx/lafHhw==}
+
+  '@x402/evm@2.15.0':
+    resolution: {integrity: sha512-HfFbGGL4SpAeAzfvai9oz8cyfPzyWQFSO5hNDwSaGQYoOx8ZTmTobo5YxuXH7gazci13JruFRmjobtvlbQu5WA==}
 
   '@x402/express@2.14.0':
     resolution: {integrity: sha512-dkM4A1EanDciS2iJwxl5B/Qsz+ENWmL5O8jt5i+hRc8w+rQ6Loj04C4cIN3RCAIwmD91NTCmivGsIJ+4WrdEwQ==}
@@ -1944,8 +1956,8 @@ packages:
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
 
-  nanoid@3.3.12:
-    resolution: {integrity: sha512-ZB9RH/39qpq5Vu6Y+NmUaFhQR6pp+M2Xt76XBnEwDaGcVAqhlvxrl3B2bKS5D3NH3QR76v3aSrKaF/Kiy7lEtQ==}
+  nanoid@3.3.15:
+    resolution: {integrity: sha512-y7Wygv/7mEOvxTuEQDB8StXdMRBWf1kR/tlhAzBRUFkB2jfcLOAxO/SHmOO2zgz1pVgK29/kyupn059/bCHdjA==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
@@ -2072,8 +2084,8 @@ packages:
     resolution: {integrity: sha512-uB80kBFb/tfd68bVleG9T5GGsGPjJrLAUpR5PZIrhBnIaRTQRjqdJSsIKkOP6OAIFbj7GOrcudc5pNjZ+geV2g==}
     engines: {node: '>=6'}
 
-  postcss@8.5.15:
-    resolution: {integrity: sha512-FfR8sjd4em2T6fb3I2MwAJU7HWVMr9zba+enmQeeWFfCbm+UOC/0X4DS8XtpUTMwWMGbjKYP7xjfNekzyGmB3A==}
+  postcss@8.5.16:
+    resolution: {integrity: sha512-vuwillviilfKZsg0VGj5R/YwwcHx4SLsIOI/7K6mQkWx+l5cUHTjj5g0AasTBcyXsbfTgrwsUNmVUb5xVwyPwg==}
     engines: {node: ^10 || ^12 || >=14}
 
   prettier@2.8.8:
@@ -3052,11 +3064,11 @@ snapshots:
       '@tybys/wasm-util': 0.10.2
     optional: true
 
-  '@napi-rs/wasm-runtime@1.1.5(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)':
+  '@napi-rs/wasm-runtime@1.1.6(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)':
     dependencies:
       '@emnapi/core': 1.9.1
       '@emnapi/runtime': 1.9.1
-      '@tybys/wasm-util': 0.10.2
+      '@tybys/wasm-util': 0.10.3
     optional: true
 
   '@noble/ciphers@1.3.0': {}
@@ -3300,7 +3312,7 @@ snapshots:
     dependencies:
       '@emnapi/core': 1.9.1
       '@emnapi/runtime': 1.9.1
-      '@napi-rs/wasm-runtime': 1.1.5(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)
+      '@napi-rs/wasm-runtime': 1.1.6(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)
     optional: true
 
   '@rolldown/binding-wasm32-wasi@1.1.1':
@@ -3380,6 +3392,11 @@ snapshots:
     optional: true
 
   '@tybys/wasm-util@0.10.2':
+    dependencies:
+      tslib: 2.8.1
+    optional: true
+
+  '@tybys/wasm-util@0.10.3':
     dependencies:
       tslib: 2.8.1
     optional: true
@@ -3528,9 +3545,13 @@ snapshots:
     dependencies:
       zod: 3.25.76
 
-  '@x402/evm@2.14.0(typescript@6.0.3)':
+  '@x402/core@2.15.0':
     dependencies:
-      '@x402/core': 2.14.0
+      zod: 3.25.76
+
+  '@x402/evm@2.15.0(typescript@6.0.3)':
+    dependencies:
+      '@x402/core': 2.15.0
       viem: 2.52.2(typescript@6.0.3)(zod@3.25.76)
       zod: 3.25.76
     transitivePeerDependencies:
@@ -3574,10 +3595,10 @@ snapshots:
     dependencies:
       viem: 2.52.2(typescript@6.0.3)(zod@4.4.3)
 
-  '@x402r/evm@0.2.0-alpha.1(@x402/core@2.14.0)(@x402/evm@2.14.0(typescript@6.0.3))(viem@2.52.2(typescript@6.0.3)(zod@4.4.3))':
+  '@x402r/evm@0.2.0-alpha.1(@x402/core@2.15.0)(@x402/evm@2.15.0(typescript@6.0.3))(viem@2.52.2(typescript@6.0.3)(zod@4.4.3))':
     dependencies:
-      '@x402/core': 2.14.0
-      '@x402/evm': 2.14.0(typescript@6.0.3)
+      '@x402/core': 2.15.0
+      '@x402/evm': 2.15.0(typescript@6.0.3)
       viem: 2.52.2(typescript@6.0.3)(zod@4.4.3)
 
   abitype@1.2.3(typescript@6.0.3)(zod@3.25.76):
@@ -4247,7 +4268,7 @@ snapshots:
 
   ms@2.1.3: {}
 
-  nanoid@3.3.12: {}
+  nanoid@3.3.15: {}
 
   nanospinner@1.2.2:
     dependencies:
@@ -4416,9 +4437,9 @@ snapshots:
 
   pify@4.0.1: {}
 
-  postcss@8.5.15:
+  postcss@8.5.16:
     dependencies:
-      nanoid: 3.3.12
+      nanoid: 3.3.15
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
@@ -4855,7 +4876,7 @@ snapshots:
     dependencies:
       lightningcss: 1.32.0
       picomatch: 4.0.4
-      postcss: 8.5.15
+      postcss: 8.5.16
       rolldown: 1.0.0-rc.13
       tinyglobby: 0.2.17
     optionalDependencies:

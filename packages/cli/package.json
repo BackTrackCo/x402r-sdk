@@ -35,8 +35,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@x402/core": "^2.14.0",
-    "@x402/evm": "^2.14.0",
+    "@x402/core": "^2.15.0",
+    "@x402/evm": "^2.15.0",
     "viem": "^2.52.2"
   },
   "devDependencies": {

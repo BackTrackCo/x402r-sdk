@@ -60,7 +60,7 @@
     "viem": "^2.52.2"
   },
   "devDependencies": {
-    "@x402/evm": "^2.14.0",
+    "@x402/evm": "^2.15.0",
     "@x402r/test-fixtures": "workspace:*"
   },
   "size-limit": [
