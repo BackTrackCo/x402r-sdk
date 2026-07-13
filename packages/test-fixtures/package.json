@@ -11,8 +11,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "prool": "^0.2.4",
-    "viem": "^2.52.2"
+    "prool": "^0.2.5",
+    "viem": "^2.53.1"
   },
   "devDependencies": {
     "@types/node": "^25.9.1",

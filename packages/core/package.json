@@ -57,10 +57,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "viem": "^2.52.2"
+    "viem": "^2.53.1"
   },
   "devDependencies": {
-    "@x402/evm": "^2.14.0",
+    "@x402/evm": "^2.17.0",
     "@x402r/test-fixtures": "workspace:*"
   },
   "size-limit": [
