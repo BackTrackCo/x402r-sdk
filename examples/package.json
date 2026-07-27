@@ -16,8 +16,8 @@
     "@types/node": "^25.9.1",
     "@x402/core": "2.14.0",
     "@x402/evm": "2.14.0",
-    "@x402/express": "2.14.0",
-    "@x402/fetch": "2.14.0",
+    "@x402/express": "2.18.0",
+    "@x402/fetch": "2.18.0",
     "@x402r/evm": "0.2.0-alpha.1",
     "@x402r/test-fixtures": "workspace:*",
     "express": "^5.0.0"
