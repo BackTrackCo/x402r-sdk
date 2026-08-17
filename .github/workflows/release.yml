@@ -34,7 +34,7 @@ jobs:
       pull-requests: write  # Open/update the Version Packages PR
     steps:
       - name: Harden runner
-        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5  # v2.19.3
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920  # v2.20.0
         with:
           egress-policy: audit
 
@@ -54,7 +54,7 @@ jobs:
           permission-pull-requests: write
 
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           # Persist the App installation token in local git config so the
           # version-bump push to changeset-release/main authenticates.
@@ -66,7 +66,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093  # v6.0.8
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271  # v6.0.9
 
       # No `cache: pnpm` here: the privileged release runner must not
       # deserialize the same cache that ci.yml writes to from
@@ -74,7 +74,7 @@ jobs:
       # changesets/changesets uses `skip-cache: true` for the same
       # reason. Cold install costs ~10s per release run.
       - name: Setup Node
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
         with:
           node-version-file: .nvmrc
 
@@ -87,7 +87,7 @@ jobs:
 
       - name: Create or update Version Packages PR
         id: changesets
-        uses: changesets/action@63a615b9cd06ba9a3e6d13796c7fbcb080a60a0b  # v1.8.0
+        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d  # v1.9.0
         with:
           version: pnpm exec changeset version
           commit: "chore(release): version packages"
@@ -126,7 +126,7 @@ jobs:
       NPM_CONFIG_PROVENANCE: "true"
     steps:
       - name: Harden runner
-        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5  # v2.19.3
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920  # v2.20.0
         with:
           egress-policy: audit
 
@@ -143,7 +143,7 @@ jobs:
           permission-contents: write
 
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           # Same reason as version job: persisted App token is needed
           # because `changeset publish` creates and pushes git tags via
@@ -152,7 +152,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093  # v6.0.8
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271  # v6.0.9
 
       # No `cache: pnpm` here: the privileged release runner must not
       # deserialize the same cache that ci.yml writes to from
@@ -160,7 +160,7 @@ jobs:
       # changesets/changesets uses `skip-cache: true` for the same
       # reason. Cold install costs ~10s per release run.
       - name: Setup Node
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6.4.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
         with:
           node-version-file: .nvmrc
           registry-url: https://registry.npmjs.org
@@ -180,7 +180,7 @@ jobs:
         run: pnpm test:pkg
 
       - name: Publish to npm
-        uses: changesets/action@63a615b9cd06ba9a3e6d13796c7fbcb080a60a0b  # v1.8.0
+        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d  # v1.9.0
         with:
           publish: pnpm exec changeset publish
           createGithubReleases: true
